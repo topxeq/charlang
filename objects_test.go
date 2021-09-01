@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	. "github.com/topxeq/charlang/"
+	. "github.com/topxeq/charlang"
 	"github.com/topxeq/charlang/token"
 )
 
