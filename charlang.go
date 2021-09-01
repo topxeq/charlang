@@ -1,9 +1,8 @@
-package main
+// Copyright (c) 2020 Ozan Hacıbekiroğlu.
+// Use of this source code is governed by a MIT License
+// that can be found in the LICENSE file.
 
-import "github.com/topxeq/tk"
+package charlang
 
-var versionG = "0.9a"
-
-func main() {
-	tk.Pl("Chalang V%v", versionG)
-}
+// CallableFunc is a function signature for a callable function.
+type CallableFunc = func(args ...Object) (ret Object, err error)
