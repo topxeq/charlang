@@ -82,3 +82,11 @@ func NewIndexValueTypeError(expectType, foundType string) *Error {
 	return ErrType.NewError(
 		fmt.Sprintf("index value type expected %s, found %s", expectType, foundType))
 }
+
+// char start
+func NewCommonError(formatA string, argsA ...interface{}) *Error {
+	return ErrType.NewError(
+		fmt.Sprintf(formatA, argsA...))
+}
+
+// char end

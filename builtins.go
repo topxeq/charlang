@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"sort"
 	"strconv"
@@ -16,6 +17,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/topxeq/charlang/token"
+	"github.com/topxeq/tk"
 )
 
 var (
@@ -24,7 +26,7 @@ var (
 )
 
 // BuiltinType represents a builtin type
-type BuiltinType byte
+type BuiltinType int
 
 // Builtins
 const (
@@ -79,6 +81,13 @@ const (
 	BuiltinTypeError
 
 	BuiltinMakeArray
+
+	// by char
+	BuiltinGetRandomInt
+
+	BuiltinWriteResp
+	BuiltinSetRespHeader
+	BuiltinWriteRespHeader
 )
 
 // BuiltinsMap is list of builtin types, exported for REPL.
@@ -134,10 +143,36 @@ var BuiltinsMap = map[string]BuiltinType{
 	"TypeError":               BuiltinTypeError,
 
 	":makeArray": BuiltinMakeArray,
+
+	// by char
+	"getRandomInt": BuiltinGetRandomInt,
+
+	"writeResp":       BuiltinWriteResp,
+	"setRespHeader":   BuiltinSetRespHeader,
+	"writeRespHeader": BuiltinWriteRespHeader,
 }
 
 // BuiltinObjects is list of builtins, exported for REPL.
 var BuiltinObjects = [...]Object{
+	// by char start
+	BuiltinGetRandomInt: &BuiltinFunction{
+		Name:  "getRandomInt",
+		Value: builtinGetRandomIntFunc,
+	},
+	BuiltinWriteResp: &BuiltinFunction{
+		Name:  "writeResp",
+		Value: builtinWriteRespFunc,
+	},
+	BuiltinSetRespHeader: &BuiltinFunction{
+		Name:  "setRespHeader",
+		Value: builtinSetRespHeaderFunc,
+	},
+	BuiltinWriteRespHeader: &BuiltinFunction{
+		Name:  "writeRespHeader",
+		Value: builtinWriteRespHeaderFunc,
+	},
+	// by char end
+
 	// :makeArray is a private builtin function to help destructuring array assignments
 	BuiltinMakeArray: &BuiltinFunction{
 		Name:  ":makeArray",
@@ -932,6 +967,128 @@ func builtinIsErrorFunc(args ...Object) (Object, error) {
 func builtinIsIntFunc(args ...Object) (Object, error) {
 	_, ok := args[0].(Int)
 	return Bool(ok), nil
+}
+
+func builtinGetRandomIntFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return Undefined, nil
+	}
+	v, ok := args[0].(Int)
+	if !ok {
+		return Undefined, nil
+	}
+	return Int(tk.GetRandomIntLessThan(int(v))), nil
+}
+
+func builtinWriteRespFunc(args ...Object) (Object, error) {
+	if len(args) < 2 {
+		return Undefined, NewCommonError("not enough paramters")
+	}
+
+	v, ok := args[0].(Any)
+	if !ok {
+		return Undefined, NewArgumentTypeError(
+			"1",
+			"any",
+			args[0].TypeName(),
+		)
+	}
+
+	v2, ok := args[1].(Bytes)
+	if !ok {
+		return Undefined, NewArgumentTypeError(
+			"2",
+			"any",
+			args[1].TypeName(),
+		)
+	}
+
+	vv, ok := v.Value.(http.ResponseWriter)
+
+	if !ok {
+		return Undefined, NewCommonError("invalid type in Any object(expect http.ResponseWriter)")
+	}
+
+	r, errT := vv.Write(v2)
+
+	return Int(r), errT
+}
+
+func builtinWriteRespHeaderFunc(args ...Object) (Object, error) {
+	if len(args) < 2 {
+		return Undefined, NewCommonError("not enough paramters")
+	}
+
+	v, ok := args[0].(Any)
+	if !ok {
+		return Undefined, NewArgumentTypeError(
+			"1",
+			"any",
+			args[0].TypeName(),
+		)
+	}
+
+	vv, ok := v.Value.(http.ResponseWriter)
+
+	if !ok {
+		return Undefined, NewCommonError("invalid type in Any object(expect http.ResponseWriter)")
+	}
+
+	v2, ok := args[1].(Int)
+	if !ok {
+		return Undefined, NewArgumentTypeError(
+			"2",
+			"int",
+			args[1].TypeName(),
+		)
+	}
+
+	vv.WriteHeader(int(v2))
+
+	return nil, nil
+}
+
+func builtinSetRespHeaderFunc(args ...Object) (Object, error) {
+	if len(args) < 3 {
+		return Undefined, NewCommonError("not enough paramters")
+	}
+
+	v, ok := args[0].(Any)
+	if !ok {
+		return Undefined, NewArgumentTypeError(
+			"1",
+			"any",
+			args[0].TypeName(),
+		)
+	}
+
+	v2, ok := args[1].(String)
+	if !ok {
+		return Undefined, NewArgumentTypeError(
+			"2",
+			"any",
+			args[1].TypeName(),
+		)
+	}
+
+	v3, ok := args[2].(String)
+	if !ok {
+		return Undefined, NewArgumentTypeError(
+			"3",
+			"any",
+			args[3].TypeName(),
+		)
+	}
+
+	vv, ok := v.Value.(http.ResponseWriter)
+
+	if !ok {
+		return Undefined, NewCommonError("invalid type in Any object(expect http.ResponseWriter)")
+	}
+
+	vv.Header().Set(string(v2), string(v3))
+
+	return Undefined, nil
 }
 
 func builtinIsUintFunc(args ...Object) (Object, error) {

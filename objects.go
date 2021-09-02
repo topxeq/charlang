@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -193,6 +194,83 @@ func (undefined) IndexGet(key Object) (Object, error) {
 
 func (undefined) IndexSet(key, value Object) error {
 	return ErrNotIndexAssignable
+}
+
+type Any struct {
+	ObjectImpl
+	Value interface{}
+}
+
+var _ Object = Any{}
+
+func NewAny(vA interface{}) *Any {
+	return &Any{
+		Value: vA,
+	}
+}
+
+func NewAnyValue(vA interface{}) Any {
+	return Any{
+		Value: vA,
+	}
+}
+
+func (o Any) WriteResp(bytesA []byte) error {
+	v, ok := o.Value.(http.ResponseWriter)
+
+	if !ok {
+		return ErrType
+	}
+
+	_, err := v.Write(bytesA)
+
+	return err
+}
+
+func (o Any) TypeName() string {
+	return "any"
+}
+
+func (o Any) String() string {
+	return fmt.Sprintf("%#v", o.Value)
+}
+
+func (o Any) Equal(right Object) bool {
+	if v, ok := right.(Any); ok {
+		return o == v
+	}
+
+	return false
+}
+
+func (o Any) IsFalsy() bool { return false }
+
+func (Any) CanCall() bool { return false }
+
+func (Any) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (Any) CanIterate() bool { return false }
+
+func (Any) Iterate() Iterator { return nil }
+
+func (Any) IndexGet(index Object) (value Object, err error) {
+	return nil, ErrNotIndexable
+}
+
+func (Any) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+func (o Any) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, ErrInvalidOperator
+}
+
+func (o *Any) Copy() Object {
+	return &Any{
+		Value: o.Value,
+	}
 }
 
 // Bool represents boolean values and implements Object interface.
@@ -930,6 +1008,24 @@ func (o *ObjectPtr) Call(args ...Object) (Object, error) {
 type Map map[string]Object
 
 var _ Object = Map{}
+
+func MssToMap(vA map[string]string) Map {
+	inParasT := make(Map, len(vA))
+	for k, v := range vA {
+		inParasT[k] = String(v)
+	}
+
+	return inParasT
+}
+
+func MsiToMap(vA map[string]interface{}) Map {
+	inParasT := make(Map, len(vA))
+	for k, v := range vA {
+		inParasT[k] = String(fmt.Sprintf("%v", v))
+	}
+
+	return inParasT
+}
 
 // TypeName implements Object interface.
 func (Map) TypeName() string {
