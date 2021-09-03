@@ -55,7 +55,7 @@ func ConvertFromObject(vA Object) interface{} {
 		return nv.Value
 	}
 
-	return fmt.Sprintf("%v", vA)
+	return vA
 }
 
 func ObjectsToI(aryA []Object) []interface{} {
@@ -63,7 +63,7 @@ func ObjectsToI(aryA []Object) []interface{} {
 		return nil
 	}
 
-	rs := make([]interface{}, len(aryA))
+	rs := make([]interface{}, 0, len(aryA))
 
 	for _, v := range aryA {
 		rs = append(rs, ConvertFromObject(v))
