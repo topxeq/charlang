@@ -83,17 +83,20 @@ const (
 	BuiltinMakeArray
 
 	// by char
+	BuiltinIsByte
+
 	BuiltinGetRandomInt
 
-	BuiltinWriteResp
-	BuiltinSetRespHeader
-	BuiltinWriteRespHeader
-
 	BuiltinPl
+	BuiltinSpr
+
+	BuiltinStrJoin
 
 	BuiltinGetNowStr
 
-	BuiltinIsByte
+	BuiltinSetRespHeader
+	BuiltinWriteRespHeader
+	BuiltinWriteResp
 )
 
 // BuiltinsMap is list of builtin types, exported for REPL.
@@ -160,15 +163,25 @@ var BuiltinsMap = map[string]BuiltinType{
 	"writeRespHeader": BuiltinWriteRespHeader,
 
 	"pl":        BuiltinPl,
+	"spr":       BuiltinSpr,
 	"getNowStr": BuiltinGetNowStr,
+	"strJoin":   BuiltinStrJoin,
 }
 
 // BuiltinObjects is list of builtins, exported for REPL.
 var BuiltinObjects = [...]Object{
 	// by char start
+	BuiltinSpr: &BuiltinFunction{
+		Name:  "spr",
+		Value: builtinSprFunc,
+	},
 	BuiltinPl: &BuiltinFunction{
 		Name:  "pl",
 		Value: builtinPlFunc,
+	},
+	BuiltinStrJoin: &BuiltinFunction{
+		Name:  "strJoin",
+		Value: builtinStrJoinFunc,
 	},
 	BuiltinGetNowStr: &BuiltinFunction{
 		Name:  "getNowStr",
@@ -997,6 +1010,27 @@ func builtinIsByteFunc(args ...Object) (Object, error) {
 	return Bool(ok), nil
 }
 
+func builtinStrJoinFunc(args ...Object) (Object, error) {
+	if len(args) != 2 {
+		return nil, ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args)))
+	}
+	arr, ok := args[0].(Array)
+	if !ok {
+		return nil, NewArgumentTypeError("first", "array",
+			args[0].TypeName())
+	}
+	sep, ok := args[1].(String)
+	if !ok {
+		return nil, NewArgumentTypeError("second", "string",
+			args[1].TypeName())
+	}
+	elems := make([]string, len(arr))
+	for i := range arr {
+		elems[i] = arr[i].String()
+	}
+	return String(strings.Join(elems, string(sep))), nil
+}
+
 func builtinPlFunc(args ...Object) (Object, error) {
 	if len(args) < 1 {
 		return Undefined, nil
@@ -1010,6 +1044,19 @@ func builtinPlFunc(args ...Object) (Object, error) {
 	tk.Pl(v.String(), ObjectsToI(args[1:])...)
 
 	return Undefined, nil
+}
+
+func builtinSprFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return Undefined, nil
+	}
+
+	v, ok := args[0].(String)
+	if !ok {
+		return Undefined, NewCommonError("required format string")
+	}
+
+	return String(fmt.Sprintf(v.String(), ObjectsToI(args[1:])...)), nil
 }
 
 func builtinGetNowStrFunc(args ...Object) (Object, error) {
