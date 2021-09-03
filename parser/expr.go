@@ -392,6 +392,28 @@ func (e *UintLit) String() string {
 	return e.Literal
 }
 
+type ByteLit struct {
+	Value    byte
+	ValuePos Pos
+	Literal  string
+}
+
+func (e *ByteLit) exprNode() {}
+
+// Pos returns the position of first character belonging to the node.
+func (e *ByteLit) Pos() Pos {
+	return e.ValuePos
+}
+
+// End returns the position of first character immediately after the node.
+func (e *ByteLit) End() Pos {
+	return Pos(int(e.ValuePos) + len(e.Literal))
+}
+
+func (e *ByteLit) String() string {
+	return e.Literal
+}
+
 // MapElementLit represents a map element.
 type MapElementLit struct {
 	Key      string

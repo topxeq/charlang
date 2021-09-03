@@ -123,6 +123,7 @@ func canOptimizeExpr(expr parser.Expr) bool {
 	case *parser.BoolLit,
 		*parser.IntLit,
 		*parser.UintLit,
+		*parser.ByteLit,
 		*parser.FloatLit,
 		*parser.CharLit,
 		*parser.StringLit,
@@ -150,6 +151,7 @@ func canOptimizeInsts(constants []Object, insts []byte) bool {
 	allowedBuiltins := [...]bool{
 		BuiltinContains: true, BuiltinBool: true, BuiltinInt: true,
 		BuiltinUint: true, BuiltinChar: true, BuiltinFloat: true,
+		BuiltinByte:   true,
 		BuiltinString: true, BuiltinChars: true, BuiltinLen: true,
 		BuiltinTypeName: true, BuiltinBytes: true, BuiltinError: true,
 		BuiltinSprintf: true,
@@ -298,6 +300,13 @@ func (opt *SimpleOptimizer) slowEvalExpr(expr parser.Expr) (parser.Expr, bool) {
 		l := strconv.FormatUint(uint64(v), 10)
 		expr = &parser.UintLit{
 			Value:    uint64(v),
+			Literal:  l,
+			ValuePos: expr.Pos(),
+		}
+	case Byte:
+		l := strconv.FormatUint(uint64(v), 10)
+		expr = &parser.ByteLit{
+			Value:    byte(v),
 			Literal:  l,
 			ValuePos: expr.Pos(),
 		}
@@ -570,6 +579,32 @@ func (opt *SimpleOptimizer) unaryop(
 			v := ^expr.Value
 			l := strconv.FormatUint(v, 10)
 			return &parser.UintLit{
+				Value:    v,
+				Literal:  l,
+				ValuePos: expr.ValuePos,
+			}, true
+		}
+	case *parser.ByteLit:
+		switch op {
+		case token.Not:
+			v := expr.Value == 0
+			return &parser.BoolLit{
+				Value:    v,
+				Literal:  strconv.FormatBool(v),
+				ValuePos: expr.ValuePos,
+			}, true
+		case token.Sub:
+			v := -expr.Value
+			l := strconv.FormatUint(uint64(v), 10)
+			return &parser.ByteLit{
+				Value:    v,
+				Literal:  l,
+				ValuePos: expr.ValuePos,
+			}, true
+		case token.Xor:
+			v := ^expr.Value
+			l := strconv.FormatUint(uint64(v), 10)
+			return &parser.ByteLit{
 				Value:    v,
 				Literal:  l,
 				ValuePos: expr.ValuePos,
@@ -926,7 +961,7 @@ func untraceoptim(opt *SimpleOptimizer) {
 
 func isObjectConstant(obj Object) bool {
 	switch obj.(type) {
-	case Bool, Int, Uint, Float, Char, String, undefined:
+	case Bool, Int, Uint, Byte, Float, Char, String, undefined:
 		return true
 	}
 	return false
@@ -944,6 +979,8 @@ func isLitFalsy(expr parser.Expr) (bool, bool) {
 		return Int(v.Value).IsFalsy(), true
 	case *parser.UintLit:
 		return Uint(v.Value).IsFalsy(), true
+	case *parser.ByteLit:
+		return Byte(v.Value).IsFalsy(), true
 	case *parser.FloatLit:
 		return Float(v.Value).IsFalsy(), true
 	case *parser.StringLit:

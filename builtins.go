@@ -43,6 +43,7 @@ const (
 	BuiltinBool
 	BuiltinInt
 	BuiltinUint
+	BuiltinByte
 	BuiltinFloat
 	BuiltinChar
 	BuiltinString
@@ -117,6 +118,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"bool":        BuiltinBool,
 	"int":         BuiltinInt,
 	"uint":        BuiltinUint,
+	"byte":        BuiltinByte,
 	"float":       BuiltinFloat,
 	"char":        BuiltinChar,
 	"string":      BuiltinString,
@@ -274,6 +276,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinUint: &BuiltinFunction{
 		Name:  "uint",
 		Value: builtinWant1(builtinUintFunc),
+	},
+	BuiltinByte: &BuiltinFunction{
+		Name:  "byte",
+		Value: builtinWant1(builtinByteFunc),
 	},
 	BuiltinFloat: &BuiltinFunction{
 		Name:  "float",
@@ -791,6 +797,38 @@ func builtinUintFunc(args ...Object) (Object, error) {
 			return Uint(1), nil
 		}
 		return Uint(0), nil
+	default:
+		return nil, NewArgumentTypeError(
+			"first",
+			"numeric|string|bool",
+			args[0].TypeName(),
+		)
+	}
+}
+
+func builtinByteFunc(args ...Object) (Object, error) {
+	switch obj := args[0].(type) {
+	case Int:
+		return Byte(obj), nil
+	case Float:
+		return Byte(obj), nil
+	case Char:
+		return Byte(obj), nil
+	case Uint:
+		return Byte(obj), nil
+	case Byte:
+		return obj, nil
+	case String:
+		v, err := strconv.ParseUint(string(obj), 0, 64)
+		if err != nil {
+			return nil, err
+		}
+		return Byte(v), nil
+	case Bool:
+		if obj {
+			return Byte(1), nil
+		}
+		return Byte(0), nil
 	default:
 		return nil, NewArgumentTypeError(
 			"first",

@@ -442,6 +442,15 @@ func (p *Parser) parseOperand() Expr {
 		}
 		p.next()
 		return x
+	case token.Byte:
+		v, _ := strconv.ParseUint(strings.TrimSuffix(p.tokenLit, "u"), 0, 64)
+		x := &ByteLit{
+			Value:    byte(v),
+			ValuePos: p.pos,
+			Literal:  p.tokenLit,
+		}
+		p.next()
+		return x
 	case token.Float:
 		v, _ := strconv.ParseFloat(p.tokenLit, 64)
 		x := &FloatLit{

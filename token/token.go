@@ -20,6 +20,7 @@ const (
 	Ident
 	Int
 	Uint
+	Byte
 	Float
 	Char
 	String
@@ -104,6 +105,7 @@ var tokens = [...]string{
 	Ident:        "IDENT",
 	Int:          "INT",
 	Uint:         "UINT",
+	Byte:         "BYTE",
 	Float:        "FLOAT",
 	Char:         "CHAR",
 	String:       "STRING",

@@ -235,6 +235,8 @@ VMLoop:
 				value, err = left.BinaryOp(tok, right)
 			case Uint:
 				value, err = left.BinaryOp(tok, right)
+			case Byte:
+				value, err = left.BinaryOp(tok, right)
 			case Char:
 				value, err = left.BinaryOp(tok, right)
 			case Bool:
@@ -288,6 +290,8 @@ VMLoop:
 				vm.stack[vm.sp-2] = Bool(left.Equal(right))
 			case Uint:
 				vm.stack[vm.sp-2] = Bool(left.Equal(right))
+			case Byte:
+				vm.stack[vm.sp-2] = Bool(left.Equal(right))
 			case Char:
 				vm.stack[vm.sp-2] = Bool(left.Equal(right))
 			default:
@@ -308,6 +312,8 @@ VMLoop:
 			case Bool:
 				vm.stack[vm.sp-2] = Bool(!left.Equal(right))
 			case Uint:
+				vm.stack[vm.sp-2] = Bool(!left.Equal(right))
+			case Byte:
 				vm.stack[vm.sp-2] = Bool(!left.Equal(right))
 			case Char:
 				vm.stack[vm.sp-2] = Bool(!left.Equal(right))
@@ -418,6 +424,8 @@ VMLoop:
 			case Int:
 				falsy = obj.IsFalsy()
 			case Uint:
+				falsy = obj.IsFalsy()
+			case Byte:
 				falsy = obj.IsFalsy()
 			case Float:
 				falsy = obj.IsFalsy()
@@ -1163,6 +1171,8 @@ func (vm *VM) execOpUnary() error {
 			value = Int(-o)
 		case Uint:
 			value = -o
+		case Byte:
+			value = -o
 		case Bool:
 			if o {
 				value = Int(-1)
@@ -1178,6 +1188,8 @@ func (vm *VM) execOpUnary() error {
 			value = ^o
 		case Uint:
 			value = ^o
+		case Byte:
+			value = ^o
 		case Char:
 			value = ^Int(o)
 		case Bool:
@@ -1191,7 +1203,7 @@ func (vm *VM) execOpUnary() error {
 		}
 	case token.Add:
 		switch o := right.(type) {
-		case Int, Uint, Float, Char:
+		case Int, Uint, Byte, Float, Char:
 			value = right
 		case Bool:
 			if o {
@@ -1246,6 +1258,8 @@ func (vm *VM) execOpSliceIndex() error {
 		lowIdx = int(v)
 	case Uint:
 		lowIdx = int(v)
+	case Byte:
+		lowIdx = int(v)
 	case Char:
 		lowIdx = int(v)
 	default:
@@ -1258,6 +1272,8 @@ func (vm *VM) execOpSliceIndex() error {
 	case Int:
 		highIdx = int(v)
 	case Uint:
+		highIdx = int(v)
+	case Byte:
 		highIdx = int(v)
 	case Char:
 		highIdx = int(v)
