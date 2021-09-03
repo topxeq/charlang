@@ -973,10 +973,12 @@ func builtinGetRandomIntFunc(args ...Object) (Object, error) {
 	if len(args) < 1 {
 		return Undefined, nil
 	}
+
 	v, ok := args[0].(Int)
 	if !ok {
-		return Undefined, nil
+		return Undefined, NewCommonError("required int")
 	}
+
 	return Int(tk.GetRandomIntLessThan(int(v))), nil
 }
 

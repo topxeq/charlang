@@ -1,3 +1,14 @@
+# The Char Language (Charlang)
+
+Charlang is based on uGo language with some minor modifications and some new builtin-functions. Thanks to ozanh(github.com/ozanh/ugo).
+
+## new features
+
+- Added new types Byte, Any.
+- Added functions: NewCommonError, NewError.
+- Added builtin functions: getRandomInt, writeResp, setRespHeader, writeRespHeader.
+- Added a global funtion wrapper: tk (TkFunction)
+
 # The uGO Language
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/ozanh/ugo.svg)](https://pkg.go.dev/github.com/ozanh/ugo)

@@ -1,0 +1,28 @@
+a := 1
+
+printf("%v\n", a+2)
+
+s := `
+We are the world.
+
+Nice day today!
+`
+
+println(s)
+
+try {
+    println(getRandomInt(7.6))
+} catch err {
+    printf("%+v\n", err)
+}
+
+n := undefined
+
+println(n)
+
+global tk
+
+tk("test", "param1", "param2", [1, 2, "s"])
+
+
+return s

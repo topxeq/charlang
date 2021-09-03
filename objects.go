@@ -198,20 +198,35 @@ func (undefined) IndexSet(key, value Object) error {
 
 type Any struct {
 	ObjectImpl
-	Value interface{}
+	Value        interface{}
+	OriginalType string
 }
 
 var _ Object = Any{}
 
-func NewAny(vA interface{}) *Any {
+func NewAny(vA interface{}, argsA ...string) *Any {
+	originalT := ""
+
+	if len(argsA) > 0 {
+		originalT = argsA[0]
+	}
+
 	return &Any{
-		Value: vA,
+		Value:        vA,
+		OriginalType: originalT,
 	}
 }
 
-func NewAnyValue(vA interface{}) Any {
+func NewAnyValue(vA interface{}, argsA ...string) Any {
+	originalT := ""
+
+	if len(argsA) > 0 {
+		originalT = argsA[0]
+	}
+
 	return Any{
-		Value: vA,
+		Value:        vA,
+		OriginalType: originalT,
 	}
 }
 
@@ -232,12 +247,12 @@ func (o Any) TypeName() string {
 }
 
 func (o Any) String() string {
-	return fmt.Sprintf("%#v", o.Value)
+	return fmt.Sprintf("[%v] %#v", o.OriginalType, o.Value)
 }
 
 func (o Any) Equal(right Object) bool {
 	if v, ok := right.(Any); ok {
-		return o == v
+		return o.Value == v.Value
 	}
 
 	return false
@@ -269,7 +284,8 @@ func (o Any) BinaryOp(tok token.Token, right Object) (Object, error) {
 
 func (o *Any) Copy() Object {
 	return &Any{
-		Value: o.Value,
+		Value:        o.Value,
+		OriginalType: o.OriginalType,
 	}
 }
 
@@ -697,6 +713,7 @@ type Function struct {
 	ObjectImpl
 	Name  string
 	Value func(args ...Object) (Object, error)
+	Self  Object
 }
 
 var _ Object = (*Function)(nil)

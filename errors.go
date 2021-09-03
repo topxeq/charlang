@@ -55,6 +55,8 @@ var (
 
 	// ErrType represents a type error.
 	ErrType = &Error{Name: "TypeError"}
+
+	ErrCommon = &Error{Name: "Error"}
 )
 
 // NewOperandTypeError creates a new Error from ErrType.
@@ -85,8 +87,16 @@ func NewIndexValueTypeError(expectType, foundType string) *Error {
 
 // char start
 func NewCommonError(formatA string, argsA ...interface{}) *Error {
-	return ErrType.NewError(
+	return ErrCommon.NewError(
 		fmt.Sprintf(formatA, argsA...))
+}
+
+func NewError(nameA string, formatA string, argsA ...interface{}) *Error {
+	errT := ErrCommon.NewError(fmt.Sprintf(formatA, argsA...))
+
+	errT.Name = nameA
+
+	return errT
 }
 
 // char end

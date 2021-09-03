@@ -29,20 +29,15 @@ import (
 	ugotime "github.com/topxeq/charlang/stdlib/time"
 )
 
-const logo = `
-            /$$$$$$   /$$$$$$ 
-           /$$__  $$ /$$__  $$
- /$$   /$$| $$  \__/| $$  \ $$
-| $$  | $$| $$ /$$$$| $$  | $$
-| $$  | $$| $$|_  $$| $$  | $$
-| $$  | $$| $$  \ $$| $$  | $$
-|  $$$$$$/|  $$$$$$/|  $$$$$$/
- \______/  \______/  \______/ 
-                                       
+var versionG = "0.9a"
+
+var logo = `
+Charlang V` + versionG + `
+
 `
 
 const (
-	title         = "uGO"
+	title         = "Char"
 	promptPrefix  = ">>> "
 	promptPrefix2 = "... "
 )
@@ -69,6 +64,37 @@ var scriptGlobals = &ugo.SyncMap{
 				return ugo.Undefined, nil
 			},
 		},
+		"versionG": ugo.String(versionG),
+		"tk":       ugo.TkFunction,
+		// "tk": &ugo.Function{
+		// 	Name: "Do",
+		// 	Value: func(args ...ugo.Object) (ugo.Object, error) {
+
+		// 		if len(args) < 1 {
+		// 			return ugo.Undefined, ugo.NewCommonError("not enough paramters")
+		// 		}
+
+		// 		if args[0].TypeName() != "string" {
+		// 			return ugo.Undefined, ugo.NewCommonError("invalid type for command")
+		// 		}
+
+		// 		cmdT := args[0].String()
+
+		// 		switch cmdT {
+		// 		case "test":
+		// 			tk.Pl("args: %v", args[1:])
+		// 			return ugo.ConvertToObject("Response!"), nil
+
+		// 		case "getNowTime":
+		// 			return ugo.ConvertToObject(time.Now()), nil
+
+		// 		default:
+		// 			return ugo.Undefined, ugo.NewCommonError("unknown comman")
+		// 		}
+
+		// 		return ugo.Undefined, nil
+		// 	},
+		// },
 	},
 }
 
@@ -349,8 +375,8 @@ func newPrompt(
 	poptions ...prompt.Option,
 ) *prompt.Prompt {
 
-	_, _ = fmt.Fprintln(w, "Copyright (c) 2020 Ozan Hacıbekiroğlu")
-	_, _ = fmt.Fprintln(w, "License: MIT")
+	// _, _ = fmt.Fprintln(w, "Copyright (c) 2020 Ozan Hacıbekiroğlu")
+	// _, _ = fmt.Fprintln(w, "License: MIT")
 	_, _ = fmt.Fprintln(w, "Press Ctrl+D to exit or use .exit command")
 	_, _ = fmt.Fprintln(w, logo)
 

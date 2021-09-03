@@ -4,8 +4,47 @@
 
 package charlang
 
+import (
+	"fmt"
+	"time"
+)
+
 // CallableFunc is a function signature for a callable function.
 type CallableFunc = func(args ...Object) (ret Object, err error)
+
+func ConvertToObject(vA interface{}) Object {
+	switch nv := vA.(type) {
+	case string:
+		return String(nv)
+	// case time.Time:
+	// 	return Any{Value: nv, OriginalType: "time.Time"}
+	case Function:
+		return &nv
+
+	default:
+		return Any{Value: nv, OriginalType: fmt.Sprintf("%T", nv)}
+		// tk.Pl("Unknown type: %T, %#v, %v", vA, vA, vA)
+		// return Undefined
+	}
+}
+
+func ConvertFromObject(vA Object) interface{} {
+	if vA.TypeName() == "string" {
+		return vA.String()
+	}
+
+	if vA.TypeName() == "any" {
+		nv := vA.(Any)
+
+		// if nv.OriginalType == "time.Time" {
+		// 	return nv.Value(.(time.Time))
+		// }
+
+		return nv.Value
+	}
+
+	return fmt.Sprintf("%v", vA)
+}
 
 func NewChar(codeA string) (interface{}, error) {
 	bytecodeT, errT := Compile([]byte(codeA), DefaultCompilerOptions)
@@ -16,8 +55,40 @@ func NewChar(codeA string) (interface{}, error) {
 	return bytecodeT, errT
 }
 
+var TkFunction = &Function{
+	Name: "Do",
+	Value: func(args ...Object) (Object, error) {
+
+		if len(args) < 1 {
+			return Undefined, NewCommonError("not enough paramters")
+		}
+
+		if args[0].TypeName() != "string" {
+			return Undefined, NewCommonError("invalid type for command")
+		}
+
+		cmdT := args[0].String()
+
+		switch cmdT {
+		case "test":
+			fmt.Printf("args: %v\n", args[1:])
+			return ConvertToObject("Response!"), nil
+
+		case "getNowTime":
+			return ConvertToObject(time.Now()), nil
+
+		default:
+			return Undefined, NewCommonError("unknown comman")
+		}
+
+		return Undefined, nil
+	},
+}
+
 func RunChar(charA *Bytecode, envA map[string]string, paraMapA map[string]string, argsA ...Object) (interface{}, error) {
 	envT := Map{}
+
+	envT["tk"] = TkFunction
 
 	for k, v := range envA {
 		envT[k] = String(v)
@@ -47,6 +118,8 @@ func RunCharCode(codeA string, envA map[string]string, paraMapA map[string]strin
 	}
 
 	envT := Map{}
+
+	envT["tk"] = TkFunction
 
 	for k, v := range envA {
 		envT[k] = String(v)
