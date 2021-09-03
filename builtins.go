@@ -996,13 +996,24 @@ func builtinWriteRespFunc(args ...Object) (Object, error) {
 		)
 	}
 
-	v2, ok := args[1].(Bytes)
-	if !ok {
-		return Undefined, NewArgumentTypeError(
-			"2",
-			"any",
-			args[1].TypeName(),
-		)
+	var contentT Bytes = nil
+
+	v1, ok := args[1].(String)
+
+	if ok {
+		contentT = Bytes(v1)
+	}
+
+	if contentT == nil {
+		v2, ok := args[1].(Bytes)
+		if !ok {
+			return Undefined, NewArgumentTypeError(
+				"2",
+				"any",
+				args[1].TypeName(),
+			)
+		}
+		contentT = v2
 	}
 
 	vv, ok := v.Value.(http.ResponseWriter)
@@ -1011,7 +1022,7 @@ func builtinWriteRespFunc(args ...Object) (Object, error) {
 		return Undefined, NewCommonError("invalid type in Any object(expect http.ResponseWriter)")
 	}
 
-	r, errT := vv.Write(v2)
+	r, errT := vv.Write(contentT)
 
 	return Int(r), errT
 }
