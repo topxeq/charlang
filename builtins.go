@@ -88,6 +88,12 @@ const (
 	BuiltinWriteResp
 	BuiltinSetRespHeader
 	BuiltinWriteRespHeader
+
+	BuiltinPl
+
+	BuiltinGetNowStr
+
+	BuiltinIsByte
 )
 
 // BuiltinsMap is list of builtin types, exported for REPL.
@@ -145,16 +151,29 @@ var BuiltinsMap = map[string]BuiltinType{
 	":makeArray": BuiltinMakeArray,
 
 	// by char
+	"isByte": BuiltinIsByte,
+
 	"getRandomInt": BuiltinGetRandomInt,
 
 	"writeResp":       BuiltinWriteResp,
 	"setRespHeader":   BuiltinSetRespHeader,
 	"writeRespHeader": BuiltinWriteRespHeader,
+
+	"pl":        BuiltinPl,
+	"getNowStr": BuiltinGetNowStr,
 }
 
 // BuiltinObjects is list of builtins, exported for REPL.
 var BuiltinObjects = [...]Object{
 	// by char start
+	BuiltinPl: &BuiltinFunction{
+		Name:  "pl",
+		Value: builtinPlFunc,
+	},
+	BuiltinGetNowStr: &BuiltinFunction{
+		Name:  "getNowStr",
+		Value: builtinGetNowStrFunc,
+	},
 	BuiltinGetRandomInt: &BuiltinFunction{
 		Name:  "getRandomInt",
 		Value: builtinGetRandomIntFunc,
@@ -274,6 +293,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinIsInt: &BuiltinFunction{
 		Name:  "isInt",
 		Value: builtinWant1(builtinIsIntFunc),
+	},
+	BuiltinIsByte: &BuiltinFunction{
+		Name:  "isByte",
+		Value: builtinWant1(builtinIsByteFunc),
 	},
 	BuiltinIsUint: &BuiltinFunction{
 		Name:  "isUint",
@@ -967,6 +990,30 @@ func builtinIsErrorFunc(args ...Object) (Object, error) {
 func builtinIsIntFunc(args ...Object) (Object, error) {
 	_, ok := args[0].(Int)
 	return Bool(ok), nil
+}
+
+func builtinIsByteFunc(args ...Object) (Object, error) {
+	_, ok := args[0].(Byte)
+	return Bool(ok), nil
+}
+
+func builtinPlFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return Undefined, nil
+	}
+
+	v, ok := args[0].(String)
+	if !ok {
+		return Undefined, NewCommonError("required format string")
+	}
+
+	tk.Pl(v.String(), ObjectsToI(args[1:])...)
+
+	return Undefined, nil
+}
+
+func builtinGetNowStrFunc(args ...Object) (Object, error) {
+	return String(tk.GetNowTimeString()), nil
 }
 
 func builtinGetRandomIntFunc(args ...Object) (Object, error) {

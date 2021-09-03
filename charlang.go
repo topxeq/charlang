@@ -29,6 +29,18 @@ func ConvertToObject(vA interface{}) Object {
 }
 
 func ConvertFromObject(vA Object) interface{} {
+	// if vA.TypeName() == "int" {
+	// 	return int(vA)
+	// }
+	switch nv := vA.(type) {
+	case Int:
+		return int(nv)
+	}
+
+	if nv, ok := vA.(Int); ok {
+		return int(nv)
+	}
+
 	if vA.TypeName() == "string" {
 		return vA.String()
 	}
@@ -46,6 +58,20 @@ func ConvertFromObject(vA Object) interface{} {
 	return fmt.Sprintf("%v", vA)
 }
 
+func ObjectsToI(aryA []Object) []interface{} {
+	if aryA == nil {
+		return nil
+	}
+
+	rs := make([]interface{}, len(aryA))
+
+	for _, v := range aryA {
+		rs = append(rs, ConvertFromObject(v))
+	}
+
+	return rs
+}
+
 func NewChar(codeA string) (interface{}, error) {
 	bytecodeT, errT := Compile([]byte(codeA), DefaultCompilerOptions)
 	// if errT != nil {
@@ -56,7 +82,7 @@ func NewChar(codeA string) (interface{}, error) {
 }
 
 var TkFunction = &Function{
-	Name: "Do",
+	Name: "tk",
 	Value: func(args ...Object) (Object, error) {
 
 		if len(args) < 1 {
