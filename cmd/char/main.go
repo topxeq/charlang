@@ -29,10 +29,8 @@ import (
 	ugotime "github.com/topxeq/charlang/stdlib/time"
 )
 
-var versionG = "0.9a"
-
 var logo = `
-Charlang V` + versionG + `
+Charlang V` + ugo.VersionG + `
 
 `
 
@@ -64,7 +62,7 @@ var scriptGlobals = &ugo.SyncMap{
 				return ugo.Undefined, nil
 			},
 		},
-		"versionG": ugo.String(versionG),
+		"versionG": ugo.String(ugo.VersionG),
 		"tk":       ugo.TkFunction,
 		// "tk": &ugo.Function{
 		// 	Name: "Do",

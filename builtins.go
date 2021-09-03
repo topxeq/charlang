@@ -92,6 +92,9 @@ const (
 
 	BuiltinStrJoin
 
+	BuiltinStrToInt
+	BuiltinToStr
+
 	BuiltinGetNowStr
 
 	BuiltinSetRespHeader
@@ -166,6 +169,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"spr":       BuiltinSpr,
 	"getNowStr": BuiltinGetNowStr,
 	"strJoin":   BuiltinStrJoin,
+	"strToInt":  BuiltinStrToInt,
+	"toStr":     BuiltinToStr,
 }
 
 // BuiltinObjects is list of builtins, exported for REPL.
@@ -182,6 +187,14 @@ var BuiltinObjects = [...]Object{
 	BuiltinStrJoin: &BuiltinFunction{
 		Name:  "strJoin",
 		Value: builtinStrJoinFunc,
+	},
+	BuiltinStrToInt: &BuiltinFunction{
+		Name:  "strToInt",
+		Value: builtinStrToIntFunc,
+	},
+	BuiltinToStr: &BuiltinFunction{
+		Name:  "toStr",
+		Value: builtinToStrFunc,
 	},
 	BuiltinGetNowStr: &BuiltinFunction{
 		Name:  "getNowStr",
@@ -1031,6 +1044,40 @@ func builtinStrJoinFunc(args ...Object) (Object, error) {
 	return String(strings.Join(elems, string(sep))), nil
 }
 
+func builtinStrToIntFunc(args ...Object) (Object, error) {
+	defaultT := -1
+
+	if len(args) > 1 {
+		defaultA, ok := args[1].(Int)
+		if ok {
+			defaultT = int(defaultA)
+		}
+	}
+
+	if len(args) < 1 {
+		return Int(defaultT), nil
+	}
+
+	strT, ok := args[0].(String)
+	if !ok {
+		return Int(defaultT), nil
+	}
+
+	rsT := tk.StrToIntWithDefaultValue(strT.String(), defaultT)
+
+	return Int(rsT), nil
+}
+
+func builtinToStrFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return String(""), nil
+	}
+
+	rsT := tk.ToStr(ConvertFromObject(args[0]))
+
+	return String(rsT), nil
+}
+
 func builtinPlFunc(args ...Object) (Object, error) {
 	if len(args) < 1 {
 		return Undefined, nil
@@ -1286,4 +1333,19 @@ func wantGEqXGotY(x, y int) string {
 	buf = append(buf, " got="...)
 	buf = strconv.AppendInt(buf, int64(y), 10)
 	return string(buf)
+}
+
+func fnASRS(fn func(string) string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongNumArguments.NewError(
+				wantEqXGotY(1, len(args)))
+		}
+		s, ok := args[0].(String)
+		if !ok {
+			return nil, NewArgumentTypeError("first", "string",
+				args[0].TypeName())
+		}
+		return String(fn(string(s))), nil
+	}
 }

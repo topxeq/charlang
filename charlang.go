@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var VersionG = "0.1a"
+
 // CallableFunc is a function signature for a callable function.
 type CallableFunc = func(args ...Object) (ret Object, err error)
 
@@ -39,6 +41,14 @@ func ConvertFromObject(vA Object) interface{} {
 
 	if nv, ok := vA.(Int); ok {
 		return int(nv)
+	}
+
+	if nv, ok := vA.(Float); ok {
+		return float64(nv)
+	}
+
+	if nv, ok := vA.(Bool); ok {
+		return bool(nv)
 	}
 
 	if vA.TypeName() == "string" {
