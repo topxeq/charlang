@@ -144,7 +144,7 @@ func RunChar(charA *Bytecode, envA map[string]string, paraMapA map[string]string
 		envT, paramsT...,
 	)
 
-	return retT, errT
+	return ConvertFromObject(retT), errT
 }
 
 func RunCharCode(codeA string, envA map[string]string, paraMapA map[string]string, argsA ...Object) (interface{}, error) {
@@ -175,5 +175,5 @@ func RunCharCode(codeA string, envA map[string]string, paraMapA map[string]strin
 		envT, paramsT...,
 	)
 
-	return retT, errT
+	return ConvertFromObject(retT), errT
 }
