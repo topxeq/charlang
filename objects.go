@@ -318,6 +318,11 @@ func (o Bool) Equal(right Object) bool {
 	if v, ok := right.(Uint); ok {
 		return bool((o && v == 1) || (!o && v == 0))
 	}
+
+	if v, ok := right.(Byte); ok {
+		return bool((o && v == 1) || (!o && v == 0))
+	}
+
 	return false
 }
 
@@ -429,6 +434,43 @@ switchpos:
 		case token.GreaterEq:
 			return Bool(bval >= v), nil
 		}
+	case Byte:
+		bval := Byte(bval)
+		switch tok {
+		case token.Add:
+			return bval + v, nil
+		case token.Sub:
+			return bval - v, nil
+		case token.Mul:
+			return bval * v, nil
+		case token.Quo:
+			if v == 0 {
+				return nil, ErrZeroDivision
+			}
+			return bval / v, nil
+		case token.Rem:
+			return bval % v, nil
+		case token.And:
+			return bval & v, nil
+		case token.Or:
+			return bval | v, nil
+		case token.Xor:
+			return bval ^ v, nil
+		case token.AndNot:
+			return bval &^ v, nil
+		case token.Shl:
+			return bval << v, nil
+		case token.Shr:
+			return bval >> v, nil
+		case token.Less:
+			return Bool(bval < v), nil
+		case token.LessEq:
+			return Bool(bval <= v), nil
+		case token.Greater:
+			return Bool(bval > v), nil
+		case token.GreaterEq:
+			return Bool(bval >= v), nil
+		}
 	case Bool:
 		if v {
 			right = Int(1)
@@ -482,6 +524,8 @@ func (o String) IndexGet(index Object) (Object, error) {
 	case Int:
 		idx = int(v)
 	case Uint:
+		idx = int(v)
+	case Byte:
 		idx = int(v)
 	case Char:
 		idx = int(v)
@@ -604,8 +648,10 @@ func (o Bytes) IndexSet(index, value Object) error {
 		idx = int(v)
 	case Uint:
 		idx = int(v)
+	case Byte:
+		idx = int(v)
 	default:
-		return NewIndexTypeError("int|uint", index.TypeName())
+		return NewIndexTypeError("int|uint|byte", index.TypeName())
 	}
 
 	if idx >= 0 && idx < len(o) {
@@ -614,8 +660,10 @@ func (o Bytes) IndexSet(index, value Object) error {
 			o[idx] = byte(v)
 		case Uint:
 			o[idx] = byte(v)
+		case Byte:
+			o[idx] = byte(v)
 		default:
-			return NewIndexValueTypeError("int|uint", value.TypeName())
+			return NewIndexValueTypeError("int|uint|byte", value.TypeName())
 		}
 		return nil
 	}
@@ -630,8 +678,10 @@ func (o Bytes) IndexGet(index Object) (Object, error) {
 		idx = int(v)
 	case Uint:
 		idx = int(v)
+	case Byte:
+		idx = int(v)
 	default:
-		return nil, NewIndexTypeError("int|uint|char", index.TypeName())
+		return nil, NewIndexTypeError("int|uint|char|byte", index.TypeName())
 	}
 
 	if idx >= 0 && idx < len(o) {
@@ -869,6 +919,13 @@ func (o Array) IndexSet(index, value Object) error {
 			return nil
 		}
 		return ErrIndexOutOfBounds
+	case Byte:
+		idx := int(v)
+		if idx >= 0 && idx < len(o) {
+			o[v] = value
+			return nil
+		}
+		return ErrIndexOutOfBounds
 	}
 	return NewIndexTypeError("int|uint", index.TypeName())
 }
@@ -883,6 +940,12 @@ func (o Array) IndexGet(index Object) (Object, error) {
 		}
 		return nil, ErrIndexOutOfBounds
 	case Uint:
+		idx := int(v)
+		if idx >= 0 && idx < len(o) {
+			return o[v], nil
+		}
+		return nil, ErrIndexOutOfBounds
+	case Byte:
 		idx := int(v)
 		if idx >= 0 && idx < len(o) {
 			return o[v], nil

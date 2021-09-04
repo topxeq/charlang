@@ -33,6 +33,7 @@ const (
 	binFalseV1
 	binIntV1
 	binUintV1
+	binByteV1
 	binCharV1
 	binFloatV1
 	binStringV1
@@ -248,6 +249,7 @@ func DecodeObject(r io.Reader) (Object, error) {
 		return False, nil
 	case binIntV1,
 		binUintV1,
+		binByteV1,
 		binFloatV1,
 		binCharV1:
 
@@ -274,6 +276,12 @@ func DecodeObject(r io.Reader) (Object, error) {
 			return v, nil
 		case binUintV1:
 			var v Uint
+			if err = v.UnmarshalBinary(buf); err != nil {
+				return nil, err
+			}
+			return v, nil
+		case binByteV1:
+			var v Byte
 			if err = v.UnmarshalBinary(buf); err != nil {
 				return nil, err
 			}
@@ -505,6 +513,26 @@ func (o *Uint) UnmarshalBinary(data []byte) error {
 
 	*o = Uint(v)
 	return nil
+}
+
+// MarshalBinary implements encoding.BinaryMarshaler
+func (o Byte) MarshalBinary() ([]byte, error) {
+	return []byte{binByteV1, 1, byte(o)}, nil
+}
+
+// UnmarshalBinary implements encoding.BinaryUnmarshaler
+func (o *Byte) UnmarshalBinary(data []byte) error {
+	if len(data) < 2 || data[0] != binByteV1 {
+		return errors.New("invalid Byte data")
+	}
+
+	if data[1] != 1 {
+		return errors.New("invalid Byte data size")
+	}
+
+	*o = Byte(data[2])
+	return nil
+
 }
 
 // MarshalBinary implements encoding.BinaryMarshaler
@@ -1386,7 +1414,7 @@ func toVarint(data []byte) (value int64, offset int, err error) {
 
 func isEncSupported(o Object) bool {
 	switch o.(type) {
-	case Bool, Int, Uint, Char, Float, String, Bytes, Array, Map,
+	case Bool, Int, Uint, Byte, Char, Float, String, Bytes, Array, Map,
 		*SyncMap, *CompiledFunction, *Function, *BuiltinFunction:
 		return true
 	default:

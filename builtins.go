@@ -40,6 +40,7 @@ const (
 	BuiltinSortReverse
 	BuiltinError
 	BuiltinTypeName
+	BuiltinAny
 	BuiltinBool
 	BuiltinInt
 	BuiltinUint
@@ -55,8 +56,10 @@ const (
 	BuiltinGlobals
 
 	BuiltinIsError
+	BuiltinIsAny
 	BuiltinIsInt
 	BuiltinIsUint
+	BuiltinIsByte
 	BuiltinIsFloat
 	BuiltinIsChar
 	BuiltinIsBool
@@ -84,12 +87,16 @@ const (
 	BuiltinMakeArray
 
 	// by char
-	BuiltinIsByte
 
 	BuiltinGetRandomInt
 
 	BuiltinPl
+	BuiltinPln
 	BuiltinSpr
+
+	BuiltinErrStrf
+	BuiltinIsErrStr
+	BuiltinGetErrStr
 
 	BuiltinStrJoin
 
@@ -115,6 +122,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"sortReverse": BuiltinSortReverse,
 	"error":       BuiltinError,
 	"typeName":    BuiltinTypeName,
+	"any":         BuiltinAny,
 	"bool":        BuiltinBool,
 	"int":         BuiltinInt,
 	"uint":        BuiltinUint,
@@ -126,12 +134,14 @@ var BuiltinsMap = map[string]BuiltinType{
 	"chars":       BuiltinChars,
 	"printf":      BuiltinPrintf,
 	"println":     BuiltinPrintln,
-	"sprintf":     BuiltinSprintf,
 	"globals":     BuiltinGlobals,
+	"sprintf":     BuiltinSprintf,
 
 	"isError":     BuiltinIsError,
+	"isAny":       BuiltinIsAny,
 	"isInt":       BuiltinIsInt,
 	"isUint":      BuiltinIsUint,
+	"isByte":      BuiltinIsByte,
 	"isFloat":     BuiltinIsFloat,
 	"isChar":      BuiltinIsChar,
 	"isBool":      BuiltinIsBool,
@@ -159,8 +169,6 @@ var BuiltinsMap = map[string]BuiltinType{
 	":makeArray": BuiltinMakeArray,
 
 	// by char
-	"isByte": BuiltinIsByte,
-
 	"getRandomInt": BuiltinGetRandomInt,
 
 	"writeResp":       BuiltinWriteResp,
@@ -168,11 +176,16 @@ var BuiltinsMap = map[string]BuiltinType{
 	"writeRespHeader": BuiltinWriteRespHeader,
 
 	"pl":        BuiltinPl,
+	"pln":       BuiltinPln,
 	"spr":       BuiltinSpr,
 	"getNowStr": BuiltinGetNowStr,
 	"strJoin":   BuiltinStrJoin,
 	"strToInt":  BuiltinStrToInt,
 	"toStr":     BuiltinToStr,
+
+	"errStrf":   BuiltinErrStrf,
+	"isErrStr":  BuiltinIsErrStr,
+	"getErrStr": BuiltinGetErrStr,
 }
 
 // BuiltinObjects is list of builtins, exported for REPL.
@@ -185,6 +198,22 @@ var BuiltinObjects = [...]Object{
 	BuiltinPl: &BuiltinFunction{
 		Name:  "pl",
 		Value: builtinPlFunc,
+	},
+	BuiltinPln: &BuiltinFunction{
+		Name:  "pln",
+		Value: fnAIV(tk.Pln),
+	},
+	BuiltinErrStrf: &BuiltinFunction{
+		Name:  "errStrf",
+		Value: fnASIVRS(tk.ErrStrf),
+	},
+	BuiltinIsErrStr: &BuiltinFunction{
+		Name:  "isErrStr",
+		Value: fnASRB(tk.IsErrStr),
+	},
+	BuiltinGetErrStr: &BuiltinFunction{
+		Name:  "getErrStr",
+		Value: fnASRS(tk.GetErrStr),
 	},
 	BuiltinStrJoin: &BuiltinFunction{
 		Name:  "strJoin",
@@ -265,6 +294,10 @@ var BuiltinObjects = [...]Object{
 		Name:  "typeName",
 		Value: builtinWant1(builtinTypeNameFunc),
 	},
+	BuiltinAny: &BuiltinFunction{
+		Name:  "any",
+		Value: builtinWant1(builtinAnyFunc),
+	},
 	BuiltinBool: &BuiltinFunction{
 		Name:  "bool",
 		Value: builtinWant1(builtinBoolFunc),
@@ -321,6 +354,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinIsError: &BuiltinFunction{
 		Name:  "isError",
 		Value: builtinIsErrorFunc,
+	},
+	BuiltinIsAny: &BuiltinFunction{
+		Name:  "isAny",
+		Value: builtinWant1(builtinIsAnyFunc),
 	},
 	BuiltinIsInt: &BuiltinFunction{
 		Name:  "isInt",
@@ -475,6 +512,8 @@ func builtinAppendFunc(args ...Object) (Object, error) {
 					rest = append(rest, byte(vv))
 				case Uint:
 					rest = append(rest, byte(vv))
+				case Byte:
+					rest = append(rest, byte(vv))
 				case Char:
 					rest = append(rest, byte(vv))
 				default:
@@ -550,6 +589,8 @@ func builtinRepeatFunc(args ...Object) (Object, error) {
 		count = int(v)
 	case Uint:
 		count = int(v)
+	case Byte:
+		count = int(v)
 	default:
 		return nil, NewArgumentTypeError(
 			"second",
@@ -609,6 +650,8 @@ func builtinContainsFunc(args ...Object) (Object, error) {
 		case Int:
 			return Bool(bytes.Contains(obj, []byte{byte(v)})), nil
 		case Uint:
+			return Bool(bytes.Contains(obj, []byte{byte(v)})), nil
+		case Byte:
 			return Bool(bytes.Contains(obj, []byte{byte(v)})), nil
 		case Char:
 			return Bool(bytes.Contains(obj, []byte{byte(v)})), nil
@@ -750,6 +793,8 @@ func builtinIntFunc(args ...Object) (Object, error) {
 	switch obj := args[0].(type) {
 	case Uint:
 		return Int(obj), nil
+	case Byte:
+		return Int(obj), nil
 	case Float:
 		return Int(obj), nil
 	case Int:
@@ -779,6 +824,8 @@ func builtinIntFunc(args ...Object) (Object, error) {
 func builtinUintFunc(args ...Object) (Object, error) {
 	switch obj := args[0].(type) {
 	case Int:
+		return Uint(obj), nil
+	case Byte:
 		return Uint(obj), nil
 	case Float:
 		return Uint(obj), nil
@@ -838,11 +885,37 @@ func builtinByteFunc(args ...Object) (Object, error) {
 	}
 }
 
+func builtinAnyFunc(args ...Object) (Object, error) {
+	switch obj := args[0].(type) {
+	case Int:
+		return Any{Value: int(obj)}, nil
+	case Float:
+		return Any{Value: float64(obj)}, nil
+	case Char:
+		return Any{Value: rune(obj)}, nil
+	case Uint:
+		return Any{Value: uint64(obj)}, nil
+	case Byte:
+		return Any{Value: byte(obj)}, nil
+	case String:
+		return Any{Value: string(obj)}, nil
+	case Bool:
+		if obj {
+			return Any{Value: true}, nil
+		}
+		return Any{Value: false}, nil
+	default:
+		return Any{Value: obj}, nil
+	}
+}
+
 func builtinCharFunc(args ...Object) (Object, error) {
 	switch obj := args[0].(type) {
 	case Int:
 		return Char(obj), nil
 	case Uint:
+		return Char(obj), nil
+	case Byte:
 		return Char(obj), nil
 	case Float:
 		return Char(obj), nil
@@ -873,6 +946,8 @@ func builtinFloatFunc(args ...Object) (Object, error) {
 	case Int:
 		return Float(obj), nil
 	case Uint:
+		return Float(obj), nil
+	case Byte:
 		return Float(obj), nil
 	case Char:
 		return Float(obj), nil
@@ -919,6 +994,8 @@ func builtinBytesFunc(args ...Object) (Object, error) {
 			case Int:
 				out = append(out, byte(v))
 			case Uint:
+				out = append(out, byte(v))
+			case Byte:
 				out = append(out, byte(v))
 			case Char:
 				out = append(out, byte(v))
@@ -1058,6 +1135,11 @@ func builtinIsIntFunc(args ...Object) (Object, error) {
 
 func builtinIsByteFunc(args ...Object) (Object, error) {
 	_, ok := args[0].(Byte)
+	return Bool(ok), nil
+}
+
+func builtinIsAnyFunc(args ...Object) (Object, error) {
+	_, ok := args[0].(Any)
 	return Bool(ok), nil
 }
 
@@ -1379,11 +1461,79 @@ func fnASRS(fn func(string) string) CallableFunc {
 			return nil, ErrWrongNumArguments.NewError(
 				wantEqXGotY(1, len(args)))
 		}
+
 		s, ok := args[0].(String)
 		if !ok {
 			return nil, NewArgumentTypeError("first", "string",
 				args[0].TypeName())
 		}
+
 		return String(fn(string(s))), nil
+	}
+}
+
+func fnASSRS(fn func(string, string) string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) != 2 {
+			return nil, ErrWrongNumArguments.NewError(
+				wantEqXGotY(2, len(args)))
+		}
+		s1, ok := args[0].(String)
+		if !ok {
+			return nil, NewArgumentTypeError("first", "string",
+				args[0].TypeName())
+		}
+		s2, ok := args[1].(String)
+		if !ok {
+			return nil, NewArgumentTypeError("second", "string",
+				args[1].TypeName())
+		}
+		return String(fn(string(s1), string(s2))), nil
+	}
+}
+
+func fnASRB(fn func(string) bool) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) != 1 {
+			return nil, ErrWrongNumArguments.NewError(
+				wantEqXGotY(1, len(args)))
+		}
+
+		s1, ok := args[0].(String)
+		if !ok {
+			return nil, NewArgumentTypeError("first", "string",
+				args[0].TypeName())
+		}
+
+		return Bool(fn(string(s1))), nil
+	}
+}
+
+func fnASIVRS(fn func(string, ...interface{}) string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 1 {
+			return nil, ErrWrongNumArguments.NewError(
+				wantEqXGotY(1, len(args)))
+		}
+
+		s1, ok := args[0].(String)
+		if !ok {
+			return nil, NewArgumentTypeError("first", "string",
+				args[0].TypeName())
+		}
+
+		objsT := ObjectsToI(args[1:])
+
+		return String(fn(string(s1), objsT...)), nil
+	}
+}
+
+func fnAIV(fn func(...interface{})) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		objsT := ObjectsToI(args)
+
+		fn(objsT...)
+
+		return Undefined, nil
 	}
 }

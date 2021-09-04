@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var VersionG = "0.1a"
+var VersionG = "0.2a"
 
 // CallableFunc is a function signature for a callable function.
 type CallableFunc = func(args ...Object) (ret Object, err error)
@@ -18,6 +18,78 @@ func ConvertToObject(vA interface{}) Object {
 	switch nv := vA.(type) {
 	case string:
 		return String(nv)
+	case bool:
+		return Bool(nv)
+	case int:
+		return Int(nv)
+	case int16:
+		return Int(nv)
+	case rune:
+		return Char(nv)
+	case int64:
+		return Int(nv)
+	case byte:
+		return Byte(nv)
+	case uint16:
+		return Uint(nv)
+	case uint32:
+		return Uint(nv)
+	case uint64:
+		return Uint(nv)
+	case float32:
+		return Float(nv)
+	case float64:
+		return Float(nv)
+	case []byte:
+		return Bytes(nv)
+	case []string:
+		if nv == nil {
+			return nil
+		}
+
+		rsT := make(Array, 0, len(nv))
+
+		for _, v := range nv {
+			rsT = append(rsT, String(v))
+		}
+
+		return rsT
+	case []interface{}:
+		if nv == nil {
+			return nil
+		}
+
+		rsT := make(Array, 0, len(nv))
+
+		for _, v := range nv {
+			rsT = append(rsT, ConvertToObject(v))
+		}
+
+		return rsT
+	case map[string]string:
+		if nv == nil {
+			return nil
+		}
+
+		rsT := make(Map, len(nv))
+
+		for k, v := range nv {
+			rsT[k] = String(v)
+		}
+
+		return rsT
+	case map[string]interface{}:
+		if nv == nil {
+			return nil
+		}
+
+		rsT := make(Map, len(nv))
+
+		for k, v := range nv {
+			rsT[k] = ConvertToObject(v)
+		}
+
+		return rsT
 	// case time.Time:
 	// 	return Any{Value: nv, OriginalType: "time.Time"}
 	case Function:
@@ -35,33 +107,23 @@ func ConvertFromObject(vA Object) interface{} {
 	// 	return int(vA)
 	// }
 	switch nv := vA.(type) {
+	case Bool:
+		return bool(nv)
+	case Byte:
+		return byte(nv)
+	case Char:
+		return rune(nv)
 	case Int:
 		return int(nv)
-	}
-
-	if nv, ok := vA.(Int); ok {
-		return int(nv)
-	}
-
-	if nv, ok := vA.(Float); ok {
+	case Uint:
+		return uint64(nv)
+	case Float:
 		return float64(nv)
-	}
-
-	if nv, ok := vA.(Bool); ok {
-		return bool(nv)
-	}
-
-	if vA.TypeName() == "string" {
-		return vA.String()
-	}
-
-	if vA.TypeName() == "any" {
-		nv := vA.(Any)
-
-		// if nv.OriginalType == "time.Time" {
-		// 	return nv.Value(.(time.Time))
-		// }
-
+	case String:
+		return string(nv)
+	case Bytes:
+		return []byte(nv)
+	case Any:
 		return nv.Value
 	}
 

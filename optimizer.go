@@ -156,6 +156,7 @@ func canOptimizeInsts(constants []Object, insts []byte) bool {
 		BuiltinTypeName: true, BuiltinBytes: true, BuiltinError: true,
 		BuiltinSprintf: true,
 		BuiltinIsError: true, BuiltinIsInt: true, BuiltinIsUint: true,
+		BuiltinIsByte:  true,
 		BuiltinIsFloat: true, BuiltinIsChar: true, BuiltinIsBool: true,
 		BuiltinIsString: true, BuiltinIsBytes: true, BuiltinIsMap: true,
 		BuiltinIsArray: true, BuiltinIsUndefined: true, BuiltinIsIterable: true,

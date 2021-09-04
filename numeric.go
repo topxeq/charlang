@@ -5,7 +5,6 @@
 package charlang
 
 import (
-	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -33,6 +32,8 @@ func (o Int) Equal(right Object) bool {
 		return o == v
 	case Uint:
 		return Uint(o) == v
+	case Byte:
+		return Byte(o) == v
 	case Float:
 		return Float(o) == v
 	case Char:
@@ -114,6 +115,8 @@ func (o Int) BinaryOp(tok token.Token, right Object) (Object, error) {
 		}
 	case Uint:
 		return Uint(o).BinaryOp(tok, right)
+	case Byte:
+		return Byte(o).BinaryOp(tok, right)
 	case Float:
 		return Float(o).BinaryOp(tok, right)
 	case Char:
@@ -162,7 +165,7 @@ func (Byte) TypeName() string {
 
 // String implements Object interface.
 func (o Byte) String() string {
-	return fmt.Sprintf("%v", o)
+	return strconv.FormatInt(int64(o), 10)
 }
 
 // Equal implements Object interface.
@@ -315,6 +318,8 @@ func (o Uint) Equal(right Object) bool {
 	switch v := right.(type) {
 	case Uint:
 		return o == v
+	case Byte:
+		return o == Uint(v)
 	case Int:
 		return o == Uint(v)
 	case Float:
@@ -396,6 +401,8 @@ func (o Uint) BinaryOp(tok token.Token, right Object) (Object, error) {
 		case token.GreaterEq:
 			return Bool(o >= v), nil
 		}
+	case Byte:
+		return o.BinaryOp(tok, Uint(v))
 	case Int:
 		return o.BinaryOp(tok, Uint(v))
 	case Float:
@@ -458,6 +465,8 @@ func (o Float) Equal(right Object) bool {
 	case Int:
 		return o == Float(v)
 	case Uint:
+		return o == Float(v)
+	case Byte:
 		return o == Float(v)
 	case Bool:
 		if v {
@@ -524,6 +533,8 @@ func (o Float) BinaryOp(tok token.Token, right Object) (Object, error) {
 		return o.BinaryOp(tok, Float(v))
 	case Uint:
 		return o.BinaryOp(tok, Float(v))
+	case Byte:
+		return o.BinaryOp(tok, Float(v))
 	case Bool:
 		if v {
 			right = Float(1)
@@ -568,6 +579,8 @@ func (o Char) Equal(right Object) bool {
 		return Int(o) == v
 	case Uint:
 		return Uint(o) == v
+	case Byte:
+		return Byte(o) == v
 	case Float:
 		return Float(o) == v
 	case Bool:
@@ -674,6 +687,21 @@ func (o Char) BinaryOp(tok token.Token, right Object) (Object, error) {
 			return Bool(Uint(o) > v), nil
 		case token.GreaterEq:
 			return Bool(Uint(o) >= v), nil
+		}
+	case Byte:
+		switch tok {
+		case token.Add:
+			return o + Char(v), nil
+		case token.Sub:
+			return o - Char(v), nil
+		case token.Less:
+			return Bool(Byte(o) < v), nil
+		case token.LessEq:
+			return Bool(Byte(o) <= v), nil
+		case token.Greater:
+			return Bool(Byte(o) > v), nil
+		case token.GreaterEq:
+			return Bool(Byte(o) >= v), nil
 		}
 	case Bool:
 		if v {

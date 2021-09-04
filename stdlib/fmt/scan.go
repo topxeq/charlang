@@ -69,6 +69,8 @@ func newScanArg(args ...ugo.Object) (ugo.Object, error) {
 		scan.argValue = &intType{}
 	case "uint":
 		scan.argValue = &uintType{}
+	case "byte":
+		scan.argValue = &byteType{}
 	case "float":
 		scan.argValue = &floatType{}
 	case "bool":
@@ -129,6 +131,18 @@ func (ut *uintType) Arg() interface{} {
 
 func (ut *uintType) Value() ugo.Object {
 	return ugo.Uint(ut.v)
+}
+
+type byteType struct {
+	v byte
+}
+
+func (bt *byteType) Arg() interface{} {
+	return &bt.v
+}
+
+func (bt *byteType) Value() ugo.Object {
+	return ugo.Byte(bt.v)
 }
 
 type floatType struct {

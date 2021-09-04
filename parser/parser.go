@@ -443,7 +443,7 @@ func (p *Parser) parseOperand() Expr {
 		p.next()
 		return x
 	case token.Byte:
-		v, _ := strconv.ParseUint(strings.TrimSuffix(p.tokenLit, "u"), 0, 64)
+		v, _ := strconv.ParseUint(strings.TrimSuffix(p.tokenLit, "b"), 0, 64)
 		x := &ByteLit{
 			Value:    byte(v),
 			ValuePos: p.pos,
@@ -701,7 +701,7 @@ func (p *Parser) parseStmt() (stmt Stmt) {
 	case token.Var, token.Const, token.Global, token.Param:
 		return &DeclStmt{Decl: p.parseDecl()}
 	case // simple statements
-		token.Func, token.Ident, token.Int, token.Uint, token.Float,
+		token.Func, token.Ident, token.Int, token.Uint, token.Byte, token.Float,
 		token.Char, token.String, token.True, token.False, token.Undefined,
 		token.LParen, token.LBrace, token.LBrack, token.Add, token.Sub,
 		token.Mul, token.And, token.Xor, token.Not, token.Import:
