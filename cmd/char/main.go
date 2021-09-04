@@ -171,7 +171,11 @@ func (r *repl) cmdBuiltins() {
 	builtins := make([]string, len(ugo.BuiltinsMap))
 
 	for k, v := range ugo.BuiltinsMap {
-		builtins[v] = fmt.Sprint(ugo.BuiltinObjects[v].TypeName(), ":", k)
+		remarkT := ""
+		if nv, ok := (ugo.BuiltinObjects[v]).(*ugo.BuiltinFunction); ok {
+			remarkT = nv.Remark
+		}
+		builtins[v] = fmt.Sprint(ugo.BuiltinObjects[v].TypeName(), ":", k, remarkT)
 	}
 	_, _ = fmt.Fprintln(r.stdout, strings.Join(builtins, "\n"))
 }
@@ -348,11 +352,16 @@ var suggestions = []prompt.Suggest{
 
 func init() {
 	// add builtins to suggestions
-	for k := range ugo.BuiltinsMap {
+	for k, v := range ugo.BuiltinsMap {
+		remarkT := ""
+		if nv, ok := (ugo.BuiltinObjects[v]).(*ugo.BuiltinFunction); ok {
+			remarkT = nv.Remark
+		}
+
 		suggestions = append(suggestions,
 			prompt.Suggest{
 				Text:        k,
-				Description: "Builtin " + k,
+				Description: "Builtin " + k + remarkT,
 			},
 		)
 	}

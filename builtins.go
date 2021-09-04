@@ -224,8 +224,9 @@ var BuiltinObjects = [...]Object{
 		Value: builtinStrToIntFunc,
 	},
 	BuiltinToStr: &BuiltinFunction{
-		Name:  "toStr",
-		Value: builtinToStrFunc,
+		Name:   "toStr",
+		Value:  builtinToStrFunc,
+		Remark: ", usage: toStr(any)",
 	},
 	BuiltinGetNowStr: &BuiltinFunction{
 		Name:  "getNowStr",

@@ -809,8 +809,9 @@ func (o *Function) Call(args ...Object) (Object, error) {
 // BuiltinFunction represents a builtin function object and implements Object interface.
 type BuiltinFunction struct {
 	ObjectImpl
-	Name  string
-	Value func(args ...Object) (Object, error)
+	Name   string
+	Value  func(args ...Object) (Object, error)
+	Remark string
 }
 
 var _ Object = (*BuiltinFunction)(nil)

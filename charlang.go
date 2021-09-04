@@ -183,13 +183,13 @@ var TkFunction = &Function{
 	},
 }
 
-func RunChar(charA *Bytecode, envA map[string]string, paraMapA map[string]string, argsA ...Object) (interface{}, error) {
+func RunChar(charA *Bytecode, envA map[string]interface{}, paraMapA map[string]string, argsA ...Object) (interface{}, error) {
 	envT := Map{}
 
 	envT["tk"] = TkFunction
 
 	for k, v := range envA {
-		envT[k] = String(v)
+		envT[k] = ConvertToObject(v)
 	}
 
 	inParasT := make(Map, len(paraMapA))
@@ -209,7 +209,7 @@ func RunChar(charA *Bytecode, envA map[string]string, paraMapA map[string]string
 	return ConvertFromObject(retT), errT
 }
 
-func RunCharCode(codeA string, envA map[string]string, paraMapA map[string]string, argsA ...Object) (interface{}, error) {
+func RunCharCode(codeA string, envA map[string]interface{}, paraMapA map[string]string, argsA ...Object) (interface{}, error) {
 	bytecodeT, errT := Compile([]byte(codeA), DefaultCompilerOptions)
 	if errT != nil {
 		return nil, errT
@@ -220,7 +220,7 @@ func RunCharCode(codeA string, envA map[string]string, paraMapA map[string]strin
 	envT["tk"] = TkFunction
 
 	for k, v := range envA {
-		envT[k] = String(v)
+		envT[k] = ConvertToObject(v)
 	}
 
 	inParasT := make(Map, len(paraMapA))
