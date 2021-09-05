@@ -88,26 +88,53 @@ const (
 
 	// by char
 
+	// BuiltinGo
 	BuiltinGetRandomInt
 
+	BuiltinPr
 	BuiltinPl
 	BuiltinPln
 	BuiltinSpr
+
+	BuiltinGetInputf
 
 	BuiltinErrStrf
 	BuiltinIsErrStr
 	BuiltinGetErrStr
 
+	BuiltinStrTrim
 	BuiltinStrJoin
+	BuiltinStrStartsWith
+	BuiltinStrEndsWith
 
 	BuiltinStrToInt
 	BuiltinToStr
 
 	BuiltinGetNowStr
 
+	BuiltinGetParam
+	BuiltinGetSwitch
+	BuiltinIfSwitchExists
+
+	BuiltinIfFileExists
+	BuiltinLoadText
+	BuiltinSaveText
+	BuiltinAppendText
+	BuiltinGetFileList
+
+	BuiltinGetWebPage
+
 	BuiltinSetRespHeader
 	BuiltinWriteRespHeader
 	BuiltinWriteResp
+
+	BuiltinSleep
+
+	BuiltinGetOSName
+	BuiltinSystemCmd
+	BuiltinSystemOpenFile
+
+	BuiltinExit
 )
 
 // BuiltinsMap is list of builtin types, exported for REPL.
@@ -169,43 +196,150 @@ var BuiltinsMap = map[string]BuiltinType{
 	":makeArray": BuiltinMakeArray,
 
 	// by char
-	"getRandomInt": BuiltinGetRandomInt,
+	// "go":    BuiltinGo,
+	"sleep":          BuiltinSleep,
+	"systemCmd":      BuiltinSystemCmd,
+	"systemOpenFile": BuiltinSystemOpenFile,
+	"getOSName":      BuiltinGetOSName,
+	"exit":           BuiltinExit,
 
-	"writeResp":       BuiltinWriteResp,
-	"setRespHeader":   BuiltinSetRespHeader,
-	"writeRespHeader": BuiltinWriteRespHeader,
+	"pr":  BuiltinPr,
+	"pl":  BuiltinPl,
+	"pln": BuiltinPln,
+	"spr": BuiltinSpr,
 
-	"pl":        BuiltinPl,
-	"pln":       BuiltinPln,
-	"spr":       BuiltinSpr,
+	"strTrim":       BuiltinStrTrim,
+	"strJoin":       BuiltinStrJoin,
+	"strStartsWith": BuiltinStrStartsWith,
+	"strEndsWith":   BuiltinStrEndsWith,
+
+	"strToInt": BuiltinStrToInt,
+	"toStr":    BuiltinToStr,
+
 	"getNowStr": BuiltinGetNowStr,
-	"strJoin":   BuiltinStrJoin,
-	"strToInt":  BuiltinStrToInt,
-	"toStr":     BuiltinToStr,
+
+	"ifSwitchExists": BuiltinIfSwitchExists,
+	"getSwitch":      BuiltinGetSwitch,
+	"getParam":       BuiltinGetParam,
+
+	"getInputf": BuiltinGetInputf,
 
 	"errStrf":   BuiltinErrStrf,
 	"isErrStr":  BuiltinIsErrStr,
 	"getErrStr": BuiltinGetErrStr,
+
+	"getRandomInt": BuiltinGetRandomInt,
+
+	"ifFileExists": BuiltinIfFileExists,
+
+	"loadText":   BuiltinLoadText,
+	"saveText":   BuiltinSaveText,
+	"appendText": BuiltinAppendText,
+
+	"getFileList": BuiltinGetFileList,
+
+	"getWebPage": BuiltinGetWebPage,
+
+	"setRespHeader":   BuiltinSetRespHeader,
+	"writeRespHeader": BuiltinWriteRespHeader,
+	"writeResp":       BuiltinWriteResp,
 }
 
 // BuiltinObjects is list of builtins, exported for REPL.
 var BuiltinObjects = [...]Object{
 	// by char start
+	BuiltinExit: &BuiltinFunction{
+		Name:   "exit",
+		Value:  builtinExitFunc,
+		Remark: ", usage: exit() or exit(1)",
+	},
+	// BuiltinGo: &BuiltinFunction{
+	// 	Name:  "go",
+	// 	Value: builtinGoFunc,
+	// },
+	BuiltinSleep: &BuiltinFunction{
+		Name:   "sleep",
+		Value:  builtinSleepFunc,
+		Remark: ", usage: sleep(1.2) sleep for 1.2 seconds",
+	},
+	BuiltinGetFileList: &BuiltinFunction{
+		Name:  "getFileList",
+		Value: fnASSVRMSSR(tk.GetFileList),
+	},
+	BuiltinGetWebPage: &BuiltinFunction{
+		Name:  "getWebPage",
+		Value: builtinGetWebPageFunc,
+	},
+	BuiltinIfSwitchExists: &BuiltinFunction{
+		Name:   "ifSwitchExists",
+		Value:  builtinIfSwitchExistsFunc,
+		Remark: `, usage: if ifSwitchExists(argsG, "-verbose") {...}`,
+	},
+	BuiltinGetSwitch: &BuiltinFunction{
+		Name:  "getSwitch",
+		Value: builtinGetSwitchFunc,
+	},
+	BuiltinGetParam: &BuiltinFunction{
+		Name:   "getParam",
+		Value:  builtinGetParamFunc,
+		Remark: `, usage: getParam(argsG, 1, "default")`,
+	},
 	BuiltinSpr: &BuiltinFunction{
 		Name:  "spr",
 		Value: builtinSprFunc,
 	},
 	BuiltinPl: &BuiltinFunction{
-		Name:  "pl",
-		Value: builtinPlFunc,
+		Name:   "pl",
+		Value:  builtinPlFunc,
+		Remark: `, usage: the same as printf, but with a line-end(\n) at the end`,
+	},
+	BuiltinPr: &BuiltinFunction{
+		Name:   "pr",
+		Value:  builtinPrFunc,
+		Remark: `, usage: the same as print`,
 	},
 	BuiltinPln: &BuiltinFunction{
 		Name:  "pln",
 		Value: fnAIV(tk.Pln),
 	},
+	BuiltinIfFileExists: &BuiltinFunction{
+		Name:  "ifFileExists",
+		Value: fnASRB(tk.IfFileExists),
+	},
+	BuiltinLoadText: &BuiltinFunction{
+		Name:   "loadText",
+		Value:  fnASRS(tk.LoadStringFromFile),
+		Remark: `, usage: loadText("file.txt"), return TXERROR: string if failed`,
+	},
+	BuiltinSaveText: &BuiltinFunction{
+		Name:   "saveText",
+		Value:  fnASSRS(tk.SaveStringToFile),
+		Remark: `, usage: saveText(textT, "file.txt"), return TXERROR: string if failed`,
+	},
+	BuiltinAppendText: &BuiltinFunction{
+		Name:   "appendText",
+		Value:  fnASSRS(tk.AppendStringToFile),
+		Remark: `, usage: appendText(textT, "file.txt"), return TXERROR: string if failed`,
+	},
 	BuiltinErrStrf: &BuiltinFunction{
 		Name:  "errStrf",
 		Value: fnASIVRS(tk.ErrStrf),
+	},
+	BuiltinGetInputf: &BuiltinFunction{
+		Name:  "getInputf",
+		Value: fnASIVRS(tk.GetInputf),
+	},
+	BuiltinSystemCmd: &BuiltinFunction{
+		Name:  "systemCmd",
+		Value: fnASSVRS(tk.SystemCmd),
+	},
+	BuiltinSystemOpenFile: &BuiltinFunction{
+		Name:  "systemOpenFile",
+		Value: fnASRS(tk.RunWinFileWithSystemDefault),
+	},
+	BuiltinGetOSName: &BuiltinFunction{
+		Name:  "getOSName",
+		Value: fnRS(tk.GetOSName),
 	},
 	BuiltinIsErrStr: &BuiltinFunction{
 		Name:  "isErrStr",
@@ -218,6 +352,18 @@ var BuiltinObjects = [...]Object{
 	BuiltinStrJoin: &BuiltinFunction{
 		Name:  "strJoin",
 		Value: builtinStrJoinFunc,
+	},
+	BuiltinStrStartsWith: &BuiltinFunction{
+		Name:  "strStartsWith",
+		Value: fnASSRB(strings.HasPrefix),
+	},
+	BuiltinStrTrim: &BuiltinFunction{
+		Name:  "strTrim",
+		Value: fnASRS(strings.TrimSpace),
+	},
+	BuiltinStrEndsWith: &BuiltinFunction{
+		Name:  "strEndsWith",
+		Value: fnASSRB(strings.HasSuffix),
 	},
 	BuiltinStrToInt: &BuiltinFunction{
 		Name:  "strToInt",
@@ -1214,6 +1360,16 @@ func builtinPlFunc(args ...Object) (Object, error) {
 	return Undefined, nil
 }
 
+func builtinPrFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return Undefined, nil
+	}
+
+	fmt.Print(ObjectsToI(args)...)
+
+	return Undefined, nil
+}
+
 func builtinSprFunc(args ...Object) (Object, error) {
 	if len(args) < 1 {
 		return Undefined, nil
@@ -1226,6 +1382,82 @@ func builtinSprFunc(args ...Object) (Object, error) {
 
 	return String(fmt.Sprintf(v.String(), ObjectsToI(args[1:])...)), nil
 }
+
+func builtinSleepFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	v := args[0].String()
+
+	f := tk.StrToFloat64WithDefaultValue(v, 0)
+
+	if f <= 0 {
+		return Undefined, NewCommonError("invalid time")
+	}
+
+	tk.Sleep(f)
+
+	return Undefined, nil
+}
+
+func builtinGetWebPageFunc(args ...Object) (Object, error) {
+	if len(args) < 3 {
+		return String(tk.ErrStrf("not enough parameters")), nil
+	}
+
+	v0, ok := args[0].(String)
+
+	if !ok {
+		return String(tk.ErrStrf("type error for arg 0")), nil
+	}
+
+	v1, ok := args[1].(Map)
+
+	if !ok {
+		return String(tk.ErrStrf("type error for arg 1")), nil
+	}
+
+	v2, ok := args[2].(Map)
+
+	if !ok {
+		return String(tk.ErrStrf("type error for arg 2")), nil
+	}
+
+	rsT := tk.DownloadWebPage(v0.String(), tk.MSI2MSS(ConvertFromObject(v1).(map[string]interface{})),
+		tk.MSI2MSS(ConvertFromObject(v2).(map[string]interface{})), ObjectsToS(args[3:])...)
+
+	return String(rsT), nil
+}
+
+func builtinExitFunc(args ...Object) (Object, error) {
+	resultT := 0
+
+	if len(args) > 0 {
+		resultT = tk.StrToIntWithDefaultValue(args[0].String(), 0)
+	}
+
+	os.Exit(resultT)
+
+	return Undefined, nil
+}
+
+// not completed...
+// func builtinGoFunc(args ...Object) (Object, error) {
+// 	if len(args) < 1 {
+// 		return Undefined, NewCommonError("not enough parameters")
+// 	}
+
+// 	v, ok := args[0].(*CompiledFunction)
+// 	if !ok {
+// 		return Undefined, NewCommonError("required function type, got: %T %#v", args[0], args[0])
+// 	}
+
+// 	// go v.Call(args[1:]...)
+// 	v.Call(args[1:]...)
+
+// 	return Undefined, nil
+// }
 
 func builtinGetNowStrFunc(args ...Object) (Object, error) {
 	return String(tk.GetNowTimeString()), nil
@@ -1287,6 +1519,118 @@ func builtinWriteRespFunc(args ...Object) (Object, error) {
 	r, errT := vv.Write(contentT)
 
 	return Int(r), errT
+}
+
+func builtinGetSwitchFunc(argsA ...Object) (Object, error) {
+	defaultT := String("")
+
+	if argsA == nil {
+		return defaultT, nil
+	}
+
+	if len(argsA) < 2 {
+		return defaultT, nil
+	}
+
+	if len(argsA) > 2 {
+		defaultT = String(argsA[2].String())
+	}
+
+	switchStrT := argsA[1].String()
+
+	tmpStrT := ""
+
+	listT, ok := argsA[0].(Array)
+
+	if !ok {
+		return defaultT, nil
+	}
+
+	for _, v := range listT {
+		argT := v.String()
+		if tk.StartsWith(argT, switchStrT) {
+			tmpStrT = argT[len(switchStrT):]
+			if tk.StartsWith(tmpStrT, "\"") && tk.EndsWith(tmpStrT, "\"") {
+				return String(tmpStrT[1 : len(tmpStrT)-1]), nil
+			}
+
+			return String(tmpStrT), nil
+		}
+
+	}
+
+	return defaultT, nil
+}
+
+func builtinIfSwitchExistsFunc(argsA ...Object) (Object, error) {
+	if len(argsA) < 2 {
+		return Bool(false), nil
+	}
+
+	argListT, ok := argsA[0].(Array)
+
+	if !ok {
+		return Bool(false), nil
+	}
+
+	listT := ObjectsToS(argListT)
+
+	if listT == nil {
+		return Bool(false), nil
+	}
+
+	return Bool(tk.IfSwitchExistsWhole(listT, argsA[1].String())), nil
+
+}
+
+func builtinGetParamFunc(argsA ...Object) (Object, error) {
+	defaultT := String("")
+	idxT := 1
+
+	if argsA == nil {
+		return defaultT, nil
+	}
+
+	if len(argsA) < 1 {
+		return defaultT, nil
+	}
+
+	if len(argsA) > 1 {
+		idxT = tk.StrToInt(argsA[1].String(), 1)
+	}
+
+	if len(argsA) > 2 {
+		defaultT = String(argsA[2].String())
+	}
+
+	listT, ok := argsA[0].(Array)
+
+	if !ok {
+		return defaultT, nil
+	}
+
+	var cnt int
+	for _, v := range listT {
+		argT := v.String()
+		if tk.StartsWith(argT, "-") {
+			continue
+		}
+
+		if cnt == idxT {
+			if _, ok := v.(String); ok {
+				if tk.StartsWith(argT, "\"") && tk.EndsWith(argT, "\"") {
+					return String(argT[1 : len(argT)-1]), nil
+				}
+			}
+
+			return v, nil
+		}
+
+		cnt++
+
+	}
+
+	return defaultT, nil
 }
 
 func builtinWriteRespHeaderFunc(args ...Object) (Object, error) {
@@ -1529,6 +1873,44 @@ func fnASIVRS(fn func(string, ...interface{}) string) CallableFunc {
 	}
 }
 
+func fnASSVRS(fn func(string, ...string) string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 1 {
+			return nil, ErrWrongNumArguments.NewError(
+				wantEqXGotY(1, len(args)))
+		}
+
+		s1, ok := args[0].(String)
+		if !ok {
+			return nil, NewArgumentTypeError("first", "string",
+				args[0].TypeName())
+		}
+
+		objsT := ObjectsToS(args[1:])
+
+		return String(fn(string(s1), objsT...)), nil
+	}
+}
+
+func fnASSVRMSSR(fn func(string, ...string) []map[string]string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 1 {
+			return nil, ErrWrongNumArguments.NewError(
+				wantEqXGotY(1, len(args)))
+		}
+
+		s1, ok := args[0].(String)
+		if !ok {
+			return nil, NewArgumentTypeError("first", "string",
+				args[0].TypeName())
+		}
+
+		objsT := ObjectsToS(args[1:])
+
+		return ConvertToObject(fn(string(s1), objsT...)), nil
+	}
+}
+
 func fnAIV(fn func(...interface{})) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		objsT := ObjectsToI(args)
@@ -1536,5 +1918,31 @@ func fnAIV(fn func(...interface{})) CallableFunc {
 		fn(objsT...)
 
 		return Undefined, nil
+	}
+}
+
+func fnRS(fn func() string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		return String(fn()), nil
+	}
+}
+
+func fnASSRB(fn func(string, string) bool) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) != 2 {
+			return nil, ErrWrongNumArguments.NewError(
+				wantEqXGotY(2, len(args)))
+		}
+		s1, ok := args[0].(String)
+		if !ok {
+			return nil, NewArgumentTypeError("first", "string",
+				args[0].TypeName())
+		}
+		s2, ok := args[1].(String)
+		if !ok {
+			return nil, NewArgumentTypeError("second", "string",
+				args[1].TypeName())
+		}
+		return Bool(fn(string(s1), string(s2))), nil
 	}
 }

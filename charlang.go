@@ -90,6 +90,18 @@ func ConvertToObject(vA interface{}) Object {
 		}
 
 		return rsT
+	case []map[string]string:
+		if nv == nil {
+			return nil
+		}
+
+		rsT := make(Array, 0, len(nv))
+
+		for _, v := range nv {
+			rsT = append(rsT, ConvertToObject(v))
+		}
+
+		return rsT
 	// case time.Time:
 	// 	return Any{Value: nv, OriginalType: "time.Time"}
 	case Function:
@@ -125,6 +137,30 @@ func ConvertFromObject(vA Object) interface{} {
 		return []byte(nv)
 	case Any:
 		return nv.Value
+	case Map:
+		if nv == nil {
+			return nil
+		}
+
+		rsT := make(map[string]interface{}, len(nv))
+
+		for k, v := range nv {
+			rsT[k] = ConvertFromObject(v)
+		}
+
+		return rsT
+	case Array:
+		if nv == nil {
+			return nil
+		}
+
+		rsT := make([]interface{}, 0, len(nv))
+
+		for _, v := range nv {
+			rsT = append(rsT, ConvertFromObject(v))
+		}
+
+		return rsT
 	}
 
 	return vA
@@ -139,6 +175,20 @@ func ObjectsToI(aryA []Object) []interface{} {
 
 	for _, v := range aryA {
 		rs = append(rs, ConvertFromObject(v))
+	}
+
+	return rs
+}
+
+func ObjectsToS(aryA []Object) []string {
+	if aryA == nil {
+		return nil
+	}
+
+	rs := make([]string, 0, len(aryA))
+
+	for _, v := range aryA {
+		rs = append(rs, v.String())
 	}
 
 	return rs
@@ -187,6 +237,8 @@ func RunChar(charA *Bytecode, envA map[string]interface{}, paraMapA map[string]s
 	envT := Map{}
 
 	envT["tk"] = TkFunction
+	// envT["argsG"] = ConvertToObject(os.Args)
+	envT["versionG"] = String(VersionG)
 
 	for k, v := range envA {
 		envT[k] = ConvertToObject(v)
@@ -218,6 +270,8 @@ func RunCharCode(codeA string, envA map[string]interface{}, paraMapA map[string]
 	envT := Map{}
 
 	envT["tk"] = TkFunction
+	// envT["argsG"] = ConvertToObject(os.Args)
+	envT["versionG"] = String(VersionG)
 
 	for k, v := range envA {
 		envT[k] = ConvertToObject(v)
@@ -238,4 +292,50 @@ func RunCharCode(codeA string, envA map[string]interface{}, paraMapA map[string]
 	)
 
 	return ConvertFromObject(retT), errT
+}
+
+func QuickCompile(codeA string) interface{} {
+	bytecodeT, errT := Compile([]byte(codeA), DefaultCompilerOptions)
+	if errT != nil {
+		return errT
+	}
+
+	return bytecodeT
+}
+
+func QuickRun(codeA interface{}, argsA ...Object) interface{} {
+	var errT error
+	nv, ok := codeA.(*Bytecode)
+
+	if !ok {
+		codeT, ok := codeA.(string)
+		if !ok {
+			return fmt.Errorf("invalid parameter")
+		}
+
+		nv, errT = Compile([]byte(codeT), DefaultCompilerOptions)
+		if errT != nil {
+			return errT
+		}
+	}
+
+	envT := Map{}
+
+	envT["tk"] = TkFunction
+	envT["argsG"] = Array{}
+	envT["versionG"] = String(VersionG)
+
+	paramsT := make([]Object, 0, 2+len(argsA))
+
+	paramsT = append(paramsT, argsA...)
+
+	retT, errT := NewVM(nv).Run(
+		envT, paramsT...,
+	)
+
+	if errT != nil {
+		return errT
+	}
+
+	return ConvertFromObject(retT)
 }

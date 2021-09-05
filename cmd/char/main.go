@@ -23,6 +23,7 @@ import (
 
 	ugo "github.com/topxeq/charlang"
 	"github.com/topxeq/charlang/token"
+	"github.com/topxeq/tk"
 
 	ugofmt "github.com/topxeq/charlang/stdlib/fmt"
 	ugostrings "github.com/topxeq/charlang/stdlib/strings"
@@ -63,6 +64,7 @@ var scriptGlobals = &ugo.SyncMap{
 			},
 		},
 		"versionG": ugo.String(ugo.VersionG),
+		"argsG":    ugo.ConvertToObject(os.Args[1:]),
 		"tk":       ugo.TkFunction,
 		// "tk": &ugo.Function{
 		// 	Name: "Do",
@@ -423,6 +425,8 @@ func parseFlags(
 ) (filePath string, timeout time.Duration, err error) {
 
 	var trace string
+	flagset.StringVar(&trace, "dir", "",
+		`directory to scan`)
 	flagset.StringVar(&trace, "trace", "",
 		`Comma separated units: -trace parser,optimizer,compiler`)
 	flagset.BoolVar(&noOptimizer, "no-optimizer", false, `Disable optimization`)
@@ -524,8 +528,13 @@ func checkErr(err error, f func()) {
 }
 
 func main() {
-	filePath, timeout, err := parseFlags(flag.CommandLine, os.Args[1:])
-	checkErr(err, nil)
+	// filePath, timeout, err := parseFlags(flag.CommandLine, os.Args[1:])
+	// checkErr(err, nil)
+
+	filePath := tk.GetParameterByIndexWithDefaultValue(os.Args, 1, "")
+	timeout := time.Duration(0)
+
+	var err error = nil
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
