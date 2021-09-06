@@ -132,6 +132,9 @@ const (
 	BuiltinWriteRespHeader
 	BuiltinWriteResp
 
+	BuiltinReplaceHtmlByMap
+	BuiltinCleanHtmlPlaceholders
+
 	BuiltinSleep
 
 	BuiltinGetOSName
@@ -271,11 +274,24 @@ var BuiltinsMap = map[string]BuiltinType{
 	"setRespHeader":   BuiltinSetRespHeader,
 	"writeRespHeader": BuiltinWriteRespHeader,
 	"writeResp":       BuiltinWriteResp,
+
+	"replaceHtmlByMap":      BuiltinReplaceHtmlByMap,
+	"cleanHtmlPlaceholders": BuiltinCleanHtmlPlaceholders,
 }
 
 // BuiltinObjects is list of builtins, exported for REPL.
 var BuiltinObjects = [...]Object{
 	// by char start
+	BuiltinReplaceHtmlByMap: &BuiltinFunction{
+		Name:   "replaceHtmlByMap",
+		Value:  BuiltinReplaceHtmlByMapFunc,
+		Remark: ", usage: replaceHtmlByMap(v, mapA)",
+	},
+	BuiltinCleanHtmlPlaceholders: &BuiltinFunction{
+		Name:   "cleanHtmlPlaceholders",
+		Value:  fnASRS(tk.CleanHtmlPlaceholders),
+		Remark: ", usage: cleanHtmlPlaceholders(v)",
+	},
 	BuiltinCheckError: &BuiltinFunction{
 		Name:   "checkError",
 		Value:  builtinCheckErrorFunc,
@@ -1930,6 +1946,54 @@ func fnASRS(fn func(string) string) CallableFunc {
 
 		return String(fn(string(s))), nil
 	}
+}
+
+func fnASMSSRS(fn func(string, map[string]string) string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 2 {
+			return ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))), nil
+		}
+
+		s, ok := args[0].(String)
+		if !ok {
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+		}
+
+		m, ok := args[1].(Map)
+		if !ok {
+			return NewArgumentTypeError("second", "map", args[1].TypeName()), nil
+		}
+
+		return String(fn(string(s), tk.MSI2MSS(ConvertFromObject(m).(map[string]interface{})))), nil
+	}
+}
+
+func BuiltinReplaceHtmlByMapFunc(args ...Object) (Object, error) {
+	if len(args) < 2 {
+		return ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))), nil
+	}
+
+	s, ok := args[0].(String)
+	if !ok {
+		return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+	}
+
+	m, ok := args[1].(Map)
+	if !ok {
+		return NewArgumentTypeError("second", "map", args[1].TypeName()), nil
+	}
+
+	if m == nil {
+		return args[0], nil
+	}
+
+	st := string(s)
+
+	for k, v := range m {
+		st = tk.Replace(st, "TX_"+k+"_XT", v.String())
+	}
+
+	return String(st), nil
 }
 
 func fnASSRS(fn func(string, string) string) CallableFunc {
