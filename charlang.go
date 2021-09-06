@@ -16,6 +16,8 @@ type CallableFunc = func(args ...Object) (ret Object, err error)
 
 func ConvertToObject(vA interface{}) Object {
 	switch nv := vA.(type) {
+	case error:
+		return WrapError(nv)
 	case string:
 		return String(nv)
 	case bool:
@@ -42,6 +44,42 @@ func ConvertToObject(vA interface{}) Object {
 		return Float(nv)
 	case []byte:
 		return Bytes(nv)
+	case []uint32:
+		if nv == nil {
+			return nil
+		}
+
+		rsT := make(Array, 0, len(nv))
+
+		for _, v := range nv {
+			rsT = append(rsT, Char(v))
+		}
+
+		return rsT
+	case []int:
+		if nv == nil {
+			return nil
+		}
+
+		rsT := make(Array, 0, len(nv))
+
+		for _, v := range nv {
+			rsT = append(rsT, Int(v))
+		}
+
+		return rsT
+	case []int64:
+		if nv == nil {
+			return nil
+		}
+
+		rsT := make(Array, 0, len(nv))
+
+		for _, v := range nv {
+			rsT = append(rsT, Int(v))
+		}
+
+		return rsT
 	case []string:
 		if nv == nil {
 			return nil
@@ -51,6 +89,23 @@ func ConvertToObject(vA interface{}) Object {
 
 		for _, v := range nv {
 			rsT = append(rsT, String(v))
+		}
+
+		return rsT
+	case [][]string:
+		if nv == nil {
+			return nil
+		}
+
+		rsT := make(Array, 0, len(nv))
+
+		for _, v := range nv {
+			lineListT := make(Array, 0, len(v))
+			for _, jv := range v {
+				lineListT = append(lineListT, String(jv))
+			}
+
+			rsT = append(rsT, lineListT)
 		}
 
 		return rsT
@@ -90,7 +145,36 @@ func ConvertToObject(vA interface{}) Object {
 		}
 
 		return rsT
+	case map[string]map[string]string:
+		if nv == nil {
+			return nil
+		}
+
+		rsT := make(Map, len(nv))
+
+		for k, v := range nv {
+			mapT := make(Map, len(nv))
+			for jk, jv := range v {
+				mapT[jk] = String(jv)
+			}
+
+			rsT[k] = mapT
+		}
+
+		return rsT
 	case []map[string]string:
+		if nv == nil {
+			return nil
+		}
+
+		rsT := make(Array, 0, len(nv))
+
+		for _, v := range nv {
+			rsT = append(rsT, ConvertToObject(v))
+		}
+
+		return rsT
+	case []map[string]interface{}:
 		if nv == nil {
 			return nil
 		}
@@ -135,6 +219,8 @@ func ConvertFromObject(vA Object) interface{} {
 		return string(nv)
 	case Bytes:
 		return []byte(nv)
+	case *Error:
+		return nv.Unwrap()
 	case Any:
 		return nv.Value
 	case Map:

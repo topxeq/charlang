@@ -6,6 +6,7 @@ package charlang
 
 import (
 	"bytes"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -17,6 +18,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/topxeq/charlang/token"
+	"github.com/topxeq/sqltk"
 	"github.com/topxeq/tk"
 )
 
@@ -89,6 +91,8 @@ const (
 	// by char
 
 	// BuiltinGo
+	BuiltinCheckError
+
 	BuiltinGetRandomInt
 
 	BuiltinPr
@@ -133,6 +137,17 @@ const (
 	BuiltinGetOSName
 	BuiltinSystemCmd
 	BuiltinSystemOpenFile
+
+	BuiltinDbConnect
+	BuiltinDbQuery
+	BuiltinDbQueryRecs
+	BuiltinDbQueryMap
+	BuiltinDbQueryMapArray
+	BuiltinDbQueryCount
+	BuiltinDbQueryFloat
+	BuiltinDbQueryString
+	BuiltinDbExec
+	BuiltinDbClose
 
 	BuiltinExit
 )
@@ -197,11 +212,24 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// by char
 	// "go":    BuiltinGo,
+	"checkError": BuiltinCheckError,
+
 	"sleep":          BuiltinSleep,
 	"systemCmd":      BuiltinSystemCmd,
 	"systemOpenFile": BuiltinSystemOpenFile,
 	"getOSName":      BuiltinGetOSName,
 	"exit":           BuiltinExit,
+
+	"dbConnect":       BuiltinDbConnect,
+	"dbQuery":         BuiltinDbQuery,
+	"dbQueryRecs":     BuiltinDbQueryRecs,
+	"dbQueryMap":      BuiltinDbQueryMap,
+	"dbQueryMapArray": BuiltinDbQueryMapArray,
+	"dbQueryCount":    BuiltinDbQueryCount,
+	"dbQueryFloat":    BuiltinDbQueryFloat,
+	"dbQueryString":   BuiltinDbQueryString,
+	"dbExec":          BuiltinDbExec,
+	"dbClose":         BuiltinDbClose,
 
 	"pr":  BuiltinPr,
 	"pl":  BuiltinPl,
@@ -248,6 +276,11 @@ var BuiltinsMap = map[string]BuiltinType{
 // BuiltinObjects is list of builtins, exported for REPL.
 var BuiltinObjects = [...]Object{
 	// by char start
+	BuiltinCheckError: &BuiltinFunction{
+		Name:   "checkError",
+		Value:  builtinCheckErrorFunc,
+		Remark: ", usage: checkError(v), if v is Error, output it and exit",
+	},
 	BuiltinExit: &BuiltinFunction{
 		Name:   "exit",
 		Value:  builtinExitFunc,
@@ -336,6 +369,46 @@ var BuiltinObjects = [...]Object{
 	BuiltinSystemOpenFile: &BuiltinFunction{
 		Name:  "systemOpenFile",
 		Value: fnASRS(tk.RunWinFileWithSystemDefault),
+	},
+	BuiltinDbConnect: &BuiltinFunction{
+		Name:  "dbConnect",
+		Value: fnASSRI(sqltk.ConnectDBX),
+	},
+	BuiltinDbQuery: &BuiltinFunction{
+		Name:  "dbQuery",
+		Value: fnADSIVRI(sqltk.QueryDBX),
+	},
+	BuiltinDbQueryCount: &BuiltinFunction{
+		Name:  "dbQueryCount",
+		Value: fnADSIVRI(sqltk.QueryCountX),
+	},
+	BuiltinDbQueryFloat: &BuiltinFunction{
+		Name:  "dbQueryFloat",
+		Value: fnADSIVRI(sqltk.QueryFloatX),
+	},
+	BuiltinDbQueryString: &BuiltinFunction{
+		Name:  "dbQueryString",
+		Value: fnADSIVRI(sqltk.QueryStringX),
+	},
+	BuiltinDbQueryRecs: &BuiltinFunction{
+		Name:  "dbQueryRecs",
+		Value: fnADSIVRI(sqltk.QueryDBRecsX),
+	},
+	BuiltinDbQueryMap: &BuiltinFunction{
+		Name:  "dbQueryMap",
+		Value: fnADSSIVRI(sqltk.QueryDBMapX),
+	},
+	BuiltinDbQueryMapArray: &BuiltinFunction{
+		Name:  "dbQueryMapArray",
+		Value: fnADSSIVRI(sqltk.QueryDBMapArrayX),
+	},
+	BuiltinDbExec: &BuiltinFunction{
+		Name:  "dbExec",
+		Value: fnADSIVRI(sqltk.ExecDBX),
+	},
+	BuiltinDbClose: &BuiltinFunction{
+		Name:  "dbClose",
+		Value: BuiltinDbCloseFunc,
 	},
 	BuiltinGetOSName: &BuiltinFunction{
 		Name:  "getOSName",
@@ -1261,6 +1334,13 @@ func builtinIsErrorFunc(args ...Object) (Object, error) {
 		switch args[0].(type) {
 		case *Error, *RuntimeError:
 			return True, nil
+			// case Any:
+			// 	_, ok := nv.Value.(error)
+
+			// 	if ok {
+			// 		return True, nil
+			// 	}
+			// 	return False, nil
 		}
 	case 2:
 		if err, ok := args[0].(error); ok {
@@ -1273,6 +1353,17 @@ func builtinIsErrorFunc(args ...Object) (Object, error) {
 			fmt.Sprint("want=1..2 got=", len(args)))
 	}
 	return False, nil
+}
+
+func builtinCheckErrorFunc(args ...Object) (Object, error) {
+	rsT, errT := builtinIsErrorFunc(args...)
+
+	if errT != nil && rsT == True {
+		fmt.Printf("Error: %v", args[0])
+		os.Exit(0)
+	}
+
+	return Undefined, nil
 }
 
 func builtinIsIntFunc(args ...Object) (Object, error) {
@@ -1366,6 +1457,32 @@ func builtinPrFunc(args ...Object) (Object, error) {
 	}
 
 	fmt.Print(ObjectsToI(args)...)
+
+	return Undefined, nil
+}
+
+func BuiltinDbCloseFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	nv, ok := args[0].(Any)
+
+	if !ok {
+		return NewCommonError("type error"), nil
+	}
+
+	dbT, ok := nv.Value.(*sql.DB)
+
+	if !ok {
+		return NewCommonError("type error for *sql.DB"), nil
+	}
+
+	errT := dbT.Close()
+
+	if errT != nil {
+		return NewCommonError("type error for *sql.DB"), nil
+	}
 
 	return Undefined, nil
 }
@@ -1803,14 +1920,12 @@ func wantGEqXGotY(x, y int) string {
 func fnASRS(fn func(string) string) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) != 1 {
-			return nil, ErrWrongNumArguments.NewError(
-				wantEqXGotY(1, len(args)))
+			return ErrWrongNumArguments.NewError(wantEqXGotY(1, len(args))), nil
 		}
 
 		s, ok := args[0].(String)
 		if !ok {
-			return nil, NewArgumentTypeError("first", "string",
-				args[0].TypeName())
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
 		}
 
 		return String(fn(string(s))), nil
@@ -1820,34 +1935,49 @@ func fnASRS(fn func(string) string) CallableFunc {
 func fnASSRS(fn func(string, string) string) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) != 2 {
-			return nil, ErrWrongNumArguments.NewError(
-				wantEqXGotY(2, len(args)))
+			return ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))), nil
 		}
 		s1, ok := args[0].(String)
 		if !ok {
-			return nil, NewArgumentTypeError("first", "string",
-				args[0].TypeName())
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
 		}
 		s2, ok := args[1].(String)
 		if !ok {
-			return nil, NewArgumentTypeError("second", "string",
-				args[1].TypeName())
+			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
 		}
 		return String(fn(string(s1), string(s2))), nil
+	}
+}
+
+func fnASSRI(fn func(string, string) interface{}) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) != 2 {
+			return ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))), nil
+		}
+
+		s1, ok := args[0].(String)
+		if !ok {
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+		}
+
+		s2, ok := args[1].(String)
+		if !ok {
+			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
+		}
+
+		return NewAnyValue(fn(string(s1), string(s2))), nil
 	}
 }
 
 func fnASRB(fn func(string) bool) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) != 1 {
-			return nil, ErrWrongNumArguments.NewError(
-				wantEqXGotY(1, len(args)))
+			return ErrWrongNumArguments.NewError(wantEqXGotY(1, len(args))), nil
 		}
 
 		s1, ok := args[0].(String)
 		if !ok {
-			return nil, NewArgumentTypeError("first", "string",
-				args[0].TypeName())
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
 		}
 
 		return Bool(fn(string(s1))), nil
@@ -1857,14 +1987,12 @@ func fnASRB(fn func(string) bool) CallableFunc {
 func fnASIVRS(fn func(string, ...interface{}) string) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) < 1 {
-			return nil, ErrWrongNumArguments.NewError(
-				wantEqXGotY(1, len(args)))
+			return ErrWrongNumArguments.NewError(wantEqXGotY(1, len(args))), nil
 		}
 
 		s1, ok := args[0].(String)
 		if !ok {
-			return nil, NewArgumentTypeError("first", "string",
-				args[0].TypeName())
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
 		}
 
 		objsT := ObjectsToI(args[1:])
@@ -1873,17 +2001,82 @@ func fnASIVRS(fn func(string, ...interface{}) string) CallableFunc {
 	}
 }
 
+func fnADSIVRI(fn func(*sql.DB, string, ...interface{}) interface{}) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 2 {
+			return ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))), nil
+		}
+
+		nv, ok := args[0].(Any)
+
+		if !ok {
+			return NewCommonError("type error: %T", args[0]), nil
+		}
+
+		dbT, ok := nv.Value.(*sql.DB)
+
+		if !ok {
+			return NewCommonError("type error: %T", nv.Value), nil
+		}
+
+		s1, ok := args[1].(String)
+		if !ok {
+			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
+		}
+
+		objsT := ObjectsToI(args[2:])
+
+		return ConvertToObject(fn(dbT, string(s1), objsT...)), nil
+	}
+}
+
+func fnADSSIVRI(fn func(*sql.DB, string, string, ...interface{}) interface{}) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 2 {
+			return ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))), nil
+		}
+
+		nv, ok := args[0].(Any)
+
+		if !ok {
+			return NewCommonError("type error"), nil
+		}
+
+		dbT, ok := nv.Value.(*sql.DB)
+
+		if !ok {
+			return NewCommonError("type error for *sql.DB"), nil
+		}
+
+		s1, ok := args[1].(String)
+		if !ok {
+			return NewArgumentTypeError("second", "string",
+				args[1].TypeName()), nil
+		}
+
+		s2, ok := args[2].(String)
+		if !ok {
+			return NewArgumentTypeError("third", "string",
+				args[2].TypeName()), nil
+		}
+
+		objsT := ObjectsToI(args[3:])
+
+		return ConvertToObject(fn(dbT, string(s1), string(s2), objsT...)), nil
+	}
+}
+
 func fnASSVRS(fn func(string, ...string) string) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) < 1 {
-			return nil, ErrWrongNumArguments.NewError(
-				wantEqXGotY(1, len(args)))
+			return ErrWrongNumArguments.NewError(
+				wantEqXGotY(1, len(args))), nil
 		}
 
 		s1, ok := args[0].(String)
 		if !ok {
-			return nil, NewArgumentTypeError("first", "string",
-				args[0].TypeName())
+			return NewArgumentTypeError("first", "string",
+				args[0].TypeName()), nil
 		}
 
 		objsT := ObjectsToS(args[1:])
@@ -1895,14 +2088,12 @@ func fnASSVRS(fn func(string, ...string) string) CallableFunc {
 func fnASSVRMSSR(fn func(string, ...string) []map[string]string) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) < 1 {
-			return nil, ErrWrongNumArguments.NewError(
-				wantEqXGotY(1, len(args)))
+			return ErrWrongNumArguments.NewError(wantEqXGotY(1, len(args))), nil
 		}
 
 		s1, ok := args[0].(String)
 		if !ok {
-			return nil, NewArgumentTypeError("first", "string",
-				args[0].TypeName())
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
 		}
 
 		objsT := ObjectsToS(args[1:])
@@ -1930,18 +2121,15 @@ func fnRS(fn func() string) CallableFunc {
 func fnASSRB(fn func(string, string) bool) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) != 2 {
-			return nil, ErrWrongNumArguments.NewError(
-				wantEqXGotY(2, len(args)))
+			return ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))), nil
 		}
 		s1, ok := args[0].(String)
 		if !ok {
-			return nil, NewArgumentTypeError("first", "string",
-				args[0].TypeName())
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
 		}
 		s2, ok := args[1].(String)
 		if !ok {
-			return nil, NewArgumentTypeError("second", "string",
-				args[1].TypeName())
+			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
 		}
 		return Bool(fn(string(s1), string(s2))), nil
 	}

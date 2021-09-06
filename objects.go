@@ -1347,7 +1347,16 @@ type Error struct {
 var _ Object = (*Error)(nil)
 
 func (o *Error) Unwrap() error {
+	if o.Cause == nil {
+		if o.Message != "" {
+			return fmt.Errorf("%v: %v", o.Name, o.Message)
+		}
+	}
 	return o.Cause
+}
+
+func WrapError(errA error) *Error {
+	return &Error{Name: "Error", Message: errA.Error(), Cause: errA}
 }
 
 // TypeName implements Object interface.

@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -28,6 +29,12 @@ import (
 	ugofmt "github.com/topxeq/charlang/stdlib/fmt"
 	ugostrings "github.com/topxeq/charlang/stdlib/strings"
 	ugotime "github.com/topxeq/charlang/stdlib/time"
+
+	_ "github.com/denisenkom/go-mssqldb"
+	_ "github.com/godror/godror"
+
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var logo = `
@@ -540,6 +547,9 @@ func main() {
 	defer cancel()
 
 	if filePath != "" {
+		if tk.IfSwitchExistsWhole(os.Args, "-gopath") {
+			filePath = filepath.Join(tk.GetEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "char", "scripts", filePath)
+		}
 		if timeout > 0 {
 			var c func()
 			ctx, c = context.WithTimeout(ctx, timeout)
