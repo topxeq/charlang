@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -122,6 +123,8 @@ const (
 	BuiltinGetParam
 	BuiltinGetSwitch
 	BuiltinIfSwitchExists
+
+	BuiltinJoinPath
 
 	BuiltinIfFileExists
 	BuiltinLoadText
@@ -254,6 +257,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strStartsWith": BuiltinStrStartsWith,
 	"strEndsWith":   BuiltinStrEndsWith,
 	"strIn":         BuiltinStrIn,
+	"joinPath":      BuiltinJoinPath,
 
 	"strToInt": BuiltinStrToInt,
 	"toStr":    BuiltinToStr,
@@ -461,6 +465,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinStrJoin: &BuiltinFunction{
 		Name:  "strJoin",
 		Value: builtinStrJoinFunc,
+	},
+	BuiltinJoinPath: &BuiltinFunction{
+		Name:  "joinPath",
+		Value: fnASVRS(filepath.Join),
 	},
 	BuiltinStrIn: &BuiltinFunction{
 		Name:  "strIn",
@@ -1802,7 +1810,12 @@ func builtinGetSwitchFunc(argsA ...Object) (Object, error) {
 	}
 
 	for _, v := range listT {
-		argT := v.String()
+		argOT, ok := v.(String)
+		if !ok {
+			continue
+		}
+
+		argT := string(argOT)
 		if tk.StartsWith(argT, switchStrT) {
 			tmpStrT = argT[len(switchStrT):]
 			if tk.StartsWith(tmpStrT, "\"") && tk.EndsWith(tmpStrT, "\"") {
@@ -2268,6 +2281,14 @@ func fnASSVRS(fn func(string, ...string) string) CallableFunc {
 		objsT := ObjectsToS(args[1:])
 
 		return String(fn(string(s1), objsT...)), nil
+	}
+}
+
+func fnASVRS(fn func(...string) string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		objsT := ObjectsToS(args)
+
+		return String(fn(objsT...)), nil
 	}
 }
 
