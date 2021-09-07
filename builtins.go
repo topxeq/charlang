@@ -91,6 +91,8 @@ const (
 	// by char
 
 	// BuiltinGo
+	BuiltinNilToEmpty
+
 	BuiltinCheckError
 
 	BuiltinGetRandomInt
@@ -110,6 +112,7 @@ const (
 	BuiltinStrJoin
 	BuiltinStrStartsWith
 	BuiltinStrEndsWith
+	BuiltinStrIn
 
 	BuiltinStrToInt
 	BuiltinToStr
@@ -131,6 +134,11 @@ const (
 	BuiltinSetRespHeader
 	BuiltinWriteRespHeader
 	BuiltinWriteResp
+
+	BuiltinGenJSONResp
+
+	BuiltinToJSON
+	BuiltinFromJSON
 
 	BuiltinReplaceHtmlByMap
 	BuiltinCleanHtmlPlaceholders
@@ -215,6 +223,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// by char
 	// "go":    BuiltinGo,
+	"nilToEmpty": BuiltinNilToEmpty,
+
 	"checkError": BuiltinCheckError,
 
 	"sleep":          BuiltinSleep,
@@ -243,6 +253,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strJoin":       BuiltinStrJoin,
 	"strStartsWith": BuiltinStrStartsWith,
 	"strEndsWith":   BuiltinStrEndsWith,
+	"strIn":         BuiltinStrIn,
 
 	"strToInt": BuiltinStrToInt,
 	"toStr":    BuiltinToStr,
@@ -274,6 +285,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"setRespHeader":   BuiltinSetRespHeader,
 	"writeRespHeader": BuiltinWriteRespHeader,
 	"writeResp":       BuiltinWriteResp,
+	"genJSONResp":     BuiltinGenJSONResp,
+
+	"toJSON":   BuiltinToJSON,
+	"fromJSON": BuiltinFromJSON,
 
 	"replaceHtmlByMap":      BuiltinReplaceHtmlByMap,
 	"cleanHtmlPlaceholders": BuiltinCleanHtmlPlaceholders,
@@ -296,6 +311,11 @@ var BuiltinObjects = [...]Object{
 		Name:   "checkError",
 		Value:  builtinCheckErrorFunc,
 		Remark: ", usage: checkError(v), if v is Error, output it and exit",
+	},
+	BuiltinNilToEmpty: &BuiltinFunction{
+		Name:   "nilToEmpty",
+		Value:  builtinNilToEmptyFunc,
+		Remark: ", usage: nilToEmpty(v), if v is Undefined or other errors occur, output empty string",
 	},
 	BuiltinExit: &BuiltinFunction{
 		Name:   "exit",
@@ -442,6 +462,10 @@ var BuiltinObjects = [...]Object{
 		Name:  "strJoin",
 		Value: builtinStrJoinFunc,
 	},
+	BuiltinStrIn: &BuiltinFunction{
+		Name:  "strIn",
+		Value: fnASSVRB(tk.InStrings),
+	},
 	BuiltinStrStartsWith: &BuiltinFunction{
 		Name:  "strStartsWith",
 		Value: fnASSRB(strings.HasPrefix),
@@ -474,6 +498,18 @@ var BuiltinObjects = [...]Object{
 	BuiltinWriteResp: &BuiltinFunction{
 		Name:  "writeResp",
 		Value: builtinWriteRespFunc,
+	},
+	BuiltinGenJSONResp: &BuiltinFunction{
+		Name:  "genJSONResp",
+		Value: builtinGenJSONRespFunc,
+	},
+	BuiltinToJSON: &BuiltinFunction{
+		Name:  "toJSON",
+		Value: builtinToJSONFunc,
+	},
+	BuiltinFromJSON: &BuiltinFunction{
+		Name:  "fromJSON",
+		Value: builtinFromJSONFunc,
 	},
 	BuiltinSetRespHeader: &BuiltinFunction{
 		Name:  "setRespHeader",
@@ -1397,6 +1433,37 @@ func builtinIsAnyFunc(args ...Object) (Object, error) {
 	return Bool(ok), nil
 }
 
+func builtinNilToEmptyFunc(argsA ...Object) (Object, error) {
+	if len(argsA) < 1 {
+		return String(""), nil
+	}
+
+	vA := argsA[0]
+
+	if vA == nil {
+		return String(""), nil
+	}
+
+	if vA == Undefined {
+		return String(""), nil
+	}
+
+	if tk.IsNil(vA) {
+		return String(""), nil
+	}
+
+	rsT := vA.String()
+
+	if len(argsA) > 1 {
+		argsT := ObjectsToS(argsA[1:])
+		if tk.IfSwitchExists(argsT, "-trim") {
+			rsT = tk.Trim(rsT)
+		}
+	}
+
+	return String(rsT), nil
+}
+
 func builtinStrJoinFunc(args ...Object) (Object, error) {
 	if len(args) != 2 {
 		return nil, ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args)))
@@ -1652,6 +1719,60 @@ func builtinWriteRespFunc(args ...Object) (Object, error) {
 	r, errT := vv.Write(contentT)
 
 	return Int(r), errT
+}
+
+func builtinGenJSONRespFunc(args ...Object) (Object, error) {
+	if len(args) < 3 {
+		return Undefined, NewCommonError("not enough paramters")
+	}
+
+	v0, ok := args[0].(Any)
+	if !ok {
+		return Undefined, NewArgumentTypeError(
+			"1",
+			"any",
+			args[0].TypeName(),
+		)
+	}
+
+	v0v, ok := v0.Value.(*http.Request)
+	if !ok {
+		return Undefined, NewArgumentTypeError(
+			"1",
+			"any(*http.Request)",
+			args[0].TypeName(),
+		)
+	}
+
+	rsT := tk.GenerateJSONPResponseWithMore(args[1].String(), args[2].String(), v0v, ObjectsToS(args[3:])...)
+
+	return String(rsT), nil
+}
+
+func builtinToJSONFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough paramters")
+	}
+
+	cObjT := ConvertFromObject(args[0])
+
+	rsT := tk.ToJSONX(cObjT, ObjectsToS(args[1:])...)
+
+	return String(rsT), nil
+}
+
+func builtinFromJSONFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough paramters")
+	}
+
+	jsonTextT := args[0].String()
+
+	jObjT := tk.FromJSONWithDefault(jsonTextT, nil)
+
+	cObjT := ConvertToObject(jObjT)
+
+	return cObjT, nil
 }
 
 func builtinGetSwitchFunc(argsA ...Object) (Object, error) {
@@ -2146,6 +2267,25 @@ func fnASSVRS(fn func(string, ...string) string) CallableFunc {
 		objsT := ObjectsToS(args[1:])
 
 		return String(fn(string(s1), objsT...)), nil
+	}
+}
+
+func fnASSVRB(fn func(string, ...string) bool) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 1 {
+			return ErrWrongNumArguments.NewError(
+				wantEqXGotY(1, len(args))), nil
+		}
+
+		s1, ok := args[0].(String)
+		if !ok {
+			return NewArgumentTypeError("first", "string",
+				args[0].TypeName()), nil
+		}
+
+		objsT := ObjectsToS(args[1:])
+
+		return Bool(fn(string(s1), objsT...)), nil
 	}
 }
 
