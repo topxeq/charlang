@@ -1433,6 +1433,7 @@ func builtinIsAnyFunc(args ...Object) (Object, error) {
 	return Bool(ok), nil
 }
 
+// Undefined to empty string
 func builtinNilToEmptyFunc(argsA ...Object) (Object, error) {
 	if len(argsA) < 1 {
 		return String(""), nil
