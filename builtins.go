@@ -132,6 +132,11 @@ const (
 	BuiltinAppendText
 	BuiltinGetFileList
 
+	BuiltinCopyFile
+	BuiltinMoveFile
+	BuiltinRemoveFile
+	BuiltinGetFileInfo
+
 	BuiltinGetWebPage
 
 	BuiltinSetRespHeader
@@ -277,6 +282,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getRandomInt": BuiltinGetRandomInt,
 
 	"ifFileExists": BuiltinIfFileExists,
+	"copyFile":     BuiltinCopyFile,
+	"moveFile":     BuiltinMoveFile,
+	"removeFile":   BuiltinRemoveFile,
+	"getFileInfo":  BuiltinGetFileInfo,
 
 	"loadText":   BuiltinLoadText,
 	"saveText":   BuiltinSaveText,
@@ -378,6 +387,22 @@ var BuiltinObjects = [...]Object{
 	BuiltinIfFileExists: &BuiltinFunction{
 		Name:  "ifFileExists",
 		Value: fnASRB(tk.IfFileExists),
+	},
+	BuiltinCopyFile: &BuiltinFunction{
+		Name:  "copyFile",
+		Value: builtinCopyFileFunc,
+	},
+	BuiltinMoveFile: &BuiltinFunction{
+		Name:  "moveFile",
+		Value: fnASSSVRE(tk.RenameFile),
+	},
+	BuiltinRemoveFile: &BuiltinFunction{
+		Name:  "removeFile",
+		Value: fnASRE(tk.RemoveFile),
+	},
+	BuiltinGetFileInfo: &BuiltinFunction{
+		Name:  "getFileInfo",
+		Value: builtinGetFileInfoFunc,
 	},
 	BuiltinLoadText: &BuiltinFunction{
 		Name:   "loadText",
@@ -1687,7 +1712,7 @@ func builtinGetRandomIntFunc(args ...Object) (Object, error) {
 
 func builtinWriteRespFunc(args ...Object) (Object, error) {
 	if len(args) < 2 {
-		return Undefined, NewCommonError("not enough paramters")
+		return Undefined, NewCommonError("not enough parameters")
 	}
 
 	v, ok := args[0].(Any)
@@ -1732,7 +1757,7 @@ func builtinWriteRespFunc(args ...Object) (Object, error) {
 
 func builtinGenJSONRespFunc(args ...Object) (Object, error) {
 	if len(args) < 3 {
-		return Undefined, NewCommonError("not enough paramters")
+		return Undefined, NewCommonError("not enough parameters")
 	}
 
 	v0, ok := args[0].(Any)
@@ -1760,7 +1785,7 @@ func builtinGenJSONRespFunc(args ...Object) (Object, error) {
 
 func builtinToJSONFunc(args ...Object) (Object, error) {
 	if len(args) < 1 {
-		return Undefined, NewCommonError("not enough paramters")
+		return Undefined, NewCommonError("not enough parameters")
 	}
 
 	cObjT := ConvertFromObject(args[0])
@@ -1772,7 +1797,7 @@ func builtinToJSONFunc(args ...Object) (Object, error) {
 
 func builtinFromJSONFunc(args ...Object) (Object, error) {
 	if len(args) < 1 {
-		return Undefined, NewCommonError("not enough paramters")
+		return Undefined, NewCommonError("not enough parameters")
 	}
 
 	jsonTextT := args[0].String()
@@ -1851,6 +1876,34 @@ func builtinIfSwitchExistsFunc(argsA ...Object) (Object, error) {
 
 }
 
+func builtinGetFileInfoFunc(argsA ...Object) (Object, error) {
+	if len(argsA) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	fileNameObjT, ok := argsA[0].(String)
+	if !ok {
+		return Undefined, NewCommonError("invalid parameter")
+	}
+
+	filePathT := string(fileNameObjT)
+
+	fi, errT := os.Stat(filePathT)
+	if errT != nil && !os.IsExist(errT) {
+		return Undefined, NewFromError(errT)
+	}
+
+	absPathT, errT := filepath.Abs(filePathT)
+	if errT != nil {
+		return Undefined, NewFromError(errT)
+	}
+
+	mapT := Map{"Path": String(filePathT), "Abs": String(absPathT), "Name": String(filepath.Base(filePathT)), "Ext": String(filepath.Ext(filePathT)), "Size": String(tk.Int64ToStr(fi.Size())), "IsDir": String(tk.BoolToStr(fi.IsDir())), "Time": String(tk.FormatTime(fi.ModTime(), tk.TimeFormatCompact)), "Mode": String(fmt.Sprintf("%v", fi.Mode()))}
+
+	return mapT, nil
+
+}
+
 func builtinGetParamFunc(argsA ...Object) (Object, error) {
 	defaultT := String("")
 	idxT := 1
@@ -1903,7 +1956,7 @@ func builtinGetParamFunc(argsA ...Object) (Object, error) {
 
 func builtinWriteRespHeaderFunc(args ...Object) (Object, error) {
 	if len(args) < 2 {
-		return Undefined, NewCommonError("not enough paramters")
+		return Undefined, NewCommonError("not enough parameters")
 	}
 
 	v, ok := args[0].(Any)
@@ -1937,7 +1990,7 @@ func builtinWriteRespHeaderFunc(args ...Object) (Object, error) {
 
 func builtinSetRespHeaderFunc(args ...Object) (Object, error) {
 	if len(args) < 3 {
-		return Undefined, NewCommonError("not enough paramters")
+		return Undefined, NewCommonError("not enough parameters")
 	}
 
 	v, ok := args[0].(Any)
@@ -2148,6 +2201,87 @@ func fnASSRS(fn func(string, string) string) CallableFunc {
 	}
 }
 
+func builtinCopyFileFunc(args ...Object) (Object, error) {
+	if len(args) < 2 {
+		return String(tk.ErrStrf("%v", ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))))), nil
+	}
+
+	s1, ok := args[0].(String)
+	if !ok {
+		return String(tk.ErrStrf("%v", NewArgumentTypeError("first", "string", args[0].TypeName()))), nil
+	}
+
+	s2, ok := args[1].(String)
+	if !ok {
+		return String(tk.ErrStrf("%v", NewArgumentTypeError("second", "string", args[1].TypeName()))), nil
+	}
+
+	errT := tk.CopyFile(string(s1), string(s2), ObjectsToS(args[2:])...)
+
+	if errT != nil {
+		return String(tk.ErrStrf("%v", errT)), nil
+	}
+
+	return String(""), nil
+}
+
+func fnASSBNRE(fn func(string, string, bool, int) error) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 4 {
+			return String(tk.ErrStrf("%v", ErrWrongNumArguments.NewError(wantEqXGotY(4, len(args))))), nil
+		}
+
+		s1, ok := args[0].(String)
+		if !ok {
+			return String(tk.ErrStrf("%v", NewArgumentTypeError("first", "string", args[0].TypeName()))), nil
+		}
+
+		s2, ok := args[1].(String)
+		if !ok {
+			return String(tk.ErrStrf("%v", NewArgumentTypeError("second", "string", args[1].TypeName()))), nil
+		}
+
+		b3, ok := args[2].(Bool)
+		if !ok {
+			return String(tk.ErrStrf("%v", NewArgumentTypeError("third", "bool", args[2].TypeName()))), nil
+		}
+
+		n4, ok := args[3].(Int)
+		if !ok {
+			return String(tk.ErrStrf("%v", NewArgumentTypeError("4th", "int", args[3].TypeName()))), nil
+		}
+
+		errT := fn(string(s1), string(s2), bool(b3), int(n4))
+
+		if errT != nil {
+			return String(tk.ErrStrf("%v", errT)), nil
+		}
+
+		return String(""), nil
+	}
+}
+
+func fnASRE(fn func(string) error) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 1 {
+			return String(tk.ErrStrf("%v", ErrWrongNumArguments.NewError(wantEqXGotY(1, len(args))))), nil
+		}
+
+		s1, ok := args[0].(String)
+		if !ok {
+			return String(tk.ErrStrf("%v", NewArgumentTypeError("first", "string", args[0].TypeName()))), nil
+		}
+
+		errT := fn(string(s1))
+
+		if errT != nil {
+			return String(tk.ErrStrf("%v", errT)), nil
+		}
+
+		return String(""), nil
+	}
+}
+
 func fnASSRI(fn func(string, string) interface{}) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) != 2 {
@@ -2308,6 +2442,35 @@ func fnASSVRB(fn func(string, ...string) bool) CallableFunc {
 		objsT := ObjectsToS(args[1:])
 
 		return Bool(fn(string(s1), objsT...)), nil
+	}
+}
+
+func fnASSSVRE(fn func(string, string, ...string) error) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 2 {
+			return String(tk.ErrStrf("%v", ErrWrongNumArguments.NewError(
+				wantEqXGotY(2, len(args))))), nil
+		}
+
+		s1, ok := args[0].(String)
+		if !ok {
+			return String(tk.ErrStrf("%v", NewArgumentTypeError("first", "string", args[0].TypeName()))), nil
+		}
+
+		s2, ok := args[1].(String)
+		if !ok {
+			return String(tk.ErrStrf("%v", NewArgumentTypeError("second", "string", args[1].TypeName()))), nil
+		}
+
+		objsT := ObjectsToS(args[2:])
+
+		errT := fn(string(s1), string(s2), objsT...)
+
+		if errT != nil {
+			return String(tk.ErrStrf("%v", errT)), nil
+		}
+
+		return String(""), nil
 	}
 }
 

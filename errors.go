@@ -99,4 +99,12 @@ func NewError(nameA string, formatA string, argsA ...interface{}) *Error {
 	return errT
 }
 
+func NewFromError(errA error) *Error {
+	errT := ErrCommon.NewError(errA.Error())
+
+	errT.Name = "error"
+
+	return errT
+}
+
 // char end
