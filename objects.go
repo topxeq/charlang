@@ -13,9 +13,11 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/topxeq/charlang/parser"
 	"github.com/topxeq/charlang/token"
+	"github.com/topxeq/tk"
 )
 
 const (
@@ -289,6 +291,97 @@ func (o *Any) Copy() Object {
 	}
 }
 
+type DateTime struct {
+	ObjectImpl
+	Value time.Time
+}
+
+var _ Object = DateTime{}
+
+func NewDateTime(vA interface{}) *DateTime {
+	return &DateTime{
+		Value: tk.ToTime(vA),
+	}
+}
+
+func NewDateTimeValue(vA interface{}) DateTime {
+	return DateTime{
+		Value: tk.ToTime(vA),
+	}
+}
+
+func (o DateTime) TypeName() string {
+	return "datetime"
+}
+
+func (o DateTime) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+func (o DateTime) Equal(right Object) bool {
+	if v, ok := right.(DateTime); ok {
+		return o.Value == v.Value
+	}
+
+	return false
+}
+
+func (o DateTime) IsFalsy() bool { return false }
+
+func (DateTime) CanCall() bool { return false }
+
+func (DateTime) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (DateTime) CanIterate() bool { return false }
+
+func (DateTime) Iterate() Iterator { return nil }
+
+func (o DateTime) IndexGet(index Object) (value Object, err error) {
+	nv, ok := index.(String)
+	if !ok {
+		return nil, ErrNotIndexable
+	}
+
+	fNameT := string(nv)
+
+	switch fNameT {
+	case "format":
+		return &Function{
+			Name: "format",
+			Value: func(args ...Object) (Object, error) {
+				rsT := tk.FormatTime(o.Value, ObjectsToS(args)...)
+
+				return String(rsT), nil
+			}}, nil
+	case "timeFormatRFC1123":
+		return String(time.RFC1123), nil
+	case "timeFormatCompact":
+		return String(tk.TimeFormatCompact), nil
+	case "timeFormat":
+		return String(tk.TimeFormat), nil
+	case "timeFormatMS":
+		return String(tk.TimeFormatMS), nil
+	}
+
+	return nil, ErrNotIndexable
+}
+
+func (DateTime) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+func (o DateTime) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, ErrInvalidOperator
+}
+
+func (o *DateTime) DateTime() Object {
+	return &DateTime{
+		Value: o.Value,
+	}
+}
+
 // Bool represents boolean values and implements Object interface.
 type Bool bool
 
@@ -517,6 +610,86 @@ func (String) IndexSet(index, value Object) error {
 	return ErrNotIndexAssignable
 }
 
+func dealStringMethods(o String, fNameA string) (Object, error) {
+	switch fNameA {
+	case "trim":
+		return &Function{
+			Name: "trim",
+			Value: func(args ...Object) (Object, error) {
+				if len(args) < 1 {
+					return String(strings.TrimSpace(string(o))), nil
+				}
+
+				return String(strings.Trim(string(o), args[0].String())), nil
+			}}, nil
+	case "startsWith":
+		return &Function{
+			Name: "startsWith",
+			Value: func(args ...Object) (Object, error) {
+				if len(args) < 1 {
+					return Bool(false), nil
+				}
+
+				return Bool(strings.HasPrefix(string(o), args[0].String())), nil
+			}}, nil
+	case "endsWith":
+		return &Function{
+			Name: "endsWith",
+			Value: func(args ...Object) (Object, error) {
+				if len(args) < 1 {
+					return Bool(false), nil
+				}
+
+				return Bool(strings.HasSuffix(string(o), args[0].String())), nil
+			}}, nil
+	case "isEmpty":
+		return &Function{
+			Name: "isEmpty",
+			Value: func(args ...Object) (Object, error) {
+				return Bool(string(o) == ""), nil
+			}}, nil
+	case "isEmptyTrim":
+		return &Function{
+			Name: "isEmptyTrim",
+			Value: func(args ...Object) (Object, error) {
+				return Bool(strings.TrimSpace(string(o)) == ""), nil
+			}}, nil
+	case "contains":
+		return &Function{
+			Name: "contains",
+			Value: func(args ...Object) (Object, error) {
+				if len(args) < 1 {
+					return Bool(false), nil
+				}
+
+				return Bool(strings.Contains(string(o), args[0].String())), nil
+			}}, nil
+
+	case "regMatch":
+		return &Function{
+			Name: "regMatch",
+			Value: func(args ...Object) (Object, error) {
+				if len(args) < 1 {
+					return Bool(false), nil
+				}
+
+				return Bool(tk.RegMatchX(string(o), args[0].String())), nil
+			}}, nil
+	case "regContains":
+		return &Function{
+			Name: "regContains",
+			Value: func(args ...Object) (Object, error) {
+				if len(args) < 1 {
+					return Bool(false), nil
+				}
+
+				return Bool(tk.RegContainsX(string(o), args[0].String())), nil
+			}}, nil
+	}
+
+	return nil, ErrNotIndexable
+}
+
 // IndexGet represents string values and implements Object interface.
 func (o String) IndexGet(index Object) (Object, error) {
 	var idx int
@@ -529,6 +702,8 @@ func (o String) IndexGet(index Object) (Object, error) {
 		idx = int(v)
 	case Char:
 		idx = int(v)
+	case String:
+		return dealStringMethods(o, v.String())
 	default:
 		return nil, NewIndexTypeError("int|uint|char", index.TypeName())
 	}
@@ -852,6 +1027,39 @@ func (*BuiltinFunction) CanCall() bool { return true }
 // Call implements Object interface.
 func (o *BuiltinFunction) Call(args ...Object) (Object, error) {
 	return o.Value(args...)
+}
+
+func (o *BuiltinFunction) IndexGet(index Object) (value Object, err error) {
+	nv, ok := index.(String)
+	if !ok {
+		return nil, ErrNotIndexable
+	}
+
+	fNameT := o.Name + "." + string(nv)
+
+	switch fNameT {
+	case "dateTime.format":
+		return &Function{
+			Name: "format",
+			Value: func(args ...Object) (Object, error) {
+
+				if len(args) < 1 {
+					return String(tk.FormatTime(time.Now(), ObjectsToS(args)...)), nil
+				}
+
+				return String(tk.FormatTime(args[0].(DateTime).Value, ObjectsToS(args[1:])...)), nil
+			}}, nil
+	case "dateTime.timeFormatRFC1123":
+		return String(time.RFC1123), nil
+	case "dateTime.timeFormatCompact":
+		return String(tk.TimeFormatCompact), nil
+	case "dateTime.timeFormat":
+		return String(tk.TimeFormat), nil
+	case "dateTime.timeFormatMS":
+		return String(tk.TimeFormatMS), nil
+	}
+
+	return nil, ErrNotIndexable
 }
 
 // Array represents array of objects and implements Object interface.

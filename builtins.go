@@ -16,6 +16,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/topxeq/charlang/token"
@@ -44,6 +45,7 @@ const (
 	BuiltinError
 	BuiltinTypeName
 	BuiltinAny
+	BuiltinDateTime
 	BuiltinBool
 	BuiltinInt
 	BuiltinUint
@@ -184,6 +186,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"error":       BuiltinError,
 	"typeName":    BuiltinTypeName,
 	"any":         BuiltinAny,
+	"dateTime":    BuiltinDateTime,
 	"bool":        BuiltinBool,
 	"int":         BuiltinInt,
 	"uint":        BuiltinUint,
@@ -505,7 +508,7 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinStrTrim: &BuiltinFunction{
 		Name:  "strTrim",
-		Value: fnASRS(strings.TrimSpace),
+		Value: fnASSVRS(tk.Trim),
 	},
 	BuiltinStrEndsWith: &BuiltinFunction{
 		Name:  "strEndsWith",
@@ -602,6 +605,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinAny: &BuiltinFunction{
 		Name:  "any",
 		Value: builtinWant1(builtinAnyFunc),
+	},
+	BuiltinDateTime: &BuiltinFunction{
+		Name:  "dateTime",
+		Value: builtinDateTimeFunc,
 	},
 	BuiltinBool: &BuiltinFunction{
 		Name:  "bool",
@@ -1211,6 +1218,25 @@ func builtinAnyFunc(args ...Object) (Object, error) {
 		return Any{Value: false}, nil
 	default:
 		return Any{Value: obj}, nil
+	}
+}
+
+func builtinDateTimeFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return DateTime{Value: time.Now()}, nil
+	}
+
+	switch obj := args[0].(type) {
+	case Int:
+		return DateTime{Value: tk.GetTimeFromUnixTimeStampMid(obj.String())}, nil
+	// case Float:
+	// 	return DateTime{Value: float64(obj)}, nil
+	case DateTime:
+		return DateTime{Value: obj.Value}, nil
+	case String:
+		return DateTime{Value: tk.ToTime(string(obj))}, nil
+	default:
+		return Undefined, NewCommonError("failed to convert time")
 	}
 }
 
