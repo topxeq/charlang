@@ -119,10 +119,12 @@ const (
 	BuiltinStrEndsWith
 	BuiltinStrIn
 	BuiltinStrContains
+	BuiltinStrContainsIn
 	BuiltinStrReplace
 
 	BuiltinRegMatch
 	BuiltinRegContains
+	BuiltinRegContainsIn
 	BuiltinRegReplace
 	BuiltinRegFind
 	BuiltinRegFindAll
@@ -280,13 +282,15 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strStartsWith": BuiltinStrStartsWith,
 	"strEndsWith":   BuiltinStrEndsWith,
 	"strContains":   BuiltinStrContains,
+	"strContainsIn": BuiltinStrContainsIn,
 	"strReplace":    BuiltinStrReplace,
 
-	"regMatch":    BuiltinRegMatch,
-	"regContains": BuiltinRegContains,
-	"regReplace":  BuiltinRegReplace,
-	"regFind":     BuiltinRegFind,
-	"regFindAll":  BuiltinRegFindAll,
+	"regMatch":      BuiltinRegMatch,
+	"regContains":   BuiltinRegContains,
+	"regContainsIn": BuiltinRegContainsIn,
+	"regReplace":    BuiltinRegReplace,
+	"regFind":       BuiltinRegFind,
+	"regFindAll":    BuiltinRegFindAll,
 
 	"strIn": BuiltinStrIn,
 
@@ -539,6 +543,14 @@ var BuiltinObjects = [...]Object{
 	BuiltinStrContains: &BuiltinFunction{
 		Name:  "strContains",
 		Value: fnASSRB(strings.Contains),
+	},
+	BuiltinStrContainsIn: &BuiltinFunction{
+		Name:  "strContainsIn",
+		Value: fnASSVRB(tk.ContainsIn),
+	},
+	BuiltinRegContainsIn: &BuiltinFunction{
+		Name:  "regContainsIn",
+		Value: fnASSVRB(tk.RegContainsIn),
 	},
 	BuiltinStrReplace: &BuiltinFunction{
 		Name:  "strReplace",
