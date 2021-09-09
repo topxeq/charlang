@@ -24,6 +24,8 @@ import (
 	"github.com/topxeq/tk"
 )
 
+// modi by TopXeQ
+
 var (
 	// PrintWriter is the default writer for printf and println builtins.
 	PrintWriter io.Writer = os.Stdout
