@@ -175,6 +175,8 @@ const (
 	BuiltinSystemCmd
 	BuiltinSystemOpenFile
 
+	BuiltinFormatSQLValue
+
 	BuiltinDbConnect
 	BuiltinDbQuery
 	BuiltinDbQueryRecs
@@ -260,6 +262,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getOSName":      BuiltinGetOSName,
 	"exit":           BuiltinExit,
 
+	"formatSQLValue":  BuiltinFormatSQLValue,
 	"dbConnect":       BuiltinDbConnect,
 	"dbQuery":         BuiltinDbQuery,
 	"dbQueryRecs":     BuiltinDbQueryRecs,
@@ -555,6 +558,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinStrReplace: &BuiltinFunction{
 		Name:  "strReplace",
 		Value: fnASSSRS(tk.Replace),
+	},
+	BuiltinFormatSQLValue: &BuiltinFunction{
+		Name:  "formatSQLValue",
+		Value: fnASRS(sqltk.FormatSQLValue),
 	},
 	BuiltinRegReplace: &BuiltinFunction{
 		Name:  "regReplace",
