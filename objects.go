@@ -94,7 +94,10 @@ type Copier interface {
 // helps to implement Object interface by embedding and overriding methods in
 // custom implementations. String and TypeName must be implemented otherwise
 // calling these methods causes panic.
-type ObjectImpl struct{}
+type ObjectImpl struct {
+	Members map[string]Object
+	Methods map[string]*Function
+}
 
 var _ Object = ObjectImpl{}
 
@@ -293,9 +296,7 @@ func (o *Any) Copy() Object {
 
 type DateTime struct {
 	ObjectImpl
-	Value   time.Time
-	Members map[string]Object
-	Methods map[string]*Function
+	Value time.Time
 }
 
 var _ Object = DateTime{}
@@ -597,9 +598,9 @@ switchpos:
 // String represents string values and implements Object interface.
 type String struct {
 	ObjectImpl
-	Value   string
-	Members map[string]Object
-	Methods map[string]*Function
+	Value string
+	// Members map[string]Object
+	// Methods map[string]*Function
 }
 
 // TypeName implements Object interface.
@@ -681,48 +682,78 @@ func dealStringMethods(o String, fNameA string) (Object, error) {
 		}
 		return fT, nil
 	case "isEmpty":
-		return &Function{
-			Name: "isEmpty",
-			Value: func(args ...Object) (Object, error) {
-				return Bool(FromString(o) == ""), nil
-			}}, nil
+		fT, ok := o.Methods["isEmpty"]
+		if !ok {
+			o.Methods["isEmpty"] = &Function{
+				Name: "isEmpty",
+				Value: func(args ...Object) (Object, error) {
+					return Bool(FromString(o) == ""), nil
+				}}
+			fT = o.Methods["isEmpty"]
+		}
+		return fT, nil
 	case "isEmptyTrim":
-		return &Function{
-			Name: "isEmptyTrim",
-			Value: func(args ...Object) (Object, error) {
-				return Bool(strings.TrimSpace(FromString(o)) == ""), nil
-			}}, nil
+		fT, ok := o.Methods["isEmptyTrim"]
+		if !ok {
+			o.Methods["isEmptyTrim"] = &Function{
+				Name: "isEmptyTrim",
+				Value: func(args ...Object) (Object, error) {
+					return Bool(strings.TrimSpace(FromString(o)) == ""), nil
+				}}
+			fT = o.Methods["isEmptyTrim"]
+		}
+		return fT, nil
+		// return &Function{
+		// 	Name: "isEmptyTrim",
+		// 	Value: func(args ...Object) (Object, error) {
+		// 		return Bool(strings.TrimSpace(FromString(o)) == ""), nil
+		// 	}}, nil
 	case "contains":
-		return &Function{
-			Name: "contains",
-			Value: func(args ...Object) (Object, error) {
-				if len(args) < 1 {
-					return Bool(false), nil
-				}
+		fT, ok := o.Methods["contains"]
+		if !ok {
+			o.Methods["contains"] = &Function{
+				Name: "contains",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return Bool(false), nil
+					}
 
-				return Bool(strings.Contains(FromString(o), args[0].String())), nil
-			}}, nil
+					return Bool(strings.Contains(FromString(o), args[0].String())), nil
+				}}
+			fT = o.Methods["contains"]
+		}
+		return fT, nil
 
 	case "regMatch":
-		return &Function{
-			Name: "regMatch",
-			Value: func(args ...Object) (Object, error) {
-				if len(args) < 1 {
-					return Bool(false), nil
-				}
+		fT, ok := o.Methods["regMatch"]
+		if !ok {
+			o.Methods["regMatch"] = &Function{
+				Name: "regMatch",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return Bool(false), nil
+					}
 
-				return Bool(tk.RegMatchX(FromString(o), args[0].String())), nil
-			}}, nil
+					return Bool(tk.RegMatchX(FromString(o), args[0].String())), nil
+				}}
+			fT = o.Methods["regMatch"]
+		}
+		return fT, nil
 	case "regContains":
-		return &Function{
-			Name: "regContains",
-			Value: func(args ...Object) (Object, error) {
-				if len(args) < 1 {
-					return Bool(false), nil
-				}
+		fT, ok := o.Methods["regContains"]
+		if !ok {
+			o.Methods["regContains"] = &Function{
+				Name: "regContains",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return Bool(false), nil
+					}
 
-				return Bool(tk.RegContainsX(FromString(o), args[0].String())), nil
-			}}, nil
+					return Bool(tk.RegContainsX(FromString(o), args[0].String())), nil
+				}}
+			fT = o.Methods["regContains"]
+		}
+		return fT, nil
 	}
 
 	return nil, ErrNotIndexable
@@ -1024,7 +1055,7 @@ func (*Function) TypeName() string {
 
 // String implements Object interface.
 func (o *Function) String() string {
-	return fmt.Sprintf("<function:%s>", o.Name)
+	return fmt.Sprintf("<function:%s(%p)>", o.Name, o.Value)
 }
 
 // Copy implements Copier interface.

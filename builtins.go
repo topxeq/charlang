@@ -98,6 +98,7 @@ const (
 
 	BuiltinCheckError
 
+	BuiltinGetRandom
 	BuiltinGetRandomInt
 
 	BuiltinPr
@@ -116,6 +117,14 @@ const (
 	BuiltinStrStartsWith
 	BuiltinStrEndsWith
 	BuiltinStrIn
+	BuiltinStrContains
+	BuiltinStrReplace
+
+	BuiltinRegMatch
+	BuiltinRegContains
+	BuiltinRegReplace
+	BuiltinRegFind
+	BuiltinRegFindAll
 
 	BuiltinStrToInt
 	BuiltinToStr
@@ -264,8 +273,18 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strJoin":       BuiltinStrJoin,
 	"strStartsWith": BuiltinStrStartsWith,
 	"strEndsWith":   BuiltinStrEndsWith,
-	"strIn":         BuiltinStrIn,
-	"joinPath":      BuiltinJoinPath,
+	"strContains":   BuiltinStrContains,
+	"strReplace":    BuiltinStrReplace,
+
+	"regMatch":    BuiltinRegMatch,
+	"regContains": BuiltinRegContains,
+	"regReplace":  BuiltinRegReplace,
+	"regFind":     BuiltinRegFind,
+	"regFindAll":  BuiltinRegFindAll,
+
+	"strIn": BuiltinStrIn,
+
+	"joinPath": BuiltinJoinPath,
 
 	"strToInt": BuiltinStrToInt,
 	"toStr":    BuiltinToStr,
@@ -282,6 +301,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"isErrStr":  BuiltinIsErrStr,
 	"getErrStr": BuiltinGetErrStr,
 
+	"getRandom":    BuiltinGetRandom,
 	"getRandomInt": BuiltinGetRandomInt,
 
 	"ifFileExists": BuiltinIfFileExists,
@@ -494,6 +514,34 @@ var BuiltinObjects = [...]Object{
 		Name:  "strJoin",
 		Value: builtinStrJoinFunc,
 	},
+	BuiltinStrContains: &BuiltinFunction{
+		Name:  "strContains",
+		Value: fnASSRB(strings.Contains),
+	},
+	BuiltinStrReplace: &BuiltinFunction{
+		Name:  "strReplace",
+		Value: fnASSSRS(tk.Replace),
+	},
+	BuiltinRegReplace: &BuiltinFunction{
+		Name:  "regReplace",
+		Value: fnASSSRS(tk.RegReplaceX),
+	},
+	BuiltinRegFind: &BuiltinFunction{
+		Name:  "regFind",
+		Value: fnASSNRS(tk.RegFindFirstX),
+	},
+	BuiltinRegFindAll: &BuiltinFunction{
+		Name:  "regFindAll",
+		Value: fnASSNRA(tk.RegFindAllX),
+	},
+	BuiltinRegContains: &BuiltinFunction{
+		Name:  "regContains",
+		Value: fnASSRB(tk.RegContainsX),
+	},
+	BuiltinRegMatch: &BuiltinFunction{
+		Name:  "regMatch",
+		Value: fnASSRB(tk.RegMatchX),
+	},
 	BuiltinJoinPath: &BuiltinFunction{
 		Name:  "joinPath",
 		Value: fnASVRS(filepath.Join),
@@ -526,6 +574,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinGetNowStr: &BuiltinFunction{
 		Name:  "getNowStr",
 		Value: builtinGetNowStrFunc,
+	},
+	BuiltinGetRandom: &BuiltinFunction{
+		Name:  "getRandom",
+		Value: builtinGetRandomFunc,
 	},
 	BuiltinGetRandomInt: &BuiltinFunction{
 		Name:  "getRandomInt",
@@ -1739,6 +1791,16 @@ func builtinGetRandomIntFunc(args ...Object) (Object, error) {
 	return Int(tk.GetRandomIntLessThan(int(v))), nil
 }
 
+func builtinGetRandomFunc(args ...Object) (Object, error) {
+	g := tk.NewRandomGenerator()
+
+	g.Randomize()
+
+	f := g.Float64()
+
+	return Float(f), nil
+}
+
 func builtinWriteRespFunc(args ...Object) (Object, error) {
 	if len(args) < 2 {
 		return Undefined, NewCommonError("not enough parameters")
@@ -2227,6 +2289,69 @@ func fnASSRS(fn func(string, string) string) CallableFunc {
 			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
 		}
 		return ToString(fn(s1.Value, s2.Value)), nil
+	}
+}
+
+func fnASSSRS(fn func(string, string, string) string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 3 {
+			return ErrWrongNumArguments.NewError(wantEqXGotY(3, len(args))), nil
+		}
+		s1, ok := args[0].(String)
+		if !ok {
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+		}
+		s2, ok := args[1].(String)
+		if !ok {
+			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
+		}
+		s3, ok := args[2].(String)
+		if !ok {
+			return NewArgumentTypeError("third", "string", args[2].TypeName()), nil
+		}
+		return ToString(fn(s1.Value, s2.Value, s3.Value)), nil
+	}
+}
+
+func fnASSNRS(fn func(string, string, int) string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 3 {
+			return ErrWrongNumArguments.NewError(wantEqXGotY(3, len(args))), nil
+		}
+		s1, ok := args[0].(String)
+		if !ok {
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+		}
+		s2, ok := args[1].(String)
+		if !ok {
+			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
+		}
+		n3, ok := args[2].(Int)
+		if !ok {
+			return NewArgumentTypeError("third", "int", args[2].TypeName()), nil
+		}
+		return ToString(fn(s1.Value, s2.Value, int(n3))), nil
+	}
+}
+
+func fnASSNRA(fn func(string, string, int) []string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 3 {
+			return ErrWrongNumArguments.NewError(wantEqXGotY(3, len(args))), nil
+		}
+		s1, ok := args[0].(String)
+		if !ok {
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+		}
+		s2, ok := args[1].(String)
+		if !ok {
+			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
+		}
+		n3, ok := args[2].(Int)
+		if !ok {
+			return NewArgumentTypeError("third", "int", args[2].TypeName()), nil
+		}
+		return ConvertToObject(fn(s1.Value, s2.Value, int(n3))), nil
 	}
 }
 
