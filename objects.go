@@ -910,7 +910,7 @@ func (o String) BinaryOp(tok token.Token, right Object) (Object, error) {
 	case String:
 		switch tok {
 		case token.Add:
-			return &String{Value: o.Value + v.Value}, nil
+			return String{Value: o.Value + v.Value}, nil
 		case token.Less:
 			return Bool(o.Value < v.Value), nil
 		case token.LessEq:
