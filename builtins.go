@@ -1600,11 +1600,11 @@ func builtinNilToEmptyFunc(argsA ...Object) (Object, error) {
 
 	vA := argsA[0]
 
-	if vA == nil {
+	if vA.TypeName() == "undefined" {
 		return ToString(""), nil
 	}
 
-	if vA == Undefined {
+	if vA == nil {
 		return ToString(""), nil
 	}
 
@@ -2243,7 +2243,8 @@ func builtinIsArrayFunc(args ...Object) (Object, error) {
 }
 
 func builtinIsUndefinedFunc(args ...Object) (Object, error) {
-	return Bool(args[0] == Undefined), nil
+	return Bool(args[0].TypeName() == "undefined"), nil
+	// return Bool(args[0] == Undefined), nil
 }
 
 func builtinIsFunctionFunc(args ...Object) (Object, error) {
