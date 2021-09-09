@@ -1229,7 +1229,7 @@ func (o *BuiltinFunction) IndexGet(index Object) (value Object, err error) {
 
 					return ToString(tk.FormatTime(args[0].(DateTime).Value, ObjectsToS(args[1:])...)), nil
 				}}
-			fT = o.Methods["format"]
+			fT = o.Methods["dateTime.format"]
 		}
 
 		return fT, nil
@@ -1241,7 +1241,7 @@ func (o *BuiltinFunction) IndexGet(index Object) (value Object, err error) {
 				Value: func(args ...Object) (Object, error) {
 					return DateTime{Value: time.Now()}, nil
 				}}
-			fT = o.Methods["now"]
+			fT = o.Methods["dateTime.now"]
 		}
 
 		return fT, nil
