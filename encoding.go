@@ -625,7 +625,7 @@ func (o *Float) UnmarshalBinary(data []byte) error {
 func (o String) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteByte(binStringV1)
-	size := int64(len(o))
+	size := int64(len(o.Value))
 
 	if size == 0 {
 		buf.WriteByte(0)
@@ -635,7 +635,7 @@ func (o String) MarshalBinary() ([]byte, error) {
 	var vi varintConv
 	b := vi.toBytes(size)
 	buf.Write(b)
-	buf.WriteString(string(o))
+	buf.WriteString(FromString(o))
 	return buf.Bytes(), nil
 }
 
@@ -659,7 +659,7 @@ func (o *String) UnmarshalBinary(data []byte) error {
 		return errors.New("invalid String data size")
 	}
 
-	*o = String(data[1+offset : ub])
+	*o = ToString(data[1+offset : ub])
 	return nil
 }
 
@@ -1036,7 +1036,7 @@ func (o *CompiledFunction) UnmarshalBinary(data []byte) error {
 // MarshalBinary implements encoding.BinaryMarshaler
 func (o *BuiltinFunction) MarshalBinary() ([]byte, error) {
 	// Note: use string name instead of index of builtin
-	s, err := String(o.Name).MarshalBinary()
+	s, err := ToString(o.Name).MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
@@ -1070,7 +1070,7 @@ func (o *BuiltinFunction) UnmarshalBinary(data []byte) error {
 		return err
 	}
 
-	index, ok := BuiltinsMap[string(s)]
+	index, ok := BuiltinsMap[FromString(s)]
 	if !ok {
 		return fmt.Errorf("builtin '%s' not found", s)
 	}
@@ -1086,7 +1086,7 @@ func (o *BuiltinFunction) UnmarshalBinary(data []byte) error {
 
 // MarshalBinary implements encoding.BinaryMarshaler
 func (o *Function) MarshalBinary() ([]byte, error) {
-	s, err := String(o.Name).MarshalBinary()
+	s, err := ToString(o.Name).MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
@@ -1119,14 +1119,14 @@ func (o *Function) UnmarshalBinary(data []byte) error {
 	if err := s.UnmarshalBinary(data[1+offset:]); err != nil {
 		return err
 	}
-	o.Name = string(s)
+	o.Name = FromString(s)
 	return nil
 }
 
 // MarshalBinary implements encoding.BinaryMarshaler
 func (sf *sourceFile) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
-	d, err := String(sf.Name).MarshalBinary()
+	d, err := ToString(sf.Name).MarshalBinary()
 	if err != nil {
 		return nil, err
 	}

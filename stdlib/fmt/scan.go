@@ -94,7 +94,7 @@ func (st *stringType) Arg() interface{} {
 }
 
 func (st *stringType) Value() ugo.Object {
-	return ugo.String(st.v)
+	return ugo.ToString(st.v)
 }
 
 type bytesType struct {

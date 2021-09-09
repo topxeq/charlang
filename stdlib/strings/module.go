@@ -306,7 +306,7 @@ func fnASSRS(fn func(string, string) string) ugo.CallableFunc {
 			return nil, ugo.NewArgumentTypeError("second", "string",
 				args[1].TypeName())
 		}
-		return ugo.String(fn(string(s1), string(s2))), nil
+		return ugo.ToString(fn(s1.Value, s2.Value)), nil
 	}
 }
 
@@ -326,7 +326,7 @@ func fnASSRB(fn func(string, string) bool) ugo.CallableFunc {
 			return nil, ugo.NewArgumentTypeError("second", "string",
 				args[1].TypeName())
 		}
-		return ugo.Bool(fn(string(s1), string(s2))), nil
+		return ugo.Bool(fn(s1.Value, s2.Value)), nil
 	}
 }
 
@@ -346,7 +346,7 @@ func fnASSRI(fn func(string, string) int) ugo.CallableFunc {
 			return nil, ugo.NewArgumentTypeError("second", "string",
 				args[1].TypeName())
 		}
-		return ugo.Int(fn(string(s1), string(s2))), nil
+		return ugo.Int(fn(s1.Value, s2.Value)), nil
 	}
 }
 
@@ -375,10 +375,10 @@ func fnASSIRA(fn func(string, string, int) []string) ugo.CallableFunc {
 			}
 			n = int(v)
 		}
-		strs := fn(string(s), string(sep), n)
+		strs := fn(s.Value, sep.Value, n)
 		out := make(ugo.Array, len(strs))
 		for i := range strs {
-			out[i] = ugo.String(strs[i])
+			out[i] = ugo.ToString(strs[i])
 		}
 		return out, nil
 	}
@@ -395,7 +395,7 @@ func fnASRS(fn func(string) string) ugo.CallableFunc {
 			return nil, ugo.NewArgumentTypeError("first", "string",
 				args[0].TypeName())
 		}
-		return ugo.String(fn(string(s))), nil
+		return ugo.ToString(fn(s.Value)), nil
 	}
 }
 
@@ -413,7 +413,7 @@ func containsChar(args ...ugo.Object) (ugo.Object, error) {
 		return nil, ugo.NewArgumentTypeError("second", "char",
 			args[1].TypeName())
 	}
-	return ugo.Bool(strings.ContainsRune(string(s), rune(c))), nil
+	return ugo.Bool(strings.ContainsRune(s.Value, rune(c))), nil
 }
 
 func fields(args ...ugo.Object) (ugo.Object, error) {
@@ -425,10 +425,10 @@ func fields(args ...ugo.Object) (ugo.Object, error) {
 		return nil, ugo.NewArgumentTypeError("first", "string",
 			args[0].TypeName())
 	}
-	strs := strings.Fields(string(s))
+	strs := strings.Fields(s.Value)
 	out := make(ugo.Array, len(strs))
 	for i := range strs {
-		out[i] = ugo.String(strs[i])
+		out[i] = ugo.ToString(strs[i])
 	}
 	return out, nil
 }
@@ -452,7 +452,7 @@ func indexByte(args ...ugo.Object) (ugo.Object, error) {
 		return nil, ugo.NewArgumentTypeError("second", "char|int",
 			args[1].TypeName())
 	}
-	return ugo.Int(strings.IndexByte(string(s), b)), nil
+	return ugo.Int(strings.IndexByte(s.Value, b)), nil
 }
 
 func indexChar(args ...ugo.Object) (ugo.Object, error) {
@@ -469,7 +469,7 @@ func indexChar(args ...ugo.Object) (ugo.Object, error) {
 		return nil, ugo.NewArgumentTypeError("second", "char",
 			args[1].TypeName())
 	}
-	return ugo.Int(strings.IndexRune(string(s), rune(c))), nil
+	return ugo.Int(strings.IndexRune(s.Value, rune(c))), nil
 }
 
 func join(args ...ugo.Object) (ugo.Object, error) {
@@ -490,7 +490,7 @@ func join(args ...ugo.Object) (ugo.Object, error) {
 	for i := range arr {
 		elems[i] = arr[i].String()
 	}
-	return ugo.String(strings.Join(elems, string(sep))), nil
+	return ugo.ToString(strings.Join(elems, sep.Value)), nil
 }
 
 func lastIndexByte(args ...ugo.Object) (ugo.Object, error) {
@@ -512,7 +512,7 @@ func lastIndexByte(args ...ugo.Object) (ugo.Object, error) {
 		return nil, ugo.NewArgumentTypeError("second", "char|int",
 			args[1].TypeName())
 	}
-	return ugo.Int(strings.LastIndexByte(string(s), b)), nil
+	return ugo.Int(strings.LastIndexByte(s.Value, b)), nil
 }
 
 func padLeft(args ...ugo.Object) (ugo.Object, error) {
@@ -530,7 +530,7 @@ func padLeft(args ...ugo.Object) (ugo.Object, error) {
 		return nil, ugo.NewArgumentTypeError("second", "int",
 			args[1].TypeName())
 	}
-	diff := int(padLen) - len(s)
+	diff := int(padLen) - len(s.Value)
 	if diff <= 0 {
 		return s, nil
 	}
@@ -547,8 +547,8 @@ func padLeft(args ...ugo.Object) (ugo.Object, error) {
 	var sb strings.Builder
 	sb.Grow(int(padLen))
 	sb.WriteString(strings.Repeat(padWith, r)[:diff])
-	sb.WriteString(string(s))
-	return ugo.String(sb.String()), nil
+	sb.WriteString(s.Value)
+	return ugo.ToString(sb.String()), nil
 }
 
 func padRight(args ...ugo.Object) (ugo.Object, error) {
@@ -566,7 +566,7 @@ func padRight(args ...ugo.Object) (ugo.Object, error) {
 		return nil, ugo.NewArgumentTypeError("second", "int",
 			args[1].TypeName())
 	}
-	diff := int(padLen) - len(s)
+	diff := int(padLen) - len(s.Value)
 	if diff <= 0 {
 		return s, nil
 	}
@@ -582,9 +582,9 @@ func padRight(args ...ugo.Object) (ugo.Object, error) {
 	}
 	var sb strings.Builder
 	sb.Grow(int(padLen))
-	sb.WriteString(string(s))
+	sb.WriteString(s.Value)
 	sb.WriteString(strings.Repeat(padWith, r)[:diff])
-	return ugo.String(sb.String()), nil
+	return ugo.ToString(sb.String()), nil
 }
 
 func repeat(args ...ugo.Object) (ugo.Object, error) {
@@ -603,9 +603,9 @@ func repeat(args ...ugo.Object) (ugo.Object, error) {
 	}
 	// if n is negative strings.Repeat function panics
 	if n < 0 {
-		return ugo.String(""), nil
+		return ugo.ToString(""), nil
 	}
-	return ugo.String(strings.Repeat(string(s), int(n))), nil
+	return ugo.ToString(strings.Repeat(s.Value, int(n))), nil
 }
 
 func replace(args ...ugo.Object) (ugo.Object, error) {
@@ -637,8 +637,8 @@ func replace(args ...ugo.Object) (ugo.Object, error) {
 		}
 		n = int(v)
 	}
-	return ugo.String(
-		strings.Replace(string(s), string(old), string(new), n),
+	return ugo.ToString(
+		strings.Replace(s.Value, old.Value, new.Value, n),
 	), nil
 }
 

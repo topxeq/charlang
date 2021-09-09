@@ -30,7 +30,11 @@ pl("result3: %v", sqlRs3T)
 
 sqlT = `update AWS2.BO_EU_TEST1 set ABC=:v1 where ID='8ceaf7f4-62e1-4915-85a9-138f0651d715'`
 
-sqlRs4T := dbExec(dbT, sqlT, "ABC"+getNowStr())
+tmps := "ABC"+getNowStr()
+
+pl("tmps: %v", tmps)
+
+sqlRs4T := dbExec(dbT, sqlT, tmps)
 
 if isError(sqlRs4T) {
     pl("exec failed: %v", sqlRs4T)

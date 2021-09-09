@@ -90,21 +90,21 @@ var Module = map[string]ugo.Object{
 	// StampMilli
 	// StampMicro
 	// StampNano
-	"ANSIC":       ugo.String(time.ANSIC),
-	"UnixDate":    ugo.String(time.UnixDate),
-	"RubyDate":    ugo.String(time.RubyDate),
-	"RFC822":      ugo.String(time.RFC822),
-	"RFC822Z":     ugo.String(time.RFC822Z),
-	"RFC850":      ugo.String(time.RFC850),
-	"RFC1123":     ugo.String(time.RFC1123),
-	"RFC1123Z":    ugo.String(time.RFC1123Z),
-	"RFC3339":     ugo.String(time.RFC3339),
-	"RFC3339Nano": ugo.String(time.RFC3339Nano),
-	"Kitchen":     ugo.String(time.Kitchen),
-	"Stamp":       ugo.String(time.Stamp),
-	"StampMilli":  ugo.String(time.StampMilli),
-	"StampMicro":  ugo.String(time.StampMicro),
-	"StampNano":   ugo.String(time.StampNano),
+	"ANSIC":       ugo.ToString(time.ANSIC),
+	"UnixDate":    ugo.ToString(time.UnixDate),
+	"RubyDate":    ugo.ToString(time.RubyDate),
+	"RFC822":      ugo.ToString(time.RFC822),
+	"RFC822Z":     ugo.ToString(time.RFC822Z),
+	"RFC850":      ugo.ToString(time.RFC850),
+	"RFC1123":     ugo.ToString(time.RFC1123),
+	"RFC1123Z":    ugo.ToString(time.RFC1123Z),
+	"RFC3339":     ugo.ToString(time.RFC3339),
+	"RFC3339Nano": ugo.ToString(time.RFC3339Nano),
+	"Kitchen":     ugo.ToString(time.Kitchen),
+	"Stamp":       ugo.ToString(time.Stamp),
+	"StampMilli":  ugo.ToString(time.StampMilli),
+	"StampMicro":  ugo.ToString(time.StampMicro),
+	"StampNano":   ugo.ToString(time.StampNano),
 
 	// ugo:doc
 	// ### Durations
@@ -402,7 +402,7 @@ func durationString(args ...ugo.Object) (ugo.Object, error) {
 	if !ok {
 		return nil, ugo.NewArgumentTypeError("first", "int", args[0].TypeName())
 	}
-	return ugo.String(time.Duration(d).String()), nil
+	return ugo.ToString(time.Duration(d).String()), nil
 }
 
 func durationNanoseconds(args ...ugo.Object) (ugo.Object, error) {
@@ -469,7 +469,7 @@ func parseDuration(args ...ugo.Object) (ugo.Object, error) {
 		return nil, ugo.NewArgumentTypeError("first", "string",
 			args[0].TypeName())
 	}
-	d, err := time.ParseDuration(string(v))
+	d, err := time.ParseDuration(v.Value)
 	if err != nil {
 		return nil, err
 	}
@@ -529,14 +529,14 @@ func durationTruncate(args ...ugo.Object) (ugo.Object, error) {
 
 func monthString(args ...ugo.Object) (ugo.Object, error) {
 	if v, ok := args[0].(ugo.Int); ok {
-		return ugo.String(time.Month(v).String()), nil
+		return ugo.ToString(time.Month(v).String()), nil
 	}
 	return nil, ugo.NewArgumentTypeError("first", "int", args[0].TypeName())
 }
 
 func weekdayString(args ...ugo.Object) (ugo.Object, error) {
 	if v, ok := args[0].(ugo.Int); ok {
-		return ugo.String(time.Weekday(v).String()), nil
+		return ugo.ToString(time.Weekday(v).String()), nil
 	}
 	return nil, ugo.NewArgumentTypeError("first", "int", args[0].TypeName())
 }
@@ -555,7 +555,7 @@ func fixedZone(args ...ugo.Object) (ugo.Object, error) {
 		return nil, ugo.NewArgumentTypeError("second", "int",
 			args[1].TypeName())
 	}
-	l := time.FixedZone(string(name), offset)
+	l := time.FixedZone(name.Value, offset)
 	return &Location{Location: l}, nil
 }
 
@@ -565,7 +565,7 @@ func loadLocation(args ...ugo.Object) (ugo.Object, error) {
 		return nil, ugo.NewArgumentTypeError("first", "string",
 			args[0].TypeName())
 	}
-	l, err := time.LoadLocation(string(name))
+	l, err := time.LoadLocation(name.Value)
 	if err != nil {
 		return nil, err
 	}
@@ -636,7 +636,7 @@ func parse(args ...ugo.Object) (ugo.Object, error) {
 			args[1].TypeName())
 	}
 	if len(args) == 2 {
-		tm, err := time.Parse(string(layout), string(value))
+		tm, err := time.Parse(layout.Value, value.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -647,7 +647,7 @@ func parse(args ...ugo.Object) (ugo.Object, error) {
 		return nil, ugo.NewArgumentTypeError("third", "location",
 			args[2].TypeName())
 	}
-	tm, err := time.ParseInLocation(string(layout), string(value), loc.Location)
+	tm, err := time.ParseInLocation(layout.Value, value.Value, loc.Location)
 	if err != nil {
 		return nil, err
 	}
@@ -785,7 +785,7 @@ func appendFormat(args ...ugo.Object) (ugo.Object, error) {
 		return nil, ugo.NewArgumentTypeError("third", "string",
 			args[2].TypeName())
 	}
-	return ugo.Bytes(tm.Value.AppendFormat(b, string(layout))), nil
+	return ugo.Bytes(tm.Value.AppendFormat(b, layout.Value)), nil
 }
 
 func format(args ...ugo.Object) (ugo.Object, error) {
@@ -799,7 +799,7 @@ func format(args ...ugo.Object) (ugo.Object, error) {
 		return nil, ugo.NewArgumentTypeError("second", "string",
 			args[1].TypeName())
 	}
-	return ugo.String(tm.Value.Format(string(layout))), nil
+	return ugo.ToString(tm.Value.Format(layout.Value)), nil
 }
 
 func timeIn(args ...ugo.Object) (ugo.Object, error) {

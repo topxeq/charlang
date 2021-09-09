@@ -70,7 +70,7 @@ var scriptGlobals = &ugo.SyncMap{
 				return ugo.Undefined, nil
 			},
 		},
-		"versionG": ugo.String(ugo.VersionG),
+		"versionG": ugo.ToString(ugo.VersionG),
 		"argsG":    ugo.ConvertToObject(os.Args[1:]),
 		"tk":       ugo.TkFunction,
 		// "tk": &ugo.Function{
@@ -298,7 +298,7 @@ func (r *repl) executeScript(line string) {
 
 	switch v := r.lastResult.(type) {
 	case ugo.String:
-		r.writeStr(fmt.Sprintf("%q\n", string(v)))
+		r.writeStr(fmt.Sprintf("%q\n", v.Value))
 	case ugo.Char:
 		r.writeStr(fmt.Sprintf("%q\n", rune(v)))
 	case ugo.Bytes:

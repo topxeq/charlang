@@ -293,7 +293,9 @@ func (o *Any) Copy() Object {
 
 type DateTime struct {
 	ObjectImpl
-	Value time.Time
+	Value   time.Time
+	Members map[string]Object
+	Methods map[string]*Function
 }
 
 var _ Object = DateTime{}
@@ -344,25 +346,30 @@ func (o DateTime) IndexGet(index Object) (value Object, err error) {
 		return nil, ErrNotIndexable
 	}
 
-	fNameT := string(nv)
+	fNameT := nv.Value
+
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if o.Methods == nil {
+		o.Methods = map[string]*Function{}
+	}
 
 	switch fNameT {
 	case "format":
-		return &Function{
-			Name: "format",
-			Value: func(args ...Object) (Object, error) {
-				rsT := tk.FormatTime(o.Value, ObjectsToS(args)...)
+		fT, ok := o.Methods["format"]
+		if !ok {
+			o.Methods["format"] = &Function{
+				Name: "format",
+				Value: func(args ...Object) (Object, error) {
+					rsT := tk.FormatTime(o.Value, ObjectsToS(args)...)
 
-				return String(rsT), nil
-			}}, nil
-	case "timeFormatRFC1123":
-		return String(time.RFC1123), nil
-	case "timeFormatCompact":
-		return String(tk.TimeFormatCompact), nil
-	case "timeFormat":
-		return String(tk.TimeFormat), nil
-	case "timeFormatMS":
-		return String(tk.TimeFormatMS), nil
+					return ToString(rsT), nil
+				}}
+			fT = o.Methods["format"]
+		}
+		return fT, nil
 	}
 
 	return nil, ErrNotIndexable
@@ -379,6 +386,8 @@ func (o DateTime) BinaryOp(tok token.Token, right Object) (Object, error) {
 func (o *DateTime) DateTime() Object {
 	return &DateTime{
 		Value: o.Value,
+		// Members: o.Members,
+		// Methods: o.Methods,
 	}
 }
 
@@ -586,7 +595,12 @@ switchpos:
 }
 
 // String represents string values and implements Object interface.
-type String string
+type String struct {
+	ObjectImpl
+	Value   string
+	Members map[string]Object
+	Methods map[string]*Function
+}
 
 // TypeName implements Object interface.
 func (String) TypeName() string {
@@ -594,7 +608,7 @@ func (String) TypeName() string {
 }
 
 func (o String) String() string {
-	return string(o)
+	return o.Value
 }
 
 // CanIterate implements Object interface.
@@ -602,7 +616,7 @@ func (String) CanIterate() bool { return true }
 
 // Iterate implements Object interface.
 func (o String) Iterate() Iterator {
-	return &StringIterator{V: o}
+	return &StringIterator{V: o.Value}
 }
 
 // IndexSet implements Object interface.
@@ -611,48 +625,72 @@ func (String) IndexSet(index, value Object) error {
 }
 
 func dealStringMethods(o String, fNameA string) (Object, error) {
+
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if o.Methods == nil {
+		o.Methods = map[string]*Function{}
+	}
+
 	switch fNameA {
 	case "trim":
-		return &Function{
-			Name: "trim",
-			Value: func(args ...Object) (Object, error) {
-				if len(args) < 1 {
-					return String(strings.TrimSpace(string(o))), nil
-				}
+		fT, ok := o.Methods["trim"]
+		if !ok {
+			o.Methods["trim"] = &Function{
+				Name: "trim",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return ToString(strings.TrimSpace(FromString(o))), nil
+					}
 
-				return String(strings.Trim(string(o), args[0].String())), nil
-			}}, nil
+					return ToString(strings.Trim(FromString(o), args[0].String())), nil
+				}}
+			fT = o.Methods["trim"]
+		}
+		return fT, nil
 	case "startsWith":
-		return &Function{
-			Name: "startsWith",
-			Value: func(args ...Object) (Object, error) {
-				if len(args) < 1 {
-					return Bool(false), nil
-				}
+		fT, ok := o.Methods["startsWith"]
+		if !ok {
+			o.Methods["startsWith"] = &Function{
+				Name: "startsWith",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return Bool(false), nil
+					}
 
-				return Bool(strings.HasPrefix(string(o), args[0].String())), nil
-			}}, nil
+					return Bool(strings.HasPrefix(FromString(o), args[0].String())), nil
+				}}
+			fT = o.Methods["startsWith"]
+		}
+		return fT, nil
 	case "endsWith":
-		return &Function{
-			Name: "endsWith",
-			Value: func(args ...Object) (Object, error) {
-				if len(args) < 1 {
-					return Bool(false), nil
-				}
+		fT, ok := o.Methods["endsWith"]
+		if !ok {
+			o.Methods["endsWith"] = &Function{
+				Name: "endsWith",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return Bool(false), nil
+					}
 
-				return Bool(strings.HasSuffix(string(o), args[0].String())), nil
-			}}, nil
+					return Bool(strings.HasSuffix(FromString(o), args[0].String())), nil
+				}}
+			fT = o.Methods["endsWith"]
+		}
+		return fT, nil
 	case "isEmpty":
 		return &Function{
 			Name: "isEmpty",
 			Value: func(args ...Object) (Object, error) {
-				return Bool(string(o) == ""), nil
+				return Bool(FromString(o) == ""), nil
 			}}, nil
 	case "isEmptyTrim":
 		return &Function{
 			Name: "isEmptyTrim",
 			Value: func(args ...Object) (Object, error) {
-				return Bool(strings.TrimSpace(string(o)) == ""), nil
+				return Bool(strings.TrimSpace(FromString(o)) == ""), nil
 			}}, nil
 	case "contains":
 		return &Function{
@@ -662,7 +700,7 @@ func dealStringMethods(o String, fNameA string) (Object, error) {
 					return Bool(false), nil
 				}
 
-				return Bool(strings.Contains(string(o), args[0].String())), nil
+				return Bool(strings.Contains(FromString(o), args[0].String())), nil
 			}}, nil
 
 	case "regMatch":
@@ -673,7 +711,7 @@ func dealStringMethods(o String, fNameA string) (Object, error) {
 					return Bool(false), nil
 				}
 
-				return Bool(tk.RegMatchX(string(o), args[0].String())), nil
+				return Bool(tk.RegMatchX(FromString(o), args[0].String())), nil
 			}}, nil
 	case "regContains":
 		return &Function{
@@ -683,7 +721,7 @@ func dealStringMethods(o String, fNameA string) (Object, error) {
 					return Bool(false), nil
 				}
 
-				return Bool(tk.RegContainsX(string(o), args[0].String())), nil
+				return Bool(tk.RegContainsX(FromString(o), args[0].String())), nil
 			}}, nil
 	}
 
@@ -707,8 +745,8 @@ func (o String) IndexGet(index Object) (Object, error) {
 	default:
 		return nil, NewIndexTypeError("int|uint|char", index.TypeName())
 	}
-	if idx >= 0 && idx < len(o) {
-		return Int(o[idx]), nil
+	if idx >= 0 && idx < len(o.Value) {
+		return Int(o.Value[idx]), nil
 	}
 	return nil, ErrIndexOutOfBounds
 }
@@ -716,16 +754,16 @@ func (o String) IndexGet(index Object) (Object, error) {
 // Equal implements Object interface.
 func (o String) Equal(right Object) bool {
 	if v, ok := right.(String); ok {
-		return o == v
+		return o.Value == v.Value
 	}
 	if v, ok := right.(Bytes); ok {
-		return string(o) == string(v)
+		return string(o.Value) == string(v)
 	}
 	return false
 }
 
 // IsFalsy implements Object interface.
-func (o String) IsFalsy() bool { return len(o) == 0 }
+func (o String) IsFalsy() bool { return len(o.Value) == 0 }
 
 // CanCall implements Object interface.
 func (o String) CanCall() bool { return false }
@@ -735,37 +773,73 @@ func (o String) Call(_ ...Object) (Object, error) {
 	return nil, ErrNotCallable
 }
 
+func ToString(argA interface{}) String {
+	switch nv := argA.(type) {
+	case String:
+		return String{Value: nv.Value}
+	case Object:
+		return String{Value: nv.String()}
+	case string:
+		return String{Value: nv}
+	case nil:
+		return String{Value: ""}
+	case []byte:
+		return String{Value: string(nv)}
+	}
+	return String{Value: fmt.Sprintf("%v", argA)}
+}
+
+// func ToString(argA interface{}) Object {
+// 	switch nv := argA.(type) {
+// 	case String:
+// 		return &String{Value: nv.Value}
+// 	case Object:
+// 		return &String{Value: nv.String()}
+// 	case string:
+// 		return &String{Value: nv}
+// 	case nil:
+// 		return &String{Value: ""}
+// 	case []byte:
+// 		return &String{Value: string(nv)}
+// 	}
+// 	return &String{Value: fmt.Sprintf("%v", argA)}
+// }
+
+func FromString(argA String) string {
+	return argA.Value
+}
+
 // BinaryOp implements Object interface.
 func (o String) BinaryOp(tok token.Token, right Object) (Object, error) {
 	switch v := right.(type) {
 	case String:
 		switch tok {
 		case token.Add:
-			return o + v, nil
+			return &String{Value: o.Value + v.Value}, nil
 		case token.Less:
-			return Bool(o < v), nil
+			return Bool(o.Value < v.Value), nil
 		case token.LessEq:
-			return Bool(o <= v), nil
+			return Bool(o.Value <= v.Value), nil
 		case token.Greater:
-			return Bool(o > v), nil
+			return Bool(o.Value > v.Value), nil
 		case token.GreaterEq:
-			return Bool(o >= v), nil
+			return Bool(o.Value >= v.Value), nil
 		}
 	case Bytes:
 		switch tok {
 		case token.Add:
 			var sb strings.Builder
-			sb.WriteString(string(o))
+			sb.WriteString(o.Value)
 			sb.Write(v)
-			return String(sb.String()), nil
+			return ToString(sb.String()), nil
 		case token.Less:
-			return Bool(string(o) < string(v)), nil
+			return Bool(o.Value < string(v)), nil
 		case token.LessEq:
-			return Bool(string(o) <= string(v)), nil
+			return Bool(o.Value <= string(v)), nil
 		case token.Greater:
-			return Bool(string(o) > string(v)), nil
+			return Bool(o.Value > string(v)), nil
 		case token.GreaterEq:
-			return Bool(string(o) >= string(v)), nil
+			return Bool(o.Value >= string(v)), nil
 		}
 	case undefined:
 		switch tok {
@@ -777,7 +851,7 @@ func (o String) BinaryOp(tok token.Token, right Object) (Object, error) {
 	}
 
 	if tok == token.Add {
-		return o + String(right.String()), nil
+		return ToString(o.Value + right.String()), nil
 	}
 
 	return nil, NewOperandTypeError(
@@ -872,7 +946,7 @@ func (o Bytes) Equal(right Object) bool {
 	}
 
 	if v, ok := right.(String); ok {
-		return string(o) == string(v)
+		return string(o) == FromString(v)
 	}
 	return false
 }
@@ -909,15 +983,15 @@ func (o Bytes) BinaryOp(tok token.Token, right Object) (Object, error) {
 	case String:
 		switch tok {
 		case token.Add:
-			return append(o, v...), nil
+			return append(o, FromString(v)...), nil
 		case token.Less:
-			return Bool(string(o) < string(v)), nil
+			return Bool(string(o) < FromString(v)), nil
 		case token.LessEq:
-			return Bool(string(o) <= string(v)), nil
+			return Bool(string(o) <= FromString(v)), nil
 		case token.Greater:
-			return Bool(string(o) > string(v)), nil
+			return Bool(string(o) > FromString(v)), nil
 		case token.GreaterEq:
-			return Bool(string(o) >= string(v)), nil
+			return Bool(string(o) >= FromString(v)), nil
 		}
 	case undefined:
 		switch tok {
@@ -984,9 +1058,11 @@ func (o *Function) Call(args ...Object) (Object, error) {
 // BuiltinFunction represents a builtin function object and implements Object interface.
 type BuiltinFunction struct {
 	ObjectImpl
-	Name   string
-	Value  func(args ...Object) (Object, error)
-	Remark string
+	Name    string
+	Value   func(args ...Object) (Object, error)
+	Remark  string
+	Members map[string]Object
+	Methods map[string]*Function
 }
 
 var _ Object = (*BuiltinFunction)(nil)
@@ -1035,28 +1111,73 @@ func (o *BuiltinFunction) IndexGet(index Object) (value Object, err error) {
 		return nil, ErrNotIndexable
 	}
 
-	fNameT := o.Name + "." + string(nv)
+	fNameT := o.Name + "." + FromString(nv)
+
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if o.Methods == nil {
+		o.Methods = map[string]*Function{}
+	}
 
 	switch fNameT {
 	case "dateTime.format":
-		return &Function{
-			Name: "format",
-			Value: func(args ...Object) (Object, error) {
+		fT, ok := o.Methods["dateTime.format"]
+		if !ok {
+			o.Methods["dateTime.format"] = &Function{
+				Name: "dateTime.format",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return ToString(tk.FormatTime(time.Now(), ObjectsToS(args)...)), nil
+					}
 
-				if len(args) < 1 {
-					return String(tk.FormatTime(time.Now(), ObjectsToS(args)...)), nil
-				}
+					return ToString(tk.FormatTime(args[0].(DateTime).Value, ObjectsToS(args[1:])...)), nil
+				}}
+			fT = o.Methods["format"]
+		}
 
-				return String(tk.FormatTime(args[0].(DateTime).Value, ObjectsToS(args[1:])...)), nil
-			}}, nil
+		return fT, nil
 	case "dateTime.timeFormatRFC1123":
-		return String(time.RFC1123), nil
+		mT, ok := o.Members["dateTime.timeFormatRFC1123"]
+		if !ok {
+			o.Members["dateTime.timeFormatRFC1123"] = ToString(time.RFC1123)
+			mT = o.Members["dateTime.timeFormatRFC1123"]
+		}
+
+		return mT, nil
 	case "dateTime.timeFormatCompact":
-		return String(tk.TimeFormatCompact), nil
+		mT, ok := o.Members["dateTime.timeFormatCompact"]
+		if !ok {
+			o.Members["dateTime.timeFormatCompact"] = ToString(tk.TimeFormatCompact)
+			mT = o.Members["dateTime.timeFormatCompact"]
+		}
+
+		return mT, nil
 	case "dateTime.timeFormat":
-		return String(tk.TimeFormat), nil
+		mT, ok := o.Members["dateTime.timeFormat"]
+		if !ok {
+			o.Members["dateTime.timeFormat"] = ToString(tk.TimeFormat)
+			mT = o.Members["dateTime.timeFormat"]
+		}
+
+		return mT, nil
 	case "dateTime.timeFormatMS":
-		return String(tk.TimeFormatMS), nil
+		mT, ok := o.Members["dateTime.timeFormatMS"]
+		if !ok {
+			o.Members["dateTime.timeFormatMS"] = ToString(tk.TimeFormatMS)
+			mT = o.Members["dateTime.timeFormatMS"]
+		}
+
+		return mT, nil
+	case "dateTime.timeFormatMSCompact":
+		mT, ok := o.Members["dateTime.timeFormatMSCompact"]
+		if !ok {
+			o.Members["dateTime.timeFormatMSCompact"] = ToString(tk.TimeFormatMSCompact)
+			mT = o.Members["dateTime.timeFormatMSCompact"]
+		}
+
+		return mT, nil
 	}
 
 	return nil, ErrNotIndexable
@@ -1301,7 +1422,7 @@ var _ Object = Map{}
 func MssToMap(vA map[string]string) Map {
 	inParasT := make(Map, len(vA))
 	for k, v := range vA {
-		inParasT[k] = String(v)
+		inParasT[k] = ToString(v)
 	}
 
 	return inParasT
@@ -1310,7 +1431,7 @@ func MssToMap(vA map[string]string) Map {
 func MsiToMap(vA map[string]interface{}) Map {
 	inParasT := make(Map, len(vA))
 	for k, v := range vA {
-		inParasT[k] = String(fmt.Sprintf("%v", v))
+		inParasT[k] = ToString(fmt.Sprintf("%v", v))
 	}
 
 	return inParasT
@@ -1610,11 +1731,11 @@ func (o *Error) IsFalsy() bool { return true }
 func (o *Error) IndexGet(index Object) (Object, error) {
 	s := index.String()
 	if s == "Name" {
-		return String(o.Name), nil
+		return ToString(o.Name), nil
 	}
 
 	if s == "Message" {
-		return String(o.Message), nil
+		return ToString(o.Message), nil
 	}
 
 	if s == "New" {

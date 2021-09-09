@@ -24,5 +24,28 @@ global tk
 
 tk("test", "param1", "param2", [1, 2, "s"])
 
+m := {}
+
+m.F1 = 11
+m.F2 = "abc"
+m["F3"] = [1, "ab", {"r": "v1"}]
+
+pl("%v", m)
+
+timeT := dateTime()
+
+pl("%v", timeT)
+
+pl("%v", timeT.format())
+
+pl("%v", timeT.format(dateTime.timeFormatRFC1123))
+
+pl("%v", timeT.format(dateTime.timeFormatCompact))
+
+pl("%v", timeT.format(dateTime.timeFormatMS))
+
+pl("%v", timeT.format(dateTime.timeFormatMSCompact))
+
+pl("%v", timeT.format("2006"))
 
 return s

@@ -19,7 +19,7 @@ func ConvertToObject(vA interface{}) Object {
 	case error:
 		return WrapError(nv)
 	case string:
-		return String(nv)
+		return ToString(nv)
 	case bool:
 		return Bool(nv)
 	case int:
@@ -88,7 +88,7 @@ func ConvertToObject(vA interface{}) Object {
 		rsT := make(Array, 0, len(nv))
 
 		for _, v := range nv {
-			rsT = append(rsT, String(v))
+			rsT = append(rsT, ToString(v))
 		}
 
 		return rsT
@@ -102,7 +102,7 @@ func ConvertToObject(vA interface{}) Object {
 		for _, v := range nv {
 			lineListT := make(Array, 0, len(v))
 			for _, jv := range v {
-				lineListT = append(lineListT, String(jv))
+				lineListT = append(lineListT, ToString(jv))
 			}
 
 			rsT = append(rsT, lineListT)
@@ -129,7 +129,7 @@ func ConvertToObject(vA interface{}) Object {
 		rsT := make(Map, len(nv))
 
 		for k, v := range nv {
-			rsT[k] = String(v)
+			rsT[k] = ToString(v)
 		}
 
 		return rsT
@@ -155,7 +155,7 @@ func ConvertToObject(vA interface{}) Object {
 		for k, v := range nv {
 			mapT := make(Map, len(nv))
 			for jk, jv := range v {
-				mapT[jk] = String(jv)
+				mapT[jk] = ToString(jv)
 			}
 
 			rsT[k] = mapT
@@ -190,6 +190,8 @@ func ConvertToObject(vA interface{}) Object {
 	// 	return Any{Value: nv, OriginalType: "time.Time"}
 	case Function:
 		return &nv
+	case String:
+		return nv
 
 	default:
 		return Any{Value: nv, OriginalType: fmt.Sprintf("%T", nv)}
@@ -216,7 +218,9 @@ func ConvertFromObject(vA Object) interface{} {
 	case Float:
 		return float64(nv)
 	case String:
-		return string(nv)
+		return nv.Value
+	case *String:
+		return nv.Value
 	case Bytes:
 		return []byte(nv)
 	case *Error:
@@ -324,7 +328,7 @@ func RunChar(charA *Bytecode, envA map[string]interface{}, paraMapA map[string]s
 
 	envT["tk"] = TkFunction
 	// envT["argsG"] = ConvertToObject(os.Args)
-	envT["versionG"] = String(VersionG)
+	envT["versionG"] = ToString(VersionG)
 
 	for k, v := range envA {
 		envT[k] = ConvertToObject(v)
@@ -332,7 +336,7 @@ func RunChar(charA *Bytecode, envA map[string]interface{}, paraMapA map[string]s
 
 	inParasT := make(Map, len(paraMapA))
 	for k, v := range paraMapA {
-		inParasT[k] = String(v)
+		inParasT[k] = ToString(v)
 	}
 
 	paramsT := make([]Object, 0, 2+len(argsA))
@@ -357,7 +361,7 @@ func RunCharCode(codeA string, envA map[string]interface{}, paraMapA map[string]
 
 	envT["tk"] = TkFunction
 	// envT["argsG"] = ConvertToObject(os.Args)
-	envT["versionG"] = String(VersionG)
+	envT["versionG"] = ToString(VersionG)
 
 	for k, v := range envA {
 		envT[k] = ConvertToObject(v)
@@ -365,7 +369,7 @@ func RunCharCode(codeA string, envA map[string]interface{}, paraMapA map[string]
 
 	inParasT := make(Map, len(paraMapA))
 	for k, v := range paraMapA {
-		inParasT[k] = String(v)
+		inParasT[k] = ToString(v)
 	}
 
 	paramsT := make([]Object, 0, 2+len(argsA))
@@ -409,7 +413,7 @@ func QuickRun(codeA interface{}, argsA ...Object) interface{} {
 
 	envT["tk"] = TkFunction
 	envT["argsG"] = Array{}
-	envT["versionG"] = String(VersionG)
+	envT["versionG"] = ToString(VersionG)
 
 	paramsT := make([]Object, 0, 2+len(argsA))
 

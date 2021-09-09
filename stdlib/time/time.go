@@ -157,7 +157,7 @@ func (o *Time) IndexGet(index ugo.Object) (ugo.Object, error) {
 	if !ok {
 		return nil, ugo.NewIndexTypeError("string", index.TypeName())
 	}
-	switch v {
+	switch v.Value {
 	case "Date":
 		y, m, d := o.Value.Date()
 		return ugo.Map{"year": ugo.Int(y), "month": ugo.Int(m),
@@ -201,7 +201,7 @@ func (o *Time) IndexGet(index ugo.Object) (ugo.Object, error) {
 		return ugo.Map{"year": ugo.Int(y), "week": ugo.Int(w)}, nil
 	case "Zone":
 		name, offset := o.Value.Zone()
-		return ugo.Map{"name": ugo.String(name), "offset": ugo.Int(offset)}, nil
+		return ugo.Map{"name": ugo.ToString(name), "offset": ugo.Int(offset)}, nil
 	}
 	return ugo.Undefined, nil
 }

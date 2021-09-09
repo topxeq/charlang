@@ -857,7 +857,7 @@ func builtinDeleteFunc(args ...Object) (Object, error) {
 	switch arg := args[0].(type) {
 	case Map:
 		if key, ok := args[1].(String); ok {
-			delete(arg, string(key))
+			delete(arg, FromString(key))
 			return Undefined, nil
 		}
 		return nil, NewArgumentTypeError(
@@ -870,7 +870,7 @@ func builtinDeleteFunc(args ...Object) (Object, error) {
 			if arg.Map == nil {
 				return Undefined, nil
 			}
-			delete(arg.Map, string(key))
+			delete(arg.Map, FromString(key))
 			return Undefined, nil
 		}
 		return nil, NewArgumentTypeError(
@@ -927,7 +927,7 @@ func builtinRepeatFunc(args ...Object) (Object, error) {
 		}
 		return out, nil
 	case String:
-		return String(strings.Repeat(string(v), count)), nil
+		return ToString(strings.Repeat(FromString(v), count)), nil
 	case Bytes:
 		return Bytes(bytes.Repeat(v, count)), nil
 	}
@@ -956,7 +956,7 @@ func builtinContainsFunc(args ...Object) (Object, error) {
 		}
 		return False, nil
 	case String:
-		return Bool(strings.Contains(string(obj), args[1].String())), nil
+		return Bool(strings.Contains(FromString(obj), args[1].String())), nil
 	case Bytes:
 		switch v := args[1].(type) {
 		case Int:
@@ -968,7 +968,7 @@ func builtinContainsFunc(args ...Object) (Object, error) {
 		case Char:
 			return Bool(bytes.Contains(obj, []byte{byte(v)})), nil
 		case String:
-			return Bool(bytes.Contains(obj, []byte(v))), nil
+			return Bool(bytes.Contains(obj, []byte(v.Value))), nil
 		case Bytes:
 			return Bool(bytes.Contains(obj, v)), nil
 		default:
@@ -992,7 +992,7 @@ func builtinContainsFunc(args ...Object) (Object, error) {
 func builtinLenFunc(args ...Object) (Object, error) {
 	switch v := args[0].(type) {
 	case String:
-		return Int(len(v)), nil
+		return Int(len(v.Value)), nil
 	case Array:
 		return Int(len(v)), nil
 	case Map:
@@ -1026,11 +1026,11 @@ func builtinSortFunc(args ...Object) (Object, error) {
 		}
 		return obj, nil
 	case String:
-		s := []rune(obj)
+		s := []rune(obj.Value)
 		sort.Slice(s, func(i, j int) bool {
 			return s[i] < s[j]
 		})
-		return String(s), nil
+		return ToString(s), nil
 	case Bytes:
 		sort.Slice(obj, func(i, j int) bool {
 			return obj[i] < obj[j]
@@ -1068,11 +1068,11 @@ func builtinSortReverseFunc(args ...Object) (Object, error) {
 		}
 		return obj, nil
 	case String:
-		s := []rune(obj)
+		s := []rune(obj.Value)
 		sort.Slice(s, func(i, j int) bool {
 			return s[j] < s[i]
 		})
-		return String(s), nil
+		return ToString(s), nil
 	case Bytes:
 		sort.Slice(obj, func(i, j int) bool {
 			return obj[j] < obj[i]
@@ -1094,7 +1094,7 @@ func builtinErrorFunc(args ...Object) (Object, error) {
 }
 
 func builtinTypeNameFunc(args ...Object) (Object, error) {
-	return String(args[0].TypeName()), nil
+	return ToString(args[0].TypeName()), nil
 }
 
 func builtinBoolFunc(args ...Object) (Object, error) {
@@ -1114,7 +1114,7 @@ func builtinIntFunc(args ...Object) (Object, error) {
 	case Char:
 		return Int(obj), nil
 	case String:
-		v, err := strconv.ParseInt(string(obj), 0, 64)
+		v, err := strconv.ParseInt(obj.Value, 0, 64)
 		if err != nil {
 			return nil, err
 		}
@@ -1146,7 +1146,7 @@ func builtinUintFunc(args ...Object) (Object, error) {
 	case Uint:
 		return obj, nil
 	case String:
-		v, err := strconv.ParseUint(string(obj), 0, 64)
+		v, err := strconv.ParseUint(obj.Value, 0, 64)
 		if err != nil {
 			return nil, err
 		}
@@ -1178,7 +1178,7 @@ func builtinByteFunc(args ...Object) (Object, error) {
 	case Byte:
 		return obj, nil
 	case String:
-		v, err := strconv.ParseUint(string(obj), 0, 64)
+		v, err := strconv.ParseUint(obj.Value, 0, 64)
 		if err != nil {
 			return nil, err
 		}
@@ -1210,7 +1210,7 @@ func builtinAnyFunc(args ...Object) (Object, error) {
 	case Byte:
 		return Any{Value: byte(obj)}, nil
 	case String:
-		return Any{Value: string(obj)}, nil
+		return Any{Value: obj.Value}, nil
 	case Bool:
 		if obj {
 			return Any{Value: true}, nil
@@ -1234,7 +1234,7 @@ func builtinDateTimeFunc(args ...Object) (Object, error) {
 	case DateTime:
 		return DateTime{Value: obj.Value}, nil
 	case String:
-		return DateTime{Value: tk.ToTime(string(obj))}, nil
+		return DateTime{Value: tk.ToTime(obj)}, nil
 	default:
 		return Undefined, NewCommonError("failed to convert time")
 	}
@@ -1253,7 +1253,7 @@ func builtinCharFunc(args ...Object) (Object, error) {
 	case Char:
 		return obj, nil
 	case String:
-		r, _ := utf8.DecodeRuneInString(string(obj))
+		r, _ := utf8.DecodeRuneInString(obj.Value)
 		if r == utf8.RuneError {
 			return Undefined, nil
 		}
@@ -1285,7 +1285,7 @@ func builtinFloatFunc(args ...Object) (Object, error) {
 	case Float:
 		return obj, nil
 	case String:
-		v, err := strconv.ParseFloat(string(obj), 64)
+		v, err := strconv.ParseFloat(obj.Value, 64)
 		if err != nil {
 			return nil, err
 		}
@@ -1305,7 +1305,10 @@ func builtinFloatFunc(args ...Object) (Object, error) {
 }
 
 func builtinStringFunc(args ...Object) (Object, error) {
-	return String(args[0].String()), nil
+	if len(args) < 1 {
+		return &String{Value: ""}, nil
+	}
+	return &String{Value: args[0].String()}, nil
 }
 
 func builtinBytesFunc(args ...Object) (Object, error) {
@@ -1315,7 +1318,7 @@ func builtinBytesFunc(args ...Object) (Object, error) {
 
 	switch obj := args[0].(type) {
 	case String:
-		return Bytes([]byte(obj)), nil
+		return Bytes([]byte(obj.Value)), nil
 	case Bytes:
 		return obj, nil
 	default:
@@ -1345,9 +1348,9 @@ func builtinBytesFunc(args ...Object) (Object, error) {
 func builtinCharsFunc(args ...Object) (Object, error) {
 	switch obj := args[0].(type) {
 	case String:
-		s := string(obj)
+		s := obj.Value
 		var out = make(Array, 0, utf8.RuneCountInString(s))
-		sz := len(obj)
+		sz := len(obj.Value)
 		i := 0
 
 		for i < sz {
@@ -1436,7 +1439,7 @@ func builtinSprintfFunc(args ...Object) (Object, error) {
 		vargs[i] = args[i+1]
 	}
 
-	return String(fmt.Sprintf(args[0].String(), vargs...)), nil
+	return ToString(fmt.Sprintf(args[0].String(), vargs...)), nil
 }
 
 func builtinIsErrorFunc(args ...Object) (Object, error) {
@@ -1495,21 +1498,21 @@ func builtinIsAnyFunc(args ...Object) (Object, error) {
 // Undefined to empty string
 func builtinNilToEmptyFunc(argsA ...Object) (Object, error) {
 	if len(argsA) < 1 {
-		return String(""), nil
+		return ToString(""), nil
 	}
 
 	vA := argsA[0]
 
 	if vA == nil {
-		return String(""), nil
+		return ToString(""), nil
 	}
 
 	if vA == Undefined {
-		return String(""), nil
+		return ToString(""), nil
 	}
 
 	if tk.IsNil(vA) {
-		return String(""), nil
+		return ToString(""), nil
 	}
 
 	rsT := vA.String()
@@ -1521,7 +1524,7 @@ func builtinNilToEmptyFunc(argsA ...Object) (Object, error) {
 		}
 	}
 
-	return String(rsT), nil
+	return ToString(rsT), nil
 }
 
 func builtinStrJoinFunc(args ...Object) (Object, error) {
@@ -1542,7 +1545,7 @@ func builtinStrJoinFunc(args ...Object) (Object, error) {
 	for i := range arr {
 		elems[i] = arr[i].String()
 	}
-	return String(strings.Join(elems, string(sep))), nil
+	return ToString(strings.Join(elems, sep.Value)), nil
 }
 
 func builtinStrToIntFunc(args ...Object) (Object, error) {
@@ -1571,12 +1574,12 @@ func builtinStrToIntFunc(args ...Object) (Object, error) {
 
 func builtinToStrFunc(args ...Object) (Object, error) {
 	if len(args) < 1 {
-		return String(""), nil
+		return ToString(""), nil
 	}
 
 	rsT := tk.ToStr(ConvertFromObject(args[0]))
 
-	return String(rsT), nil
+	return ToString(rsT), nil
 }
 
 func builtinPlFunc(args ...Object) (Object, error) {
@@ -1640,7 +1643,7 @@ func builtinSprFunc(args ...Object) (Object, error) {
 		return Undefined, NewCommonError("required format string")
 	}
 
-	return String(fmt.Sprintf(v.String(), ObjectsToI(args[1:])...)), nil
+	return ToString(fmt.Sprintf(v.String(), ObjectsToI(args[1:])...)), nil
 }
 
 func builtinSleepFunc(args ...Object) (Object, error) {
@@ -1663,31 +1666,31 @@ func builtinSleepFunc(args ...Object) (Object, error) {
 
 func builtinGetWebPageFunc(args ...Object) (Object, error) {
 	if len(args) < 3 {
-		return String(tk.ErrStrf("not enough parameters")), nil
+		return ToString(tk.ErrStrf("not enough parameters")), nil
 	}
 
 	v0, ok := args[0].(String)
 
 	if !ok {
-		return String(tk.ErrStrf("type error for arg 0")), nil
+		return ToString(tk.ErrStrf("type error for arg 0")), nil
 	}
 
 	v1, ok := args[1].(Map)
 
 	if !ok {
-		return String(tk.ErrStrf("type error for arg 1")), nil
+		return ToString(tk.ErrStrf("type error for arg 1")), nil
 	}
 
 	v2, ok := args[2].(Map)
 
 	if !ok {
-		return String(tk.ErrStrf("type error for arg 2")), nil
+		return ToString(tk.ErrStrf("type error for arg 2")), nil
 	}
 
 	rsT := tk.DownloadWebPage(v0.String(), tk.MSI2MSS(ConvertFromObject(v1).(map[string]interface{})),
 		tk.MSI2MSS(ConvertFromObject(v2).(map[string]interface{})), ObjectsToS(args[3:])...)
 
-	return String(rsT), nil
+	return ToString(rsT), nil
 }
 
 func builtinExitFunc(args ...Object) (Object, error) {
@@ -1720,7 +1723,7 @@ func builtinExitFunc(args ...Object) (Object, error) {
 // }
 
 func builtinGetNowStrFunc(args ...Object) (Object, error) {
-	return String(tk.GetNowTimeString()), nil
+	return ToString(tk.GetNowTimeString()), nil
 }
 
 func builtinGetRandomIntFunc(args ...Object) (Object, error) {
@@ -1755,7 +1758,7 @@ func builtinWriteRespFunc(args ...Object) (Object, error) {
 	v1, ok := args[1].(String)
 
 	if ok {
-		contentT = Bytes(v1)
+		contentT = Bytes(v1.Value)
 	}
 
 	if contentT == nil {
@@ -1806,7 +1809,7 @@ func builtinGenJSONRespFunc(args ...Object) (Object, error) {
 
 	rsT := tk.GenerateJSONPResponseWithMore(args[1].String(), args[2].String(), v0v, ObjectsToS(args[3:])...)
 
-	return String(rsT), nil
+	return ToString(rsT), nil
 }
 
 func builtinToJSONFunc(args ...Object) (Object, error) {
@@ -1818,7 +1821,7 @@ func builtinToJSONFunc(args ...Object) (Object, error) {
 
 	rsT := tk.ToJSONX(cObjT, ObjectsToS(args[1:])...)
 
-	return String(rsT), nil
+	return ToString(rsT), nil
 }
 
 func builtinFromJSONFunc(args ...Object) (Object, error) {
@@ -1836,7 +1839,7 @@ func builtinFromJSONFunc(args ...Object) (Object, error) {
 }
 
 func builtinGetSwitchFunc(argsA ...Object) (Object, error) {
-	defaultT := String("")
+	defaultT := ToString("")
 
 	if argsA == nil {
 		return defaultT, nil
@@ -1847,7 +1850,7 @@ func builtinGetSwitchFunc(argsA ...Object) (Object, error) {
 	}
 
 	if len(argsA) > 2 {
-		defaultT = String(argsA[2].String())
+		defaultT = ToString(argsA[2].String())
 	}
 
 	switchStrT := argsA[1].String()
@@ -1866,14 +1869,14 @@ func builtinGetSwitchFunc(argsA ...Object) (Object, error) {
 			continue
 		}
 
-		argT := string(argOT)
+		argT := FromString(argOT)
 		if tk.StartsWith(argT, switchStrT) {
 			tmpStrT = argT[len(switchStrT):]
 			if tk.StartsWith(tmpStrT, "\"") && tk.EndsWith(tmpStrT, "\"") {
-				return String(tmpStrT[1 : len(tmpStrT)-1]), nil
+				return ToString(tmpStrT[1 : len(tmpStrT)-1]), nil
 			}
 
-			return String(tmpStrT), nil
+			return ToString(tmpStrT), nil
 		}
 
 	}
@@ -1912,7 +1915,7 @@ func builtinGetFileInfoFunc(argsA ...Object) (Object, error) {
 		return Undefined, NewCommonError("invalid parameter")
 	}
 
-	filePathT := string(fileNameObjT)
+	filePathT := FromString(fileNameObjT)
 
 	fi, errT := os.Stat(filePathT)
 	if errT != nil && !os.IsExist(errT) {
@@ -1924,14 +1927,14 @@ func builtinGetFileInfoFunc(argsA ...Object) (Object, error) {
 		return Undefined, NewFromError(errT)
 	}
 
-	mapT := Map{"Path": String(filePathT), "Abs": String(absPathT), "Name": String(filepath.Base(filePathT)), "Ext": String(filepath.Ext(filePathT)), "Size": String(tk.Int64ToStr(fi.Size())), "IsDir": String(tk.BoolToStr(fi.IsDir())), "Time": String(tk.FormatTime(fi.ModTime(), tk.TimeFormatCompact)), "Mode": String(fmt.Sprintf("%v", fi.Mode()))}
+	mapT := Map{"Path": ToString(filePathT), "Abs": ToString(absPathT), "Name": ToString(filepath.Base(filePathT)), "Ext": ToString(filepath.Ext(filePathT)), "Size": ToString(tk.Int64ToStr(fi.Size())), "IsDir": ToString(tk.BoolToStr(fi.IsDir())), "Time": ToString(tk.FormatTime(fi.ModTime(), tk.TimeFormatCompact)), "Mode": ToString(fmt.Sprintf("%v", fi.Mode()))}
 
 	return mapT, nil
 
 }
 
 func builtinGetParamFunc(argsA ...Object) (Object, error) {
-	defaultT := String("")
+	defaultT := ToString("")
 	idxT := 1
 
 	if argsA == nil {
@@ -1947,7 +1950,7 @@ func builtinGetParamFunc(argsA ...Object) (Object, error) {
 	}
 
 	if len(argsA) > 2 {
-		defaultT = String(argsA[2].String())
+		defaultT = ToString(argsA[2].String())
 	}
 
 	listT, ok := argsA[0].(Array)
@@ -1966,7 +1969,7 @@ func builtinGetParamFunc(argsA ...Object) (Object, error) {
 		if cnt == idxT {
 			if _, ok := v.(String); ok {
 				if tk.StartsWith(argT, "\"") && tk.EndsWith(argT, "\"") {
-					return String(argT[1 : len(argT)-1]), nil
+					return ToString(argT[1 : len(argT)-1]), nil
 				}
 			}
 
@@ -2052,7 +2055,7 @@ func builtinSetRespHeaderFunc(args ...Object) (Object, error) {
 		return Undefined, NewCommonError("invalid type in Any object(expect http.ResponseWriter)")
 	}
 
-	vv.Header().Set(string(v2), string(v3))
+	vv.Header().Set(v2.Value, v3.Value)
 
 	return Undefined, nil
 }
@@ -2158,7 +2161,7 @@ func fnASRS(fn func(string) string) CallableFunc {
 			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
 		}
 
-		return String(fn(string(s))), nil
+		return ToString(fn(s.Value)), nil
 	}
 }
 
@@ -2178,7 +2181,7 @@ func fnASMSSRS(fn func(string, map[string]string) string) CallableFunc {
 			return NewArgumentTypeError("second", "map", args[1].TypeName()), nil
 		}
 
-		return String(fn(string(s), tk.MSI2MSS(ConvertFromObject(m).(map[string]interface{})))), nil
+		return ToString(fn(s.Value, tk.MSI2MSS(ConvertFromObject(m).(map[string]interface{})))), nil
 	}
 }
 
@@ -2201,13 +2204,13 @@ func BuiltinReplaceHtmlByMapFunc(args ...Object) (Object, error) {
 		return args[0], nil
 	}
 
-	st := string(s)
+	st := s.Value
 
 	for k, v := range m {
 		st = tk.Replace(st, "TX_"+k+"_XT", v.String())
 	}
 
-	return String(st), nil
+	return ToString(st), nil
 }
 
 func fnASSRS(fn func(string, string) string) CallableFunc {
@@ -2223,88 +2226,88 @@ func fnASSRS(fn func(string, string) string) CallableFunc {
 		if !ok {
 			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
 		}
-		return String(fn(string(s1), string(s2))), nil
+		return ToString(fn(s1.Value, s2.Value)), nil
 	}
 }
 
 func builtinCopyFileFunc(args ...Object) (Object, error) {
 	if len(args) < 2 {
-		return String(tk.ErrStrf("%v", ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))))), nil
+		return ToString(tk.ErrStrf("%v", ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))))), nil
 	}
 
 	s1, ok := args[0].(String)
 	if !ok {
-		return String(tk.ErrStrf("%v", NewArgumentTypeError("first", "string", args[0].TypeName()))), nil
+		return ToString(tk.ErrStrf("%v", NewArgumentTypeError("first", "string", args[0].TypeName()))), nil
 	}
 
 	s2, ok := args[1].(String)
 	if !ok {
-		return String(tk.ErrStrf("%v", NewArgumentTypeError("second", "string", args[1].TypeName()))), nil
+		return ToString(tk.ErrStrf("%v", NewArgumentTypeError("second", "string", args[1].TypeName()))), nil
 	}
 
-	errT := tk.CopyFile(string(s1), string(s2), ObjectsToS(args[2:])...)
+	errT := tk.CopyFile(s1.Value, s2.Value, ObjectsToS(args[2:])...)
 
 	if errT != nil {
-		return String(tk.ErrStrf("%v", errT)), nil
+		return ToString(tk.ErrStrf("%v", errT)), nil
 	}
 
-	return String(""), nil
+	return ToString(""), nil
 }
 
 func fnASSBNRE(fn func(string, string, bool, int) error) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) < 4 {
-			return String(tk.ErrStrf("%v", ErrWrongNumArguments.NewError(wantEqXGotY(4, len(args))))), nil
+			return ToString(tk.ErrStrf("%v", ErrWrongNumArguments.NewError(wantEqXGotY(4, len(args))))), nil
 		}
 
 		s1, ok := args[0].(String)
 		if !ok {
-			return String(tk.ErrStrf("%v", NewArgumentTypeError("first", "string", args[0].TypeName()))), nil
+			return ToString(tk.ErrStrf("%v", NewArgumentTypeError("first", "string", args[0].TypeName()))), nil
 		}
 
 		s2, ok := args[1].(String)
 		if !ok {
-			return String(tk.ErrStrf("%v", NewArgumentTypeError("second", "string", args[1].TypeName()))), nil
+			return ToString(tk.ErrStrf("%v", NewArgumentTypeError("second", "string", args[1].TypeName()))), nil
 		}
 
 		b3, ok := args[2].(Bool)
 		if !ok {
-			return String(tk.ErrStrf("%v", NewArgumentTypeError("third", "bool", args[2].TypeName()))), nil
+			return ToString(tk.ErrStrf("%v", NewArgumentTypeError("third", "bool", args[2].TypeName()))), nil
 		}
 
 		n4, ok := args[3].(Int)
 		if !ok {
-			return String(tk.ErrStrf("%v", NewArgumentTypeError("4th", "int", args[3].TypeName()))), nil
+			return ToString(tk.ErrStrf("%v", NewArgumentTypeError("4th", "int", args[3].TypeName()))), nil
 		}
 
-		errT := fn(string(s1), string(s2), bool(b3), int(n4))
+		errT := fn(FromString(s1), FromString(s2), bool(b3), int(n4))
 
 		if errT != nil {
-			return String(tk.ErrStrf("%v", errT)), nil
+			return ToString(tk.ErrStrf("%v", errT)), nil
 		}
 
-		return String(""), nil
+		return ToString(""), nil
 	}
 }
 
 func fnASRE(fn func(string) error) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) < 1 {
-			return String(tk.ErrStrf("%v", ErrWrongNumArguments.NewError(wantEqXGotY(1, len(args))))), nil
+			return ToString(tk.ErrStrf("%v", ErrWrongNumArguments.NewError(wantEqXGotY(1, len(args))))), nil
 		}
 
 		s1, ok := args[0].(String)
 		if !ok {
-			return String(tk.ErrStrf("%v", NewArgumentTypeError("first", "string", args[0].TypeName()))), nil
+			return ToString(tk.ErrStrf("%v", NewArgumentTypeError("first", "string", args[0].TypeName()))), nil
 		}
 
-		errT := fn(string(s1))
+		errT := fn(FromString(s1))
 
 		if errT != nil {
-			return String(tk.ErrStrf("%v", errT)), nil
+			return ToString(tk.ErrStrf("%v", errT)), nil
 		}
 
-		return String(""), nil
+		return ToString(""), nil
 	}
 }
 
@@ -2324,7 +2327,7 @@ func fnASSRI(fn func(string, string) interface{}) CallableFunc {
 			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
 		}
 
-		return NewAnyValue(fn(string(s1), string(s2))), nil
+		return NewAnyValue(fn(FromString(s1), FromString(s2))), nil
 	}
 }
 
@@ -2339,7 +2342,7 @@ func fnASRB(fn func(string) bool) CallableFunc {
 			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
 		}
 
-		return Bool(fn(string(s1))), nil
+		return Bool(fn(FromString(s1))), nil
 	}
 }
 
@@ -2356,7 +2359,7 @@ func fnASIVRS(fn func(string, ...interface{}) string) CallableFunc {
 
 		objsT := ObjectsToI(args[1:])
 
-		return String(fn(string(s1), objsT...)), nil
+		return ToString(fn(FromString(s1), objsT...)), nil
 	}
 }
 
@@ -2385,7 +2388,7 @@ func fnADSIVRI(fn func(*sql.DB, string, ...interface{}) interface{}) CallableFun
 
 		objsT := ObjectsToI(args[2:])
 
-		return ConvertToObject(fn(dbT, string(s1), objsT...)), nil
+		return ConvertToObject(fn(dbT, s1.Value, objsT...)), nil
 	}
 }
 
@@ -2421,7 +2424,7 @@ func fnADSSIVRI(fn func(*sql.DB, string, string, ...interface{}) interface{}) Ca
 
 		objsT := ObjectsToI(args[3:])
 
-		return ConvertToObject(fn(dbT, string(s1), string(s2), objsT...)), nil
+		return ConvertToObject(fn(dbT, FromString(s1), FromString(s2), objsT...)), nil
 	}
 }
 
@@ -2440,7 +2443,7 @@ func fnASSVRS(fn func(string, ...string) string) CallableFunc {
 
 		objsT := ObjectsToS(args[1:])
 
-		return String(fn(string(s1), objsT...)), nil
+		return ToString(fn(FromString(s1), objsT...)), nil
 	}
 }
 
@@ -2448,7 +2451,7 @@ func fnASVRS(fn func(...string) string) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		objsT := ObjectsToS(args)
 
-		return String(fn(objsT...)), nil
+		return ToString(fn(objsT...)), nil
 	}
 }
 
@@ -2467,36 +2470,35 @@ func fnASSVRB(fn func(string, ...string) bool) CallableFunc {
 
 		objsT := ObjectsToS(args[1:])
 
-		return Bool(fn(string(s1), objsT...)), nil
+		return Bool(fn(FromString(s1), objsT...)), nil
 	}
 }
 
 func fnASSSVRE(fn func(string, string, ...string) error) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) < 2 {
-			return String(tk.ErrStrf("%v", ErrWrongNumArguments.NewError(
-				wantEqXGotY(2, len(args))))), nil
+			return ToString(tk.ErrStrf("%v", ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))))), nil
 		}
 
 		s1, ok := args[0].(String)
 		if !ok {
-			return String(tk.ErrStrf("%v", NewArgumentTypeError("first", "string", args[0].TypeName()))), nil
+			return ToString(tk.ErrStrf("%v", NewArgumentTypeError("first", "string", args[0].TypeName()))), nil
 		}
 
 		s2, ok := args[1].(String)
 		if !ok {
-			return String(tk.ErrStrf("%v", NewArgumentTypeError("second", "string", args[1].TypeName()))), nil
+			return ToString(tk.ErrStrf("%v", NewArgumentTypeError("second", "string", args[1].TypeName()))), nil
 		}
 
 		objsT := ObjectsToS(args[2:])
 
-		errT := fn(string(s1), string(s2), objsT...)
+		errT := fn(FromString(s1), FromString(s2), objsT...)
 
 		if errT != nil {
-			return String(tk.ErrStrf("%v", errT)), nil
+			return ToString(tk.ErrStrf("%v", errT)), nil
 		}
 
-		return String(""), nil
+		return ToString(""), nil
 	}
 }
 
@@ -2513,7 +2515,7 @@ func fnASSVRMSSR(fn func(string, ...string) []map[string]string) CallableFunc {
 
 		objsT := ObjectsToS(args[1:])
 
-		return ConvertToObject(fn(string(s1), objsT...)), nil
+		return ConvertToObject(fn(FromString(s1), objsT...)), nil
 	}
 }
 
@@ -2529,7 +2531,7 @@ func fnAIV(fn func(...interface{})) CallableFunc {
 
 func fnRS(fn func() string) CallableFunc {
 	return func(args ...Object) (Object, error) {
-		return String(fn()), nil
+		return ToString(fn()), nil
 	}
 }
 
@@ -2546,6 +2548,6 @@ func fnASSRB(fn func(string, string) bool) CallableFunc {
 		if !ok {
 			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
 		}
-		return Bool(fn(string(s1), string(s2))), nil
+		return Bool(fn(FromString(s1), FromString(s2))), nil
 	}
 }

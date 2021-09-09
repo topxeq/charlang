@@ -178,7 +178,7 @@ func fnSprint(fn func(...interface{}) string) ugo.CallableFunc {
 
 	return func(args ...ugo.Object) (ret ugo.Object, err error) {
 		vargs := argsToPrintArgs(0, args)
-		return ugo.String(fn(vargs...)), nil
+		return ugo.ToString(fn(vargs...)), nil
 	}
 }
 
@@ -190,7 +190,7 @@ func fnSprintf(fn func(string, ...interface{}) string) ugo.CallableFunc {
 				"want>=1 got=" + strconv.Itoa(len(args)))
 		}
 		vargs := argsToPrintArgs(1, args)
-		return ugo.String(fn(args[0].String(), vargs...)), nil
+		return ugo.ToString(fn(args[0].String(), vargs...)), nil
 	}
 }
 

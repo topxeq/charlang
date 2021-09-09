@@ -1244,7 +1244,7 @@ func (vm *VM) execOpSliceIndex() error {
 	case Array:
 		objLen = len(obj)
 	case String:
-		objLen = len(obj)
+		objLen = len(obj.Value)
 	case Bytes:
 		objLen = len(obj)
 	default:
@@ -1295,7 +1295,7 @@ func (vm *VM) execOpSliceIndex() error {
 	case Array:
 		vm.stack[vm.sp] = obj[lowIdx:highIdx]
 	case String:
-		vm.stack[vm.sp] = obj[lowIdx:highIdx]
+		vm.stack[vm.sp] = ToString(obj.Value[lowIdx:highIdx])
 	case Bytes:
 		vm.stack[vm.sp] = obj[lowIdx:highIdx]
 	}
