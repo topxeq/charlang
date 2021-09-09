@@ -143,6 +143,7 @@ const (
 	BuiltinIfSwitchExists
 
 	BuiltinJoinPath
+	BuiltinGetBaseFileName
 
 	BuiltinIfFileExists
 	BuiltinLoadText
@@ -300,7 +301,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"encryptStr": BuiltinEncryptStr,
 	"decryptStr": BuiltinDecryptStr,
 
-	"joinPath": BuiltinJoinPath,
+	"joinPath":        BuiltinJoinPath,
+	"getBaseFileName": BuiltinGetBaseFileName,
 
 	"strToInt":  BuiltinStrToInt,
 	"strToTime": BuiltinStrToTime,
@@ -586,6 +588,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinJoinPath: &BuiltinFunction{
 		Name:  "joinPath",
 		Value: fnASVRS(filepath.Join),
+	},
+	BuiltinGetBaseFileName: &BuiltinFunction{
+		Name:  "getBaseFileName",
+		Value: fnASRS(filepath.Base),
 	},
 	BuiltinStrIn: &BuiltinFunction{
 		Name:  "strIn",
