@@ -114,6 +114,7 @@ const (
 
 	BuiltinStrTrim
 	BuiltinStrJoin
+	BuiltinStrSplit
 	BuiltinStrStartsWith
 	BuiltinStrEndsWith
 	BuiltinStrIn
@@ -126,7 +127,11 @@ const (
 	BuiltinRegFind
 	BuiltinRegFindAll
 
+	BuiltinEncryptStr
+	BuiltinDecryptStr
+
 	BuiltinStrToInt
+	BuiltinStrToTime
 	BuiltinToStr
 
 	BuiltinGetNowStr
@@ -270,6 +275,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"spr": BuiltinSpr,
 
 	"strTrim":       BuiltinStrTrim,
+	"strSplit":      BuiltinStrSplit,
 	"strJoin":       BuiltinStrJoin,
 	"strStartsWith": BuiltinStrStartsWith,
 	"strEndsWith":   BuiltinStrEndsWith,
@@ -284,10 +290,14 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"strIn": BuiltinStrIn,
 
+	"encryptStr": BuiltinEncryptStr,
+	"decryptStr": BuiltinDecryptStr,
+
 	"joinPath": BuiltinJoinPath,
 
-	"strToInt": BuiltinStrToInt,
-	"toStr":    BuiltinToStr,
+	"strToInt":  BuiltinStrToInt,
+	"strToTime": BuiltinStrToTime,
+	"toStr":     BuiltinToStr,
 
 	"getNowStr": BuiltinGetNowStr,
 
@@ -514,6 +524,18 @@ var BuiltinObjects = [...]Object{
 		Name:  "strJoin",
 		Value: builtinStrJoinFunc,
 	},
+	BuiltinStrSplit: &BuiltinFunction{
+		Name:  "strSplit",
+		Value: fnASSRA(strings.Split),
+	},
+	BuiltinEncryptStr: &BuiltinFunction{
+		Name:  "encryptStr",
+		Value: fnASSVRS(tk.EncryptStringByTXDEF),
+	},
+	BuiltinDecryptStr: &BuiltinFunction{
+		Name:  "decryptStr",
+		Value: fnASSVRS(tk.DecryptStringByTXDEF),
+	},
 	BuiltinStrContains: &BuiltinFunction{
 		Name:  "strContains",
 		Value: fnASSRB(strings.Contains),
@@ -565,6 +587,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinStrToInt: &BuiltinFunction{
 		Name:  "strToInt",
 		Value: builtinStrToIntFunc,
+	},
+	BuiltinStrToTime: &BuiltinFunction{
+		Name:  "strToTime",
+		Value: builtinStrToTimeFunc,
 	},
 	BuiltinToStr: &BuiltinFunction{
 		Name:   "toStr",
@@ -1624,6 +1650,36 @@ func builtinStrToIntFunc(args ...Object) (Object, error) {
 	return Int(rsT), nil
 }
 
+func builtinStrToTimeFunc(args ...Object) (Object, error) {
+	// defaultT := NewDateTimeValue("")
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	formatT := ""
+
+	if len(args) > 1 {
+		defaultA, ok := args[1].(String)
+		if ok {
+			formatT = defaultA.String()
+		}
+	}
+
+	strT, ok := args[0].(String)
+	if !ok {
+		return NewCommonError("invalid paramter"), nil
+	}
+
+	rsT, errT := tk.StrToTimeByFormat(strT.String(), formatT)
+
+	if errT != nil {
+		return NewCommonError("time parse failed: %v", errT), nil
+	}
+
+	return NewDateTimeValue(rsT), nil
+}
+
 func builtinToStrFunc(args ...Object) (Object, error) {
 	if len(args) < 1 {
 		return ToString(""), nil
@@ -2352,6 +2408,23 @@ func fnASSNRA(fn func(string, string, int) []string) CallableFunc {
 			return NewArgumentTypeError("third", "int", args[2].TypeName()), nil
 		}
 		return ConvertToObject(fn(s1.Value, s2.Value, int(n3))), nil
+	}
+}
+
+func fnASSRA(fn func(string, string) []string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 2 {
+			return ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))), nil
+		}
+		s1, ok := args[0].(String)
+		if !ok {
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+		}
+		s2, ok := args[1].(String)
+		if !ok {
+			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
+		}
+		return ConvertToObject(fn(s1.Value, s2.Value)), nil
 	}
 }
 

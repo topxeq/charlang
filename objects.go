@@ -371,6 +371,50 @@ func (o DateTime) IndexGet(index Object) (value Object, err error) {
 			fT = o.Methods["format"]
 		}
 		return fT, nil
+	case "add":
+		fT, ok := o.Methods["add"]
+		if !ok {
+			o.Methods["add"] = &Function{
+				Name: "add",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return Undefined, NewCommonError("not enough parameters")
+					}
+
+					nv := ToInt(args[0], 0)
+					if nv == 0 {
+						return Undefined, NewCommonError("invalid parameter")
+					}
+
+					rsT := o.Value.Add(time.Second * time.Duration(nv))
+
+					return NewDateTimeValue(rsT), nil
+				}}
+			fT = o.Methods["add"]
+		}
+		return fT, nil
+	case "before":
+		fT, ok := o.Methods["before"]
+		if !ok {
+			o.Methods["before"] = &Function{
+				Name: "before",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return Undefined, NewCommonError("not enough parameters")
+					}
+
+					nv, ok := args[0].(DateTime)
+					if !ok {
+						return Undefined, NewCommonError("invalid parameter")
+					}
+
+					rsT := o.Value.Before(nv.Value)
+
+					return Bool(rsT), nil
+				}}
+			fT = o.Methods["before"]
+		}
+		return fT, nil
 	}
 
 	return nil, ErrNotIndexable
@@ -820,6 +864,26 @@ func ToString(argA interface{}) String {
 	return String{Value: fmt.Sprintf("%v", argA)}
 }
 
+func ToInt(argA interface{}, defaultA ...int) Int {
+	defaultT := 0
+	if len(defaultA) > 0 {
+		defaultT = defaultA[0]
+	}
+	switch nv := argA.(type) {
+	case String:
+		return Int(tk.StrToInt(nv.Value, defaultT))
+	case Object:
+		return Int(tk.StrToInt(nv.String(), defaultT))
+	case string:
+		return Int(tk.StrToInt(nv, defaultT))
+	case nil:
+		return Int(defaultT)
+	case []byte:
+		return Int(tk.StrToInt(string(nv), defaultT))
+	}
+	return Int(defaultT)
+}
+
 // func ToString(argA interface{}) Object {
 // 	switch nv := argA.(type) {
 // 	case String:
@@ -1169,11 +1233,31 @@ func (o *BuiltinFunction) IndexGet(index Object) (value Object, err error) {
 		}
 
 		return fT, nil
+	case "dateTime.now":
+		fT, ok := o.Methods["dateTime.now"]
+		if !ok {
+			o.Methods["dateTime.now"] = &Function{
+				Name: "dateTime.now",
+				Value: func(args ...Object) (Object, error) {
+					return DateTime{Value: time.Now()}, nil
+				}}
+			fT = o.Methods["now"]
+		}
+
+		return fT, nil
 	case "dateTime.timeFormatRFC1123":
 		mT, ok := o.Members["dateTime.timeFormatRFC1123"]
 		if !ok {
 			o.Members["dateTime.timeFormatRFC1123"] = ToString(time.RFC1123)
 			mT = o.Members["dateTime.timeFormatRFC1123"]
+		}
+
+		return mT, nil
+	case "dateTime.second":
+		mT, ok := o.Members["dateTime.second"]
+		if !ok {
+			o.Members["dateTime.second"] = Int(time.Second)
+			mT = o.Members["dateTime.second"]
 		}
 
 		return mT, nil
