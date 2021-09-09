@@ -1403,9 +1403,9 @@ func builtinFloatFunc(args ...Object) (Object, error) {
 
 func builtinStringFunc(args ...Object) (Object, error) {
 	if len(args) < 1 {
-		return &String{Value: ""}, nil
+		return String{Value: ""}, nil
 	}
-	return &String{Value: args[0].String()}, nil
+	return String{Value: args[0].String()}, nil
 }
 
 func builtinBytesFunc(args ...Object) (Object, error) {
