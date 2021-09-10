@@ -567,7 +567,7 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinStrReplace: &BuiltinFunction{
 		Name:  "strReplace",
-		Value: fnASSSRS(tk.Replace),
+		Value: fnASSVRS(tk.StringReplace),
 	},
 	BuiltinFormatSQLValue: &BuiltinFunction{
 		Name:  "formatSQLValue",
