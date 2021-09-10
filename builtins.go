@@ -1864,7 +1864,7 @@ func builtinExitFunc(args ...Object) (Object, error) {
 // }
 
 func builtinGetNowStrFunc(args ...Object) (Object, error) {
-	return ToString(tk.GetNowTimeString()), nil
+	return ToString(tk.GetNowTimeStringFormat(ObjectsToS(args)...)), nil
 }
 
 func builtinGetRandomIntFunc(args ...Object) (Object, error) {
