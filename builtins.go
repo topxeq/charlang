@@ -106,6 +106,7 @@ const (
 	BuiltinPr
 	BuiltinPl
 	BuiltinPln
+	BuiltinPlv
 	BuiltinSpr
 
 	BuiltinGetInputf
@@ -280,6 +281,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"pr":  BuiltinPr,
 	"pl":  BuiltinPl,
 	"pln": BuiltinPln,
+	"plv": BuiltinPlv,
 	"spr": BuiltinSpr,
 
 	"strTrim":       BuiltinStrTrim,
@@ -427,6 +429,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinPln: &BuiltinFunction{
 		Name:  "pln",
 		Value: fnAIV(tk.Pln),
+	},
+	BuiltinPlv: &BuiltinFunction{
+		Name:  "plv",
+		Value: fnAIV(tk.Plvsr),
 	},
 	BuiltinIfFileExists: &BuiltinFunction{
 		Name:  "ifFileExists",
