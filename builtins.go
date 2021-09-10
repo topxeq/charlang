@@ -611,7 +611,7 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinStrTrim: &BuiltinFunction{
 		Name:  "strTrim",
-		Value: fnASSVRS(tk.Trim),
+		Value: fnASSVRS_safely(tk.Trim),
 	},
 	BuiltinStrEndsWith: &BuiltinFunction{
 		Name:  "strEndsWith",
@@ -2671,6 +2671,29 @@ func fnASSVRS(fn func(string, ...string) string) CallableFunc {
 		if !ok {
 			return NewArgumentTypeError("first", "string",
 				args[0].TypeName()), nil
+		}
+
+		objsT := ObjectsToS(args[1:])
+
+		return ToString(fn(FromString(s1), objsT...)), nil
+	}
+}
+
+func fnASSVRS_safely(fn func(string, ...string) string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 1 {
+			return ToString(""), nil
+		}
+
+		s1, ok := args[0].(String)
+		if !ok {
+			if args[0].TypeName() == "undefined" {
+				s1 = ToString("")
+			} else {
+				s1 = ToString(args[0].String())
+			}
+			// return NewArgumentTypeError("first", "string",
+			// 	args[0].TypeName()), nil
 		}
 
 		objsT := ObjectsToS(args[1:])
