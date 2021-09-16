@@ -284,6 +284,20 @@ func ObjectsToS(aryA []Object) []string {
 	return rs
 }
 
+func ObjectsToBytes(aryA []Object) []byte {
+	if aryA == nil {
+		return nil
+	}
+
+	rs := make([]byte, 0, len(aryA))
+
+	for _, v := range aryA {
+		rs = append(rs, byte(v.(Byte)))
+	}
+
+	return rs
+}
+
 func NewChar(codeA string) (interface{}, error) {
 	bytecodeT, errT := Compile([]byte(codeA), DefaultCompilerOptions)
 	// if errT != nil {

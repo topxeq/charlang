@@ -170,6 +170,9 @@ const (
 	BuiltinToJSON
 	BuiltinFromJSON
 
+	BuiltinSimpleEncode
+	BuiltinSimpleDecode
+
 	BuiltinReplaceHtmlByMap
 	BuiltinCleanHtmlPlaceholders
 
@@ -348,6 +351,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"toJSON":   BuiltinToJSON,
 	"fromJSON": BuiltinFromJSON,
+
+	"simpleEncode": BuiltinSimpleEncode,
+	"simpleDecode": BuiltinSimpleDecode,
 
 	"replaceHtmlByMap":      BuiltinReplaceHtmlByMap,
 	"cleanHtmlPlaceholders": BuiltinCleanHtmlPlaceholders,
@@ -657,6 +663,14 @@ var BuiltinObjects = [...]Object{
 	BuiltinFromJSON: &BuiltinFunction{
 		Name:  "fromJSON",
 		Value: builtinFromJSONFunc,
+	},
+	BuiltinSimpleEncode: &BuiltinFunction{
+		Name:  "simpleEncode",
+		Value: BuiltinSimpleEncodeFunc,
+	},
+	BuiltinSimpleDecode: &BuiltinFunction{
+		Name:  "simpleDecode",
+		Value: BuiltinSimpleDecodeFunc,
 	},
 	BuiltinSetRespHeader: &BuiltinFunction{
 		Name:  "setRespHeader",
@@ -1989,6 +2003,22 @@ func builtinFromJSONFunc(args ...Object) (Object, error) {
 	return cObjT, nil
 }
 
+func BuiltinSimpleEncodeFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	return ToString(tk.EncodeStringCustomEx(args[0].String())), nil
+}
+
+func BuiltinSimpleDecodeFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	return ToString(tk.DecodeStringCustom(args[0].String())), nil
+}
+
 func builtinGetSwitchFunc(argsA ...Object) (Object, error) {
 	defaultT := ToString("")
 
@@ -2676,6 +2706,25 @@ func fnASSVRS(fn func(string, ...string) string) CallableFunc {
 		objsT := ObjectsToS(args[1:])
 
 		return ToString(fn(FromString(s1), objsT...)), nil
+	}
+}
+
+func fnASYVRS(fn func(string, ...byte) string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 1 {
+			return ErrWrongNumArguments.NewError(
+				wantEqXGotY(1, len(args))), nil
+		}
+
+		s1, ok := args[0].(String)
+		if !ok {
+			return NewArgumentTypeError("first", "string",
+				args[0].TypeName()), nil
+		}
+
+		objsT := ObjectsToBytes(args[1:])
+
+		return ToString(fn(s1.Value, objsT...)), nil
 	}
 }
 
