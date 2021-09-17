@@ -528,7 +528,11 @@ func checkErr(err error, f func()) {
 	}
 
 	defer os.Exit(1)
-	_, _ = fmt.Fprintln(os.Stderr, err.Error())
+	_, _ = fmt.Fprintf(os.Stderr, "%+v\n", err)
+
+	e := err.(*ugo.RuntimeError)
+	fmt.Printf("Trace: %v\n", e.StackTrace())
+
 	if f != nil {
 		f()
 	}

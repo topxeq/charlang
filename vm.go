@@ -1287,8 +1287,10 @@ func (vm *VM) execOpSliceIndex() error {
 
 	if lowIdx < 0 || highIdx < 0 ||
 		lowIdx > objLen-1 || highIdx > objLen {
-		return ErrIndexOutOfBounds.NewError(
-			fmt.Sprintf("[%d:%d]", lowIdx, highIdx))
+		if !((lowIdx == objLen) && (lowIdx == highIdx)) {
+			return ErrIndexOutOfBounds.NewError(
+				fmt.Sprintf("[%d:%d]", lowIdx, highIdx))
+		}
 	}
 
 	switch obj := obj.(type) {
