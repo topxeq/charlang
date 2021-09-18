@@ -152,6 +152,8 @@ const (
 	BuiltinLoadText
 	BuiltinSaveText
 	BuiltinAppendText
+	BuiltinLoadBytes
+	BuiltinSaveBytes
 	BuiltinGetFileList
 
 	BuiltinCopyFile
@@ -340,6 +342,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"saveText":   BuiltinSaveText,
 	"appendText": BuiltinAppendText,
 
+	"loadBytes": BuiltinLoadBytes,
+	"saveBytes": BuiltinSaveBytes,
+
 	"getFileList": BuiltinGetFileList,
 
 	"getWebPage": BuiltinGetWebPage,
@@ -468,12 +473,22 @@ var BuiltinObjects = [...]Object{
 	BuiltinSaveText: &BuiltinFunction{
 		Name:   "saveText",
 		Value:  fnASSRS(tk.SaveStringToFile),
-		Remark: `, usage: saveText(textT, "file.txt"), return TXERROR: string if failed`,
+		Remark: `, usage: saveText(textT, "file.txt"), return TXERROR: string if failed, empty string if succeed`,
+	},
+	BuiltinLoadBytes: &BuiltinFunction{
+		Name:   "loadBytes",
+		Value:  fnASNVRI(tk.LoadBytesFromFile),
+		Remark: `, usage: loadBytes("file.bin"), return error or Bytes([]byte)`,
+	},
+	BuiltinSaveBytes: &BuiltinFunction{
+		Name:   "saveBytes",
+		Value:  fnAYSRS(tk.SaveBytesToFile),
+		Remark: `, usage: saveBytes(bytesT, "file.bin"), return TXERROR: string if failed`,
 	},
 	BuiltinAppendText: &BuiltinFunction{
 		Name:   "appendText",
 		Value:  fnASSRS(tk.AppendStringToFile),
-		Remark: `, usage: appendText(textT, "file.txt"), return TXERROR: string if failed`,
+		Remark: `, usage: appendText(textT, "file.txt"), return TXERROR: string if failed, empty string if succeed`,
 	},
 	BuiltinErrStrf: &BuiltinFunction{
 		Name:  "errStrf",
@@ -2412,6 +2427,23 @@ func fnASSRS(fn func(string, string) string) CallableFunc {
 	}
 }
 
+func fnAYSRS(fn func([]byte, string) string) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) != 2 {
+			return ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))), nil
+		}
+		y0, ok := args[0].(Bytes)
+		if !ok {
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+		}
+		s1, ok := args[1].(String)
+		if !ok {
+			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
+		}
+		return ToString(fn([]byte(y0), s1.Value)), nil
+	}
+}
+
 func fnASSSRS(fn func(string, string, string) string) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) < 3 {
@@ -2651,6 +2683,23 @@ func fnADSIVRI(fn func(*sql.DB, string, ...interface{}) interface{}) CallableFun
 		objsT := ObjectsToI(args[2:])
 
 		return ConvertToObject(fn(dbT, s1.Value, objsT...)), nil
+	}
+}
+
+func fnASNVRI(fn func(string, ...int) interface{}) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 1 {
+			return ErrWrongNumArguments.NewError(wantEqXGotY(1, len(args))), nil
+		}
+
+		s0, ok := args[0].(String)
+		if !ok {
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+		}
+
+		objsT := ObjectsToN(args[1:])
+
+		return ConvertToObject(fn(s0.Value, objsT...)), nil
 	}
 }
 

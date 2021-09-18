@@ -278,6 +278,23 @@ func ObjectsToI(aryA []Object) []interface{} {
 	return rs
 }
 
+func ObjectsToN(aryA []Object) []int {
+	if aryA == nil {
+		return nil
+	}
+
+	rs := make([]int, 0, len(aryA))
+
+	for _, v := range aryA {
+		vT := ConvertFromObject(v)
+		if nv, ok := vT.(int); ok {
+			rs = append(rs, nv)
+		}
+	}
+
+	return rs
+}
+
 func ObjectsToS(aryA []Object) []string {
 	if aryA == nil {
 		return nil
