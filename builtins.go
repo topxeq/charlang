@@ -95,6 +95,9 @@ const (
 
 	// by char
 
+	BuiltinMakeStringBuilder
+	BuiltinWriteString
+
 	// BuiltinGo
 	BuiltinNilToEmpty
 
@@ -261,6 +264,10 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// by char
 	// "go":    BuiltinGo,
+
+	"makeStringBuilder": BuiltinMakeStringBuilder,
+	"writeString":       BuiltinWriteString,
+
 	"nilToEmpty": BuiltinNilToEmpty,
 
 	"checkError": BuiltinCheckError,
@@ -702,6 +709,14 @@ var BuiltinObjects = [...]Object{
 		Name:  ":makeArray",
 		Value: builtinWant2(builtinMakeArrayFunc),
 	},
+	BuiltinMakeStringBuilder: &BuiltinFunction{
+		Name:  "makeStringBuilder",
+		Value: builtinMakeStringBuilderFunc,
+	},
+	BuiltinWriteString: &BuiltinFunction{
+		Name:  "writeString",
+		Value: builtinWriteStringFunc,
+	},
 	BuiltinAppend: &BuiltinFunction{
 		Name:  "append",
 		Value: builtinAppendFunc,
@@ -942,6 +957,41 @@ func builtinMakeArrayFunc(args ...Object) (Object, error) {
 		ret[i] = Undefined
 	}
 	return ret, nil
+}
+
+func builtinMakeStringBuilderFunc(args ...Object) (Object, error) {
+	return Any{
+		Value:        new(strings.Builder),
+		OriginalType: "StringBuilder",
+	}, nil
+}
+
+func builtinWriteStringFunc(args ...Object) (Object, error) {
+	if len(args) < 2 {
+		return nil, ErrWrongNumArguments.NewError("want>=2")
+	}
+
+	s1, ok := args[1].(String)
+
+	if !ok {
+		s1 = ToString(args[1].String())
+	}
+
+	if args[0].TypeName() == "any" {
+		vT := args[0].(Any)
+		switch nv := vT.Value.(type) {
+		case *strings.Builder:
+			n, errT := nv.WriteString(s1.Value)
+
+			if errT != nil {
+				return NewCommonError("%v", errT), nil
+			}
+
+			return Int(n), nil
+		}
+	}
+
+	return NewCommonError("%v", "invalid data"), nil
 }
 
 func builtinAppendFunc(args ...Object) (Object, error) {

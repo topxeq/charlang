@@ -1,0 +1,8 @@
+sb := makeStringBuilder()
+
+n1 := writeString(sb, "abc")
+
+n2 := writeString(sb, "123")
+
+plv(sb, n1, n2)
+pl("sb: %v", sb)
