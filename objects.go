@@ -252,7 +252,12 @@ func (o Any) TypeName() string {
 }
 
 func (o Any) String() string {
-	return fmt.Sprintf("[%v] %#v", o.OriginalType, o.Value)
+	switch nv := o.Value.(type) {
+	case *strings.Builder:
+		return nv.String()
+	}
+
+	return fmt.Sprintf("%v", o.Value)
 }
 
 func (o Any) Equal(right Object) bool {
