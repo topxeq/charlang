@@ -15,6 +15,10 @@ var VersionG = "0.2a"
 type CallableFunc = func(args ...Object) (ret Object, err error)
 
 func ConvertToObject(vA interface{}) Object {
+	if vA == nil {
+		return Undefined
+	}
+
 	switch nv := vA.(type) {
 	case error:
 		return WrapError(nv)
@@ -46,7 +50,7 @@ func ConvertToObject(vA interface{}) Object {
 		return Bytes(nv)
 	case []uint32:
 		if nv == nil {
-			return nil
+			return Undefined
 		}
 
 		rsT := make(Array, 0, len(nv))
@@ -58,7 +62,7 @@ func ConvertToObject(vA interface{}) Object {
 		return rsT
 	case []int:
 		if nv == nil {
-			return nil
+			return Undefined
 		}
 
 		rsT := make(Array, 0, len(nv))
@@ -70,7 +74,7 @@ func ConvertToObject(vA interface{}) Object {
 		return rsT
 	case []int64:
 		if nv == nil {
-			return nil
+			return Undefined
 		}
 
 		rsT := make(Array, 0, len(nv))
@@ -82,7 +86,7 @@ func ConvertToObject(vA interface{}) Object {
 		return rsT
 	case []string:
 		if nv == nil {
-			return nil
+			return Undefined
 		}
 
 		rsT := make(Array, 0, len(nv))
@@ -94,7 +98,7 @@ func ConvertToObject(vA interface{}) Object {
 		return rsT
 	case [][]string:
 		if nv == nil {
-			return nil
+			return Undefined
 		}
 
 		rsT := make(Array, 0, len(nv))
@@ -111,7 +115,7 @@ func ConvertToObject(vA interface{}) Object {
 		return rsT
 	case []interface{}:
 		if nv == nil {
-			return nil
+			return Undefined
 		}
 
 		rsT := make(Array, 0, len(nv))
@@ -123,7 +127,7 @@ func ConvertToObject(vA interface{}) Object {
 		return rsT
 	case map[string]string:
 		if nv == nil {
-			return nil
+			return Undefined
 		}
 
 		rsT := make(Map, len(nv))
@@ -135,7 +139,7 @@ func ConvertToObject(vA interface{}) Object {
 		return rsT
 	case map[string]interface{}:
 		if nv == nil {
-			return nil
+			return Undefined
 		}
 
 		rsT := make(Map, len(nv))
@@ -147,7 +151,7 @@ func ConvertToObject(vA interface{}) Object {
 		return rsT
 	case map[string]map[string]string:
 		if nv == nil {
-			return nil
+			return Undefined
 		}
 
 		rsT := make(Map, len(nv))
@@ -164,7 +168,7 @@ func ConvertToObject(vA interface{}) Object {
 		return rsT
 	case []map[string]string:
 		if nv == nil {
-			return nil
+			return Undefined
 		}
 
 		rsT := make(Array, 0, len(nv))
@@ -176,7 +180,7 @@ func ConvertToObject(vA interface{}) Object {
 		return rsT
 	case []map[string]interface{}:
 		if nv == nil {
-			return nil
+			return Undefined
 		}
 
 		rsT := make(Array, 0, len(nv))
@@ -251,6 +255,10 @@ func ConvertFromObject(vA Object) interface{} {
 		}
 
 		return rsT
+	}
+
+	if vA == Undefined {
+		return nil
 	}
 
 	return vA
