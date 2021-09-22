@@ -48,6 +48,7 @@ const (
 	BuiltinTypeName
 	BuiltinAny
 	BuiltinDateTime
+	BuiltinStringBuilder
 	BuiltinBool
 	BuiltinInt
 	BuiltinUint
@@ -94,6 +95,9 @@ const (
 	BuiltinMakeArray
 
 	// by char
+
+	BuiltinNewAny
+	BuiltinNewValue
 
 	BuiltinMakeStringBuilder
 	BuiltinWriteString
@@ -205,31 +209,32 @@ const (
 
 // BuiltinsMap is list of builtin types, exported for REPL.
 var BuiltinsMap = map[string]BuiltinType{
-	"append":      BuiltinAppend,
-	"delete":      BuiltinDelete,
-	"copy":        BuiltinCopy,
-	"repeat":      BuiltinRepeat,
-	"contains":    BuiltinContains,
-	"len":         BuiltinLen,
-	"sort":        BuiltinSort,
-	"sortReverse": BuiltinSortReverse,
-	"error":       BuiltinError,
-	"typeName":    BuiltinTypeName,
-	"any":         BuiltinAny,
-	"dateTime":    BuiltinDateTime,
-	"bool":        BuiltinBool,
-	"int":         BuiltinInt,
-	"uint":        BuiltinUint,
-	"byte":        BuiltinByte,
-	"float":       BuiltinFloat,
-	"char":        BuiltinChar,
-	"string":      BuiltinString,
-	"bytes":       BuiltinBytes,
-	"chars":       BuiltinChars,
-	"printf":      BuiltinPrintf,
-	"println":     BuiltinPrintln,
-	"globals":     BuiltinGlobals,
-	"sprintf":     BuiltinSprintf,
+	"append":        BuiltinAppend,
+	"delete":        BuiltinDelete,
+	"copy":          BuiltinCopy,
+	"repeat":        BuiltinRepeat,
+	"contains":      BuiltinContains,
+	"len":           BuiltinLen,
+	"sort":          BuiltinSort,
+	"sortReverse":   BuiltinSortReverse,
+	"error":         BuiltinError,
+	"typeName":      BuiltinTypeName,
+	"any":           BuiltinAny,
+	"dateTime":      BuiltinDateTime,
+	"stringBuilder": BuiltinStringBuilder,
+	"bool":          BuiltinBool,
+	"int":           BuiltinInt,
+	"uint":          BuiltinUint,
+	"byte":          BuiltinByte,
+	"float":         BuiltinFloat,
+	"char":          BuiltinChar,
+	"string":        BuiltinString,
+	"bytes":         BuiltinBytes,
+	"chars":         BuiltinChars,
+	"printf":        BuiltinPrintf,
+	"println":       BuiltinPrintln,
+	"globals":       BuiltinGlobals,
+	"sprintf":       BuiltinSprintf,
 
 	"isError":     BuiltinIsError,
 	"isAny":       BuiltinIsAny,
@@ -264,6 +269,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// by char
 	// "go":    BuiltinGo,
+
+	"newAny":   BuiltinNewAny,
+	"newValue": BuiltinNewValue,
 
 	"makeStringBuilder": BuiltinMakeStringBuilder,
 	"writeString":       BuiltinWriteString,
@@ -717,6 +725,14 @@ var BuiltinObjects = [...]Object{
 		Name:  "writeString",
 		Value: builtinWriteStringFunc,
 	},
+	BuiltinNewAny: &BuiltinFunction{
+		Name:  "newAny",
+		Value: builtinNewAnyFunc,
+	},
+	BuiltinNewValue: &BuiltinFunction{
+		Name:  "newValue",
+		Value: builtinNewValueFunc,
+	},
 	BuiltinAppend: &BuiltinFunction{
 		Name:  "append",
 		Value: builtinAppendFunc,
@@ -764,6 +780,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinDateTime: &BuiltinFunction{
 		Name:  "dateTime",
 		Value: builtinDateTimeFunc,
+	},
+	BuiltinStringBuilder: &BuiltinFunction{
+		Name:  "stringBuilder",
+		Value: builtinStringBuilderFunc,
 	},
 	BuiltinBool: &BuiltinFunction{
 		Name:  "bool",
@@ -968,7 +988,7 @@ func builtinMakeStringBuilderFunc(args ...Object) (Object, error) {
 
 func builtinWriteStringFunc(args ...Object) (Object, error) {
 	if len(args) < 2 {
-		return nil, ErrWrongNumArguments.NewError("want>=2")
+		return NewCommonError("not enough parameters"), nil
 	}
 
 	s1, ok := args[1].(String)
@@ -989,9 +1009,70 @@ func builtinWriteStringFunc(args ...Object) (Object, error) {
 
 			return Int(n), nil
 		}
+	} else if args[0].TypeName() == "stringBuilder" {
+		vT := args[0].(StringBuilder)
+		n, errT := vT.Value.WriteString(s1.Value)
+
+		if errT != nil {
+			return NewCommonError("%v", errT), nil
+		}
+
+		return Int(n), nil
 	}
 
 	return NewCommonError("%v", "invalid data"), nil
+}
+
+func builtinNewAnyFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return Any{Value: nil}, nil
+	}
+
+	var s1s string
+
+	s1, ok := args[0].(String)
+
+	if !ok {
+		s1s = args[0].String()
+	} else {
+		s1s = s1.Value
+	}
+
+	switch s1s {
+	case "strings.Builder", "*strings.Builder", "stringBuilder":
+		return builtinMakeStringBuilderFunc(args[1:]...)
+	}
+
+	return Any{Value: nil}, nil
+}
+
+func builtinNewValueFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return Any{Value: nil}, nil
+	}
+
+	var s0s string
+
+	s0, ok := args[0].(String)
+
+	if !ok {
+		s0s = args[0].String()
+	} else {
+		s0s = s0.Value
+	}
+
+	switch s0s {
+	case "":
+		if len(args) > 1 {
+			return args[1], nil
+		}
+
+		return Undefined, nil
+	case "strings.Builder", "*strings.Builder", "stringBuilder":
+		return builtinMakeStringBuilderFunc(args[1:]...)
+	}
+
+	return Undefined, nil
 }
 
 func builtinAppendFunc(args ...Object) (Object, error) {
@@ -1428,6 +1509,22 @@ func builtinDateTimeFunc(args ...Object) (Object, error) {
 	default:
 		return Undefined, NewCommonError("failed to convert time")
 	}
+}
+
+func builtinStringBuilderFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		rs := StringBuilder{Value: new(strings.Builder)}
+		rs.Value.WriteString("")
+		return rs, nil
+	}
+
+	s := args[0].String()
+
+	rs := StringBuilder{Value: new(strings.Builder)}
+
+	rs.Value.WriteString(s)
+
+	return rs, nil
 }
 
 func builtinCharFunc(args ...Object) (Object, error) {

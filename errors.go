@@ -100,6 +100,10 @@ func NewError(nameA string, formatA string, argsA ...interface{}) *Error {
 }
 
 func NewFromError(errA error) *Error {
+	if errA == nil {
+		return nil
+	}
+
 	errT := ErrCommon.NewError(errA.Error())
 
 	errT.Name = "error"
