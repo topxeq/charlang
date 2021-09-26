@@ -203,6 +203,248 @@ func (undefined) IndexSet(key, value Object) error {
 	return ErrNotIndexAssignable
 }
 
+type StatusResult struct {
+	ObjectImpl
+	Status string
+	Value  string
+}
+
+var StatusResultInvalid = StatusResult{Status: "", Value: ""}
+var StatusResultSuccess = StatusResult{Status: "success", Value: ""}
+var StatusResultFail = StatusResult{Status: "fail", Value: ""}
+
+func (o StatusResult) TypeName() string {
+	return "statusResult"
+}
+
+func (o StatusResult) String() string {
+	return `{"Status": ` + tk.ObjectToJSON(o.Status) + `, "Value": ` + tk.ObjectToJSON(o.Value) + `}`
+}
+
+func (StatusResult) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o StatusResult) Equal(right Object) bool {
+	nv, ok := right.(StatusResult)
+	if !ok {
+		return false
+	}
+
+	return ((nv.Status == o.Status) && (nv.Value == o.Value))
+}
+
+func (o StatusResult) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, ErrInvalidOperator
+}
+
+func GenStatusResult(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return StatusResultInvalid, nil
+	}
+
+	if len(args) == 1 {
+		nv, ok := args[0].(String)
+
+		if !ok {
+			return StatusResultInvalid, nil
+		}
+
+		mapT := tk.JSONToMapStringString(nv.Value)
+		if mapT == nil {
+			return StatusResultInvalid, nil
+		}
+
+		statusT, ok := mapT["Status"]
+		if !ok {
+			return StatusResultInvalid, nil
+		}
+
+		return StatusResult{Status: statusT, Value: mapT["Value"]}, nil
+	}
+
+	nv0, ok := args[0].(String)
+
+	if !ok {
+		return StatusResultInvalid, nil
+	}
+
+	nv1, ok := args[1].(String)
+
+	if !ok {
+		return StatusResultInvalid, nil
+	}
+
+	return StatusResult{Status: nv0.Value, Value: nv1.Value}, nil
+
+}
+
+func (o StatusResult) IndexGet(index Object) (Object, error) {
+	nv, ok := index.(String)
+	if !ok {
+		return nil, ErrNotIndexable
+	}
+
+	fNameT := nv.Value
+
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if o.Methods == nil {
+		o.Methods = map[string]*Function{}
+	}
+
+	switch fNameT {
+	case "status":
+		fT, ok := o.Methods["status"]
+		if !ok {
+			o.Methods["status"] = &Function{
+				Name: "status",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return ToString(o.Status), nil
+					}
+
+					nv, ok := args[0].(String)
+
+					if !ok {
+						return StatusResultInvalid, nil
+					}
+
+					o.Status = nv.Value
+					return StatusResultSuccess, nil
+				}}
+			fT = o.Methods["status"]
+		}
+		return fT, nil
+	case "value":
+		fT, ok := o.Methods["value"]
+		if !ok {
+			o.Methods["value"] = &Function{
+				Name: "value",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return ToString(o.Value), nil
+					}
+
+					nv, ok := args[0].(String)
+
+					if !ok {
+						return StatusResultInvalid, nil
+					}
+
+					o.Value = nv.Value
+					return StatusResultSuccess, nil
+				}}
+			fT = o.Methods["value"]
+		}
+		return fT, nil
+	case "isValid":
+		fT, ok := o.Methods["isValid"]
+		if !ok {
+			o.Methods["isValid"] = &Function{
+				Name: "isValid",
+				Value: func(args ...Object) (Object, error) {
+					return Bool(o.Status != ""), nil
+				}}
+			fT = o.Methods["isValid"]
+		}
+		return fT, nil
+	case "isSuccess":
+		fT, ok := o.Methods["isSuccess"]
+		if !ok {
+			o.Methods["isSuccess"] = &Function{
+				Name: "isSuccess",
+				Value: func(args ...Object) (Object, error) {
+					return Bool(o.Status == "success"), nil
+				}}
+			fT = o.Methods["isSuccess"]
+		}
+		return fT, nil
+	case "toString", "toJSON":
+		fT, ok := o.Methods["toString"]
+		if !ok {
+			o.Methods["toString"] = &Function{
+				Name: "toString",
+				Value: func(args ...Object) (Object, error) {
+					return ToString(o.String()), nil
+				}}
+			fT = o.Methods["toString"]
+		}
+		return fT, nil
+	case "fromString", "set":
+		fT, ok := o.Methods["fromString"]
+		if !ok {
+			o.Methods["fromString"] = &Function{
+				Name: "fromString",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						o.Status = ""
+						o.Value = ""
+						return StatusResultInvalid, nil
+					}
+
+					if len(args) == 1 {
+						nv, ok := args[0].(String)
+
+						if !ok {
+							o.Status = ""
+							o.Value = ""
+							return StatusResultInvalid, nil
+						}
+
+						mapT := tk.JSONToMapStringString(nv.Value)
+						if mapT == nil {
+							o.Status = ""
+							o.Value = ""
+							return StatusResultInvalid, nil
+						}
+
+						statusT, ok := mapT["Status"]
+						if !ok {
+							o.Status = ""
+							o.Value = ""
+							return StatusResultInvalid, nil
+						}
+
+						o.Status = statusT
+						o.Value = mapT["Value"]
+						return StatusResultSuccess, nil
+					}
+
+					nv0, ok := args[0].(String)
+
+					if !ok {
+						o.Status = ""
+						o.Value = ""
+						return StatusResultInvalid, nil
+					}
+
+					nv1, ok := args[1].(String)
+
+					if !ok {
+						o.Status = ""
+						o.Value = ""
+						return StatusResultInvalid, nil
+					}
+
+					o.Status = nv0.Value
+					o.Value = nv1.Value
+					return StatusResultSuccess, nil
+				}}
+			fT = o.Methods["fromString"]
+		}
+		return fT, nil
+	}
+
+	return nil, ErrNotIndexable
+}
+
+func (StatusResult) IndexSet(key, value Object) error {
+	return ErrNotIndexAssignable
+}
+
 type Any struct {
 	ObjectImpl
 	Value        interface{}
@@ -775,6 +1017,19 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 	}
 
 	switch fNameT {
+	case "toAny":
+		fT, ok := o.Methods["toAny"]
+		if !ok {
+			o.Methods["toAny"] = &Function{
+				Name: "toAny",
+				Value: func(args ...Object) (Object, error) {
+					return NewAnyValue(o.Value), nil
+				},
+			}
+
+			fT = o.Methods["toAny"]
+		}
+		return fT, nil
 	case "connect":
 		fT, ok := o.Methods["connect"]
 		if !ok {
@@ -795,6 +1050,224 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 			}
 
 			fT = o.Methods["connect"]
+		}
+		return fT, nil
+	case "query":
+		fT, ok := o.Methods["query"]
+		if !ok {
+			o.Methods["query"] = &Function{
+				Name: "query",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.QueryDBX(o.Value, s0.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["query"]
+		}
+		return fT, nil
+	case "queryRecs":
+		fT, ok := o.Methods["queryRecs"]
+		if !ok {
+			o.Methods["queryRecs"] = &Function{
+				Name: "queryRecs",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.QueryDBRecsX(o.Value, s0.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryRecs"]
+		}
+		return fT, nil
+	case "queryMap":
+		fT, ok := o.Methods["queryMap"]
+		if !ok {
+			o.Methods["queryMap"] = &Function{
+				Name: "queryMap",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					s1, ok := args[1].(String)
+					if !ok {
+						return NewArgumentTypeError("second", "string",
+							args[1].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[2:])
+
+					return ConvertToObject(sqltk.QueryDBMapX(o.Value, s0.Value, s1.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryMap"]
+		}
+		return fT, nil
+	case "queryMapArray":
+		fT, ok := o.Methods["queryMapArray"]
+		if !ok {
+			o.Methods["queryMapArray"] = &Function{
+				Name: "queryMapArray",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					s1, ok := args[1].(String)
+					if !ok {
+						return NewArgumentTypeError("second", "string",
+							args[1].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[2:])
+
+					return ConvertToObject(sqltk.QueryDBMapArrayX(o.Value, s0.Value, s1.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryMapArray"]
+		}
+		return fT, nil
+	case "queryCount":
+		fT, ok := o.Methods["queryCount"]
+		if !ok {
+			o.Methods["queryCount"] = &Function{
+				Name: "queryCount",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.QueryCountX(o.Value, s0.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryCount"]
+		}
+		return fT, nil
+	case "queryFloat":
+		fT, ok := o.Methods["queryFloat"]
+		if !ok {
+			o.Methods["queryFloat"] = &Function{
+				Name: "queryFloat",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.QueryFloatX(o.Value, s0.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryFloat"]
+		}
+		return fT, nil
+	case "queryString":
+		fT, ok := o.Methods["queryString"]
+		if !ok {
+			o.Methods["queryString"] = &Function{
+				Name: "queryString",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.QueryStringX(o.Value, s0.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryString"]
+		}
+		return fT, nil
+	case "exec":
+		fT, ok := o.Methods["exec"]
+		if !ok {
+			o.Methods["exec"] = &Function{
+				Name: "exec",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.ExecDBX(o.Value, s0.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["exec"]
+		}
+		return fT, nil
+	case "close":
+		fT, ok := o.Methods["close"]
+		if !ok {
+			o.Methods["close"] = &Function{
+				Name: "close",
+				Value: func(args ...Object) (Object, error) {
+					o.Value.Close()
+					return Undefined, nil
+				},
+			}
+
+			fT = o.Methods["close"]
 		}
 		return fT, nil
 	}
@@ -1599,6 +2072,86 @@ func (o *BuiltinFunction) IndexGet(index Object) (value Object, err error) {
 					return builtinNewAnyFunc(args...)
 				}}
 			fT = o.Methods["any.new"]
+		}
+
+		return fT, nil
+	case "database.connect":
+		fT, ok := o.Methods["database.connect"]
+		if !ok {
+			o.Methods["database.connect"] = &Function{
+				Name: "database.connect",
+				Value: func(args ...Object) (Object, error) {
+
+					nv0, ok := args[0].(String)
+
+					if !ok {
+						return NewCommonError("invalid paramter 1"), nil
+					}
+
+					nv1, ok := args[1].(String)
+
+					if !ok {
+						return NewCommonError("invalid paramter 2"), nil
+					}
+
+					rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
+					if tk.IsError(rsT) {
+						return NewFromError(rsT.(error)), nil
+					}
+
+					return Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
+				}}
+			fT = o.Methods["database.connect"]
+		}
+
+		return fT, nil
+	case "database.formatSQLValue", "database.format":
+		fT, ok := o.Methods["database.formatSQLValue"]
+		if !ok {
+			o.Methods["database.formatSQLValue"] = &Function{
+				Name: "database.formatSQLValue",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough paramters"), nil
+					}
+
+					nv0 := args[0].String()
+
+					return ToString(sqltk.FormatSQLValue(nv0)), nil
+				}}
+			fT = o.Methods["database.formatSQLValue"]
+		}
+
+		return fT, nil
+	case "statusResult.success":
+		fT, ok := o.Methods["statusResult.success"]
+		if !ok {
+			o.Methods["statusResult.success"] = &Function{
+				Name: "statusResult.success",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return StatusResultSuccess, nil
+					}
+
+					return StatusResult{Status: "success", Value: args[0].String()}, nil
+				}}
+			fT = o.Methods["statusResult.success"]
+		}
+
+		return fT, nil
+	case "statusResult.fail":
+		fT, ok := o.Methods["statusResult.fail"]
+		if !ok {
+			o.Methods["statusResult.fail"] = &Function{
+				Name: "statusResult.fail",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return StatusResultFail, nil
+					}
+
+					return StatusResult{Status: "fail", Value: args[0].String()}, nil
+				}}
+			fT = o.Methods["statusResult.fail"]
 		}
 
 		return fT, nil

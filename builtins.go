@@ -46,7 +46,9 @@ const (
 	BuiltinSortReverse
 	BuiltinError
 	BuiltinTypeName
+
 	BuiltinAny
+	BuiltinStatusResult
 	BuiltinDateTime
 	BuiltinStringBuilder
 	BuiltinBool
@@ -58,6 +60,7 @@ const (
 	BuiltinString
 	BuiltinBytes
 	BuiltinChars
+
 	BuiltinPrintf
 	BuiltinPrintln
 	BuiltinSprintf
@@ -221,6 +224,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"typeName":      BuiltinTypeName,
 	"any":           BuiltinAny,
 	"dateTime":      BuiltinDateTime,
+	"statusResult":  BuiltinStatusResult,
 	"stringBuilder": BuiltinStringBuilder,
 	"bool":          BuiltinBool,
 	"int":           BuiltinInt,
@@ -780,6 +784,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinDateTime: &BuiltinFunction{
 		Name:  "dateTime",
 		Value: builtinDateTimeFunc,
+	},
+	BuiltinStatusResult: &BuiltinFunction{
+		Name:  "statusResult",
+		Value: builtinStatusResultFunc,
 	},
 	BuiltinStringBuilder: &BuiltinFunction{
 		Name:  "stringBuilder",
@@ -1509,6 +1517,10 @@ func builtinDateTimeFunc(args ...Object) (Object, error) {
 	default:
 		return Undefined, NewCommonError("failed to convert time")
 	}
+}
+
+func builtinStatusResultFunc(args ...Object) (Object, error) {
+	return GenStatusResult(args...)
 }
 
 func builtinStringBuilderFunc(args ...Object) (Object, error) {
