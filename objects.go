@@ -1036,13 +1036,29 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 			o.Methods["connect"] = &Function{
 				Name: "connect",
 				Value: func(args ...Object) (Object, error) {
-					aryT := ObjectsToS(args)
+					if len(args) < 2 {
+						return NewCommonError("not enough paramters"), nil
+					}
 
-					rsT := sqltk.ConnectDBX(aryT[0], aryT[1])
+					nv0, ok := args[0].(String)
+
+					if !ok {
+						return NewCommonError("invalid paramter 1"), nil
+					}
+
+					nv1, ok := args[1].(String)
+
+					if !ok {
+						return NewCommonError("invalid paramter 2"), nil
+					}
+
+					rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
 					if tk.IsError(rsT) {
 						return NewFromError(rsT.(error)), nil
 					}
 
+					o.DBType = nv0.Value
+					o.DBConnectString = nv1.Value
 					o.Value = rsT.(*sql.DB)
 
 					return Undefined, nil

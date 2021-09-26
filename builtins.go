@@ -50,6 +50,7 @@ const (
 	BuiltinAny
 	BuiltinStatusResult
 	BuiltinDateTime
+	BuiltinDatabase
 	BuiltinStringBuilder
 	BuiltinBool
 	BuiltinInt
@@ -224,6 +225,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"typeName":      BuiltinTypeName,
 	"any":           BuiltinAny,
 	"dateTime":      BuiltinDateTime,
+	"database":      BuiltinDatabase,
 	"statusResult":  BuiltinStatusResult,
 	"stringBuilder": BuiltinStringBuilder,
 	"bool":          BuiltinBool,
@@ -784,6 +786,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinDateTime: &BuiltinFunction{
 		Name:  "dateTime",
 		Value: builtinDateTimeFunc,
+	},
+	BuiltinDatabase: &BuiltinFunction{
+		Name:  "database",
+		Value: builtinDatabaseFunc,
 	},
 	BuiltinStatusResult: &BuiltinFunction{
 		Name:  "statusResult",
@@ -1517,6 +1523,31 @@ func builtinDateTimeFunc(args ...Object) (Object, error) {
 	default:
 		return Undefined, NewCommonError("failed to convert time")
 	}
+}
+
+func builtinDatabaseFunc(args ...Object) (Object, error) {
+	if len(args) < 2 {
+		return Database{Value: nil}, nil
+	}
+
+	nv0, ok := args[0].(String)
+
+	if !ok {
+		return NewCommonError("invalid paramter 1"), nil
+	}
+
+	nv1, ok := args[1].(String)
+
+	if !ok {
+		return NewCommonError("invalid paramter 2"), nil
+	}
+
+	rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
+	if tk.IsError(rsT) {
+		return NewFromError(rsT.(error)), nil
+	}
+
+	return Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
 }
 
 func builtinStatusResultFunc(args ...Object) (Object, error) {
