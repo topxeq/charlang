@@ -2139,6 +2139,36 @@ func (o *BuiltinFunction) IndexGet(index Object) (value Object, err error) {
 		}
 
 		return fT, nil
+	case "database.oneColumnToArray", "database.oneColToAry":
+		fT, ok := o.Methods["database.oneColumnToArray"]
+		if !ok {
+			o.Methods["database.oneColumnToArray"] = &Function{
+				Name: "database.oneColumnToArray",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough paramters"), nil
+					}
+
+					nv0, ok := args[0].(Array)
+					if !ok {
+						return NewCommonError("invalid paramter 1"), nil
+					}
+
+					aryT := Array{}
+					for i, v := range nv0 {
+						if i == 0 {
+							continue
+						}
+
+						aryT = append(aryT, v.(Array)[0])
+					}
+
+					return aryT, nil
+				}}
+			fT = o.Methods["database.oneColumnToArray"]
+		}
+
+		return fT, nil
 	case "statusResult.success":
 		fT, ok := o.Methods["statusResult.success"]
 		if !ok {
