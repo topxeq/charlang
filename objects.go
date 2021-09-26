@@ -6,6 +6,7 @@ package charlang
 
 import (
 	"bytes"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/topxeq/charlang/parser"
 	"github.com/topxeq/charlang/token"
+	"github.com/topxeq/sqltk"
 	"github.com/topxeq/tk"
 )
 
@@ -709,6 +711,102 @@ func (o StringBuilder) Copy() Object {
 	rsT.Value.WriteString(o.Value.String())
 
 	return rsT
+}
+
+type Database struct {
+	ObjectImpl
+	Value           *sql.DB
+	DBType          string
+	DBConnectString string
+}
+
+var _ Object = Database{}
+
+// func NewStringBuilder() *StringBuilder {
+// 	return &StringBuilder{}
+// }
+
+// func NewStringBuilderValue(vA interface{}) StringBuilder {
+// 	return StringBuilder{}
+// }
+
+func (o Database) TypeName() string {
+	return "database"
+}
+
+func (o Database) String() string {
+	return fmt.Sprintf("%v", o)
+}
+
+func (o Database) Equal(right Object) bool {
+	if v, ok := right.(Database); ok {
+		return o.Value == v.Value
+	}
+
+	return false
+}
+
+func (o Database) IsFalsy() bool { return false }
+
+func (Database) CanCall() bool { return false }
+
+func (Database) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (Database) CanIterate() bool { return false }
+
+func (Database) Iterate() Iterator { return nil }
+
+func (o Database) IndexGet(index Object) (value Object, err error) {
+	nv, ok := index.(String)
+	if !ok {
+		return nil, ErrNotIndexable
+	}
+
+	fNameT := nv.Value
+
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if o.Methods == nil {
+		o.Methods = map[string]*Function{}
+	}
+
+	switch fNameT {
+	case "connect":
+		fT, ok := o.Methods["connect"]
+		if !ok {
+			o.Methods["connect"] = &Function{
+				Name: "connect",
+				Value: func(args ...Object) (Object, error) {
+					aryT := ObjectsToS(args)
+
+					rsT := sqltk.ConnectDBX(aryT[0], aryT[1])
+					if tk.IsError(rsT) {
+						return NewFromError(rsT.(error)), nil
+					}
+
+					o.Value = rsT.(*sql.DB)
+
+					return Undefined, nil
+				},
+			}
+
+			fT = o.Methods["connect"]
+		}
+		return fT, nil
+	}
+	return nil, ErrNotIndexable
+}
+
+func (Database) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+func (o Database) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, ErrInvalidOperator
 }
 
 // Bool represents boolean values and implements Object interface.
