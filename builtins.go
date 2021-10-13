@@ -2711,8 +2711,8 @@ func fnASSNRAS(fn func(string, string, int) []string) CallableFunc {
 
 func fnASSRA2N(fn func(string, string) [][]int) CallableFunc {
 	return func(args ...Object) (Object, error) {
-		if len(args) < 3 {
-			return ErrWrongNumArguments.NewError(wantEqXGotY(3, len(args))), nil
+		if len(args) < 2 {
+			return ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args))), nil
 		}
 		s1, ok := args[0].(String)
 		if !ok {
