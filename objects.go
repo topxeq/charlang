@@ -1742,6 +1742,14 @@ func ToInt(argA interface{}, defaultA ...int) Int {
 		return Int(tk.StrToInt(nv.String(), defaultT))
 	case string:
 		return Int(tk.StrToInt(nv, defaultT))
+	case int:
+		return Int(nv)
+	case int64:
+		return Int(nv)
+	case int32:
+		return Int(nv)
+	case uint8:
+		return Int(nv)
 	case nil:
 		return Int(defaultT)
 	case []byte:
