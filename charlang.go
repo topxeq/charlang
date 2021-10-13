@@ -274,7 +274,7 @@ func ConvertFromObject(vA Object) interface{} {
 		return rsT
 	}
 
-	if vA == Undefined {
+	if vA.TypeName() == "undefined" {
 		return nil
 	}
 
