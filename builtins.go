@@ -188,6 +188,7 @@ const (
 
 	BuiltinSimpleEncode
 	BuiltinSimpleDecode
+	BuiltinMd5
 
 	BuiltinReplaceHtmlByMap
 	BuiltinCleanHtmlPlaceholders
@@ -386,6 +387,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"simpleEncode": BuiltinSimpleEncode,
 	"simpleDecode": BuiltinSimpleDecode,
+
+	"md5": BuiltinMd5,
 
 	"replaceHtmlByMap":      BuiltinReplaceHtmlByMap,
 	"cleanHtmlPlaceholders": BuiltinCleanHtmlPlaceholders,
@@ -725,6 +728,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinSimpleDecode: &BuiltinFunction{
 		Name:  "simpleDecode",
 		Value: BuiltinSimpleDecodeFunc,
+	},
+	BuiltinMd5: &BuiltinFunction{
+		Name:  "md5",
+		Value: fnASRS(tk.MD5Encrypt),
 	},
 	BuiltinSetRespHeader: &BuiltinFunction{
 		Name:  "setRespHeader",
