@@ -320,13 +320,15 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strContains":   BuiltinStrContains,
 	"strContainsIn": BuiltinStrContainsIn,
 	"strReplace":    BuiltinStrReplace,
+	"strFindAllSub": BuiltinStrFindAllSub,
 
-	"regMatch":      BuiltinRegMatch,
-	"regContains":   BuiltinRegContains,
-	"regContainsIn": BuiltinRegContainsIn,
-	"regReplace":    BuiltinRegReplace,
-	"regFind":       BuiltinRegFind,
-	"regFindAll":    BuiltinRegFindAll,
+	"regMatch":        BuiltinRegMatch,
+	"regContains":     BuiltinRegContains,
+	"regContainsIn":   BuiltinRegContainsIn,
+	"regReplace":      BuiltinRegReplace,
+	"regFind":         BuiltinRegFind,
+	"regFindAll":      BuiltinRegFindAll,
+	"regFindAllIndex": BuiltinRegFindAllIndex,
 
 	"strIn": BuiltinStrIn,
 
