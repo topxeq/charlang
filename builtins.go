@@ -136,6 +136,7 @@ const (
 	BuiltinStrContainsIn
 	BuiltinStrReplace
 	BuiltinStrFindAllSub
+	BuiltinStrRuneLen
 
 	BuiltinRegMatch
 	BuiltinRegContains
@@ -321,6 +322,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strContainsIn": BuiltinStrContainsIn,
 	"strReplace":    BuiltinStrReplace,
 	"strFindAllSub": BuiltinStrFindAllSub,
+	"strRuneLen":    BuiltinStrRuneLen,
 
 	"regMatch":        BuiltinRegMatch,
 	"regContains":     BuiltinRegContains,
@@ -662,6 +664,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinStrStartsWith: &BuiltinFunction{
 		Name:  "strStartsWith",
 		Value: fnASSRB(strings.HasPrefix),
+	},
+	BuiltinStrRuneLen: &BuiltinFunction{
+		Name:  "strRuneLen",
+		Value: fnASRN(tk.RuneLen),
 	},
 	BuiltinStrTrim: &BuiltinFunction{
 		Name:  "strTrim",
@@ -2561,6 +2567,21 @@ func fnASRS(fn func(string) string) CallableFunc {
 		}
 
 		return ToString(fn(s.Value)), nil
+	}
+}
+
+func fnASRN(fn func(string) int) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) != 1 {
+			return ErrWrongNumArguments.NewError(wantEqXGotY(1, len(args))), nil
+		}
+
+		s, ok := args[0].(String)
+		if !ok {
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+		}
+
+		return ToInt(fn(s.Value)), nil
 	}
 }
 
