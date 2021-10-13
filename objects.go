@@ -1734,6 +1734,10 @@ func ToInt(argA interface{}, defaultA ...int) Int {
 	switch nv := argA.(type) {
 	case String:
 		return Int(tk.StrToInt(nv.Value, defaultT))
+	case Int:
+		return nv
+	case Float:
+		return Int(nv)
 	case Object:
 		return Int(tk.StrToInt(nv.String(), defaultT))
 	case string:
