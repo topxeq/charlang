@@ -113,6 +113,23 @@ func ConvertToObject(vA interface{}) Object {
 		}
 
 		return rsT
+	case [][]int:
+		if nv == nil {
+			return Undefined
+		}
+
+		rsT := make(Array, 0, len(nv))
+
+		for _, v := range nv {
+			lineListT := make(Array, 0, len(v))
+			for _, jv := range v {
+				lineListT = append(lineListT, ToInt(jv))
+			}
+
+			rsT = append(rsT, lineListT)
+		}
+
+		return rsT
 	case []interface{}:
 		if nv == nil {
 			return Undefined

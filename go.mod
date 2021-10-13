@@ -14,4 +14,5 @@ require (
 )
 
 replace github.com/topxeq/tk v0.0.0 => ../tk
+
 replace github.com/topxeq/sqltk v0.0.0 => ../sqltk

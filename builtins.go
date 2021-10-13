@@ -135,6 +135,7 @@ const (
 	BuiltinStrContains
 	BuiltinStrContainsIn
 	BuiltinStrReplace
+	BuiltinStrFindAllSub
 
 	BuiltinRegMatch
 	BuiltinRegContains
@@ -142,6 +143,7 @@ const (
 	BuiltinRegReplace
 	BuiltinRegFind
 	BuiltinRegFindAll
+	BuiltinRegFindAllIndex
 
 	BuiltinEncryptStr
 	BuiltinDecryptStr
@@ -625,7 +627,15 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinRegFindAll: &BuiltinFunction{
 		Name:  "regFindAll",
-		Value: fnASSNRA(tk.RegFindAllX),
+		Value: fnASSNRAS(tk.RegFindAllX),
+	},
+	BuiltinRegFindAllIndex: &BuiltinFunction{
+		Name:  "regFindAllIndex",
+		Value: fnASSRA2N(tk.RegFindAllIndexX),
+	},
+	BuiltinStrFindAllSub: &BuiltinFunction{
+		Name:  "strFindAllSub",
+		Value: fnASSRA2N(tk.FindSubStringAll),
 	},
 	BuiltinRegContains: &BuiltinFunction{
 		Name:  "regContains",
@@ -2676,7 +2686,7 @@ func fnASSNRS(fn func(string, string, int) string) CallableFunc {
 	}
 }
 
-func fnASSNRA(fn func(string, string, int) []string) CallableFunc {
+func fnASSNRAS(fn func(string, string, int) []string) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) < 3 {
 			return ErrWrongNumArguments.NewError(wantEqXGotY(3, len(args))), nil
@@ -2694,6 +2704,23 @@ func fnASSNRA(fn func(string, string, int) []string) CallableFunc {
 			return NewArgumentTypeError("third", "int", args[2].TypeName()), nil
 		}
 		return ConvertToObject(fn(s1.Value, s2.Value, int(n3))), nil
+	}
+}
+
+func fnASSRA2N(fn func(string, string) [][]int) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) < 3 {
+			return ErrWrongNumArguments.NewError(wantEqXGotY(3, len(args))), nil
+		}
+		s1, ok := args[0].(String)
+		if !ok {
+			return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+		}
+		s2, ok := args[1].(String)
+		if !ok {
+			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
+		}
+		return ConvertToObject(fn(s1.Value, s2.Value)), nil
 	}
 }
 
