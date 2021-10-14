@@ -790,7 +790,7 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinSort: &BuiltinFunction{
 		Name:  "sort",
-		Value: builtinWant1(builtinSortFunc),
+		Value: builtinSortFunc,
 	},
 	BuiltinSortReverse: &BuiltinFunction{
 		Name:  "sortReverse",
@@ -1319,17 +1319,61 @@ func builtinSortFunc(args ...Object) (Object, error) {
 	switch obj := args[0].(type) {
 	case Array:
 		var err error
-		sort.Slice(obj, func(i, j int) bool {
-			v, e := obj[i].BinaryOp(token.Less, obj[j])
-			if e != nil && err == nil {
-				err = e
+
+		keyT := ""
+		if len(args) > 1 {
+			keyT = args[1].String()
+		}
+
+		descT := false
+		if len(args) > 2 {
+			descT = (args[2].String() == "desc") || (!(args[2].IsFalsy()))
+		}
+
+		if keyT != "" {
+			sort.Slice(obj, func(i, j int) bool {
+				// v1 := Undefined
+				// v2 := Undefined
+
+				m1, ok := obj[i].(Map)
+
+				if ok {
+					m2, ok := obj[j].(Map)
+					if ok {
+						v1, ok := m1[keyT]
+						if ok {
+							v2, ok := m2[keyT]
+
+							if ok {
+								v, e := v1.BinaryOp(tk.IfThenElse(descT, token.Greater, token.Less).(token.Token), v2)
+								if e != nil && err == nil {
+									err = e
+									return false
+								}
+								if v != nil {
+									return !v.IsFalsy()
+								}
+								return false
+							}
+						}
+					}
+				}
+
 				return false
-			}
-			if v != nil {
-				return !v.IsFalsy()
-			}
-			return false
-		})
+			})
+		} else {
+			sort.Slice(obj, func(i, j int) bool {
+				v, e := obj[i].BinaryOp(token.Less, obj[j])
+				if e != nil && err == nil {
+					err = e
+					return false
+				}
+				if v != nil {
+					return !v.IsFalsy()
+				}
+				return false
+			})
+		}
 
 		if err != nil {
 			return nil, err
