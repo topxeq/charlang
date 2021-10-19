@@ -2056,7 +2056,7 @@ func BuiltinDbCloseFunc(args ...Object) (Object, error) {
 	errT := dbT.Close()
 
 	if errT != nil {
-		return NewCommonError("type error for *sql.DB"), nil
+		return NewCommonError("failed to close DB: %v", errT), nil
 	}
 
 	return Undefined, nil
