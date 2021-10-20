@@ -177,6 +177,7 @@ const (
 
 	BuiltinGetWebPage
 
+	BuiltinGetReqHeader
 	BuiltinSetRespHeader
 	BuiltinWriteRespHeader
 	BuiltinWriteResp
@@ -377,7 +378,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"getWebPage": BuiltinGetWebPage,
 
-	"setRespHeader":   BuiltinSetRespHeader,
+	"getReqHeader":    BuiltinGetReqHeader,
 	"writeRespHeader": BuiltinWriteRespHeader,
 	"writeResp":       BuiltinWriteResp,
 	"genJSONResp":     BuiltinGenJSONResp,
@@ -732,6 +733,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinMd5: &BuiltinFunction{
 		Name:  "md5",
 		Value: fnASRS(tk.MD5Encrypt),
+	},
+	BuiltinGetReqHeader: &BuiltinFunction{
+		Name:  "getReqHeader",
+		Value: builtinGetReqHeaderFunc,
 	},
 	BuiltinSetRespHeader: &BuiltinFunction{
 		Name:  "setRespHeader",
@@ -2513,6 +2518,40 @@ func builtinSetRespHeaderFunc(args ...Object) (Object, error) {
 	vv.Header().Set(v2.Value, v3.Value)
 
 	return Undefined, nil
+}
+
+func builtinGetReqHeaderFunc(args ...Object) (Object, error) {
+	if len(args) < 2 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	v, ok := args[0].(Any)
+	if !ok {
+		return Undefined, NewArgumentTypeError(
+			"1",
+			"any",
+			args[0].TypeName(),
+		)
+	}
+
+	v2, ok := args[1].(String)
+	if !ok {
+		return Undefined, NewArgumentTypeError(
+			"2",
+			"any",
+			args[1].TypeName(),
+		)
+	}
+
+	vv, ok := v.Value.(*http.Request)
+
+	if !ok {
+		return Undefined, NewCommonError("invalid type in Any object(expect *http.Request)")
+	}
+
+	strT := vv.Header.Get(v2.Value)
+
+	return ToString(strT), nil
 }
 
 func builtinIsUintFunc(args ...Object) (Object, error) {
