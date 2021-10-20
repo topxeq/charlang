@@ -379,6 +379,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getWebPage": BuiltinGetWebPage,
 
 	"getReqHeader":    BuiltinGetReqHeader,
+	"setRespHeader":   BuiltinSetRespHeader,
 	"writeRespHeader": BuiltinWriteRespHeader,
 	"writeResp":       BuiltinWriteResp,
 	"genJSONResp":     BuiltinGenJSONResp,
