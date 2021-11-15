@@ -176,6 +176,7 @@ const (
 	BuiltinGetFileInfo
 
 	BuiltinGetWebPage
+	BuiltinGetWebBytes
 
 	BuiltinGetReqHeader
 	BuiltinSetRespHeader
@@ -376,7 +377,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"getFileList": BuiltinGetFileList,
 
-	"getWebPage": BuiltinGetWebPage,
+	"getWebPage":  BuiltinGetWebPage,
+	"getWebBytes": BuiltinGetWebBytes,
 
 	"getReqHeader":    BuiltinGetReqHeader,
 	"setRespHeader":   BuiltinSetRespHeader,
@@ -440,6 +442,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinGetWebPage: &BuiltinFunction{
 		Name:  "getWebPage",
 		Value: builtinGetWebPageFunc,
+	},
+	BuiltinGetWebBytes: &BuiltinFunction{
+		Name:  "getWebBytes",
+		Value: builtinGetWebBytesFunc,
 	},
 	BuiltinIfSwitchExists: &BuiltinFunction{
 		Name:   "ifSwitchExists",
@@ -2100,7 +2106,48 @@ func builtinSleepFunc(args ...Object) (Object, error) {
 }
 
 func builtinGetWebPageFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return ToString(tk.ErrStrf("not enough parameters")), nil
+	}
+
+	v0, ok := args[0].(String)
+
+	if !ok {
+		return ToString(tk.ErrStrf("type error for arg 0")), nil
+	}
+
+	var v1 Map
+
+	if len(args) < 2 {
+		v1 = Map{}
+	} else {
+		v1, ok = args[1].(Map)
+
+		if !ok {
+			return ToString(tk.ErrStrf("type error for arg 1")), nil
+		}
+	}
+
+	var v2 Map
+
 	if len(args) < 3 {
+		v2 = Map{}
+	} else {
+		v2, ok = args[2].(Map)
+
+		if !ok {
+			return ToString(tk.ErrStrf("type error for arg 2")), nil
+		}
+	}
+
+	rsT := tk.DownloadWebPage(v0.String(), tk.MSI2MSS(ConvertFromObject(v1).(map[string]interface{})),
+		tk.MSI2MSS(ConvertFromObject(v2).(map[string]interface{})), ObjectsToS(args[3:])...)
+
+	return ToString(rsT), nil
+}
+
+func builtinGetWebBytesFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
 		return ToString(tk.ErrStrf("not enough parameters")), nil
 	}
 
@@ -2122,10 +2169,18 @@ func builtinGetWebPageFunc(args ...Object) (Object, error) {
 		return ToString(tk.ErrStrf("type error for arg 2")), nil
 	}
 
-	rsT := tk.DownloadWebPage(v0.String(), tk.MSI2MSS(ConvertFromObject(v1).(map[string]interface{})),
+	b, m, e := tk.DownloadWebBytes(v0.String(), tk.MSI2MSS(ConvertFromObject(v1).(map[string]interface{})),
 		tk.MSI2MSS(ConvertFromObject(v2).(map[string]interface{})), ObjectsToS(args[3:])...)
 
-	return ToString(rsT), nil
+	if e != nil {
+		return Undefined, NewCommonError(e.Error())
+	}
+
+	rsT := Array{}
+	rsT = append(rsT, Bytes(b))
+	rsT = append(rsT, ConvertToObject(m))
+
+	return rsT, nil
 }
 
 func builtinExitFunc(args ...Object) (Object, error) {
