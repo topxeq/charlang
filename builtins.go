@@ -2165,40 +2165,40 @@ func builtinGetWebBytesFunc(args ...Object) (Object, error) {
 		return ToString(tk.ErrStrf("type error for arg 0")), nil
 	}
 
-	// var v1 Map
+	var v1 Map
 
-	// if len(args) < 2 {
-	// 	v1 = Map{}
-	// } else {
-	// 	v1, ok = args[1].(Map)
+	if len(args) < 2 {
+		v1 = Map{}
+	} else {
+		v1, ok = args[1].(Map)
 
-	// 	if !ok {
-	// 		return ToString(tk.ErrStrf("type error for arg 1")), nil
-	// 	}
-	// }
+		if !ok {
+			return ToString(tk.ErrStrf("type error for arg 1")), nil
+		}
+	}
 
-	// var v2 Map
+	var v2 Map
 
-	// if len(args) < 3 {
-	// 	v2 = Map{}
-	// } else {
-	// 	v2, ok = args[2].(Map)
+	if len(args) < 3 {
+		v2 = Map{}
+	} else {
+		v2, ok = args[2].(Map)
 
-	// 	if !ok {
-	// 		return ToString(tk.ErrStrf("type error for arg 2")), nil
-	// 	}
-	// }
+		if !ok {
+			return ToString(tk.ErrStrf("type error for arg 2")), nil
+		}
+	}
 
-	// var optsT []Object
+	var optsT []Object
 
-	// if len(args) < 4 {
-	// 	optsT = []Object{}
-	// } else {
-	// 	optsT = args[3:]
-	// }
+	if len(args) < 4 {
+		optsT = []Object{}
+	} else {
+		optsT = args[3:]
+	}
 
-	// b, m, e := tk.DownloadWebBytes(v0.String(), tk.MSI2MSS(ConvertFromObject(v1).(map[string]interface{})), tk.MSI2MSS(ConvertFromObject(v2).(map[string]interface{})), ObjectsToS(optsT)...)
-	b, m, e := tk.DownloadWebBytes(v0.String(), nil, nil)
+	b, m, e := tk.DownloadWebBytes(v0.String(), tk.MSI2MSS(ConvertFromObject(v1).(map[string]interface{})), tk.MSI2MSS(ConvertFromObject(v2).(map[string]interface{})), ObjectsToS(optsT)...)
+	// b, m, e := tk.DownloadWebBytes(v0.String(), nil, nil)
 
 	if e != nil {
 		return ToString(tk.ErrStrf(e.Error())), nil
