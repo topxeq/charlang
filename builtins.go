@@ -2201,7 +2201,7 @@ func builtinGetWebBytesFunc(args ...Object) (Object, error) {
 		tk.MSI2MSS(ConvertFromObject(v2).(map[string]interface{})), ObjectsToS(optsT)...)
 
 	if e != nil {
-		return Undefined, NewCommonError(e.Error())
+		return ToString(tk.ErrStrf(e.Error())), nil
 	}
 
 	rsT := Array{}
