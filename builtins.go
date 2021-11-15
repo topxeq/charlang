@@ -2157,16 +2157,28 @@ func builtinGetWebBytesFunc(args ...Object) (Object, error) {
 		return ToString(tk.ErrStrf("type error for arg 0")), nil
 	}
 
-	v1, ok := args[1].(Map)
+	var v1 Map
 
-	if !ok {
-		return ToString(tk.ErrStrf("type error for arg 1")), nil
+	if len(args) < 2 {
+		v1 = Map{}
+	} else {
+		v1, ok = args[1].(Map)
+
+		if !ok {
+			return ToString(tk.ErrStrf("type error for arg 1")), nil
+		}
 	}
 
-	v2, ok := args[2].(Map)
+	var v2 Map
 
-	if !ok {
-		return ToString(tk.ErrStrf("type error for arg 2")), nil
+	if len(args) < 3 {
+		v2 = Map{}
+	} else {
+		v2, ok = args[2].(Map)
+
+		if !ok {
+			return ToString(tk.ErrStrf("type error for arg 2")), nil
+		}
 	}
 
 	b, m, e := tk.DownloadWebBytes(v0.String(), tk.MSI2MSS(ConvertFromObject(v1).(map[string]interface{})),
