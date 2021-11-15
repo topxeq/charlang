@@ -2140,8 +2140,16 @@ func builtinGetWebPageFunc(args ...Object) (Object, error) {
 		}
 	}
 
+	var optsT []Object
+
+	if len(args) < 4 {
+		optsT = []Object{}
+	} else {
+		optsT = args[3:]
+	}
+
 	rsT := tk.DownloadWebPage(v0.String(), tk.MSI2MSS(ConvertFromObject(v1).(map[string]interface{})),
-		tk.MSI2MSS(ConvertFromObject(v2).(map[string]interface{})), ObjectsToS(args[3:])...)
+		tk.MSI2MSS(ConvertFromObject(v2).(map[string]interface{})), ObjectsToS(optsT)...)
 
 	return ToString(rsT), nil
 }
@@ -2181,8 +2189,16 @@ func builtinGetWebBytesFunc(args ...Object) (Object, error) {
 		}
 	}
 
+	var optsT []Object
+
+	if len(args) < 4 {
+		optsT = []Object{}
+	} else {
+		optsT = args[3:]
+	}
+
 	b, m, e := tk.DownloadWebBytes(v0.String(), tk.MSI2MSS(ConvertFromObject(v1).(map[string]interface{})),
-		tk.MSI2MSS(ConvertFromObject(v2).(map[string]interface{})), ObjectsToS(args[3:])...)
+		tk.MSI2MSS(ConvertFromObject(v2).(map[string]interface{})), ObjectsToS(optsT)...)
 
 	if e != nil {
 		return Undefined, NewCommonError(e.Error())
