@@ -614,7 +614,7 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinStrContains: &BuiltinFunction{
 		Name:  "strContains",
-		Value: fnASSRB(strings.Contains),
+		Value: fnASSRB_Restrict(strings.Contains),
 	},
 	BuiltinStrContainsIn: &BuiltinFunction{
 		Name:  "strContainsIn",
@@ -654,11 +654,11 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinRegContains: &BuiltinFunction{
 		Name:  "regContains",
-		Value: fnASSRB(tk.RegContainsX),
+		Value: fnASSRB_Restrict(tk.RegContainsX),
 	},
 	BuiltinRegMatch: &BuiltinFunction{
 		Name:  "regMatch",
-		Value: fnASSRB(tk.RegMatchX),
+		Value: fnASSRB_Restrict(tk.RegMatchX),
 	},
 	BuiltinJoinPath: &BuiltinFunction{
 		Name:  "joinPath",
@@ -674,7 +674,7 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinStrStartsWith: &BuiltinFunction{
 		Name:  "strStartsWith",
-		Value: fnASSRB(strings.HasPrefix),
+		Value: fnASSRB_Restrict(strings.HasPrefix),
 	},
 	BuiltinStrRuneLen: &BuiltinFunction{
 		Name:  "strRuneLen",
@@ -686,7 +686,7 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinStrEndsWith: &BuiltinFunction{
 		Name:  "strEndsWith",
-		Value: fnASSRB(strings.HasSuffix),
+		Value: fnASSRB_Restrict(strings.HasSuffix),
 	},
 	BuiltinStrToInt: &BuiltinFunction{
 		Name:  "strToInt",
@@ -3314,6 +3314,23 @@ func fnASSRB(fn func(string, string) bool) CallableFunc {
 		s2, ok := args[1].(String)
 		if !ok {
 			return NewArgumentTypeError("second", "string", args[1].TypeName()), nil
+		}
+		return Bool(fn(FromString(s1), FromString(s2))), nil
+	}
+}
+
+func fnASSRB_Restrict(fn func(string, string) bool) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		if len(args) != 2 {
+			return Undefined, ErrWrongNumArguments.NewError(wantEqXGotY(2, len(args)))
+		}
+		s1, ok := args[0].(String)
+		if !ok {
+			return Undefined, NewArgumentTypeError("first", "string", args[0].TypeName())
+		}
+		s2, ok := args[1].(String)
+		if !ok {
+			return Undefined, NewArgumentTypeError("second", "string", args[1].TypeName())
 		}
 		return Bool(fn(FromString(s1), FromString(s2))), nil
 	}
