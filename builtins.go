@@ -175,6 +175,7 @@ const (
 	BuiltinRemoveFile
 	BuiltinGetFileInfo
 
+	BuiltinGetWeb
 	BuiltinGetWebPage
 	BuiltinGetWebBytes
 
@@ -377,6 +378,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"getFileList": BuiltinGetFileList,
 
+	"getWeb":      BuiltinGetWeb,
 	"getWebPage":  BuiltinGetWebPage,
 	"getWebBytes": BuiltinGetWebBytes,
 
@@ -438,6 +440,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinGetFileList: &BuiltinFunction{
 		Name:  "getFileList",
 		Value: fnASSVRMSSR(tk.GetFileList),
+	},
+	BuiltinGetWeb: &BuiltinFunction{
+		Name:  "getWeb",
+		Value: fnASIVRS(tk.DownloadWebPageX),
 	},
 	BuiltinGetWebPage: &BuiltinFunction{
 		Name:  "getWebPage",

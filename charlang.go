@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var VersionG = "0.2a"
+var VersionG = "0.3a"
 
 // CallableFunc is a function signature for a callable function.
 type CallableFunc = func(args ...Object) (ret Object, err error)
