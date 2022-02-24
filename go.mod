@@ -5,13 +5,13 @@ go 1.15
 require (
 	github.com/mattn/go-sqlite3 v1.14.8 // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/topxeq/sqltk v0.0.0
-	github.com/topxeq/tk v0.0.0
+	github.com/topxeq/sqltk v0.0.0-20220223085339-1da81e4d0c2e
+	github.com/topxeq/tk v0.9.1
 )
 
-replace github.com/topxeq/tk v0.0.0 => ../tk
+// replace github.com/topxeq/tk v0.0.0 => ../tk
 
-replace github.com/topxeq/sqltk v0.0.0 => ../sqltk
+// replace github.com/topxeq/sqltk v0.0.0 => ../sqltk
 
 // replace github.com/topxeq/gods v0.0.0 => ../gods
 

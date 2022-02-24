@@ -20,5 +20,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.11
 	github.com/stretchr/testify v1.7.0
 	github.com/topxeq/charlang v0.0.0
-	github.com/topxeq/tk v0.0.0
+	github.com/topxeq/tk v0.9.1
+
 )
