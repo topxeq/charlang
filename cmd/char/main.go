@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
+//go:build !js
 // +build !js
 
 package main
@@ -563,6 +564,17 @@ func main() {
 		var script []byte
 		if filePath == "-" {
 			script, err = ioutil.ReadAll(os.Stdin)
+		} else if strings.HasPrefix(filePath, "http") {
+			rsT := tk.DownloadWebPageX(filePath)
+
+			if tk.IsErrStr(rsT) {
+				script = []byte("")
+				err = tk.ErrStrToErr(rsT)
+			} else {
+				script = []byte(rsT)
+				err = nil
+			}
+
 		} else {
 			script, err = ioutil.ReadFile(filePath)
 		}

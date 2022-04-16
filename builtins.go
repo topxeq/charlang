@@ -120,6 +120,8 @@ const (
 	BuiltinPlv
 	BuiltinSpr
 
+	BuiltinFatalf
+
 	BuiltinGetInputf
 
 	BuiltinErrStrf
@@ -151,6 +153,7 @@ const (
 
 	BuiltinStrToInt
 	BuiltinStrToTime
+	BuiltinToInt
 	BuiltinToStr
 
 	BuiltinGetNowStr
@@ -317,6 +320,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"plv": BuiltinPlv,
 	"spr": BuiltinSpr,
 
+	"fatalf": BuiltinFatalf,
+
 	"strTrim":       BuiltinStrTrim,
 	"strSplit":      BuiltinStrSplit,
 	"strJoin":       BuiltinStrJoin,
@@ -346,6 +351,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"strToInt":  BuiltinStrToInt,
 	"strToTime": BuiltinStrToTime,
+	"toInt":     BuiltinToInt,
 	"toStr":     BuiltinToStr,
 
 	"getNowStr": BuiltinGetNowStr,
@@ -484,6 +490,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinPln: &BuiltinFunction{
 		Name:  "pln",
 		Value: fnAIV(tk.Pln),
+	},
+	BuiltinFatalf: &BuiltinFunction{
+		Name:  "fatalf",
+		Value: builtinFatalfFunc,
 	},
 	BuiltinPlv: &BuiltinFunction{
 		Name:  "plv",
@@ -701,6 +711,11 @@ var BuiltinObjects = [...]Object{
 	BuiltinStrToTime: &BuiltinFunction{
 		Name:  "strToTime",
 		Value: builtinStrToTimeFunc,
+	},
+	BuiltinToInt: &BuiltinFunction{
+		Name:   "toInt",
+		Value:  builtinToIntFunc,
+		Remark: ", usage: toInt(any)",
 	},
 	BuiltinToStr: &BuiltinFunction{
 		Name:   "toStr",
@@ -2019,6 +2034,16 @@ func builtinStrToTimeFunc(args ...Object) (Object, error) {
 	return NewDateTimeValue(rsT), nil
 }
 
+func builtinToIntFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return ToInt(""), nil
+	}
+
+	rsT := tk.ToInt(ConvertFromObject(args[0]))
+
+	return ToInt(rsT), nil
+}
+
 func builtinToStrFunc(args ...Object) (Object, error) {
 	if len(args) < 1 {
 		return ToString(""), nil
@@ -2040,6 +2065,23 @@ func builtinPlFunc(args ...Object) (Object, error) {
 	}
 
 	tk.Pl(v.String(), ObjectsToI(args[1:])...)
+
+	return Undefined, nil
+}
+
+func builtinFatalfFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return Undefined, nil
+	}
+
+	v, ok := args[0].(String)
+	if !ok {
+		return Undefined, NewCommonError("required format string")
+	}
+
+	tk.Pl(v.String(), ObjectsToI(args[1:])...)
+
+	tk.Exit(1)
 
 	return Undefined, nil
 }
