@@ -740,6 +740,16 @@ func (DateTime) IndexSet(index, value Object) error {
 }
 
 func (o DateTime) BinaryOp(tok token.Token, right Object) (Object, error) {
+	nv, ok := right.(DateTime)
+	if !ok {
+		return nil, NewCommonError("invalid parameter")
+	}
+
+	switch tok {
+	case token.Sub:
+		return ToInt(o.Value.Sub(nv.Value)), nil
+	}
+
 	return nil, ErrInvalidOperator
 }
 
@@ -1754,7 +1764,10 @@ func ToInt(argA interface{}, defaultA ...int) Int {
 		return Int(defaultT)
 	case []byte:
 		return Int(tk.StrToInt(string(nv), defaultT))
+	case time.Duration:
+		return Int(nv)
 	}
+
 	return Int(defaultT)
 }
 

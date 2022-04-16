@@ -1,0 +1,14 @@
+// Z... N/A now
+
+handler1 := func(w, r) {
+	pl("here")
+	writeResp(w, "abc")
+}
+
+muxG := newAny("mux")
+
+setMuxHandler(muxG, "/", handler1)
+
+startHttpServer(":8080", muxG)
+
+

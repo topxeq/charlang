@@ -187,6 +187,9 @@ const (
 	BuiltinWriteRespHeader
 	BuiltinWriteResp
 
+	// BuiltinSetMuxHandler
+	// BuiltinStartHttpServer
+
 	BuiltinGenJSONResp
 
 	BuiltinToJSON
@@ -393,6 +396,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"writeRespHeader": BuiltinWriteRespHeader,
 	"writeResp":       BuiltinWriteResp,
 	"genJSONResp":     BuiltinGenJSONResp,
+
+	// "setMuxHandler":   BuiltinSetMuxHandler,
+	// "startHttpServer": BuiltinStartHttpServer,
 
 	"toJSON":   BuiltinToJSON,
 	"fromJSON": BuiltinFromJSON,
@@ -738,6 +744,14 @@ var BuiltinObjects = [...]Object{
 		Name:  "writeResp",
 		Value: builtinWriteRespFunc,
 	},
+	// BuiltinSetMuxHandler: &BuiltinFunction{
+	// 	Name:  "setMuxHandler",
+	// 	Value: builtinSetMuxHandlerFunc,
+	// },
+	// BuiltinStartHttpServer: &BuiltinFunction{
+	// 	Name:  "startHttpServer",
+	// 	Value: builtinStartHttpServerFunc,
+	// },
 	BuiltinGenJSONResp: &BuiltinFunction{
 		Name:  "genJSONResp",
 		Value: builtinGenJSONRespFunc,
@@ -1113,6 +1127,11 @@ func builtinNewAnyFunc(args ...Object) (Object, error) {
 	switch s1s {
 	case "strings.Builder", "*strings.Builder", "stringBuilder":
 		return builtinMakeStringBuilderFunc(args[1:]...)
+		// case "mux":
+		// 	return Any{
+		// 		Value:        http.NewServeMux(),
+		// 		OriginalType: "*http.ServeMux",
+		// 	}, nil
 	}
 
 	return Any{Value: nil}, nil
@@ -2359,6 +2378,100 @@ func builtinWriteRespFunc(args ...Object) (Object, error) {
 
 	return Int(r), errT
 }
+
+// func builtinSetMuxHandlerFunc(args ...Object) (Object, error) {
+// 	if len(args) < 3 {
+// 		return Undefined, NewCommonError("not enough parameters")
+// 	}
+
+// 	v, ok := args[0].(Any)
+// 	if !ok {
+// 		return Undefined, NewArgumentTypeError(
+// 			"1",
+// 			"any",
+// 			args[0].TypeName(),
+// 		)
+// 	}
+
+// 	muxT, ok := v.Value.(*http.ServeMux)
+
+// 	if !ok {
+// 		return Undefined, NewArgumentTypeError(
+// 			"1",
+// 			"*http.ServeMux",
+// 			tk.Spr("%T", v.Value),
+// 		)
+// 	}
+
+// 	v1, ok := args[1].(String)
+
+// 	if !ok {
+// 		return Undefined, NewArgumentTypeError(
+// 			"2",
+// 			"string",
+// 			tk.Spr("%T", v1.Value),
+// 		)
+// 	}
+
+// 	vv, ok := args[2].(*CompiledFunction)
+
+// 	if !ok {
+// 		return Undefined, NewCommonError("invalid type in Any object(expect Function): %v", args[2])
+// 	}
+
+// 	handlerT := func(w http.ResponseWriter, r *http.Request) {
+// 		tk.Pl("%#v %#v \n%#v", w, r, vv)
+// 		rsT, errT := args[2].Call(NewAny(w), NewAny(r))
+// 		tk.Pl("%#v %#v", rsT, errT)
+// 	}
+
+// 	muxT.HandleFunc(v1.Value, handlerT)
+
+// 	return nil, nil
+// }
+
+// func builtinStartHttpServerFunc(args ...Object) (Object, error) {
+// 	if len(args) < 2 {
+// 		return Undefined, NewCommonError("not enough parameters")
+// 	}
+
+// 	v1, ok := args[0].(String)
+
+// 	if !ok {
+// 		return Undefined, NewArgumentTypeError(
+// 			"1",
+// 			"string",
+// 			tk.Spr("%T", v1.Value),
+// 		)
+// 	}
+
+// 	v, ok := args[1].(Any)
+// 	if !ok {
+// 		return Undefined, NewArgumentTypeError(
+// 			"2",
+// 			"any",
+// 			args[1].TypeName(),
+// 		)
+// 	}
+
+// 	muxT, ok := v.Value.(*http.ServeMux)
+
+// 	if !ok {
+// 		return Undefined, NewArgumentTypeError(
+// 			"2",
+// 			"*http.ServeMux",
+// 			tk.Spr("%T", v.Value),
+// 		)
+// 	}
+
+// 	errT := http.ListenAndServe(v1.Value, muxT)
+
+// 	if errT != nil {
+// 		return Undefined, NewCommonError("failed to start http server: %v", errT)
+// 	}
+
+// 	return nil, nil
+// }
 
 func builtinGenJSONRespFunc(args ...Object) (Object, error) {
 	if len(args) < 3 {
