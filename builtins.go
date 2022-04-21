@@ -623,8 +623,9 @@ var BuiltinObjects = [...]Object{
 		Value: builtinStrJoinFunc,
 	},
 	BuiltinStrSplit: &BuiltinFunction{
-		Name:  "strSplit",
-		Value: fnASSRA(strings.Split),
+		Name: "strSplit",
+		// Value: fnASSRA(strings.Split),
+		Value: builtinStrSplitFunc,
 	},
 	BuiltinEncryptStr: &BuiltinFunction{
 		Name:  "encryptStr",
@@ -2686,6 +2687,62 @@ func builtinGetParamFunc(argsA ...Object) (Object, error) {
 	}
 
 	return defaultT, nil
+}
+
+func builtinStrSplitFunc(argsA ...Object) (Object, error) {
+	defaultT := ToString("")
+	nT := -1
+	sepT := ""
+
+	if argsA == nil {
+		return defaultT, NewCommonError("not enough parameters")
+	}
+
+	if len(argsA) < 1 {
+		return defaultT, NewCommonError("not enough parameters")
+	}
+
+	strT, ok := argsA[0].(String)
+
+	if !ok {
+		return defaultT, NewArgumentTypeError(
+			"1",
+			"string",
+			argsA[0].TypeName(),
+		)
+	}
+
+	if len(argsA) > 1 {
+		sepStrT, ok := argsA[1].(String)
+
+		if !ok {
+			return defaultT, NewArgumentTypeError(
+				"2",
+				"string",
+				argsA[1].TypeName(),
+			)
+		}
+
+		sepT = sepStrT.Value
+	}
+
+	if len(argsA) > 2 {
+		nTmpT, ok := argsA[2].(Int)
+
+		if !ok {
+			return defaultT, NewArgumentTypeError(
+				"3",
+				"int",
+				argsA[2].TypeName(),
+			)
+		}
+
+		nT = int(nTmpT)
+	}
+
+	listT := strings.SplitN(strT.Value, sepT, nT)
+
+	return ConvertToObject(listT), nil
 }
 
 func builtinWriteRespHeaderFunc(args ...Object) (Object, error) {
