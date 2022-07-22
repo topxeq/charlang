@@ -1641,7 +1641,12 @@ func builtinDateTimeFunc(args ...Object) (Object, error) {
 	case DateTime:
 		return DateTime{Value: obj.Value}, nil
 	case String:
-		return DateTime{Value: tk.ToTime(obj)}, nil
+		rsT := tk.ToTime(obj)
+
+		if tk.IsError(rsT) {
+			return Undefined, NewCommonError("failed to convert time")
+		}
+		return DateTime{Value: rsT.(time.Time)}, nil
 	default:
 		return Undefined, NewCommonError("failed to convert time")
 	}

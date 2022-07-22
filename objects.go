@@ -618,13 +618,13 @@ var _ Object = DateTime{}
 
 func NewDateTime(vA interface{}) *DateTime {
 	return &DateTime{
-		Value: tk.ToTime(vA),
+		Value: tk.ToTime(vA, "-defaultNow").(time.Time),
 	}
 }
 
 func NewDateTimeValue(vA interface{}) DateTime {
 	return DateTime{
-		Value: tk.ToTime(vA),
+		Value: tk.ToTime(vA, "-defaultNow").(time.Time),
 	}
 }
 
@@ -1651,7 +1651,8 @@ func dealStringMethods(o String, fNameA string) (Object, error) {
 					}
 
 					return Bool(tk.RegMatchX(FromString(o), args[0].String())), nil
-				}}
+				},
+			}
 			fT = o.Methods["regMatch"]
 		}
 		return fT, nil
