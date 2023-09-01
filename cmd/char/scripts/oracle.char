@@ -1,9 +1,9 @@
 global argsG
 
-// connect string is like: user/password@127.0.0.1:1521/mydb
+// connect string is like: oracle://user:password@127.0.0.1:1521/ORCL
 dbConnectStr := getSwitch(argsG, "-connect=")
 
-dbT := dbConnect("godror", dbConnectStr)
+dbT := dbConnect("oracle", dbConnectStr)
 
 if isError(dbT) {
     pl("failed to connect DB: %v", dbT)

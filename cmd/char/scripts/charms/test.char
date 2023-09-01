@@ -1,0 +1,17 @@
+global tk
+global requestG
+global responseG
+
+param (...argsG)
+
+pl("[%v] args: %v", getNowStr(), argsG)
+
+a := 1+6
+
+// tk("test", 1, "a")
+
+// setRespHeader(responseG, "Content-Type", "text/json; charset=utf-8")
+
+writeResp(responseG, "here we go")
+
+return "TX_END_RESPONSE_XT"

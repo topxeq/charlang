@@ -1,7 +1,3 @@
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
-// Use of this source code is governed by a MIT License
-// that can be found in the LICENSE file.
-
 package charlang
 
 import (
@@ -36,6 +32,7 @@ type BuiltinType int
 
 // Builtins
 const (
+	// internal related
 	BuiltinAppend BuiltinType = iota
 	BuiltinDelete
 	BuiltinCopy
@@ -47,6 +44,7 @@ const (
 	BuiltinError
 	BuiltinTypeName
 
+	// data type related
 	BuiltinAny
 	BuiltinStatusResult
 	BuiltinDateTime
@@ -62,11 +60,13 @@ const (
 	BuiltinBytes
 	BuiltinChars
 
+	// print related
 	BuiltinPrintf
 	BuiltinPrintln
 	BuiltinSprintf
 	BuiltinGlobals
 
+	// decision related
 	BuiltinIsError
 	BuiltinIsAny
 	BuiltinIsInt
@@ -85,6 +85,7 @@ const (
 	BuiltinIsCallable
 	BuiltinIsIterable
 
+	// error related
 	BuiltinWrongNumArgumentsError
 	BuiltinInvalidOperatorError
 	BuiltinIndexOutOfBoundsError
@@ -107,6 +108,9 @@ const (
 	BuiltinWriteString
 
 	// BuiltinGo
+
+	BuiltinPass
+
 	BuiltinNilToEmpty
 
 	BuiltinCheckError
@@ -297,6 +301,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"nilToEmpty": BuiltinNilToEmpty,
 
+	"pass": BuiltinPass,
+
 	"checkError": BuiltinCheckError,
 
 	"sleep":          BuiltinSleep,
@@ -434,6 +440,11 @@ var BuiltinObjects = [...]Object{
 		Name:   "nilToEmpty",
 		Value:  builtinNilToEmptyFunc,
 		Remark: ", usage: nilToEmpty(v), if v is Undefined or other errors occur, output empty string",
+	},
+	BuiltinPass: &BuiltinFunction{
+		Name:   "pass",
+		Value:  builtinPassFunc,
+		Remark: ", usage: pass(), do nothing, return none",
 	},
 	BuiltinExit: &BuiltinFunction{
 		Name:   "exit",
@@ -1950,6 +1961,10 @@ func builtinIsByteFunc(args ...Object) (Object, error) {
 func builtinIsAnyFunc(args ...Object) (Object, error) {
 	_, ok := args[0].(Any)
 	return Bool(ok), nil
+}
+
+func builtinPassFunc(argsA ...Object) (Object, error) {
+	return Undefined, nil
 }
 
 // Undefined to empty string

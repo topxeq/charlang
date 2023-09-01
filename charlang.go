@@ -1,15 +1,32 @@
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
-// Use of this source code is governed by a MIT License
-// that can be found in the LICENSE file.
-
 package charlang
 
 import (
 	"fmt"
+	"net/http"
+	"os"
 	"time"
+
+	"github.com/topxeq/tk"
+
+	_ "github.com/denisenkom/go-mssqldb"
+	// _ "github.com/godror/godror"
+	_ "github.com/sijms/go-ora/v2"
+
+	// full version related end
+
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-var VersionG = "0.3a"
+var VersionG = "0.5a"
+
+var CodeTextG = ""
+
+var VerboseG = false
+
+var ScriptPathG string
+
+var ServerModeG = false
 
 // CallableFunc is a function signature for a callable function.
 type CallableFunc = func(args ...Object) (ret Object, err error)
@@ -340,6 +357,95 @@ func ObjectsToBytes(aryA []Object) []byte {
 	return rs
 }
 
+func DownloadStringFromSSH(sshA string, filePathA string) string {
+	aryT := tk.Split(sshA, ":")
+
+	basePathT, errT := tk.EnsureBasePath("char")
+
+	if errT != nil {
+		return tk.GenerateErrorStringF("failed to find base path: %v", errT)
+	}
+
+	if len(aryT) != 5 {
+		aryT = tk.Split(tk.LoadStringFromFile(tk.JoinPath(basePathT, "ssh.cfg"))+filePathA, ":")
+
+		if len(aryT) != 5 {
+			return tk.ErrStrF("invalid ssh config: %v", "")
+		}
+
+	}
+
+	clientT, errT := tk.NewSSHClient(aryT[0], tk.StrToIntWithDefaultValue(aryT[1], 22), aryT[2], aryT[3])
+
+	if errT != nil {
+		return tk.ErrToStrF("failed to create SSH client:", errT)
+	}
+
+	tmpPathT := tk.JoinPath(basePathT, "tmp")
+
+	errT = tk.EnsureMakeDirsE(tmpPathT)
+
+	if errT != nil {
+		return tk.ErrToStrF("failed to create tmp dir:", errT)
+	}
+
+	tmpFileT, errT := tk.CreateTempFile(tmpPathT, "")
+
+	if errT != nil {
+		return tk.ErrToStrF("failed to create tmp dir:", errT)
+	}
+
+	defer os.Remove(tmpFileT)
+
+	errT = clientT.Download(aryT[4], tmpFileT)
+
+	if errT != nil {
+		return tk.ErrToStrF("failed to download file:", errT)
+	}
+
+	fcT := tk.LoadStringFromFile(tmpFileT)
+
+	return fcT
+}
+
+func GetCfgString(fileNameA string) string {
+	basePathT, errT := tk.EnsureBasePath("char")
+
+	if errT == nil {
+		cfgPathT := tk.JoinPath(basePathT, fileNameA)
+
+		cfgStrT := tk.Trim(tk.LoadStringFromFile(cfgPathT))
+
+		if !tk.IsErrorString(cfgStrT) {
+			return cfgStrT
+		}
+
+		return tk.ErrStrF("failed to get config string: %v", tk.GetErrorString(cfgStrT))
+
+	}
+
+	return tk.ErrStrF("failed to get config string: %v", errT)
+}
+
+func SetCfgString(fileNameA string, strA string) string {
+	basePathT, errT := tk.EnsureBasePath("char")
+
+	if errT == nil {
+		cfgPathT := tk.JoinPath(basePathT, fileNameA)
+
+		rsT := tk.SaveStringToFile(strA, cfgPathT)
+
+		if tk.IsErrorString(rsT) {
+			return tk.ErrStrF("failed to save config string: %v", tk.GetErrorString(rsT))
+		}
+
+		return ""
+
+	}
+
+	return tk.ErrStrF("failed to save config string: %v", errT)
+}
+
 func NewChar(codeA string) (interface{}, error) {
 	bytecodeT, errT := Compile([]byte(codeA), DefaultCompilerOptions)
 	// if errT != nil {
@@ -484,4 +590,128 @@ func QuickRun(codeA interface{}, argsA ...Object) interface{} {
 	}
 
 	return ConvertFromObject(retT)
+}
+
+func RunScriptOnHttp(codeA string, res http.ResponseWriter, req *http.Request, inputA string, argsA []string, parametersA map[string]string, optionsA ...string) (string, error) {
+	if tk.IfSwitchExists(optionsA, "-verbose") {
+		tk.Pl("Starting...")
+	}
+
+	if tk.StartsWith(codeA, "//TXDEF#") {
+		tmps := tk.DecryptStringByTXDEF(codeA, "topxeq")
+
+		if !tk.IsErrStr(tmps) {
+			codeA = tmps
+		}
+	}
+
+	if res != nil {
+		res.Header().Set("Access-Control-Allow-Origin", "*")
+		res.Header().Set("Access-Control-Allow-Headers", "*")
+		res.Header().Set("Content-Type", "text/html; charset=utf-8")
+	}
+
+	if req != nil {
+		req.ParseForm()
+	}
+
+	reqT := tk.GetFormValueWithDefaultValue(req, "charms", "")
+	// if req.RequestURI != "/charms/ed01/addAccessLog" {
+	// 	tk.Pl("RequestURI: %v", req.RequestURI)
+	// }
+
+	if reqT == "" {
+		if tk.StartsWith(req.RequestURI, "/charms") {
+			reqT = req.RequestURI[7:]
+		}
+	}
+
+	tmps := tk.Split(reqT, "?")
+	if len(tmps) > 1 {
+		reqT = tmps[0]
+	}
+
+	if tk.StartsWith(reqT, "/") {
+		reqT = reqT[1:]
+	}
+
+	// tk.Pl("charms: %v", reqT)
+
+	var paraMapT map[string]string
+	var errT error
+
+	retT := ""
+
+	vo := tk.GetFormValueWithDefaultValue(req, "vo", "")
+
+	if vo == "" {
+		paraMapT = tk.FormToMap(req.Form)
+	} else {
+		paraMapT, errT = tk.MSSFromJSON(vo)
+
+		if errT != nil {
+			res.Write([]byte(tk.ErrStrf("%v", "invalid vo format")))
+			// res.Write([]byte(genFailCompact("操作失败", "invalid vo format", "-compact")))
+			return retT, nil
+		}
+	}
+
+	// if !tk.ContainsIn(req.RequestURI, "/charms/ed01/addAccessLog", "/charms/ed01/getRuleColor.js", "/charms/ed01/getLangList.js", "/charms/ed01/getKnowListByBoard") {
+	// 	tk.Pl("[%v] REQ: %#v (%#v)", tk.GetNowTimeStringFormal(), reqT, paraMapT)
+	// }
+
+	toWriteT := ""
+
+	fileNameT := reqT
+
+	if !tk.EndsWith(fileNameT, ".char") {
+		fileNameT += ".char"
+	}
+
+	fcT := codeA
+
+	bytecodeT, errT := Compile([]byte(fcT), DefaultCompilerOptions)
+	if errT != nil {
+		res.Write([]byte(tk.ErrStrf("%v", errT.Error())))
+		// res.Write([]byte(genFailCompact("操作失败", errT.Error(), "-compact")))
+		return retT, nil
+	}
+
+	inParasT := make(Map, len(paraMapT))
+	for k, v := range paraMapT {
+		inParasT[k] = ToString(v)
+	}
+
+	envT := Map{}
+
+	envT["tk"] = TkFunction
+	envT["requestG"] = ConvertToObject(req)
+	envT["responseG"] = ConvertToObject(res)
+	envT["reqNameG"] = ConvertToObject(reqT)
+	envT["inputG"] = ConvertToObject(inputA)
+	envT["argsG"] = ConvertToObject(argsA)
+	envT["basePathG"] = ConvertToObject(tk.GetSwitch(optionsA, "-base=", ""))
+	envT["paraMapG"] = ConvertToObject(parametersA)
+
+	retObjectT, errT := NewVM(bytecodeT).Run(
+		envT,
+		inParasT,
+	)
+
+	if errT != nil {
+		res.Write([]byte(tk.ErrStrf("%v", errT.Error())))
+		return retObjectT.String(), nil
+	}
+
+	toWriteT = retObjectT.String()
+
+	if toWriteT == "TX_END_RESPONSE_XT" {
+		return retObjectT.String(), nil
+	}
+
+	res.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	res.Write([]byte(toWriteT))
+
+	return retObjectT.String(), nil
 }
