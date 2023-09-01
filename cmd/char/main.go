@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"flag"
@@ -609,93 +610,118 @@ func runInteractiveShell() int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	defer handlePromptExit()
+	// defer handlePromptExit()
 
-	cw := prompt.NewStdoutWriter()
-	grepl = newREPL(ctx, os.Stdout, cw)
-	newPrompt(
-		func(s string) { grepl.executor(s) },
-		os.Stdout,
-		prompt.OptionWriter(cw),
-	).Run()
-
-	return 0
-
-	// var following bool
-	// var source string
-
-	// tk.Pl("Char %v", ugo.VersionG)
-
-	// scanner := bufio.NewScanner(os.Stdin)
-
-	// for {
-	// 	if following {
-	// 		source += "\n"
-	// 		fmt.Print("  ")
-	// 	} else {
-	// 		fmt.Print("> ")
-	// 	}
-
-	// 	if !scanner.Scan() {
-	// 		break
-	// 	}
-	// 	source += scanner.Text()
-	// 	if source == "" {
-	// 		continue
-	// 	}
-	// 	if source == "quit()" {
-	// 		break
-	// 	}
-
-	// 	// stmts, err := parser.ParseSrc(source)
-
-	// 	// if e, ok := err.(*parser.Error); ok {
-	// 	// 	es := e.Error()
-	// 	// 	if strings.HasPrefix(es, "syntax error: unexpected") {
-	// 	// 		if strings.HasPrefix(es, "syntax error: unexpected $end,") {
-	// 	// 			following = true
-	// 	// 			continue
-	// 	// 		}
-	// 	// 	} else {
-	// 	// 		if e.Pos.Column == len(source) && !e.Fatal {
-	// 	// 			fmt.Fprintln(os.Stderr, e)
-	// 	// 			following = true
-	// 	// 			continue
-	// 	// 		}
-	// 	// 		if e.Error() == "unexpected EOF" {
-	// 	// 			following = true
-	// 	// 			continue
-	// 	// 		}
-	// 	// 	}
-	// 	// }
-
-	// 	gox.RetG = gox.NotFoundG
-
-	// 	err := gox.QlVMG.SafeEval(source)
-
-	// 	if err != nil {
-	// 		fmt.Fprintln(os.Stderr, err)
-	// 		following = false
-	// 		source = ""
-	// 		continue
-	// 	}
-
-	// 	if gox.RetG != gox.NotFoundG {
-	// 		fmt.Println(gox.RetG)
-	// 	}
-
-	// 	following = false
-	// 	source = ""
-	// }
-
-	// if err := scanner.Err(); err != nil {
-	// 	if err != io.EOF {
-	// 		fmt.Fprintln(os.Stderr, "ReadString error:", err)
-	// 		return 12
-	// 	}
-	// }
+	// cw := prompt.NewStdoutWriter()
+	// grepl = newREPL(ctx, os.Stdout, cw)
+	// newPrompt(
+	// 	func(s string) { grepl.executor(s) },
+	// 	os.Stdout,
+	// 	prompt.OptionWriter(cw),
+	// ).Run()
 
 	// return 0
+
+	moduleMap := ugo.NewModuleMap()
+	moduleMap.AddBuiltinModule("time", ugotime.Module).
+		AddBuiltinModule("strings", ugostrings.Module).
+		AddBuiltinModule("fmt", ugofmt.Module)
+
+	opts := ugo.CompilerOptions{
+		ModulePath:        "(repl)",
+		ModuleMap:         moduleMap,
+		SymbolTable:       ugo.NewSymbolTable(),
+		OptimizerMaxCycle: ugo.TraceCompilerOptions.OptimizerMaxCycle,
+		TraceParser:       traceParser,
+		TraceOptimizer:    traceOptimizer,
+		TraceCompiler:     traceCompiler,
+		OptimizeConst:     !noOptimizer,
+		OptimizeExpr:      !noOptimizer,
+	}
+
+	evalT := ugo.NewEval(opts, scriptGlobals)
+
+	var following bool
+	var source string
+
+	tk.Pl("Char %v", ugo.VersionG)
+
+	scanner := bufio.NewScanner(os.Stdin)
+
+	for {
+		if following {
+			source += "\n"
+			fmt.Print("  ")
+		} else {
+			fmt.Print("> ")
+		}
+
+		if !scanner.Scan() {
+			break
+		}
+		source += scanner.Text()
+		if source == "" {
+			continue
+		}
+		if source == "quit()" {
+			break
+		}
+
+		// stmts, err := parser.ParseSrc(source)
+
+		// if e, ok := err.(*parser.Error); ok {
+		// 	es := e.Error()
+		// 	if strings.HasPrefix(es, "syntax error: unexpected") {
+		// 		if strings.HasPrefix(es, "syntax error: unexpected $end,") {
+		// 			following = true
+		// 			continue
+		// 		}
+		// 	} else {
+		// 		if e.Pos.Column == len(source) && !e.Fatal {
+		// 			fmt.Fprintln(os.Stderr, e)
+		// 			following = true
+		// 			continue
+		// 		}
+		// 		if e.Error() == "unexpected EOF" {
+		// 			following = true
+		// 			continue
+		// 		}
+		// 	}
+		// }
+
+		// gox.RetG = gox.NotFoundG
+
+		// err := gox.QlVMG.SafeEval(source)
+
+		lastResultT, lastBytecodeT, errT := evalT.Run(ctx, []byte(source))
+
+		if verboseG {
+			tk.Pln("result:", lastResultT, lastBytecodeT, errT)
+		}
+
+		if errT != nil {
+			fmt.Fprintln(os.Stderr, errT)
+			following = false
+			source = ""
+			continue
+		}
+
+		if lastResultT != nil && lastResultT.TypeName() != "undefined" {
+			fmt.Println(lastResultT)
+		}
+
+		following = false
+		source = ""
+	}
+
+	if err := scanner.Err(); err != nil {
+		if err != io.EOF {
+			fmt.Fprintln(os.Stderr, "ReadString error:", err)
+			return 12
+		}
+	}
+
+	return 0
 }
 
 var staticFS http.Handler = nil
