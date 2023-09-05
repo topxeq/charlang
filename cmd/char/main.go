@@ -24,13 +24,13 @@ import (
 
 	"github.com/c-bata/go-prompt"
 
-	ugo "github.com/topxeq/charlang"
+	"github.com/topxeq/charlang"
+	// ugofmt "github.com/topxeq/charlang/stdlib/fmt"
+	// ugotime "github.com/topxeq/charlang/stdlib/time"
+	// ugostrings "github.com/topxeq/charlang/stdlib/strings"
+	ugoex "github.com/topxeq/charlang/stdlib/ex"
 	"github.com/topxeq/charlang/token"
 	"github.com/topxeq/tk"
-
-	ugofmt "github.com/topxeq/charlang/stdlib/fmt"
-	ugostrings "github.com/topxeq/charlang/stdlib/strings"
-	ugotime "github.com/topxeq/charlang/stdlib/time"
 	// _ "github.com/denisenkom/go-mssqldb"
 	// _ "github.com/godror/godror"
 	// _ "github.com/go-sql-driver/mysql"
@@ -48,7 +48,7 @@ var verboseG = false
 
 // global variables
 var logo = `
-Charlang V` + ugo.VersionG + `
+Charlang V` + charlang.VersionG + `
 
 `
 
@@ -71,28 +71,28 @@ var (
 	initialSuggLen int
 )
 
-var scriptGlobals = &ugo.SyncMap{
-	Map: ugo.Map{
-		"Gosched": &ugo.Function{
+var scriptGlobals = &charlang.SyncMap{
+	Map: charlang.Map{
+		"Gosched": &charlang.Function{
 			Name: "Gosched",
-			Value: func(args ...ugo.Object) (ugo.Object, error) {
+			Value: func(args ...charlang.Object) (charlang.Object, error) {
 				runtime.Gosched()
-				return ugo.Undefined, nil
+				return charlang.Undefined, nil
 			},
 		},
-		"versionG": ugo.ToString(ugo.VersionG),
-		"argsG":    ugo.ConvertToObject(os.Args[1:]),
-		"tk":       ugo.TkFunction,
-		// "tk": &ugo.Function{
+		"versionG": charlang.ToString(charlang.VersionG),
+		"argsG":    charlang.ConvertToObject(os.Args[1:]),
+		"tk":       charlang.TkFunction,
+		// "tk": &charlang.Function{
 		// 	Name: "Do",
-		// 	Value: func(args ...ugo.Object) (ugo.Object, error) {
+		// 	Value: func(args ...charlang.Object) (charlang.Object, error) {
 
 		// 		if len(args) < 1 {
-		// 			return ugo.Undefined, ugo.NewCommonError("not enough paramters")
+		// 			return charlang.Undefined, charlang.NewCommonError("not enough paramters")
 		// 		}
 
 		// 		if args[0].TypeName() != "string" {
-		// 			return ugo.Undefined, ugo.NewCommonError("invalid type for command")
+		// 			return charlang.Undefined, charlang.NewCommonError("invalid type for command")
 		// 		}
 
 		// 		cmdT := args[0].String()
@@ -100,16 +100,16 @@ var scriptGlobals = &ugo.SyncMap{
 		// 		switch cmdT {
 		// 		case "test":
 		// 			tk.Pl("args: %v", args[1:])
-		// 			return ugo.ConvertToObject("Response!"), nil
+		// 			return charlang.ConvertToObject("Response!"), nil
 
 		// 		case "getNowTime":
-		// 			return ugo.ConvertToObject(time.Now()), nil
+		// 			return charlang.ConvertToObject(time.Now()), nil
 
 		// 		default:
-		// 			return ugo.Undefined, ugo.NewCommonError("unknown comman")
+		// 			return charlang.Undefined, charlang.NewCommonError("unknown comman")
 		// 		}
 
-		// 		return ugo.Undefined, nil
+		// 		return charlang.Undefined, nil
 		// 	},
 		// },
 	},
@@ -119,9 +119,9 @@ var grepl *repl
 
 type repl struct {
 	ctx          context.Context
-	eval         *ugo.Eval
-	lastBytecode *ugo.Bytecode
-	lastResult   ugo.Object
+	eval         *charlang.Eval
+	lastBytecode *charlang.Bytecode
+	lastResult   charlang.Object
 	multiline    string
 	werr         prompt.ConsoleWriter
 	wout         prompt.ConsoleWriter
@@ -130,16 +130,16 @@ type repl struct {
 }
 
 func newREPL(ctx context.Context, stdout io.Writer, cw prompt.ConsoleWriter) *repl {
-	moduleMap := ugo.NewModuleMap()
-	moduleMap.AddBuiltinModule("time", ugotime.Module).
-		AddBuiltinModule("strings", ugostrings.Module).
-		AddBuiltinModule("fmt", ugofmt.Module)
+	moduleMap := charlang.NewModuleMap()
+	// moduleMap.AddBuiltinModule("time", ugotime.Module).
+	// 	AddBuiltinModule("strings", ugostrings.Module).
+	moduleMap.AddBuiltinModule("ex", ugoex.Module)
 
-	opts := ugo.CompilerOptions{
+	opts := charlang.CompilerOptions{
 		ModulePath:        "(repl)",
 		ModuleMap:         moduleMap,
-		SymbolTable:       ugo.NewSymbolTable(),
-		OptimizerMaxCycle: ugo.TraceCompilerOptions.OptimizerMaxCycle,
+		SymbolTable:       charlang.NewSymbolTable(),
+		OptimizerMaxCycle: charlang.TraceCompilerOptions.OptimizerMaxCycle,
 		TraceParser:       traceParser,
 		TraceOptimizer:    traceOptimizer,
 		TraceCompiler:     traceCompiler,
@@ -157,7 +157,7 @@ func newREPL(ctx context.Context, stdout io.Writer, cw prompt.ConsoleWriter) *re
 
 	r := &repl{
 		ctx:    ctx,
-		eval:   ugo.NewEval(opts, scriptGlobals),
+		eval:   charlang.NewEval(opts, scriptGlobals),
 		werr:   cw,
 		wout:   cw,
 		stdout: stdout,
@@ -187,14 +187,14 @@ func (r *repl) cmdBytecode() {
 }
 
 func (r *repl) cmdBuiltins() {
-	builtins := make([]string, len(ugo.BuiltinsMap))
+	builtins := make([]string, len(charlang.BuiltinsMap))
 
-	for k, v := range ugo.BuiltinsMap {
+	for k, v := range charlang.BuiltinsMap {
 		remarkT := ""
-		if nv, ok := (ugo.BuiltinObjects[v]).(*ugo.BuiltinFunction); ok {
+		if nv, ok := (charlang.BuiltinObjects[v]).(*charlang.BuiltinFunction); ok {
 			remarkT = nv.Remark
 		}
-		builtins[v] = fmt.Sprint(ugo.BuiltinObjects[v].TypeName(), ":", k, remarkT)
+		builtins[v] = fmt.Sprint(charlang.BuiltinObjects[v].TypeName(), ":", k, remarkT)
 	}
 	_, _ = fmt.Fprintln(r.stdout, strings.Join(builtins, "\n"))
 }
@@ -307,11 +307,11 @@ func (r *repl) executeScript(line string) {
 	}
 
 	switch v := r.lastResult.(type) {
-	case ugo.String:
+	case charlang.String:
 		r.writeStr(fmt.Sprintf("%q\n", v.Value))
-	case ugo.Char:
+	case charlang.Char:
 		r.writeStr(fmt.Sprintf("%q\n", rune(v)))
-	case ugo.Bytes:
+	case charlang.Bytes:
 		r.writeStr(fmt.Sprintf("%v\n", []byte(v)))
 	default:
 		r.writeStr(fmt.Sprintf("%v\n", r.lastResult))
@@ -321,7 +321,7 @@ func (r *repl) executeScript(line string) {
 	suggestions = suggestions[:initialSuggLen]
 
 	for _, s := range symbols {
-		if s.Scope != ugo.ScopeBuiltin {
+		if s.Scope != charlang.ScopeBuiltin {
 			suggestions = append(suggestions,
 				prompt.Suggest{
 					Text:        s.Name,
@@ -372,9 +372,9 @@ var suggestions = []prompt.Suggest{
 
 func init() {
 	// add builtins to suggestions
-	for k, v := range ugo.BuiltinsMap {
+	for k, v := range charlang.BuiltinsMap {
 		remarkT := ""
-		if nv, ok := (ugo.BuiltinObjects[v]).(*ugo.BuiltinFunction); ok {
+		if nv, ok := (charlang.BuiltinObjects[v]).(*charlang.BuiltinFunction); ok {
 			remarkT = nv.Remark
 		}
 
@@ -496,7 +496,7 @@ func parseFlags(
 }
 
 func executeScript(ctx context.Context, scr []byte, traceOut io.Writer) error {
-	opts := ugo.DefaultCompilerOptions
+	opts := charlang.DefaultCompilerOptions
 	if traceEnabled {
 		opts.Trace = traceOut
 		opts.TraceParser = traceParser
@@ -504,17 +504,17 @@ func executeScript(ctx context.Context, scr []byte, traceOut io.Writer) error {
 		opts.TraceOptimizer = traceOptimizer
 	}
 
-	opts.ModuleMap = ugo.NewModuleMap().
-		AddBuiltinModule("time", ugotime.Module).
-		AddBuiltinModule("strings", ugostrings.Module).
-		AddBuiltinModule("fmt", ugofmt.Module)
+	opts.ModuleMap = nil // charlang.NewModuleMap().
+	// AddBuiltinModule("time", ugotime.Module).
+	// AddBuiltinModule("strings", ugostrings.Module).
+	// AddBuiltinModule("fmt", ugofmt.Module)
 
-	bc, err := ugo.Compile(scr, opts)
+	bc, err := charlang.Compile(scr, opts)
 	if err != nil {
 		return err
 	}
 
-	vm := ugo.NewVM(bc)
+	vm := charlang.NewVM(bc)
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -541,7 +541,7 @@ func checkErr(err error, f func()) {
 	defer os.Exit(1)
 	_, _ = fmt.Fprintf(os.Stderr, "%+v\n", err)
 
-	e := err.(*ugo.RuntimeError)
+	e := err.(*charlang.RuntimeError)
 	fmt.Printf("Trace: %v\n", e.StackTrace())
 
 	if f != nil {
@@ -622,29 +622,32 @@ func runInteractiveShell() int {
 
 	// return 0
 
-	moduleMap := ugo.NewModuleMap()
-	moduleMap.AddBuiltinModule("time", ugotime.Module).
-		AddBuiltinModule("strings", ugostrings.Module).
-		AddBuiltinModule("fmt", ugofmt.Module)
+	moduleMap := charlang.NewModuleMap()
+	// moduleMap.AddBuiltinModule("time", ugotime.Module).
+	// 	AddBuiltinModule("strings", ugostrings.Module).
+	// 	AddBuiltinModule("fmt", ugofmt.Module)
+	moduleMap.AddBuiltinModule("ex", ugoex.Module)
 
-	opts := ugo.CompilerOptions{
-		ModulePath:        "(repl)",
+	opts := &charlang.CompilerOptions{
+		ModulePath:        "", //"(repl)",
 		ModuleMap:         moduleMap,
-		SymbolTable:       ugo.NewSymbolTable(),
-		OptimizerMaxCycle: ugo.TraceCompilerOptions.OptimizerMaxCycle,
-		TraceParser:       traceParser,
-		TraceOptimizer:    traceOptimizer,
-		TraceCompiler:     traceCompiler,
-		OptimizeConst:     !noOptimizer,
-		OptimizeExpr:      !noOptimizer,
+		SymbolTable:       charlang.NewSymbolTable(),
+		OptimizerMaxCycle: charlang.TraceCompilerOptions.OptimizerMaxCycle,
+		// TraceParser:       traceParser,
+		// TraceOptimizer:    traceOptimizer,
+		// TraceCompiler:     traceCompiler,
+		// OptimizeConst:     !noOptimizer,
+		// OptimizeExpr:      !noOptimizer,
 	}
 
-	evalT := ugo.NewEval(opts, scriptGlobals)
+	// evalT := charlang.NewEval(opts, scriptGlobals)
+
+	evalT := charlang.NewEvalQuick(map[string]interface{}{"argsG": charlang.ConvertToObject(os.Args[1:])}, opts)
 
 	var following bool
 	var source string
 
-	tk.Pl("Char %v", ugo.VersionG)
+	tk.Pl("Char %v", charlang.VersionG)
 
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -706,7 +709,7 @@ func runInteractiveShell() int {
 			continue
 		}
 
-		if lastResultT != nil && lastResultT.TypeName() != "undefined" {
+		if lastResultT != nil && lastResultT.TypeCode() != 0 {
 			fmt.Println(lastResultT)
 		}
 
@@ -774,7 +777,7 @@ func startHttpsServer(portA string) {
 }
 
 func doServer() {
-	ugo.ServerModeG = true
+	charlang.ServerModeG = true
 
 	portG = tk.GetSwitch(os.Args, "-port=", portG)
 	sslPortG = tk.GetSwitch(os.Args, "-sslPort=", sslPortG)
@@ -800,7 +803,7 @@ func doServer() {
 
 	muxG.HandleFunc("/", serveStaticDirHandler)
 
-	tk.PlNow("Charlang Server %v -port=%v -sslPort=%v -dir=%v -webDir=%v -certDir=%v", ugo.VersionG, portG, sslPortG, basePathG, webPathG, certPathG)
+	tk.PlNow("Charlang Server %v -port=%v -sslPort=%v -dir=%v -webDir=%v -certDir=%v", charlang.VersionG, portG, sslPortG, basePathG, webPathG, certPathG)
 
 	if sslPortG != "" {
 		tk.PlNow("try starting ssl server on %v...", sslPortG)
@@ -888,7 +891,7 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 	// paraMapT["_reqHost"] = req.Host
 	// paraMapT["_reqInfo"] = fmt.Sprintf("%#v", req)
 
-	toWriteT, errT = ugo.RunScriptOnHttp(fcT, res, req, paraMapT["input"], nil, paraMapT, "-base="+basePathG)
+	toWriteT, errT = charlang.RunScriptOnHttp(fcT, res, req, paraMapT["input"], nil, paraMapT, "-base="+basePathG)
 
 	if errT != nil {
 		res.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -912,13 +915,13 @@ func runArgs(argsA ...string) interface{} {
 	argsT := argsA
 
 	if tk.IfSwitchExistsWhole(argsT, "-version") {
-		tk.Pl("Charlang by TopXeQ V%v", ugo.VersionG)
+		tk.Pl("Charlang by TopXeQ V%v", charlang.VersionG)
 		return nil // "github.com/topxeq/charlang"
 	}
 
 	if tk.IfSwitchExistsWhole(argsT, "-h") {
 		// showHelp()
-		tk.Pl("Charlang by TopXeQ V%v", ugo.VersionG)
+		tk.Pl("Charlang by TopXeQ V%v", charlang.VersionG)
 		return nil
 	}
 
@@ -986,7 +989,7 @@ func runArgs(argsA ...string) interface{} {
 
 	// ifXieT := tk.IfSwitchExistsWhole(argsT, "-xie")
 	ifClipT := tk.IfSwitchExistsWhole(argsT, "-clip")
-	ifEmbedT := (ugo.CodeTextG != "") && (!tk.IfSwitchExistsWhole(argsT, "-noembed"))
+	ifEmbedT := (charlang.CodeTextG != "") && (!tk.IfSwitchExistsWhole(argsT, "-noembed"))
 
 	ifInExeT := false
 	inExeCodeT := ""
@@ -1161,7 +1164,7 @@ func runArgs(argsA ...string) interface{} {
 	ifOpenT := tk.IfSwitchExistsWhole(argsT, "-open")
 	ifCompileT := tk.IfSwitchExistsWhole(argsT, "-compile")
 
-	ugo.VerboseG = tk.IfSwitchExistsWhole(argsT, "-verbose")
+	charlang.VerboseG = tk.IfSwitchExistsWhole(argsT, "-verbose")
 
 	// ifMagicT := false
 	// magicNumberT, errT := tk.StrToIntE(scriptT)
@@ -1175,7 +1178,7 @@ func runArgs(argsA ...string) interface{} {
 	if ifInExeT && inExeCodeT != "" && !tk.IfSwitchExistsWhole(os.Args, "-noin") {
 		fcT = inExeCodeT
 
-		ugo.ScriptPathG = ""
+		charlang.ScriptPathG = ""
 	} else if cmdT != "" {
 		fcT = cmdT
 
@@ -1183,11 +1186,11 @@ func runArgs(argsA ...string) interface{} {
 			fcT = tk.UrlDecode(fcT)
 		}
 
-		ugo.ScriptPathG = ""
+		charlang.ScriptPathG = ""
 		// } else if ifMagicT {
 		// 	fcT = gox.GetMagic(magicNumberT)
 
-		// 	ugo.ScriptPathG = ""
+		// 	charlang.ScriptPathG = ""
 	} else if ifRunT {
 		if tk.IfSwitchExistsWhole(os.Args, "-urlDecode") {
 			fcT = tk.UrlDecode(scriptT)
@@ -1196,19 +1199,19 @@ func runArgs(argsA ...string) interface{} {
 		}
 		tk.Pl("run cmd(%v)", fcT)
 
-		ugo.ScriptPathG = ""
+		charlang.ScriptPathG = ""
 	} else if ifRemoteT {
-		ugo.ScriptPathG = scriptT
+		charlang.ScriptPathG = scriptT
 		fcT = tk.DownloadPageUTF8(scriptT, nil, "", 30)
 
 	} else if ifClipT {
 		fcT = tk.GetClipText()
 
-		ugo.ScriptPathG = ""
+		charlang.ScriptPathG = ""
 	} else if ifEmbedT {
-		fcT = ugo.CodeTextG
+		fcT = charlang.CodeTextG
 
-		ugo.ScriptPathG = ""
+		charlang.ScriptPathG = ""
 	} else if ifCloudT {
 		basePathT, errT := tk.EnsureBasePath("char")
 
@@ -1220,7 +1223,7 @@ func runArgs(argsA ...string) interface{} {
 			cfgStrT := tk.Trim(tk.LoadStringFromFile(cfgPathT))
 
 			if !tk.IsErrorString(cfgStrT) {
-				ugo.ScriptPathG = cfgStrT + scriptT
+				charlang.ScriptPathG = cfgStrT + scriptT
 
 				fcT = tk.DownloadPageUTF8(cfgStrT+scriptT, nil, "", 30)
 
@@ -1230,29 +1233,29 @@ func runArgs(argsA ...string) interface{} {
 		}
 
 		if !gotT {
-			ugo.ScriptPathG = scriptT
+			charlang.ScriptPathG = scriptT
 			fcT = tk.DownloadPageUTF8(scriptT, nil, "", 30)
 		}
 
 	} else if sshT != "" {
-		fcT = ugo.DownloadStringFromSSH(sshT, scriptT)
+		fcT = charlang.DownloadStringFromSSH(sshT, scriptT)
 
 		if tk.IsErrorString(fcT) {
 
 			return tk.Errf("failed to get script from SSH: %v", tk.GetErrorString(fcT))
 		}
 
-		ugo.ScriptPathG = ""
+		charlang.ScriptPathG = ""
 	} else if ifGoPathT {
-		ugo.ScriptPathG = filepath.Join(tk.GetEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "char", "scripts", scriptT)
+		charlang.ScriptPathG = filepath.Join(tk.GetEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "char", "scripts", scriptT)
 
-		fcT = tk.LoadStringFromFile(ugo.ScriptPathG)
+		fcT = tk.LoadStringFromFile(charlang.ScriptPathG)
 	} else if ifAppPathT {
-		ugo.ScriptPathG = filepath.Join(tk.GetApplicationPath(), scriptT)
+		charlang.ScriptPathG = filepath.Join(tk.GetApplicationPath(), scriptT)
 
-		fcT = tk.LoadStringFromFile(ugo.ScriptPathG)
+		fcT = tk.LoadStringFromFile(charlang.ScriptPathG)
 	} else if ifLocalT {
-		localPathT := ugo.GetCfgString("localScriptPath.cfg")
+		localPathT := charlang.GetCfgString("localScriptPath.cfg")
 
 		if tk.IsErrorString(localPathT) {
 			// tk.Pl("failed to get local path: %v", tk.GetErrorString(localPathT))
@@ -1264,11 +1267,11 @@ func runArgs(argsA ...string) interface{} {
 		// 	tk.Pl("Try to load script from %v", filepath.Join(localPathT, scriptT))
 		// }
 
-		ugo.ScriptPathG = filepath.Join(localPathT, scriptT)
+		charlang.ScriptPathG = filepath.Join(localPathT, scriptT)
 
-		fcT = tk.LoadStringFromFile(ugo.ScriptPathG)
+		fcT = tk.LoadStringFromFile(charlang.ScriptPathG)
 	} else {
-		ugo.ScriptPathG = scriptT
+		charlang.ScriptPathG = scriptT
 		fcT = tk.LoadStringFromFile(scriptT)
 
 	}
@@ -1360,7 +1363,7 @@ func runArgs(argsA ...string) interface{} {
 	}
 
 	if ifOpenT {
-		tk.RunWinFileWithSystemDefault(ugo.ScriptPathG)
+		tk.RunWinFileWithSystemDefault(charlang.ScriptPathG)
 
 		return nil
 	}
@@ -1454,27 +1457,42 @@ func runArgs(argsA ...string) interface{} {
 	// gox.RetG = gox.NotFoundG
 
 	// errT = gox.QlVMG.SafeEval(fcT)
-	bytecodeT, errT := ugo.Compile([]byte(fcT), ugo.DefaultCompilerOptions)
+	moduleMap := charlang.NewModuleMap()
+	moduleMap.AddBuiltinModule("ex", ugoex.Module)
+
+	opts := &charlang.CompilerOptions{
+		ModulePath:        "", //"(repl)",
+		ModuleMap:         moduleMap,
+		SymbolTable:       charlang.NewSymbolTable(),
+		OptimizerMaxCycle: charlang.TraceCompilerOptions.OptimizerMaxCycle,
+		// TraceParser:       traceParser,
+		// TraceOptimizer:    traceOptimizer,
+		// TraceCompiler:     traceCompiler,
+		// OptimizeConst:     !noOptimizer,
+		// OptimizeExpr:      !noOptimizer,
+	}
+
+	bytecodeT, errT := charlang.Compile([]byte(fcT), *opts) // charlang.DefaultCompilerOptions)
 	if errT != nil {
 		return errT
 	}
 
-	// inParasT := make(ugo.Map, len(paraMapT))
+	// inParasT := make(charlang.Map, len(paraMapT))
 	// for k, v := range paraMapT {
-	// 	inParasT[k] = ugo.ToString(v)
+	// 	inParasT[k] = charlang.ToString(v)
 	// }
 
-	inParasT := make(ugo.Map, 0)
+	// inParasT := make(charlang.Map, 0)
 
-	envT := ugo.Map{}
+	envT := charlang.Map{}
 
-	envT["tk"] = ugo.TkFunction
-	envT["argsG"] = ugo.ConvertToObject(os.Args)
-	envT["versionG"] = ugo.ToString(ugo.VersionG)
+	envT["tk"] = charlang.TkFunction
+	envT["argsG"] = charlang.ConvertToObject(os.Args)
+	envT["versionG"] = charlang.ToString(charlang.VersionG)
 
-	retT, errT := ugo.NewVM(bytecodeT).Run(
+	retT, errT := charlang.NewVM(bytecodeT).Run(
 		envT,
-		inParasT,
+		// inParasT,
 	)
 
 	if errT != nil {
@@ -1526,10 +1544,10 @@ func main() {
 			return
 		}
 
-		nv2, ok := rs.(ugo.Object)
+		nv2, ok := rs.(charlang.Object)
 
 		if ok {
-			if nv2.TypeName() == "undefined" {
+			if nv2.TypeCode() == 0 {
 
 			} else {
 				tk.Pl("%v", nv2)

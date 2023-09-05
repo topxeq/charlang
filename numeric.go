@@ -15,6 +15,10 @@ import (
 // Int represents signed integer values and implements Object interface.
 type Int int64
 
+func (Int) TypeCode() int {
+	return 107
+}
+
 // TypeName implements Object interface.
 func (Int) TypeName() string {
 	return "int"
@@ -157,6 +161,10 @@ func (o Int) BinaryOp(tok token.Token, right Object) (Object, error) {
 }
 
 type Byte byte
+
+func (Byte) TypeCode() int {
+	return 109
+}
 
 // TypeName implements Object interface.
 func (Byte) TypeName() string {
@@ -303,6 +311,10 @@ func (o Byte) BinaryOp(tok token.Token, right Object) (Object, error) {
 
 type Uint uint64
 
+func (Uint) TypeCode() int {
+	return 111
+}
+
 // TypeName implements Object interface.
 func (Uint) TypeName() string {
 	return "uint"
@@ -447,6 +459,10 @@ func (o Uint) BinaryOp(tok token.Token, right Object) (Object, error) {
 // Float represents float values and implements Object interface.
 type Float float64
 
+func (Float) TypeCode() int {
+	return 115
+}
+
 // TypeName implements Object interface.
 func (Float) TypeName() string {
 	return "float"
@@ -559,6 +575,10 @@ func (o Float) BinaryOp(tok token.Token, right Object) (Object, error) {
 
 // Char represents a rune and implements Object interface.
 type Char rune
+
+func (Char) TypeCode() int {
+	return 113
+}
 
 // TypeName implements Object interface.
 func (Char) TypeName() string {

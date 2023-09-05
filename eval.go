@@ -70,6 +70,33 @@ func (r *Eval) Run(ctx context.Context, script []byte) (Object, *Bytecode, error
 	return ret, bytecode, nil
 }
 
+func (r *Eval) QuickRun(scriptA string) (Object, *Bytecode, error) {
+	bytecode, err := Compile([]byte(scriptA), r.Opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	bytecode.Main.NumParams = bytecode.Main.NumLocals
+	r.Opts.Constants = bytecode.Constants
+	r.fixOpPop(bytecode)
+	r.VM.SetBytecode(bytecode)
+
+	// if ctx == nil {
+	ctx := context.Background()
+	// }
+
+	r.VM.modulesCache = r.ModulesCache
+	ret, err := r.run(ctx)
+	r.ModulesCache = r.VM.modulesCache
+	r.Locals = r.VM.GetLocals(r.Locals)
+	r.VM.Clear()
+
+	if err != nil {
+		return nil, bytecode, err
+	}
+	return ret, bytecode, nil
+}
+
 func (r *Eval) run(ctx context.Context) (ret Object, err error) {
 	ret = Undefined
 	doneCh := make(chan struct{})

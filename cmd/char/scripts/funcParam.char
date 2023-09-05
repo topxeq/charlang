@@ -1,0 +1,24 @@
+c := [1, 2, "a"]
+
+pln(c)
+
+f3 := func(aryA) {
+	aryA[1] = "cc"
+}
+
+f3(c)
+
+pln(c)
+
+d := {"field1": 1, "field2": "23.8"}
+
+pln(toJSON(d, "-sort"))
+
+f4 := func(mapA) {
+	mapA["field3"] = "dd"
+	mapA["field1"] = true
+}
+
+f4(d)
+
+pln(toJSON(d, "-sort"))

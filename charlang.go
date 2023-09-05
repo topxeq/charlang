@@ -16,6 +16,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
+	// ugofmt "github.com/topxeq/charlang/stdlib/fmt"
 )
 
 var VersionG = "0.5a"
@@ -147,6 +148,18 @@ func ConvertToObject(vA interface{}) Object {
 		}
 
 		return rsT
+	case []Object:
+		if nv == nil {
+			return Undefined
+		}
+
+		rsT := make(Array, 0, len(nv))
+
+		for _, v := range nv {
+			rsT = append(rsT, v)
+		}
+
+		return rsT
 	case []interface{}:
 		if nv == nil {
 			return Undefined
@@ -232,7 +245,14 @@ func ConvertToObject(vA interface{}) Object {
 		return nv
 
 	default:
-		return Any{Value: nv, OriginalType: fmt.Sprintf("%T", nv)}
+		originalCodeT := -1
+		nv1, ok := vA.(Object)
+
+		if ok {
+			originalCodeT = nv1.TypeCode()
+		}
+
+		return Any{Value: nv, OriginalType: fmt.Sprintf("%T", nv), OriginalCode: originalCodeT}
 		// tk.Pl("Unknown type: %T, %#v, %v", vA, vA, vA)
 		// return Undefined
 	}
@@ -291,7 +311,7 @@ func ConvertFromObject(vA Object) interface{} {
 		return rsT
 	}
 
-	if vA.TypeName() == "undefined" {
+	if vA.TypeCode() == 0 {
 		return nil
 	}
 
@@ -485,62 +505,92 @@ var TkFunction = &Function{
 	},
 }
 
-func RunChar(charA *Bytecode, envA map[string]interface{}, paraMapA map[string]string, argsA ...Object) (interface{}, error) {
-	envT := Map{}
+func RunChar(charA *Bytecode, envA map[string]interface{}, paraMapA map[string]string, inputA interface{}, argsA []string, paramsA ...Object) (interface{}, error) {
+	envT := NewBaseEnv(nil) // Map{}
 
-	envT["tk"] = TkFunction
-	// envT["argsG"] = ConvertToObject(os.Args)
-	envT["versionG"] = ToString(VersionG)
+	// envT["tk"] = TkFunction
+	(*envT)["argsG"] = ConvertToObject(argsA) // ConvertToObject(os.Args)
+	// envT["versionG"] = ToString(VersionG)
+	(*envT)["inputG"] = ConvertToObject(inputA)
+	(*envT)["paraMapG"] = ConvertToObject(paraMapA)
 
 	for k, v := range envA {
-		envT[k] = ConvertToObject(v)
+		(*envT)[k] = ConvertToObject(v)
 	}
 
-	inParasT := make(Map, len(paraMapA))
-	for k, v := range paraMapA {
-		inParasT[k] = ToString(v)
-	}
+	// inParasT := make(Map, len(paraMapA))
+	// for k, v := range paraMapA {
+	// 	inParasT[k] = ToString(v)
+	// }
 
-	paramsT := make([]Object, 0, 2+len(argsA))
+	// paramsT := make([]Object, 0, 2+len(argsA))
 
-	paramsT = append(paramsT, inParasT)
-	paramsT = append(paramsT, argsA...)
+	// paramsT = append(paramsT, inParasT)
+	// paramsT = append(paramsT, argsA...)
 
 	retT, errT := NewVM(charA).Run(
-		envT, paramsT...,
+		envT, paramsA...,
 	)
 
 	return ConvertFromObject(retT), errT
+
+	// envT := Map{}
+
+	// envT["tk"] = TkFunction
+	// // envT["argsG"] = ConvertToObject(os.Args)
+	// envT["versionG"] = ToString(VersionG)
+
+	// for k, v := range envA {
+	// 	envT[k] = ConvertToObject(v)
+	// }
+
+	// inParasT := make(Map, len(paraMapA))
+	// for k, v := range paraMapA {
+	// 	inParasT[k] = ToString(v)
+	// }
+
+	// paramsT := make([]Object, 0, 2+len(argsA))
+
+	// paramsT = append(paramsT, inParasT)
+	// paramsT = append(paramsT, argsA...)
+
+	// retT, errT := NewVM(charA).Run(
+	// 	envT, paramsT...,
+	// )
+
+	// return ConvertFromObject(retT), errT
 }
 
-func RunCharCode(codeA string, envA map[string]interface{}, paraMapA map[string]string, argsA ...Object) (interface{}, error) {
+func RunCharCode(codeA string, envA map[string]interface{}, paraMapA map[string]string, inputA interface{}, argsA []string, paramsA ...Object) (interface{}, error) {
 	bytecodeT, errT := Compile([]byte(codeA), DefaultCompilerOptions)
 	if errT != nil {
 		return nil, errT
 	}
 
-	envT := Map{}
+	envT := NewBaseEnv(nil) // Map{}
 
-	envT["tk"] = TkFunction
-	// envT["argsG"] = ConvertToObject(os.Args)
-	envT["versionG"] = ToString(VersionG)
+	// envT["tk"] = TkFunction
+	(*envT)["argsG"] = ConvertToObject(argsA) // ConvertToObject(os.Args)
+	// envT["versionG"] = ToString(VersionG)
+	(*envT)["inputG"] = ConvertToObject(inputA)
+	(*envT)["paraMapG"] = ConvertToObject(paraMapA)
 
 	for k, v := range envA {
-		envT[k] = ConvertToObject(v)
+		(*envT)[k] = ConvertToObject(v)
 	}
 
-	inParasT := make(Map, len(paraMapA))
-	for k, v := range paraMapA {
-		inParasT[k] = ToString(v)
-	}
+	// inParasT := make(Map, len(paraMapA))
+	// for k, v := range paraMapA {
+	// 	inParasT[k] = ToString(v)
+	// }
 
-	paramsT := make([]Object, 0, 2+len(argsA))
+	// paramsT := make([]Object, 0, 2+len(argsA))
 
-	paramsT = append(paramsT, inParasT)
-	paramsT = append(paramsT, argsA...)
+	// paramsT = append(paramsT, inParasT)
+	// paramsT = append(paramsT, argsA...)
 
 	retT, errT := NewVM(bytecodeT).Run(
-		envT, paramsT...,
+		envT, paramsA...,
 	)
 
 	return ConvertFromObject(retT), errT
@@ -555,7 +605,25 @@ func QuickCompile(codeA string) interface{} {
 	return bytecodeT
 }
 
-func QuickRun(codeA interface{}, argsA ...Object) interface{} {
+func NewBaseEnv(varsA map[string]interface{}, additionsA ...Object) *Map {
+	envT := Map{}
+
+	envT["tk"] = TkFunction
+	envT["argsG"] = Array{}
+	envT["versionG"] = ToString(VersionG)
+
+	for k, v := range varsA {
+		envT[k] = ConvertToObject(v)
+	}
+
+	for i, v := range additionsA {
+		envT[tk.IntToStr(i+1)] = v
+	}
+
+	return &envT
+}
+
+func QuickRun(codeA interface{}, globalsA map[string]interface{}, additionsA ...Object) interface{} {
 	var errT error
 	nv, ok := codeA.(*Bytecode)
 
@@ -571,25 +639,73 @@ func QuickRun(codeA interface{}, argsA ...Object) interface{} {
 		}
 	}
 
-	envT := Map{}
+	envT := NewBaseEnv(globalsA) // Map{}
 
-	envT["tk"] = TkFunction
-	envT["argsG"] = Array{}
-	envT["versionG"] = ToString(VersionG)
+	// envT["tk"] = TkFunction
+	// envT["argsG"] = Array{}
+	// envT["versionG"] = ToString(VersionG)
 
-	paramsT := make([]Object, 0, 2+len(argsA))
+	// for k, v := range globalsA {
+	// 	envT[k] = ConvertToObject(v)
+	// }
 
-	paramsT = append(paramsT, argsA...)
+	// for i, v := range additionsA {
+	// 	envT[tk.IntToStr(i+1)] = v
+	// }
 
-	retT, errT := NewVM(nv).Run(
-		envT, paramsT...,
-	)
+	retT, errT := NewVM(nv).Run(envT, additionsA...)
 
 	if errT != nil {
 		return errT
 	}
 
 	return ConvertFromObject(retT)
+}
+
+func NewEvalQuick(globalsA map[string]interface{}, optsA *CompilerOptions, localsA ...Object) *Eval {
+	// moduleMap := NewModuleMap()
+	// // moduleMap.AddBuiltinModule("time", ugotime.Module).
+	// // 	AddBuiltinModule("strings", ugostrings.Module).
+	// moduleMap.AddBuiltinModule("fmt", ugofmt.Module)
+
+	var optsT CompilerOptions
+
+	if optsA != nil {
+		optsT = *optsA
+	} else {
+		optsT = CompilerOptions{
+			ModulePath:        "",
+			ModuleMap:         nil,
+			SymbolTable:       NewSymbolTable(),
+			OptimizerMaxCycle: TraceCompilerOptions.OptimizerMaxCycle,
+			// TraceParser:       false,
+			// TraceOptimizer:    false,
+			// TraceCompiler:     false,
+			// OptimizeConst:     !noOptimizer,
+			// OptimizeExpr:      !noOptimizer,
+		}
+	}
+
+	envT := NewBaseEnv(globalsA) // Map{}
+
+	// if globals == nil {
+	// 	globals = Map{}
+	// }
+
+	if optsT.SymbolTable == nil {
+		optsT.SymbolTable = NewSymbolTable()
+	}
+
+	if optsT.ModuleIndexes == nil {
+		optsT.ModuleIndexes = NewModuleIndexes()
+	}
+
+	return &Eval{
+		Locals:  localsA,
+		Globals: *envT,
+		Opts:    optsT,
+		VM:      NewVM(nil).SetRecover(true),
+	}
 }
 
 func RunScriptOnHttp(codeA string, res http.ResponseWriter, req *http.Request, inputA string, argsA []string, parametersA map[string]string, optionsA ...string) (string, error) {
@@ -682,16 +798,17 @@ func RunScriptOnHttp(codeA string, res http.ResponseWriter, req *http.Request, i
 		inParasT[k] = ToString(v)
 	}
 
-	envT := Map{}
+	envT := NewBaseEnv(nil) // Map{}
 
-	envT["tk"] = TkFunction
-	envT["requestG"] = ConvertToObject(req)
-	envT["responseG"] = ConvertToObject(res)
-	envT["reqNameG"] = ConvertToObject(reqT)
-	envT["inputG"] = ConvertToObject(inputA)
-	envT["argsG"] = ConvertToObject(argsA)
-	envT["basePathG"] = ConvertToObject(tk.GetSwitch(optionsA, "-base=", ""))
-	envT["paraMapG"] = ConvertToObject(parametersA)
+	// envT["tk"] = TkFunction
+	(*envT)["argsG"] = ConvertToObject(argsA)
+
+	(*envT)["requestG"] = ConvertToObject(req)
+	(*envT)["responseG"] = ConvertToObject(res)
+	(*envT)["reqNameG"] = ConvertToObject(reqT)
+	(*envT)["inputG"] = ConvertToObject(inputA)
+	(*envT)["basePathG"] = ConvertToObject(tk.GetSwitch(optionsA, "-base=", ""))
+	(*envT)["paraMapG"] = ConvertToObject(parametersA)
 
 	retObjectT, errT := NewVM(bytecodeT).Run(
 		envT,

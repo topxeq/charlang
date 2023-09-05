@@ -1,0 +1,33 @@
+ex := import("ex")
+
+sourceT := `
+param (v0)
+
+for {
+	v0 ++
+
+	pl("(thread) v0=%v", v0)
+
+	sleep(1.0)
+}
+
+return
+
+`
+
+c1 := ex.compile(sourceT)
+
+plo(c1)
+
+a := 5
+
+ex.goRunCompiled(c1, a)
+
+for {
+	a += 10
+
+	pl("(main) a=%v", a)
+
+	sleep(1.0)
+}
+

@@ -29,6 +29,10 @@ type Time struct {
 	Value time.Time
 }
 
+func (*Time) TypeCode() int {
+	return 0
+}
+
 // TypeName implements ugo.Object interface.
 func (*Time) TypeName() string {
 	return "time"

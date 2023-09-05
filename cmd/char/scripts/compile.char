@@ -1,0 +1,27 @@
+ex := import("ex")
+
+sourceT := `
+param (v0, v1, ...vargs)
+
+a := 1
+
+r1 := a + 2.3
+
+pl("r1=%v", r1)
+
+pl("v0=%v", v0)
+
+pl("v1=%v", v1)
+
+pl("vargs=%v", vargs)
+
+return "abc" + v0 + v1 + r1
+
+`
+
+c1 := ex.compile(sourceT)
+
+rs := ex.runCompiled(c1, true, "value1", 1, 2, "3a")
+
+plo(rs)
+

@@ -156,6 +156,10 @@ type CompiledFunction struct {
 
 var _ Object = (*CompiledFunction)(nil)
 
+func (*CompiledFunction) TypeCode() int {
+	return 185
+}
+
 // TypeName implements Object interface
 func (*CompiledFunction) TypeName() string {
 	return "compiled-function"

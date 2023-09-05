@@ -22,6 +22,8 @@ import (
 	"github.com/topxeq/tk"
 )
 
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, StringBuilder: 307, Database: 309, Any: 999
+
 const (
 	// True represents a true value.
 	True = Bool(true)
@@ -35,8 +37,15 @@ var (
 	Undefined Object = undefined{}
 )
 
+func IsUndefined(vA Object) bool {
+	return vA.TypeCode() == 0
+}
+
 // Object represents an object in the VM.
 type Object interface {
+	// TypeCode should return an unique integer indicates the type
+	TypeCode() int
+
 	// TypeName should return the name of the type.
 	TypeName() string
 
@@ -103,6 +112,10 @@ type ObjectImpl struct {
 
 var _ Object = ObjectImpl{}
 
+func (ObjectImpl) TypeCode() int {
+	return 101
+}
+
 // TypeName implements Object interface.
 func (ObjectImpl) TypeName() string {
 	panic(ErrNotImplemented)
@@ -150,6 +163,10 @@ func (ObjectImpl) BinaryOp(_ token.Token, _ Object) (Object, error) {
 
 type undefined struct {
 	ObjectImpl
+}
+
+func (o undefined) TypeCode() int {
+	return 0
 }
 
 // TypeName implements Object interface.
@@ -212,6 +229,10 @@ type StatusResult struct {
 var StatusResultInvalid = StatusResult{Status: "", Value: ""}
 var StatusResultSuccess = StatusResult{Status: "success", Value: ""}
 var StatusResultFail = StatusResult{Status: "fail", Value: ""}
+
+func (o StatusResult) TypeCode() int {
+	return 303
+}
 
 func (o StatusResult) TypeName() string {
 	return "statusResult"
@@ -449,6 +470,7 @@ type Any struct {
 	ObjectImpl
 	Value        interface{}
 	OriginalType string
+	OriginalCode int
 }
 
 var _ Object = Any{}
@@ -460,9 +482,18 @@ func NewAny(vA interface{}, argsA ...string) *Any {
 		originalT = argsA[0]
 	}
 
+	originalCodeT := -1
+
+	nv, ok := vA.(Object)
+
+	if ok {
+		originalCodeT = nv.TypeCode()
+	}
+
 	return &Any{
 		Value:        vA,
 		OriginalType: originalT,
+		OriginalCode: originalCodeT,
 	}
 }
 
@@ -473,9 +504,18 @@ func NewAnyValue(vA interface{}, argsA ...string) Any {
 		originalT = argsA[0]
 	}
 
+	originalCodeT := -1
+
+	nv, ok := vA.(Object)
+
+	if ok {
+		originalCodeT = nv.TypeCode()
+	}
+
 	return Any{
 		Value:        vA,
 		OriginalType: originalT,
+		OriginalCode: originalCodeT,
 	}
 }
 
@@ -489,6 +529,10 @@ func (o Any) WriteResp(bytesA []byte) error {
 	_, err := v.Write(bytesA)
 
 	return err
+}
+
+func (o Any) TypeCode() int {
+	return 999
 }
 
 func (o Any) TypeName() string {
@@ -531,6 +575,16 @@ func (o Any) IndexGet(index Object) (value Object, err error) {
 	}
 
 	fNameT := nv.Value
+
+	if fNameT == "unref" {
+		if o.OriginalCode == 100105 { // o.OriginalType == "*String" {
+			return *(o.Value.(*String)), nil
+		}
+
+		tk.Pl("otype: %v, ocode: %v", o.OriginalType, o.OriginalCode)
+
+		return nil, fmt.Errorf("not unrefable")
+	}
 
 	if o.Members == nil {
 		o.Members = map[string]Object{}
@@ -594,7 +648,27 @@ func (o Any) IndexGet(index Object) (value Object, err error) {
 	return nil, ErrNotIndexable
 }
 
-func (Any) IndexSet(index, value Object) error {
+func (o Any) IndexSet(index, value Object) error {
+
+	// nv, ok := index.(String)
+
+	// if ok {
+	// 	strT := nv.Value
+
+	// 	if strT == "refValue" {
+	// 		if o.OriginalCode == 100105 { // o.OriginalType == "*String" {
+	// 			pt := o.Value.(*String)
+
+	// 			(*pt).Value = ToString(value).Value
+
+	// 			// (*pt).Value = ToString(value).Value
+	// 			return nil
+	// 		}
+
+	// 		tk.Pl("otype: %v, ocode: %v", o.OriginalType, o.OriginalCode)
+	// 	}
+	// }
+
 	return ErrNotIndexAssignable
 }
 
@@ -626,6 +700,10 @@ func NewDateTimeValue(vA interface{}) DateTime {
 	return DateTime{
 		Value: tk.ToTime(vA, "-defaultNow").(time.Time),
 	}
+}
+
+func (o DateTime) TypeCode() int {
+	return 305
 }
 
 func (o DateTime) TypeName() string {
@@ -773,6 +851,10 @@ var _ Object = StringBuilder{}
 // func NewStringBuilderValue(vA interface{}) StringBuilder {
 // 	return StringBuilder{}
 // }
+
+func (o StringBuilder) TypeCode() int {
+	return 307
+}
 
 func (o StringBuilder) TypeName() string {
 	return "stringBuilder"
@@ -981,6 +1063,10 @@ var _ Object = Database{}
 // func NewStringBuilderValue(vA interface{}) StringBuilder {
 // 	return StringBuilder{}
 // }
+
+func (o Database) TypeCode() int {
+	return 309
+}
 
 func (o Database) TypeName() string {
 	return "database"
@@ -1311,6 +1397,10 @@ func (o Database) BinaryOp(tok token.Token, right Object) (Object, error) {
 // Bool represents boolean values and implements Object interface.
 type Bool bool
 
+func (o Bool) TypeCode() int {
+	return 103
+}
+
 // TypeName implements Object interface.
 func (Bool) TypeName() string {
 	return "bool"
@@ -1519,6 +1609,10 @@ type String struct {
 	// Methods map[string]*Function
 }
 
+func (o String) TypeCode() int {
+	return 105
+}
+
 // TypeName implements Object interface.
 func (String) TypeName() string {
 	return "string"
@@ -1537,7 +1631,39 @@ func (o String) Iterate() Iterator {
 }
 
 // IndexSet implements Object interface.
-func (String) IndexSet(index, value Object) error {
+// func (o String) IndexSet(index, value Object) error {
+// 	tk.Plo(index, value)
+// 	nv, ok := index.(String)
+
+// 	if ok {
+// 		strT := nv.String()
+
+// 		if strT == "value" {
+// 			tk.Pl("%v -> %v", o.Value, ToString(value).Value)
+// 			o.Value = ToString(value).Value
+// 			tk.Pl("%v -> %v", o.Value, ToString(value).Value)
+// 			return nil
+// 		}
+// 	}
+
+// 	return ErrNotIndexAssignable
+// }
+
+func (o String) IndexSet(index, value Object) error {
+	tk.Plo(index, value)
+	nv, ok := index.(String)
+
+	if ok {
+		strT := nv.String()
+
+		if strT == "value" {
+			tk.Pl("%v -> %v", o.Value, ToString(value).Value)
+			o.Value = ToString(value).Value
+			tk.Pl("%v -> %v", o.Value, ToString(value).Value)
+			return nil
+		}
+	}
+
 	return ErrNotIndexAssignable
 }
 
@@ -1689,7 +1815,15 @@ func (o String) IndexGet(index Object) (Object, error) {
 	case Char:
 		idx = int(v)
 	case String:
-		return dealStringMethods(o, v.String())
+		strT := v.String()
+
+		if strT == "ref" {
+			return Any{Value: &o, OriginalType: "*String", OriginalCode: 100000 + o.TypeCode()}, nil
+			// } else if strT == "setValue" {
+
+		}
+
+		return dealStringMethods(o, strT)
 	default:
 		return nil, NewIndexTypeError("int|uint|char", index.TypeName())
 	}
@@ -1848,6 +1982,10 @@ type Bytes []byte
 
 var _ Object = Bytes{}
 
+func (o Bytes) TypeCode() int {
+	return 137
+}
+
 // TypeName implements Object interface.
 func (Bytes) TypeName() string {
 	return "bytes"
@@ -1990,6 +2128,212 @@ func (o Bytes) BinaryOp(tok token.Token, right Object) (Object, error) {
 		right.TypeName())
 }
 
+// Chars represents rune/char slice and implements Object interface.
+type Chars []rune
+
+var _ Object = Chars{}
+
+func (o Chars) TypeCode() int {
+	return 139
+}
+
+// TypeName implements Object interface.
+func (Chars) TypeName() string {
+	return "chars"
+}
+
+func (o Chars) String() string {
+	return string(o)
+}
+
+// Copy implements Copier interface.
+func (o Chars) Copy() Object {
+	cp := make(Chars, len(o))
+
+	for i, v := range o {
+		cp[i] = v
+	}
+	// copy(cp, o)
+	return cp
+}
+
+// CanIterate implements Object interface.
+func (Chars) CanIterate() bool { return true }
+
+// Iterate implements Object interface.
+func (o Chars) Iterate() Iterator {
+	return &CharsIterator{V: o}
+}
+
+// IndexSet implements Object interface.
+func (o Chars) IndexSet(index, value Object) error {
+	var idx int
+	switch v := index.(type) {
+	case Int:
+		idx = int(v)
+	case Uint:
+		idx = int(v)
+	case Byte:
+		idx = int(v)
+	default:
+		return NewIndexTypeError("int|uint|byte", index.TypeName())
+	}
+
+	if idx >= 0 && idx < len(o) {
+		switch v := value.(type) {
+		case Char:
+			o[idx] = rune(v)
+		case Int:
+			o[idx] = rune(v)
+		case Uint:
+			o[idx] = rune(v)
+		case Byte:
+			o[idx] = rune(v)
+		default:
+			return NewIndexValueTypeError("int|uint|byte", value.TypeName())
+		}
+		return nil
+	}
+
+	return ErrIndexOutOfBounds
+}
+
+// IndexGet represents string values and implements Object interface.
+func (o Chars) IndexGet(index Object) (Object, error) {
+	var idx int
+	switch v := index.(type) {
+	case Int:
+		idx = int(v)
+	case Uint:
+		idx = int(v)
+	case Byte:
+		idx = int(v)
+	default:
+		return nil, NewIndexTypeError("int|uint|char|byte", index.TypeName())
+	}
+
+	if idx >= 0 && idx < len(o) {
+		return Char(o[idx]), nil
+	}
+	return nil, ErrIndexOutOfBounds
+}
+
+// Equal implements Object interface.
+func (o Chars) Equal(right Object) bool {
+	if v, ok := right.(Chars); ok {
+		return string(o) == string(v)
+	}
+
+	if v, ok := right.(Bytes); ok {
+		return string(o) == string(v)
+	}
+
+	if v, ok := right.(String); ok {
+		return string(o) == FromString(v)
+	}
+	return false
+}
+
+// IsFalsy implements Object interface.
+func (o Chars) IsFalsy() bool { return len(o) == 0 }
+
+// CanCall implements Object interface.
+func (o Chars) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (o Chars) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// BinaryOp implements Object interface.
+func (o Chars) BinaryOp(tok token.Token, right Object) (Object, error) {
+	switch v := right.(type) {
+	// case Bytes:
+	// 	switch tok {
+	// 	case token.Add:
+	// 		return append(o, v...), nil
+	// 	case token.Less:
+	// 		return Bool(bytes.Compare([]byte(o), []byte(v)) == -1), nil
+	// 	case token.LessEq:
+	// 		cmp := bytes.Compare([]byte(o), []byte(v))
+	// 		return Bool(cmp == 0 || cmp == -1), nil
+	// 	case token.Greater:
+	// 		return Bool(bytes.Compare([]byte(o), []byte(v)) == 1), nil
+	// 	case token.GreaterEq:
+	// 		cmp := bytes.Compare([]byte(o), []byte(v))
+	// 		return Bool(cmp == 0 || cmp == 1), nil
+	// 	}
+	case Chars:
+		switch tok {
+		case token.Add:
+			return append(o, v...), nil
+		case token.Less:
+			// resultT := false
+
+			for i1, v1 := range o {
+				if v1 < v[i1] {
+					return Bool(true), nil
+				}
+			}
+
+			return Bool(false), nil // Bool(bytes.Compare([]byte(string(o)), []byte(v)) == -1), nil
+		case token.LessEq:
+			for i1, v1 := range o {
+				if v1 > v[i1] {
+					return Bool(false), nil
+				}
+			}
+
+			return Bool(true), nil
+			// cmp := bytes.Compare([]byte(o), []byte(v))
+			// return Bool(cmp == 0 || cmp == -1), nil
+		case token.Greater:
+			for i1, v1 := range o {
+				if v1 > v[i1] {
+					return Bool(true), nil
+				}
+			}
+
+			return Bool(false), nil
+			// return Bool(bytes.Compare([]byte(o), []byte(v)) == 1), nil
+		case token.GreaterEq:
+			for i1, v1 := range o {
+				if v1 < v[i1] {
+					return Bool(false), nil
+				}
+			}
+
+			return Bool(true), nil
+			// cmp := bytes.Compare([]byte(o), []byte(v))
+			// return Bool(cmp == 0 || cmp == 1), nil
+		}
+	case String:
+		switch tok {
+		case token.Add:
+			return append(o, ([]rune(FromString(v)))...), nil
+		case token.Less:
+			return Bool(string(o) < FromString(v)), nil
+		case token.LessEq:
+			return Bool(string(o) <= FromString(v)), nil
+		case token.Greater:
+			return Bool(string(o) > FromString(v)), nil
+		case token.GreaterEq:
+			return Bool(string(o) >= FromString(v)), nil
+		}
+	case undefined:
+		switch tok {
+		case token.Less, token.LessEq:
+			return False, nil
+		case token.Greater, token.GreaterEq:
+			return True, nil
+		}
+	}
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
 // Function represents a function object and implements Object interface.
 type Function struct {
 	ObjectImpl
@@ -1999,6 +2343,10 @@ type Function struct {
 }
 
 var _ Object = (*Function)(nil)
+
+func (*Function) TypeCode() int {
+	return 191
+}
 
 // TypeName implements Object interface.
 func (*Function) TypeName() string {
@@ -2049,6 +2397,10 @@ type BuiltinFunction struct {
 }
 
 var _ Object = (*BuiltinFunction)(nil)
+
+func (*BuiltinFunction) TypeCode() int {
+	return 183
+}
 
 // TypeName implements Object interface.
 func (*BuiltinFunction) TypeName() string {
@@ -2313,6 +2665,10 @@ type Array []Object
 
 var _ Object = Array{}
 
+func (Array) TypeCode() int {
+	return 131
+}
+
 // TypeName implements Object interface.
 func (Array) TypeName() string {
 	return "array"
@@ -2486,6 +2842,10 @@ type ObjectPtr struct {
 
 var _ Object = (*ObjectPtr)(nil)
 
+func (o *ObjectPtr) TypeCode() int {
+	return 151
+}
+
 // TypeName implements Object interface.
 func (o *ObjectPtr) TypeName() string {
 	return "object-ptr"
@@ -2560,6 +2920,10 @@ func MsiToMap(vA map[string]interface{}) Map {
 	}
 
 	return inParasT
+}
+
+func (Map) TypeCode() int {
+	return 133
 }
 
 // TypeName implements Object interface.
@@ -2696,6 +3060,10 @@ type SyncMap struct {
 
 var _ Object = (*SyncMap)(nil)
 
+func (*SyncMap) TypeCode() int {
+	return 153
+}
+
 // TypeName implements Object interface.
 func (*SyncMap) TypeName() string {
 	return "sync-map"
@@ -2811,6 +3179,10 @@ func (o *Error) Unwrap() error {
 
 func WrapError(errA error) *Error {
 	return &Error{Name: "Error", Message: errA.Error(), Cause: errA}
+}
+
+func (*Error) TypeCode() int {
+	return 155
 }
 
 // TypeName implements Object interface.
@@ -2938,6 +3310,10 @@ func (o *RuntimeError) addTrace(pos parser.Pos) {
 		}
 	}
 	o.Trace = append(o.Trace, pos)
+}
+
+func (*RuntimeError) TypeCode() int {
+	return 157
 }
 
 // TypeName implements Object interface.

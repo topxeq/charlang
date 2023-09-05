@@ -80,7 +80,35 @@ func (it *BytesIterator) Key() Object {
 func (it *BytesIterator) Value() Object {
 	i := it.i - 1
 	if i > -1 && i < len(it.V) {
-		return Int(it.V[i])
+		return Byte(it.V[i]) // Int(it.V[i])
+	}
+	return Undefined
+}
+
+// CharsIterator represents an iterator for the bytes.
+type CharsIterator struct {
+	V Chars
+	i int
+}
+
+var _ Iterator = (*CharsIterator)(nil)
+
+// Next implements Iterator interface.
+func (it *CharsIterator) Next() bool {
+	it.i++
+	return it.i-1 < len(it.V)
+}
+
+// Key implements Iterator interface.
+func (it *CharsIterator) Key() Object {
+	return Int(it.i - 1)
+}
+
+// Value implements Iterator interface.
+func (it *CharsIterator) Value() Object {
+	i := it.i - 1
+	if i > -1 && i < len(it.V) {
+		return Char(it.V[i])
 	}
 	return Undefined
 }

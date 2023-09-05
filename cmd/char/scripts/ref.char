@@ -1,0 +1,58 @@
+a := "  1.2 "
+
+plo(a)
+pl("pa=%p", a)
+
+b := a.ref
+
+plo(b)
+pl("pb=%p", b)
+
+f1 := func(strA) {
+	strA = "bbb"
+}
+
+f1(a)
+
+plo(a)
+
+f2 := func(strPtA) {
+	plo(strPtA)
+	pl("pf2=%p", strPtA)
+	strPtA.refValue = "bbb"
+}
+
+f2(b)
+
+plo(a)
+
+plo(b)
+
+c := [1, 2, "a"]
+
+plo(c)
+
+f3 := func(aryA) {
+	// plo(strPtA)
+	// pl("pf2=%p", strPtA)
+	aryA[1] = "cc"
+}
+
+f3(c)
+
+plo(c)
+
+d := {"field1": 1, "field2": "23.8"}
+
+plo(d)
+
+f4 := func(mapA) {
+	// plo(strPtA)
+	// pl("pf2=%p", strPtA)
+	mapA["field3"] = "dd"
+	mapA["field1"] = true
+}
+
+f4(d)
+
+plo(d)

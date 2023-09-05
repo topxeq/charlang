@@ -32,7 +32,6 @@ type BuiltinType int
 
 // Builtins
 const (
-	// internal related
 	BuiltinAppend BuiltinType = iota
 	BuiltinDelete
 	BuiltinCopy
@@ -42,9 +41,19 @@ const (
 	BuiltinSort
 	BuiltinSortReverse
 	BuiltinError
+
+	BuiltinGlobals
+
+	BuiltinTestByText
+	BuiltinTestByStartsWith
+	BuiltinTestByReg
+
+	// BuiltinCompile
+	// BuiltinRunCompiled
+
+	BuiltinTypeCode
 	BuiltinTypeName
 
-	// data type related
 	BuiltinAny
 	BuiltinStatusResult
 	BuiltinDateTime
@@ -60,11 +69,15 @@ const (
 	BuiltinBytes
 	BuiltinChars
 
-	// print related
 	BuiltinPrintf
 	BuiltinPrintln
 	BuiltinSprintf
-	BuiltinGlobals
+	BuiltinPr
+	BuiltinPl
+	BuiltinPln
+	BuiltinPlv
+	BuiltinPlo
+	BuiltinSpr
 
 	// decision related
 	BuiltinIsError
@@ -117,12 +130,6 @@ const (
 
 	BuiltinGetRandom
 	BuiltinGetRandomInt
-
-	BuiltinPr
-	BuiltinPl
-	BuiltinPln
-	BuiltinPlv
-	BuiltinSpr
 
 	BuiltinFatalf
 
@@ -226,19 +233,36 @@ const (
 	BuiltinDbClose
 
 	BuiltinExit
+
+	// misc related
+	BuiltinGetSeq
 )
 
 // BuiltinsMap is list of builtin types, exported for REPL.
 var BuiltinsMap = map[string]BuiltinType{
-	"append":        BuiltinAppend,
-	"delete":        BuiltinDelete,
-	"copy":          BuiltinCopy,
-	"repeat":        BuiltinRepeat,
-	"contains":      BuiltinContains,
-	"len":           BuiltinLen,
-	"sort":          BuiltinSort,
-	"sortReverse":   BuiltinSortReverse,
-	"error":         BuiltinError,
+	// internal & debug related
+	"append":      BuiltinAppend,
+	"delete":      BuiltinDelete,
+	"copy":        BuiltinCopy,
+	"repeat":      BuiltinRepeat,
+	"contains":    BuiltinContains,
+	"len":         BuiltinLen,
+	"sort":        BuiltinSort,
+	"sortReverse": BuiltinSortReverse,
+	"error":       BuiltinError,
+
+	"globals": BuiltinGlobals,
+
+	"testByText":       BuiltinTestByText,
+	"testByStartsWith": BuiltinTestByStartsWith,
+	"testByReg":        BuiltinTestByReg,
+
+	// "compile":     BuiltinCompile,
+	// "runCompiled": BuiltinRunCompiled,
+
+	// data type related
+
+	"typeCode":      BuiltinTypeCode,
 	"typeName":      BuiltinTypeName,
 	"any":           BuiltinAny,
 	"dateTime":      BuiltinDateTime,
@@ -254,10 +278,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	"string":        BuiltinString,
 	"bytes":         BuiltinBytes,
 	"chars":         BuiltinChars,
-	"printf":        BuiltinPrintf,
-	"println":       BuiltinPrintln,
-	"globals":       BuiltinGlobals,
-	"sprintf":       BuiltinSprintf,
+
+	// print related
+	"printf":  BuiltinPrintf,
+	"println": BuiltinPrintln,
+	"sprintf": BuiltinSprintf,
 
 	"isError":     BuiltinIsError,
 	"isAny":       BuiltinIsAny,
@@ -327,6 +352,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"pl":  BuiltinPl,
 	"pln": BuiltinPln,
 	"plv": BuiltinPlv,
+	"plo": BuiltinPlo,
 	"spr": BuiltinSpr,
 
 	"fatalf": BuiltinFatalf,
@@ -416,11 +442,19 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"replaceHtmlByMap":      BuiltinReplaceHtmlByMap,
 	"cleanHtmlPlaceholders": BuiltinCleanHtmlPlaceholders,
+
+	// misc related
+	"getSeq": BuiltinGetSeq,
 }
 
 // BuiltinObjects is list of builtins, exported for REPL.
 var BuiltinObjects = [...]Object{
 	// by char start
+	BuiltinGetSeq: &BuiltinFunction{
+		Name:   "getSeq",
+		Value:  fnANoneRInt(tk.GetSeq),
+		Remark: ", usage: getSeq()",
+	},
 	BuiltinReplaceHtmlByMap: &BuiltinFunction{
 		Name:   "replaceHtmlByMap",
 		Value:  BuiltinReplaceHtmlByMapFunc,
@@ -515,6 +549,10 @@ var BuiltinObjects = [...]Object{
 	BuiltinPlv: &BuiltinFunction{
 		Name:  "plv",
 		Value: fnAIV(tk.Plvsr),
+	},
+	BuiltinPlo: &BuiltinFunction{
+		Name:  "plo",
+		Value: fnAIV(tk.Plo),
 	},
 	BuiltinIfFileExists: &BuiltinFunction{
 		Name:  "ifFileExists",
@@ -858,6 +896,30 @@ var BuiltinObjects = [...]Object{
 	BuiltinError: &BuiltinFunction{
 		Name:  "error",
 		Value: builtinWant1(builtinErrorFunc),
+	},
+	// BuiltinCompile: &BuiltinFunction{
+	// 	Name:  "compile",
+	// 	Value: builtinCompileFunc,
+	// },
+	// BuiltinRunCompiled: &BuiltinFunction{
+	// 	Name:  "runCompiled",
+	// 	Value: builtinRunCompiledFunc,
+	// },
+	BuiltinTestByText: &BuiltinFunction{
+		Name:  "testByText",
+		Value: builtinTestByTextFunc,
+	},
+	BuiltinTestByStartsWith: &BuiltinFunction{
+		Name:  "testByStartsWith",
+		Value: builtinTestByStartsWithFunc,
+	},
+	BuiltinTestByReg: &BuiltinFunction{
+		Name:  "testByReg",
+		Value: builtinTestByRegFunc,
+	},
+	BuiltinTypeCode: &BuiltinFunction{
+		Name:  "typeCode",
+		Value: builtinWant1(builtinTypeCodeFunc),
 	},
 	BuiltinTypeName: &BuiltinFunction{
 		Name:  "typeName",
@@ -1379,6 +1441,186 @@ func builtinLenFunc(args ...Object) (Object, error) {
 	return Int(0), nil
 }
 
+// func builtinCompileFunc(argsA ...Object) (Object, error) {
+// 	lenT := len(argsA)
+
+// 	if lenT < 1 {
+// 		return nil, fmt.Errorf("not enough parameters")
+// 	}
+
+// 	byteCodeT := QuickCompile(tk.ToStr(argsA[0]))
+
+// 	if tk.IsError(byteCodeT) {
+// 		return nil, byteCodeT.(error)
+// 	}
+
+// 	return NewAny(byteCodeT), nil
+// }
+
+// func builtinRunCompiledFunc(argsA ...Object) (Object, error) {
+// 	lenT := len(argsA)
+
+// 	if lenT < 1 {
+// 		return nil, fmt.Errorf("not enough parameters")
+// 	}
+
+// 	anyT, ok := argsA[0].(*Any)
+
+// 	if !ok {
+// 		return nil, fmt.Errorf("invalid code type: (%T)%v", argsA[0], argsA[0])
+// 	}
+
+// 	valueT := anyT.Value
+
+// 	byteCodeT, ok := valueT.(*Bytecode)
+
+// 	if !ok {
+// 		return nil, fmt.Errorf("invalid code type in Any: (%T)%v", valueT, valueT)
+// 	}
+
+// 	var globalsA map[string]interface{} = nil
+// 	var additionsA []Object = nil
+
+// 	envT := NewBaseEnv(globalsA) // Map{}
+
+// 	retT, errT := NewVM(byteCodeT).Run(envT, additionsA...)
+
+// 	if errT != nil {
+// 		return nil, errT
+// 	}
+
+// 	return retT, nil
+// }
+
+func builtinTestByTextFunc(argsA ...Object) (Object, error) {
+	lenT := len(argsA)
+
+	if lenT < 2 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	v1 := argsA[0]
+	v2 := argsA[1]
+
+	var v3 string
+	var v4 string
+
+	if lenT > 3 {
+		v3 = tk.ToStr(argsA[2])
+		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+	} else if lenT > 2 {
+		v3 = tk.ToStr(argsA[2])
+	} else {
+		v3 = tk.ToStr(tk.GetSeq())
+	}
+
+	nv1, ok := v1.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v1): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	nv2, ok := v2.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	if nv1.Value == nv2.Value {
+		tk.Pl("test %v%v passed", v3, v4)
+	} else {
+		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	return nil, nil
+}
+
+func builtinTestByStartsWithFunc(argsA ...Object) (Object, error) {
+	lenT := len(argsA)
+
+	if lenT < 2 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	v1 := argsA[0]
+	v2 := argsA[1]
+
+	var v3 string
+	var v4 string
+
+	if lenT > 3 {
+		v3 = tk.ToStr(argsA[2])
+		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+	} else if lenT > 2 {
+		v3 = tk.ToStr(argsA[2])
+	} else {
+		v3 = tk.ToStr(tk.GetSeq())
+	}
+
+	nv1, ok := v1.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v1): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	nv2, ok := v2.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	if strings.HasPrefix(nv1.Value, nv2.Value) {
+		tk.Pl("test %v%v passed", v3, v4)
+	} else {
+		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	return nil, nil
+}
+
+func builtinTestByRegFunc(argsA ...Object) (Object, error) {
+	lenT := len(argsA)
+
+	if lenT < 2 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	v1 := argsA[0]
+	v2 := argsA[1]
+
+	var v3 string
+	var v4 string
+
+	if lenT > 3 {
+		v3 = tk.ToStr(argsA[2])
+		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+	} else if lenT > 2 {
+		v3 = tk.ToStr(argsA[2])
+	} else {
+		v3 = tk.ToStr(tk.GetSeq())
+	}
+
+	nv1, ok := v1.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v1): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	nv2, ok := v2.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	if tk.RegMatchX(nv1.Value, nv2.Value) {
+		tk.Pl("test %v%v passed", v3, v4)
+	} else {
+		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	return nil, nil
+}
+
 func builtinSortFunc(args ...Object) (Object, error) {
 	switch obj := args[0].(type) {
 	case Array:
@@ -1509,6 +1751,10 @@ func builtinSortReverseFunc(args ...Object) (Object, error) {
 
 func builtinErrorFunc(args ...Object) (Object, error) {
 	return &Error{Name: "error", Message: args[0].String()}, nil
+}
+
+func builtinTypeCodeFunc(args ...Object) (Object, error) {
+	return ToInt(args[0].TypeCode()), nil
 }
 
 func builtinTypeNameFunc(args ...Object) (Object, error) {
@@ -1975,7 +2221,7 @@ func builtinNilToEmptyFunc(argsA ...Object) (Object, error) {
 
 	vA := argsA[0]
 
-	if vA.TypeName() == "undefined" {
+	if vA.TypeCode() == 0 {
 		return ToString(""), nil
 	}
 
@@ -2922,7 +3168,7 @@ func builtinIsArrayFunc(args ...Object) (Object, error) {
 }
 
 func builtinIsUndefinedFunc(args ...Object) (Object, error) {
-	return Bool(args[0].TypeName() == "undefined"), nil
+	return Bool(args[0].TypeCode() == 0), nil
 	// return Bool(args[0] == Undefined), nil
 }
 
@@ -3277,6 +3523,12 @@ func fnASSRI(fn func(string, string) interface{}) CallableFunc {
 	}
 }
 
+func fnANoneRInt(fn func() int) CallableFunc {
+	return func(args ...Object) (Object, error) {
+		return ToInt(fn()), nil
+	}
+}
+
 func fnASRB(fn func(string) bool) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		if len(args) != 1 {
@@ -3437,7 +3689,7 @@ func fnASSVRS_safely(fn func(string, ...string) string) CallableFunc {
 
 		s1, ok := args[0].(String)
 		if !ok {
-			if args[0].TypeName() == "undefined" {
+			if args[0].TypeCode() == 0 {
 				s1 = ToString("")
 			} else {
 				s1 = ToString(args[0].String())

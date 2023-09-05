@@ -1,0 +1,29 @@
+var rs
+
+rs = systemCmd("char", "-gopath", "basic.char")
+
+testByText(rs, "3.4000000000000004\n", getSeq(), "basic.char")
+
+rs = systemCmd("char", "-gopath", "typeCodeAndName.char")
+
+testByText(rs, "typeCode of a: 107\ntypeName of a: int\ntypeCode of b: 105\ntypeName of b: string\ntypeCode of c: 131\ntypeName of c: array\ntypeCode of d: 131\ntypeName of d: array\n", getSeq(), "typeCodeAndName.char")
+
+rs = systemCmd("char", "-gopath", "anonymousFunc.char")
+
+testByStartsWith(rs, "Hi! Nice to see you.\n3\n8\n17", getSeq(), "anonymousFunc.char")
+
+rs = systemCmd("char", "-gopath", "param.char")
+
+testByReg(rs, `(?sm)args.*?\narg 1: param\.char.*`, getSeq(), "param.char")
+
+rs = systemCmd("char", "-gopath", "char.char")
+
+testByText(rs, "type of c1: char\ninternal type of c1: int32\nvalue of c1: 97\ncharacter of c1: a\n\ntype of c2: char\ninternal type of c2: int32\nvalue of c2: 22825\ncharacter of c2: 天\n", getSeq(), "char.char")
+
+rs = systemCmd("char", "-gopath", "compile.char")
+
+testByText(rs, "r1=3.3\nv0=true\nv1=value1\nvargs=[1 2 3a]\n(string)\"abctruevalue13.3\"\n", getSeq(), "compile.char")
+
+rs = systemCmd("char", "-gopath", "funcParam.char")
+
+testByText(rs, "[1 2 a]\n[1 cc a]\n{\"field1\":1,\"field2\":\"23.8\"}\n{\"field1\":true,\"field2\":\"23.8\",\"field3\":\"dd\"}\n", getSeq(), "funcParam.char")
