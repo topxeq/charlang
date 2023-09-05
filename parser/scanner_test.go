@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ozanh/ugo/parser"
-	"github.com/ozanh/ugo/token"
+	"github.com/topxeq/charlang/parser"
+	"github.com/topxeq/charlang/token"
 )
 
 var testFileSet = parser.NewFileSet()

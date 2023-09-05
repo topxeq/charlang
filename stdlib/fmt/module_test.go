@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	. "github.com/ozanh/ugo"
-	. "github.com/ozanh/ugo/stdlib/fmt"
+	. "github.com/topxeq/charlang"
+	. "github.com/topxeq/charlang/stdlib/fmt"
 )
 
 func Example() {

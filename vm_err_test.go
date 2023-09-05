@@ -1,14 +1,14 @@
-package ugo_test
+package charlang_test
 
 import (
 	"bytes"
 	"errors"
 	"testing"
 
-	"github.com/ozanh/ugo/parser"
 	"github.com/stretchr/testify/require"
+	"github.com/topxeq/charlang/parser"
 
-	. "github.com/ozanh/ugo"
+	. "github.com/topxeq/charlang"
 )
 
 func TestVMErrorHandlers(t *testing.T) {
@@ -670,7 +670,7 @@ func TestVMExamples(t *testing.T) {
 	}
 `
 	ex1MainScript := `
-	// This example is to show some features of uGO.
+	// This example is to show some features of Charlang.
 
 	// provide arguments as if main module body is a function.
 	param (a0, a1, ...args)

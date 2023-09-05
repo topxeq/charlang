@@ -1,8 +1,4 @@
-// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
-// Use of this source code is governed by a MIT License
-// that can be found in the LICENSE file.
-
-package ugo
+package charlang
 
 import (
 	"bytes"
@@ -15,7 +11,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/ozanh/ugo/token"
+	"github.com/topxeq/charlang/token"
 )
 
 var (

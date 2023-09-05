@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ozanh/ugo"
+	"github.com/topxeq/charlang"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -72,7 +72,7 @@ func TestREPL(t *testing.T) {
 	})
 	t.Run("globals plus", func(t *testing.T) {
 		require.NoError(t, r.execute(".globals+"))
-		testHasPrefix(t, string(cw.consume()), "&ugo.SyncMap{")
+		testHasPrefix(t, string(cw.consume()), "&charlang.SyncMap{")
 	})
 	t.Run("locals", func(t *testing.T) {
 		r := newREPL(ctx, cw)
@@ -86,7 +86,7 @@ func TestREPL(t *testing.T) {
 		require.NoError(t, r.execute("test := 1"))
 		cw.consume()
 		require.NoError(t, r.execute(".locals+"))
-		require.Equal(t, string(cw.consume()), "[]ugo.Object{1}\n")
+		require.Equal(t, string(cw.consume()), "[]charlang.Object{1}\n")
 	})
 	t.Run("return 1", func(t *testing.T) {
 		r := newREPL(ctx, cw)
@@ -108,7 +108,7 @@ func TestREPL(t *testing.T) {
 		cw.consume()
 		require.NoError(t, r.execute(".return+"))
 		require.Equal(t, string(cw.consume()),
-			"GoType:ugo.Int, TypeName:int, Value:1\n")
+			"GoType:charlang.Int, TypeName:int, Value:1\n")
 	})
 	t.Run("symbols", func(t *testing.T) {
 		r := newREPL(ctx, cw)
@@ -218,10 +218,10 @@ func TestFlags(t *testing.T) {
 	}
 
 	fs := flag.NewFlagSet("script file", flag.ExitOnError)
-	fp, to, err := parseFlags(fs, []string{"testdata/fibtc.ugo"})
+	fp, to, err := parseFlags(fs, []string{"testdata/fibtc.char"})
 	require.NoError(t, err)
 	require.Empty(t, to)
-	require.Equal(t, "testdata/fibtc.ugo", fp)
+	require.Equal(t, "testdata/fibtc.char", fp)
 
 	resetGlobals()
 
@@ -251,7 +251,7 @@ func TestExecuteScript(t *testing.T) {
 	defer cancel()
 
 	const workdir = "./testdata"
-	scr, err := ioutil.ReadFile("./testdata/fibtc.ugo")
+	scr, err := ioutil.ReadFile("./testdata/fibtc.char")
 	require.NoError(t, err)
 	require.NoError(t, executeScript(ctx, "(test1)", workdir, scr, nil))
 
@@ -268,7 +268,7 @@ func TestExecuteScript(t *testing.T) {
 	cancel()
 	err = executeScript(ctx, "(test3)", workdir, scr, nil)
 	if err != nil {
-		if err != context.Canceled && err != ugo.ErrVMAborted {
+		if err != context.Canceled && err != charlang.ErrVMAborted {
 			t.Fatalf("unexpected error: %+v", err)
 		}
 	}

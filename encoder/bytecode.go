@@ -7,19 +7,19 @@ import (
 	"io"
 	"reflect"
 
-	"github.com/ozanh/ugo"
+	"github.com/topxeq/charlang"
 )
 
 // EncodeBytecodeTo encodes given bc to w io.Writer.
-func EncodeBytecodeTo(bc *ugo.Bytecode, w io.Writer) error {
+func EncodeBytecodeTo(bc *charlang.Bytecode, w io.Writer) error {
 	return (*Bytecode)(bc).Encode(w)
 }
 
-// DecodeBytecodeFrom decodes *ugo.Bytecode from given r io.Reader.
-func DecodeBytecodeFrom(r io.Reader, modules *ugo.ModuleMap) (*ugo.Bytecode, error) {
+// DecodeBytecodeFrom decodes *charlang.Bytecode from given r io.Reader.
+func DecodeBytecodeFrom(r io.Reader, modules *charlang.ModuleMap) (*charlang.Bytecode, error) {
 	var bc Bytecode
 	err := bc.Decode(r, modules)
-	return (*ugo.Bytecode)(&bc), err
+	return (*charlang.Bytecode)(&bc), err
 }
 
 // Encode writes encoded data of Bytecode to writer.
@@ -41,7 +41,7 @@ func (bc *Bytecode) Encode(w io.Writer) error {
 }
 
 // Decode decodes Bytecode data from the reader.
-func (bc *Bytecode) Decode(r io.Reader, modules *ugo.ModuleMap) error {
+func (bc *Bytecode) Decode(r io.Reader, modules *charlang.ModuleMap) error {
 	dst := bytes.NewBuffer(nil)
 	if _, err := io.Copy(dst, r); err != nil {
 		return err
@@ -50,28 +50,28 @@ func (bc *Bytecode) Decode(r io.Reader, modules *ugo.ModuleMap) error {
 }
 
 // unmarshal unmarshals data and assigns receiver to the new Bytecode.
-func (bc *Bytecode) unmarshal(data []byte, modules *ugo.ModuleMap) error {
+func (bc *Bytecode) unmarshal(data []byte, modules *charlang.ModuleMap) error {
 	err := bc.UnmarshalBinary(data)
 	if err != nil {
 		return err
 	}
 
 	if modules == nil {
-		modules = ugo.NewModuleMap()
+		modules = charlang.NewModuleMap()
 	}
 	return bc.fixObjects(modules)
 }
 
-func (bc *Bytecode) fixObjects(modules *ugo.ModuleMap) error {
+func (bc *Bytecode) fixObjects(modules *charlang.ModuleMap) error {
 	for i := range bc.Constants {
 		switch obj := bc.Constants[i].(type) {
-		case ugo.Map:
-			v, ok := obj[ugo.AttrModuleName]
+		case charlang.Map:
+			v, ok := obj[charlang.AttrModuleName]
 			if !ok {
 				continue
 			}
 
-			name, ok := v.(ugo.String)
+			name, ok := v.(charlang.String)
 			if !ok {
 				continue
 			}
@@ -83,11 +83,11 @@ func (bc *Bytecode) fixObjects(modules *ugo.ModuleMap) error {
 
 			// copy items from given module to decoded object if key exists in obj
 			for item := range obj {
-				if item == ugo.AttrModuleName {
+				if item == charlang.AttrModuleName {
 					// module name may not present in given map, skip it.
 					continue
 				}
-				o := bmod.(*ugo.BuiltinModule).Attrs[item]
+				o := bmod.(*charlang.BuiltinModule).Attrs[item]
 				// if item not exists in module, nil will not pass type check
 				want := reflect.TypeOf(obj[item])
 				got := reflect.TypeOf(o)

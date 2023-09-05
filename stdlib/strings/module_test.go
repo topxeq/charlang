@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	. "github.com/ozanh/ugo"
-	. "github.com/ozanh/ugo/stdlib/strings"
+	. "github.com/topxeq/charlang"
+	. "github.com/topxeq/charlang/stdlib/strings"
 )
 
 func TestModuleStrings(t *testing.T) {
@@ -50,10 +50,10 @@ func TestModuleStrings(t *testing.T) {
 	require.EqualValues(t, 0, ret)
 
 	equalFold := Module["EqualFold"]
-	ret, err = equalFold.Call(String("UGO"), String("ugo"))
+	ret, err = equalFold.Call(String("CHAR"), String("char"))
 	require.NoError(t, err)
 	require.EqualValues(t, true, ret)
-	ret, err = equalFold.Call(String("UGO"), String("go"))
+	ret, err = equalFold.Call(String("CHAR"), String("char"))
 	require.NoError(t, err)
 	require.EqualValues(t, false, ret)
 
@@ -484,7 +484,7 @@ func TestScript(t *testing.T) {
 				if c == 'o' { return 'O' }
 				return c
 			},
-			"tengo")`, e: String("I❤uGO")},
+			"tengo")`, e: String("I❤Charlang")},
 		{s: `strings.Map(func(c){return c}, "test")`,
 			m: catch, e: String("test")},
 

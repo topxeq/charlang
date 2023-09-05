@@ -3,7 +3,7 @@ package parser_test
 import (
 	"testing"
 
-	"github.com/ozanh/ugo/parser"
+	"github.com/topxeq/charlang/parser"
 )
 
 func TestIdentListString(t *testing.T) {

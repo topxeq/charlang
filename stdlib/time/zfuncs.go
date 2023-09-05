@@ -5,20 +5,20 @@ package time
 import (
 	"strconv"
 
-	"github.com/ozanh/ugo"
+	"github.com/topxeq/charlang"
 )
 
-// funcPTROEx is a generated function to make ugo.CallableExFunc.
-// Source: funcPTRO(t *Time) (ret ugo.Object)
-func funcPTROEx(fn func(*Time) ugo.Object) ugo.CallableExFunc {
-	return func(args ugo.Call) (ret ugo.Object, err error) {
+// funcPTROEx is a generated function to make charlang.CallableExFunc.
+// Source: funcPTRO(t *Time) (ret charlang.Object)
+func funcPTROEx(fn func(*Time) charlang.Object) charlang.CallableExFunc {
+	return func(args charlang.Call) (ret charlang.Object, err error) {
 		if err := args.CheckLen(1); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 
 		t, ok := ToTime(args.Get(0))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
 		}
 
 		ret = fn(t)
@@ -26,21 +26,21 @@ func funcPTROEx(fn func(*Time) ugo.Object) ugo.CallableExFunc {
 	}
 }
 
-// funcPTi64ROEx is a generated function to make ugo.CallableExFunc.
-// Source: funcPTi64RO(t *Time, d int64) (ret ugo.Object)
-func funcPTi64ROEx(fn func(*Time, int64) ugo.Object) ugo.CallableExFunc {
-	return func(args ugo.Call) (ret ugo.Object, err error) {
+// funcPTi64ROEx is a generated function to make charlang.CallableExFunc.
+// Source: funcPTi64RO(t *Time, d int64) (ret charlang.Object)
+func funcPTi64ROEx(fn func(*Time, int64) charlang.Object) charlang.CallableExFunc {
+	return func(args charlang.Call) (ret charlang.Object, err error) {
 		if err := args.CheckLen(2); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 
 		t, ok := ToTime(args.Get(0))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
 		}
-		d, ok := ugo.ToGoInt64(args.Get(1))
+		d, ok := charlang.ToGoInt64(args.Get(1))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("2nd", "int", args.Get(1).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("2nd", "int", args.Get(1).TypeName())
 		}
 
 		ret = fn(t, d)
@@ -48,21 +48,21 @@ func funcPTi64ROEx(fn func(*Time, int64) ugo.Object) ugo.CallableExFunc {
 	}
 }
 
-// funcPTTROEx is a generated function to make ugo.CallableExFunc.
-// Source: funcPTTRO(t1 *Time, t2 *Time) (ret ugo.Object)
-func funcPTTROEx(fn func(*Time, *Time) ugo.Object) ugo.CallableExFunc {
-	return func(args ugo.Call) (ret ugo.Object, err error) {
+// funcPTTROEx is a generated function to make charlang.CallableExFunc.
+// Source: funcPTTRO(t1 *Time, t2 *Time) (ret charlang.Object)
+func funcPTTROEx(fn func(*Time, *Time) charlang.Object) charlang.CallableExFunc {
+	return func(args charlang.Call) (ret charlang.Object, err error) {
 		if err := args.CheckLen(2); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 
 		t1, ok := ToTime(args.Get(0))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
 		}
 		t2, ok := ToTime(args.Get(1))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("2nd", "time", args.Get(1).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("2nd", "time", args.Get(1).TypeName())
 		}
 
 		ret = fn(t1, t2)
@@ -70,29 +70,29 @@ func funcPTTROEx(fn func(*Time, *Time) ugo.Object) ugo.CallableExFunc {
 	}
 }
 
-// funcPTiiiROEx is a generated function to make ugo.CallableExFunc.
-// Source: funcPTiiiRO(t *Time, i1 int, i2 int, i3 int) (ret ugo.Object)
-func funcPTiiiROEx(fn func(*Time, int, int, int) ugo.Object) ugo.CallableExFunc {
-	return func(args ugo.Call) (ret ugo.Object, err error) {
+// funcPTiiiROEx is a generated function to make charlang.CallableExFunc.
+// Source: funcPTiiiRO(t *Time, i1 int, i2 int, i3 int) (ret charlang.Object)
+func funcPTiiiROEx(fn func(*Time, int, int, int) charlang.Object) charlang.CallableExFunc {
+	return func(args charlang.Call) (ret charlang.Object, err error) {
 		if err := args.CheckLen(4); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 
 		t, ok := ToTime(args.Get(0))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
 		}
-		i1, ok := ugo.ToGoInt(args.Get(1))
+		i1, ok := charlang.ToGoInt(args.Get(1))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("2nd", "int", args.Get(1).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("2nd", "int", args.Get(1).TypeName())
 		}
-		i2, ok := ugo.ToGoInt(args.Get(2))
+		i2, ok := charlang.ToGoInt(args.Get(2))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("3rd", "int", args.Get(2).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("3rd", "int", args.Get(2).TypeName())
 		}
-		i3, ok := ugo.ToGoInt(args.Get(3))
+		i3, ok := charlang.ToGoInt(args.Get(3))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("4th", "int", args.Get(3).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("4th", "int", args.Get(3).TypeName())
 		}
 
 		ret = fn(t, i1, i2, i3)
@@ -100,21 +100,21 @@ func funcPTiiiROEx(fn func(*Time, int, int, int) ugo.Object) ugo.CallableExFunc 
 	}
 }
 
-// funcPTsROEx is a generated function to make ugo.CallableExFunc.
-// Source: funcPTsRO(t *Time, s string) (ret ugo.Object)
-func funcPTsROEx(fn func(*Time, string) ugo.Object) ugo.CallableExFunc {
-	return func(args ugo.Call) (ret ugo.Object, err error) {
+// funcPTsROEx is a generated function to make charlang.CallableExFunc.
+// Source: funcPTsRO(t *Time, s string) (ret charlang.Object)
+func funcPTsROEx(fn func(*Time, string) charlang.Object) charlang.CallableExFunc {
+	return func(args charlang.Call) (ret charlang.Object, err error) {
 		if err := args.CheckLen(2); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 
 		t, ok := ToTime(args.Get(0))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
 		}
-		s, ok := ugo.ToGoString(args.Get(1))
+		s, ok := charlang.ToGoString(args.Get(1))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("2nd", "string", args.Get(1).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("2nd", "string", args.Get(1).TypeName())
 		}
 
 		ret = fn(t, s)
@@ -122,25 +122,25 @@ func funcPTsROEx(fn func(*Time, string) ugo.Object) ugo.CallableExFunc {
 	}
 }
 
-// funcPTb2sROEx is a generated function to make ugo.CallableExFunc.
-// Source: funcPTb2sRO(t *Time, b []byte, s string) (ret ugo.Object)
-func funcPTb2sROEx(fn func(*Time, []byte, string) ugo.Object) ugo.CallableExFunc {
-	return func(args ugo.Call) (ret ugo.Object, err error) {
+// funcPTb2sROEx is a generated function to make charlang.CallableExFunc.
+// Source: funcPTb2sRO(t *Time, b []byte, s string) (ret charlang.Object)
+func funcPTb2sROEx(fn func(*Time, []byte, string) charlang.Object) charlang.CallableExFunc {
+	return func(args charlang.Call) (ret charlang.Object, err error) {
 		if err := args.CheckLen(3); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 
 		t, ok := ToTime(args.Get(0))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
 		}
-		b, ok := ugo.ToGoByteSlice(args.Get(1))
+		b, ok := charlang.ToGoByteSlice(args.Get(1))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("2nd", "bytes", args.Get(1).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("2nd", "bytes", args.Get(1).TypeName())
 		}
-		s, ok := ugo.ToGoString(args.Get(2))
+		s, ok := charlang.ToGoString(args.Get(2))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("3rd", "string", args.Get(2).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("3rd", "string", args.Get(2).TypeName())
 		}
 
 		ret = fn(t, b, s)
@@ -148,21 +148,21 @@ func funcPTb2sROEx(fn func(*Time, []byte, string) ugo.Object) ugo.CallableExFunc
 	}
 }
 
-// funcPTLROEx is a generated function to make ugo.CallableExFunc.
-// Source: funcPTLRO(t *Time, loc *Location) (ret ugo.Object)
-func funcPTLROEx(fn func(*Time, *Location) ugo.Object) ugo.CallableExFunc {
-	return func(args ugo.Call) (ret ugo.Object, err error) {
+// funcPTLROEx is a generated function to make charlang.CallableExFunc.
+// Source: funcPTLRO(t *Time, loc *Location) (ret charlang.Object)
+func funcPTLROEx(fn func(*Time, *Location) charlang.Object) charlang.CallableExFunc {
+	return func(args charlang.Call) (ret charlang.Object, err error) {
 		if err := args.CheckLen(2); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 
 		t, ok := ToTime(args.Get(0))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args.Get(0).TypeName())
 		}
 		loc, ok := ToLocation(args.Get(1))
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("2nd", "location", args.Get(1).TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("2nd", "location", args.Get(1).TypeName())
 		}
 
 		ret = fn(t, loc)
@@ -170,17 +170,17 @@ func funcPTLROEx(fn func(*Time, *Location) ugo.Object) ugo.CallableExFunc {
 	}
 }
 
-// funcPTRO is a generated function to make ugo.CallableFunc.
-// Source: funcPTRO(t *Time) (ret ugo.Object)
-func funcPTRO(fn func(*Time) ugo.Object) ugo.CallableFunc {
-	return func(args ...ugo.Object) (ret ugo.Object, err error) {
+// funcPTRO is a generated function to make charlang.CallableFunc.
+// Source: funcPTRO(t *Time) (ret charlang.Object)
+func funcPTRO(fn func(*Time) charlang.Object) charlang.CallableFunc {
+	return func(args ...charlang.Object) (ret charlang.Object, err error) {
 		if len(args) != 1 {
-			return ugo.Undefined, ugo.ErrWrongNumArguments.NewError("want=1 got=" + strconv.Itoa(len(args)))
+			return charlang.Undefined, charlang.ErrWrongNumArguments.NewError("want=1 got=" + strconv.Itoa(len(args)))
 		}
 
 		t, ok := ToTime(args[0])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args[0].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args[0].TypeName())
 		}
 
 		ret = fn(t)
@@ -188,21 +188,21 @@ func funcPTRO(fn func(*Time) ugo.Object) ugo.CallableFunc {
 	}
 }
 
-// funcPTi64RO is a generated function to make ugo.CallableFunc.
-// Source: funcPTi64RO(t *Time, d int64) (ret ugo.Object)
-func funcPTi64RO(fn func(*Time, int64) ugo.Object) ugo.CallableFunc {
-	return func(args ...ugo.Object) (ret ugo.Object, err error) {
+// funcPTi64RO is a generated function to make charlang.CallableFunc.
+// Source: funcPTi64RO(t *Time, d int64) (ret charlang.Object)
+func funcPTi64RO(fn func(*Time, int64) charlang.Object) charlang.CallableFunc {
+	return func(args ...charlang.Object) (ret charlang.Object, err error) {
 		if len(args) != 2 {
-			return ugo.Undefined, ugo.ErrWrongNumArguments.NewError("want=2 got=" + strconv.Itoa(len(args)))
+			return charlang.Undefined, charlang.ErrWrongNumArguments.NewError("want=2 got=" + strconv.Itoa(len(args)))
 		}
 
 		t, ok := ToTime(args[0])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args[0].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args[0].TypeName())
 		}
-		d, ok := ugo.ToGoInt64(args[1])
+		d, ok := charlang.ToGoInt64(args[1])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("2nd", "int", args[1].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("2nd", "int", args[1].TypeName())
 		}
 
 		ret = fn(t, d)
@@ -210,21 +210,21 @@ func funcPTi64RO(fn func(*Time, int64) ugo.Object) ugo.CallableFunc {
 	}
 }
 
-// funcPTTRO is a generated function to make ugo.CallableFunc.
-// Source: funcPTTRO(t1 *Time, t2 *Time) (ret ugo.Object)
-func funcPTTRO(fn func(*Time, *Time) ugo.Object) ugo.CallableFunc {
-	return func(args ...ugo.Object) (ret ugo.Object, err error) {
+// funcPTTRO is a generated function to make charlang.CallableFunc.
+// Source: funcPTTRO(t1 *Time, t2 *Time) (ret charlang.Object)
+func funcPTTRO(fn func(*Time, *Time) charlang.Object) charlang.CallableFunc {
+	return func(args ...charlang.Object) (ret charlang.Object, err error) {
 		if len(args) != 2 {
-			return ugo.Undefined, ugo.ErrWrongNumArguments.NewError("want=2 got=" + strconv.Itoa(len(args)))
+			return charlang.Undefined, charlang.ErrWrongNumArguments.NewError("want=2 got=" + strconv.Itoa(len(args)))
 		}
 
 		t1, ok := ToTime(args[0])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args[0].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args[0].TypeName())
 		}
 		t2, ok := ToTime(args[1])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("2nd", "time", args[1].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("2nd", "time", args[1].TypeName())
 		}
 
 		ret = fn(t1, t2)
@@ -232,29 +232,29 @@ func funcPTTRO(fn func(*Time, *Time) ugo.Object) ugo.CallableFunc {
 	}
 }
 
-// funcPTiiiRO is a generated function to make ugo.CallableFunc.
-// Source: funcPTiiiRO(t *Time, i1 int, i2 int, i3 int) (ret ugo.Object)
-func funcPTiiiRO(fn func(*Time, int, int, int) ugo.Object) ugo.CallableFunc {
-	return func(args ...ugo.Object) (ret ugo.Object, err error) {
+// funcPTiiiRO is a generated function to make charlang.CallableFunc.
+// Source: funcPTiiiRO(t *Time, i1 int, i2 int, i3 int) (ret charlang.Object)
+func funcPTiiiRO(fn func(*Time, int, int, int) charlang.Object) charlang.CallableFunc {
+	return func(args ...charlang.Object) (ret charlang.Object, err error) {
 		if len(args) != 4 {
-			return ugo.Undefined, ugo.ErrWrongNumArguments.NewError("want=4 got=" + strconv.Itoa(len(args)))
+			return charlang.Undefined, charlang.ErrWrongNumArguments.NewError("want=4 got=" + strconv.Itoa(len(args)))
 		}
 
 		t, ok := ToTime(args[0])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args[0].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args[0].TypeName())
 		}
-		i1, ok := ugo.ToGoInt(args[1])
+		i1, ok := charlang.ToGoInt(args[1])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("2nd", "int", args[1].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("2nd", "int", args[1].TypeName())
 		}
-		i2, ok := ugo.ToGoInt(args[2])
+		i2, ok := charlang.ToGoInt(args[2])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("3rd", "int", args[2].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("3rd", "int", args[2].TypeName())
 		}
-		i3, ok := ugo.ToGoInt(args[3])
+		i3, ok := charlang.ToGoInt(args[3])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("4th", "int", args[3].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("4th", "int", args[3].TypeName())
 		}
 
 		ret = fn(t, i1, i2, i3)
@@ -262,21 +262,21 @@ func funcPTiiiRO(fn func(*Time, int, int, int) ugo.Object) ugo.CallableFunc {
 	}
 }
 
-// funcPTsRO is a generated function to make ugo.CallableFunc.
-// Source: funcPTsRO(t *Time, s string) (ret ugo.Object)
-func funcPTsRO(fn func(*Time, string) ugo.Object) ugo.CallableFunc {
-	return func(args ...ugo.Object) (ret ugo.Object, err error) {
+// funcPTsRO is a generated function to make charlang.CallableFunc.
+// Source: funcPTsRO(t *Time, s string) (ret charlang.Object)
+func funcPTsRO(fn func(*Time, string) charlang.Object) charlang.CallableFunc {
+	return func(args ...charlang.Object) (ret charlang.Object, err error) {
 		if len(args) != 2 {
-			return ugo.Undefined, ugo.ErrWrongNumArguments.NewError("want=2 got=" + strconv.Itoa(len(args)))
+			return charlang.Undefined, charlang.ErrWrongNumArguments.NewError("want=2 got=" + strconv.Itoa(len(args)))
 		}
 
 		t, ok := ToTime(args[0])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args[0].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args[0].TypeName())
 		}
-		s, ok := ugo.ToGoString(args[1])
+		s, ok := charlang.ToGoString(args[1])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("2nd", "string", args[1].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("2nd", "string", args[1].TypeName())
 		}
 
 		ret = fn(t, s)
@@ -284,25 +284,25 @@ func funcPTsRO(fn func(*Time, string) ugo.Object) ugo.CallableFunc {
 	}
 }
 
-// funcPTb2sRO is a generated function to make ugo.CallableFunc.
-// Source: funcPTb2sRO(t *Time, b []byte, s string) (ret ugo.Object)
-func funcPTb2sRO(fn func(*Time, []byte, string) ugo.Object) ugo.CallableFunc {
-	return func(args ...ugo.Object) (ret ugo.Object, err error) {
+// funcPTb2sRO is a generated function to make charlang.CallableFunc.
+// Source: funcPTb2sRO(t *Time, b []byte, s string) (ret charlang.Object)
+func funcPTb2sRO(fn func(*Time, []byte, string) charlang.Object) charlang.CallableFunc {
+	return func(args ...charlang.Object) (ret charlang.Object, err error) {
 		if len(args) != 3 {
-			return ugo.Undefined, ugo.ErrWrongNumArguments.NewError("want=3 got=" + strconv.Itoa(len(args)))
+			return charlang.Undefined, charlang.ErrWrongNumArguments.NewError("want=3 got=" + strconv.Itoa(len(args)))
 		}
 
 		t, ok := ToTime(args[0])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args[0].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args[0].TypeName())
 		}
-		b, ok := ugo.ToGoByteSlice(args[1])
+		b, ok := charlang.ToGoByteSlice(args[1])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("2nd", "bytes", args[1].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("2nd", "bytes", args[1].TypeName())
 		}
-		s, ok := ugo.ToGoString(args[2])
+		s, ok := charlang.ToGoString(args[2])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("3rd", "string", args[2].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("3rd", "string", args[2].TypeName())
 		}
 
 		ret = fn(t, b, s)
@@ -310,21 +310,21 @@ func funcPTb2sRO(fn func(*Time, []byte, string) ugo.Object) ugo.CallableFunc {
 	}
 }
 
-// funcPTLRO is a generated function to make ugo.CallableFunc.
-// Source: funcPTLRO(t *Time, loc *Location) (ret ugo.Object)
-func funcPTLRO(fn func(*Time, *Location) ugo.Object) ugo.CallableFunc {
-	return func(args ...ugo.Object) (ret ugo.Object, err error) {
+// funcPTLRO is a generated function to make charlang.CallableFunc.
+// Source: funcPTLRO(t *Time, loc *Location) (ret charlang.Object)
+func funcPTLRO(fn func(*Time, *Location) charlang.Object) charlang.CallableFunc {
+	return func(args ...charlang.Object) (ret charlang.Object, err error) {
 		if len(args) != 2 {
-			return ugo.Undefined, ugo.ErrWrongNumArguments.NewError("want=2 got=" + strconv.Itoa(len(args)))
+			return charlang.Undefined, charlang.ErrWrongNumArguments.NewError("want=2 got=" + strconv.Itoa(len(args)))
 		}
 
 		t, ok := ToTime(args[0])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("1st", "time", args[0].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("1st", "time", args[0].TypeName())
 		}
 		loc, ok := ToLocation(args[1])
 		if !ok {
-			return ugo.Undefined, ugo.NewArgumentTypeError("2nd", "location", args[1].TypeName())
+			return charlang.Undefined, charlang.NewArgumentTypeError("2nd", "location", args[1].TypeName())
 		}
 
 		ret = fn(t, loc)

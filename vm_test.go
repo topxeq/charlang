@@ -1,4 +1,4 @@
-package ugo_test
+package charlang_test
 
 import (
 	"bytes"
@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ozanh/ugo/tests"
+	"github.com/topxeq/charlang/tests"
 
-	. "github.com/ozanh/ugo"
+	. "github.com/topxeq/charlang"
 )
 
 func TestVMArray(t *testing.T) {

@@ -1,4 +1,4 @@
-package ugo_test
+package charlang_test
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	. "github.com/ozanh/ugo"
-	ugotime "github.com/ozanh/ugo/stdlib/time"
+	. "github.com/topxeq/charlang"
+	ugotime "github.com/topxeq/charlang/stdlib/time"
 )
 
 func TestEval(t *testing.T) {

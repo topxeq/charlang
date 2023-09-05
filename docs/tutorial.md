@@ -54,7 +54,7 @@ package main
 import (
   "fmt"
 
-  "github.com/ozanh/ugo"
+  "github.com/topxeq/charlang"
 )
 
 func main() {

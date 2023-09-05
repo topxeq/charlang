@@ -1,4 +1,4 @@
-module github.com/ozanh/ugo
+module github.com/topxeq/charlang
 
 go 1.15
 

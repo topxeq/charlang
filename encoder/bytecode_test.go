@@ -9,42 +9,42 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ozanh/ugo"
-	"github.com/ozanh/ugo/stdlib/fmt"
-	"github.com/ozanh/ugo/stdlib/json"
-	"github.com/ozanh/ugo/stdlib/strings"
-	"github.com/ozanh/ugo/stdlib/time"
-	"github.com/ozanh/ugo/tests"
+	"github.com/topxeq/charlang"
+	"github.com/topxeq/charlang/stdlib/fmt"
+	"github.com/topxeq/charlang/stdlib/json"
+	"github.com/topxeq/charlang/stdlib/strings"
+	"github.com/topxeq/charlang/stdlib/time"
+	"github.com/topxeq/charlang/tests"
 
-	. "github.com/ozanh/ugo/encoder"
+	. "github.com/topxeq/charlang/encoder"
 )
 
-var baz ugo.Object = ugo.String("baz")
-var testObjects = []ugo.Object{
-	ugo.Undefined,
-	ugo.Int(-1), ugo.Int(0), ugo.Int(1),
-	ugo.Uint(0), ^ugo.Uint(0),
-	ugo.Char('x'),
-	ugo.Bool(true), ugo.Bool(false),
-	ugo.Float(0), ugo.Float(1.2),
-	ugo.String(""), ugo.String("abc"),
-	ugo.Bytes{}, ugo.Bytes("foo"),
-	ugo.ErrIndexOutOfBounds,
-	&ugo.RuntimeError{Err: ugo.ErrInvalidIndex},
-	ugo.Map{"key": &ugo.Function{Name: "f"}},
-	&ugo.SyncMap{Value: ugo.Map{"k": ugo.String("")}},
-	ugo.Array{ugo.Undefined, ugo.True, ugo.False},
+var baz charlang.Object = charlang.String("baz")
+var testObjects = []charlang.Object{
+	charlang.Undefined,
+	charlang.Int(-1), charlang.Int(0), charlang.Int(1),
+	charlang.Uint(0), ^charlang.Uint(0),
+	charlang.Char('x'),
+	charlang.Bool(true), charlang.Bool(false),
+	charlang.Float(0), charlang.Float(1.2),
+	charlang.String(""), charlang.String("abc"),
+	charlang.Bytes{}, charlang.Bytes("foo"),
+	charlang.ErrIndexOutOfBounds,
+	&charlang.RuntimeError{Err: charlang.ErrInvalidIndex},
+	charlang.Map{"key": &charlang.Function{Name: "f"}},
+	&charlang.SyncMap{Value: charlang.Map{"k": charlang.String("")}},
+	charlang.Array{charlang.Undefined, charlang.True, charlang.False},
 	&time.Time{Value: gotime.Time{}},
-	&json.EncoderOptions{Value: ugo.Int(1)},
-	&json.RawMessage{Value: ugo.Bytes("bar")},
-	&ugo.ObjectPtr{Value: &baz},
+	&json.EncoderOptions{Value: charlang.Int(1)},
+	&json.RawMessage{Value: charlang.Bytes("bar")},
+	&charlang.ObjectPtr{Value: &baz},
 }
 
 func TestBytecode_Encode(t *testing.T) {
-	testBytecodeSerialization(t, &ugo.Bytecode{Main: compFunc(nil)}, nil)
+	testBytecodeSerialization(t, &charlang.Bytecode{Main: compFunc(nil)}, nil)
 
 	testBytecodeSerialization(t,
-		&ugo.Bytecode{Constants: testObjects,
+		&charlang.Bytecode{Constants: testObjects,
 			Main: compFunc(
 				[]byte("test instructions"),
 				withLocals(1), withParams(1), withVariadic(),
@@ -57,14 +57,14 @@ func TestBytecode_Encode(t *testing.T) {
 func TestBytecode_file(t *testing.T) {
 	temp := t.TempDir()
 
-	bc := &ugo.Bytecode{Constants: testObjects,
+	bc := &charlang.Bytecode{Constants: testObjects,
 		Main: compFunc(
 			[]byte("test instructions"),
 			withLocals(4), withParams(0), withVariadic(),
 			withSourceMap(map[int]int{0: 1, 1: 2}),
 		),
 	}
-	f, err := ioutil.TempFile(temp, "mod.ugoc")
+	f, err := ioutil.TempFile(temp, "mod.charlangc")
 	require.NoError(t, err)
 	defer f.Close()
 
@@ -95,8 +95,8 @@ v = int(fmt.Sprintf("%d", v))
 return v*time.Second/time.Second // 1
 `
 
-	opts := ugo.DefaultCompilerOptions
-	opts.ModuleMap = ugo.NewModuleMap().
+	opts := charlang.DefaultCompilerOptions
+	opts.ModuleMap = charlang.NewModuleMap().
 		AddBuiltinModule("fmt", fmt.Module).
 		AddBuiltinModule("strings", strings.Module).
 		AddBuiltinModule("time", time.Module).
@@ -110,15 +110,15 @@ return {
 
 	mmCopy := opts.ModuleMap.Copy()
 
-	bc, err := ugo.Compile([]byte(src), opts)
+	bc, err := charlang.Compile([]byte(src), opts)
 	require.NoError(t, err)
 
-	wantRet, err := ugo.NewVM(bc).Run(nil)
+	wantRet, err := charlang.NewVM(bc).Run(nil)
 	require.NoError(t, err)
-	require.Equal(t, ugo.Int(1), wantRet)
+	require.Equal(t, charlang.Int(1), wantRet)
 
 	temp := t.TempDir()
-	f, err := ioutil.TempFile(temp, "program.ugoc")
+	f, err := ioutil.TempFile(temp, "program.charlangc")
 	require.NoError(t, err)
 	defer f.Close()
 
@@ -137,37 +137,37 @@ return {
 	_, err = f.Seek(0, io.SeekStart)
 	require.NoError(t, err)
 
-	var gotBc *ugo.Bytecode
+	var gotBc *charlang.Bytecode
 	logmicros(t, "decode time: %d microsecs", func() {
 		gotBc, err = DecodeBytecodeFrom(f, mmCopy)
 	})
 	require.NoError(t, err)
 	require.NotNil(t, gotBc)
 
-	var gotRet ugo.Object
+	var gotRet charlang.Object
 	logmicros(t, "run time: %d microsecs", func() {
-		gotRet, err = ugo.NewVM(gotBc).Run(nil)
+		gotRet, err = charlang.NewVM(gotBc).Run(nil)
 	})
 	require.NoError(t, err)
 
 	require.Equal(t, wantRet, gotRet)
 }
 
-func testBytecodeSerialization(t *testing.T, b *ugo.Bytecode, modules *ugo.ModuleMap) {
+func testBytecodeSerialization(t *testing.T, b *charlang.Bytecode, modules *charlang.ModuleMap) {
 	t.Helper()
 
 	var buf bytes.Buffer
 	err := (*Bytecode)(b).Encode(&buf)
 	require.NoError(t, err)
 
-	r := &ugo.Bytecode{}
+	r := &charlang.Bytecode{}
 	err = (*Bytecode)(r).Decode(bytes.NewReader(buf.Bytes()), modules)
 	require.NoError(t, err)
 
 	testBytecodesEqual(t, b, r)
 }
 
-func testBytecodesEqual(t *testing.T, want, got *ugo.Bytecode) {
+func testBytecodesEqual(t *testing.T, want, got *charlang.Bytecode) {
 	t.Helper()
 
 	require.Equal(t, want.FileSet, got.FileSet)

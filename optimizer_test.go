@@ -1,4 +1,4 @@
-package ugo_test
+package charlang_test
 
 import (
 	"fmt"
@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	. "github.com/ozanh/ugo"
-	"github.com/ozanh/ugo/token"
+	. "github.com/topxeq/charlang"
+	"github.com/topxeq/charlang/token"
 )
 
 func TestOptimizer(t *testing.T) {
@@ -695,7 +695,7 @@ func TestOptimizerShadowing(t *testing.T) {
 		),
 	)
 
-	// https://github.com/ozanh/ugo/issues/2
+	// https://github.com/topxeq/charlang/issues/2
 	expectRun(t, `
 	string := func(x) { return "ok" }
 	return string(1)

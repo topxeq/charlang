@@ -7,50 +7,50 @@ package time
 import (
 	"time"
 
-	"github.com/ozanh/ugo"
+	"github.com/topxeq/charlang"
 )
 
-// ugo:doc
+// char:doc
 // ## Types
 // ### location
 //
 // Go Type
 //
 // ```go
-// // Location represents location values and implements ugo.Object interface.
+// // Location represents location values and implements charlang.Object interface.
 // type Location struct {
-//    ugo.ObjectImpl
+//    charlang.ObjectImpl
 //    Value *time.Location
 // }
 // ```
 
-// Location represents location values and implements ugo.Object interface.
+// Location represents location values and implements charlang.Object interface.
 type Location struct {
-	ugo.ObjectImpl
+	charlang.ObjectImpl
 	Value *time.Location
 }
 
-// TypeName implements ugo.Object interface.
+// TypeName implements charlang.Object interface.
 func (*Location) TypeName() string {
 	return "location"
 }
 
-// String implements ugo.Object interface.
+// String implements charlang.Object interface.
 func (o *Location) String() string {
 	return o.Value.String()
 }
 
-// IsFalsy implements ugo.Object interface.
+// IsFalsy implements charlang.Object interface.
 func (o *Location) IsFalsy() bool {
 	return o.Value == nil
 }
 
-// Equal implements ugo.Object interface.
-func (o *Location) Equal(right ugo.Object) bool {
+// Equal implements charlang.Object interface.
+func (o *Location) Equal(right charlang.Object) bool {
 	if v, ok := right.(*Location); ok {
 		return v == o || v.String() == o.String()
 	}
-	if v, ok := right.(ugo.String); ok {
+	if v, ok := right.(charlang.String); ok {
 		return o.String() == v.String()
 	}
 	return false

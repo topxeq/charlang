@@ -5,8 +5,8 @@ import (
 	"encoding/gob"
 	"testing"
 
-	"github.com/ozanh/ugo"
-	. "github.com/ozanh/ugo/encoder"
+	"github.com/topxeq/charlang"
+	. "github.com/topxeq/charlang/encoder"
 )
 
 func BenchmarkBytecodeUnmarshal(b *testing.B) {
@@ -19,7 +19,7 @@ func BenchmarkBytecodeUnmarshal(b *testing.B) {
 	m := {a: 1, b: ["abc"], c: {x: bytes()}, builtins: [append, len]}
 	`
 	var err error
-	bc, err := ugo.Compile([]byte(script), ugo.CompilerOptions{})
+	bc, err := charlang.Compile([]byte(script), charlang.CompilerOptions{})
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func BenchmarkBytecodeDecode(b *testing.B) {
 	m := {a: 1, b: ["abc"], c: {x: bytes()}, builtins: [append, len]}
 	`
 	var err error
-	bc, err := ugo.Compile([]byte(script), ugo.CompilerOptions{})
+	bc, err := charlang.Compile([]byte(script), charlang.CompilerOptions{})
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -82,14 +82,14 @@ func BenchmarkBytecodeEncDec(b *testing.B) {
 	m := {a: 1, b: ["abc"], c: {x: bytes()}, builtins: [append, len]}
 	`
 	var err error
-	bc, err := ugo.Compile([]byte(script), ugo.CompilerOptions{})
+	bc, err := charlang.Compile([]byte(script), charlang.CompilerOptions{})
 	if err != nil {
 		b.Fatal(err)
 	}
 
 	b.Run("compileUnopt", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err := ugo.Compile([]byte(script), ugo.CompilerOptions{})
+			_, err := charlang.Compile([]byte(script), charlang.CompilerOptions{})
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -98,7 +98,7 @@ func BenchmarkBytecodeEncDec(b *testing.B) {
 
 	b.Run("compileOpt", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err := ugo.Compile([]byte(script), ugo.CompilerOptions{
+			_, err := charlang.Compile([]byte(script), charlang.CompilerOptions{
 				OptimizeConst:     true,
 				OptimizeExpr:      true,
 				OptimizerMaxCycle: 100,

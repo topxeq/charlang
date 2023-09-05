@@ -1,7 +1,3 @@
-// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
-// Use of this source code is governed by a MIT License
-// that can be found in the LICENSE file.
-
 //go:build !js
 // +build !js
 
@@ -25,18 +21,18 @@ import (
 
 	"github.com/peterh/liner"
 
-	"github.com/ozanh/ugo"
-	"github.com/ozanh/ugo/importers"
-	"github.com/ozanh/ugo/token"
+	"github.com/topxeq/charlang"
+	"github.com/topxeq/charlang/importers"
+	"github.com/topxeq/charlang/token"
 
-	ugofmt "github.com/ozanh/ugo/stdlib/fmt"
-	ugojson "github.com/ozanh/ugo/stdlib/json"
-	ugostrings "github.com/ozanh/ugo/stdlib/strings"
-	ugotime "github.com/ozanh/ugo/stdlib/time"
+	charlangfmt "github.com/topxeq/charlang/stdlib/fmt"
+	charlangjson "github.com/topxeq/charlang/stdlib/json"
+	charlangstrings "github.com/topxeq/charlang/stdlib/strings"
+	charlangtime "github.com/topxeq/charlang/stdlib/time"
 )
 
 const (
-	title         = "uGO"
+	title         = "Char"
 	promptPrefix  = ">>> "
 	promptPrefix2 = "... "
 )
@@ -58,13 +54,13 @@ var (
 	errReset = errors.New("reset")
 )
 
-var scriptGlobals = &ugo.SyncMap{
-	Value: ugo.Map{
-		"Gosched": &ugo.Function{
+var scriptGlobals = &charlang.SyncMap{
+	Value: charlang.Map{
+		"Gosched": &charlang.Function{
 			Name: "Gosched",
-			Value: func(args ...ugo.Object) (ugo.Object, error) {
+			Value: func(args ...charlang.Object) (charlang.Object, error) {
 				runtime.Gosched()
-				return ugo.Undefined, nil
+				return charlang.Undefined, nil
 			},
 		},
 	},
@@ -78,21 +74,21 @@ type suggest struct {
 
 type repl struct {
 	ctx          context.Context
-	eval         *ugo.Eval
+	eval         *charlang.Eval
 	out          io.Writer
 	commands     map[string]func(string) error
 	script       *bytes.Buffer
-	lastBytecode *ugo.Bytecode
-	lastResult   ugo.Object
+	lastBytecode *charlang.Bytecode
+	lastResult   charlang.Object
 	isMultiline  bool
 }
 
 func newREPL(ctx context.Context, stdout io.Writer) *repl {
-	opts := ugo.CompilerOptions{
+	opts := charlang.CompilerOptions{
 		ModulePath:        "(repl)",
 		ModuleMap:         defaultModuleMap("."),
 		SymbolTable:       defaultSymbolTable(),
-		OptimizerMaxCycle: ugo.TraceCompilerOptions.OptimizerMaxCycle,
+		OptimizerMaxCycle: charlang.TraceCompilerOptions.OptimizerMaxCycle,
 		TraceParser:       traceParser,
 		TraceOptimizer:    traceOptimizer,
 		TraceCompiler:     traceCompiler,
@@ -110,7 +106,7 @@ func newREPL(ctx context.Context, stdout io.Writer) *repl {
 
 	r := &repl{
 		ctx:    ctx,
-		eval:   ugo.NewEval(opts, scriptGlobals),
+		eval:   charlang.NewEval(opts, scriptGlobals),
 		out:    stdout,
 		script: bytes.NewBuffer(nil),
 	}
@@ -315,11 +311,11 @@ func (r *repl) executeScript() {
 	}
 
 	switch v := r.lastResult.(type) {
-	case ugo.String:
+	case charlang.String:
 		r.writeString(fmt.Sprintf("\n⇦   %q", string(v)))
-	case ugo.Char:
+	case charlang.Char:
 		r.writeString(fmt.Sprintf("\n⇦   %q", rune(v)))
-	case ugo.Bytes:
+	case charlang.Bytes:
 		r.writeString(fmt.Sprintf("\n⇦   %v", []byte(v)))
 	default:
 		r.writeString(fmt.Sprintf("\n⇦   %v", r.lastResult))
@@ -331,7 +327,7 @@ func (r *repl) setSymbolSuggestions() {
 	suggestions = suggestions[:initialSuggLen]
 
 	for _, s := range symbols {
-		if s.Scope != ugo.ScopeBuiltin {
+		if s.Scope != charlang.ScopeBuiltin {
 			suggestions = append(suggestions,
 				suggest{
 					text:        s.Name,
@@ -351,8 +347,7 @@ func (r *repl) prefix() string {
 }
 
 func (r *repl) printInfo() {
-	_, _ = fmt.Fprintln(r.out, "Copyright (c) 2020-2023 Ozan Hacıbekiroğlu")
-	_, _ = fmt.Fprintln(r.out, "https://github.com/ozanh/ugo License: MIT",
+	_, _ = fmt.Fprintln(r.out, "https://github.com/topxeq/charlang License: MIT",
 		"Build:", runtime.Version(), runtime.GOOS, runtime.GOARCH)
 	_, _ = fmt.Fprintln(r.out, "Write .commands to list available commands")
 	_, _ = fmt.Fprintln(r.out, "Press Ctrl+D or write .exit command to exit")
@@ -367,7 +362,7 @@ func (r *repl) run(history io.Reader) error {
 	line.SetCompleter(complete)
 	_, err := line.ReadHistory(history)
 	if err != nil {
-		err = &ugo.Error{Message: "failed history read", Cause: err}
+		err = &charlang.Error{Message: "failed history read", Cause: err}
 		return err
 	}
 	r.printInfo()
@@ -381,7 +376,7 @@ func (r *repl) run(history io.Reader) error {
 				err = nil
 				break
 			}
-			err = &ugo.Error{Message: "prompt error", Cause: err}
+			err = &charlang.Error{Message: "prompt error", Cause: err}
 			break
 		}
 		err = r.execute(str)
@@ -409,21 +404,21 @@ func complete(line string) (completions []string) {
 	return
 }
 
-func defaultSymbolTable() *ugo.SymbolTable {
-	table := ugo.NewSymbolTable()
+func defaultSymbolTable() *charlang.SymbolTable {
+	table := charlang.NewSymbolTable()
 	_, err := table.DefineGlobal("Gosched")
 	if err != nil {
-		panic(&ugo.Error{Message: "global symbol define error", Cause: err})
+		panic(&charlang.Error{Message: "global symbol define error", Cause: err})
 	}
 	return table
 }
 
-func defaultModuleMap(workdir string) *ugo.ModuleMap {
-	return ugo.NewModuleMap().
-		AddBuiltinModule("time", ugotime.Module).
-		AddBuiltinModule("strings", ugostrings.Module).
-		AddBuiltinModule("fmt", ugofmt.Module).
-		AddBuiltinModule("json", ugojson.Module).
+func defaultModuleMap(workdir string) *charlang.ModuleMap {
+	return charlang.NewModuleMap().
+		AddBuiltinModule("time", charlangtime.Module).
+		AddBuiltinModule("strings", charlangstrings.Module).
+		AddBuiltinModule("fmt", charlangfmt.Module).
+		AddBuiltinModule("json", charlangjson.Module).
 		SetExtImporter(
 			&importers.FileImporter{
 				WorkDir:    workdir,
@@ -469,13 +464,13 @@ func initSuggestions() {
 	}
 
 	// add builtins to suggestions
-	for k, id := range ugo.BuiltinsMap {
+	for k, id := range charlang.BuiltinsMap {
 		var desc string
-		o := ugo.BuiltinObjects[id]
+		o := charlang.BuiltinObjects[id]
 		switch o.(type) {
-		case *ugo.BuiltinFunction:
+		case *charlang.BuiltinFunction:
 			desc = "Builtin Function"
-		case *ugo.Error:
+		case *charlang.Error:
 			desc = "Builtin Error"
 		default:
 			desc = "Builtin"
@@ -515,7 +510,7 @@ func parseFlags(
 
 	flagset.Usage = func() {
 		_, _ = fmt.Fprint(flagset.Output(),
-			"Usage: ugo [flags] [uGO script file]\n\n",
+			"Usage: char [flags] [Charlang script file]\n\n",
 			"If script file is not provided, REPL terminal application is started\n",
 			"Use - to read from stdin\n\n",
 			"\nFlags:\n",
@@ -560,7 +555,7 @@ func executeScript(
 	script []byte,
 	traceOut io.Writer,
 ) error {
-	opts := ugo.DefaultCompilerOptions
+	opts := charlang.DefaultCompilerOptions
 	opts.SymbolTable = defaultSymbolTable()
 	opts.ModuleMap = defaultModuleMap(workdir)
 	opts.ModulePath = modulePath
@@ -572,12 +567,12 @@ func executeScript(
 		opts.TraceOptimizer = traceOptimizer
 	}
 
-	bc, err := ugo.Compile(script, opts)
+	bc, err := charlang.Compile(script, opts)
 	if err != nil {
 		return err
 	}
 
-	vm := ugo.NewVM(bc).SetRecover(true)
+	vm := charlang.NewVM(bc).SetRecover(true)
 
 	done := make(chan struct{})
 	go func() {

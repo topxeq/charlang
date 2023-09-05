@@ -1,11 +1,11 @@
 // Put relatively new features' tests in this test file.
 
-package ugo_test
+package charlang_test
 
 import (
 	"testing"
 
-	. "github.com/ozanh/ugo"
+	. "github.com/topxeq/charlang"
 )
 
 func TestVMDestructuring(t *testing.T) {

@@ -11,7 +11,7 @@ var objectConverters = map[reflect.Type]Converter{}
 var anyConverters = map[reflect.Type]Converter{}
 
 // RegisterObjectConverter registers a converter for a specific type to be used
-// with ToObject that converts to a ugo.Object.
+// with ToObject that converts to a charlang.Object.
 func RegisterObjectConverter(typ reflect.Type, converter Converter) {
 	objectConverters[typ] = converter
 }
@@ -22,9 +22,9 @@ func RegisterAnyConverter(typ reflect.Type, converter Converter) {
 	anyConverters[typ] = converter
 }
 
-// ToObject tries to convert any value to a ugo.Object using the registered
+// ToObject tries to convert any value to a charlang.Object using the registered
 // converters.
-// This should be called in ugo.ToObject.
+// This should be called in charlang.ToObject.
 func ToObject(in interface{}) (out interface{}, ok bool) {
 	typ := reflect.TypeOf(in)
 	if converter, ok := objectConverters[typ]; ok {
@@ -34,7 +34,7 @@ func ToObject(in interface{}) (out interface{}, ok bool) {
 }
 
 // ToInterface tries to convert any value to any using the registered converters.
-// This should be called in ugo.ToInterface.
+// This should be called in charlang.ToInterface.
 func ToInterface(in interface{}) (out interface{}, ok bool) {
 	typ := reflect.TypeOf(in)
 	if converter, ok := anyConverters[typ]; ok {

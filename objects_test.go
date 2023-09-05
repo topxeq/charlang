@@ -1,4 +1,4 @@
-package ugo_test
+package charlang_test
 
 import (
 	"errors"
@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	. "github.com/ozanh/ugo"
-	"github.com/ozanh/ugo/token"
+	. "github.com/topxeq/charlang"
+	"github.com/topxeq/charlang/token"
 )
 
 func TestObjects(t *testing.T) {

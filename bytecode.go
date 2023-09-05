@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
-package ugo
+package charlang
 
 import (
 	"bytes"
@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ozanh/ugo/parser"
-	"github.com/ozanh/ugo/token"
+	"github.com/topxeq/charlang/parser"
+	"github.com/topxeq/charlang/token"
 )
 
 // Bytecode holds the compiled functions and constants.

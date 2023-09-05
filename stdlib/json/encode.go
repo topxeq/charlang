@@ -1,13 +1,3 @@
-// A modified version of Go's json implementation.
-
-// Copyright (c) 2022-2023 Ozan Hacıbekiroğlu.
-// Use of this source code is governed by a MIT License
-// that can be found in the LICENSE file.
-
-// Copyright 2010 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE.golang file.
-
 package json
 
 import (
@@ -21,11 +11,11 @@ import (
 	"strconv"
 	"unicode/utf8"
 
-	"github.com/ozanh/ugo"
+	"github.com/topxeq/charlang"
 )
 
 // Marshal returns the JSON encoding of v.
-func Marshal(v ugo.Object) ([]byte, error) {
+func Marshal(v charlang.Object) ([]byte, error) {
 	e := newEncodeState()
 
 	err := e.marshal(v, encOpts{escapeHTML: true})
@@ -40,7 +30,7 @@ func Marshal(v ugo.Object) ([]byte, error) {
 // MarshalIndent is like Marshal but applies Indent to format the output.
 // Each JSON element in the output will begin on a new line beginning with prefix
 // followed by one or more copies of indent according to the indentation nesting.
-func MarshalIndent(v ugo.Object, prefix, indent string) ([]byte, error) {
+func MarshalIndent(v charlang.Object, prefix, indent string) ([]byte, error) {
 	b, err := Marshal(v)
 	if err != nil {
 		return nil, err
@@ -62,7 +52,7 @@ type Marshaler interface {
 // An UnsupportedValueError is returned by Marshal when attempting
 // to encode an unsupported value.
 type UnsupportedValueError struct {
-	Object ugo.Object
+	Object charlang.Object
 	Str    string
 }
 
@@ -72,7 +62,7 @@ func (e *UnsupportedValueError) Error() string {
 
 // A MarshalerError represents an error from calling a MarshalJSON or MarshalText method.
 type MarshalerError struct {
-	Object     ugo.Object
+	Object     charlang.Object
 	Err        error
 	sourceFunc string
 }
@@ -116,7 +106,7 @@ func newEncodeState() *encodeState {
 // can distinguish intentional panics from this package.
 type jsonError struct{ error }
 
-func (e *encodeState) marshal(v ugo.Object, opts encOpts) (err error) {
+func (e *encodeState) marshal(v charlang.Object, opts encOpts) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if je, ok := r.(jsonError); ok {
@@ -135,7 +125,7 @@ func (e *encodeState) error(err error) {
 	panic(jsonError{err})
 }
 
-func (e *encodeState) encode(v ugo.Object, opts encOpts) {
+func (e *encodeState) encode(v charlang.Object, opts encOpts) {
 	objectEncoder(v)(e, v, opts)
 }
 
@@ -146,34 +136,34 @@ type encOpts struct {
 	escapeHTML bool
 }
 
-type encoderFunc func(e *encodeState, v ugo.Object, opts encOpts)
+type encoderFunc func(e *encodeState, v charlang.Object, opts encOpts)
 
-// objectEncoder constructs an encoderFunc for a ugo.Object.
-func objectEncoder(v ugo.Object) encoderFunc {
+// objectEncoder constructs an encoderFunc for a charlang.Object.
+func objectEncoder(v charlang.Object) encoderFunc {
 	switch v.(type) {
-	case ugo.Bool:
+	case charlang.Bool:
 		return boolEncoder
-	case ugo.Int:
+	case charlang.Int:
 		return intEncoder
-	case ugo.Uint:
+	case charlang.Uint:
 		return uintEncoder
-	case ugo.Float:
+	case charlang.Float:
 		return floatEncoder
-	case ugo.String:
+	case charlang.String:
 		return stringEncoder
-	case ugo.Bytes:
+	case charlang.Bytes:
 		return bytesEncoder
-	case ugo.Map, *ugo.SyncMap:
+	case charlang.Map, *charlang.SyncMap:
 		return mapEncoder
-	case ugo.Array:
+	case charlang.Array:
 		return arrayEncoder
-	case ugo.Char:
+	case charlang.Char:
 		return charEncoder
 	case *EncoderOptions:
 		return optionsEncoder
-	case *ugo.ObjectPtr:
+	case *charlang.ObjectPtr:
 		return objectPtrEncoder
-	case *ugo.UndefinedType:
+	case *charlang.UndefinedType:
 		return invalidValueEncoder
 	case encoding.TextMarshaler:
 		return textMarshalerEncoder
@@ -184,23 +174,23 @@ func objectEncoder(v ugo.Object) encoderFunc {
 	}
 }
 
-func invalidValueEncoder(e *encodeState, _ ugo.Object, _ encOpts) {
+func invalidValueEncoder(e *encodeState, _ charlang.Object, _ encOpts) {
 	e.WriteString("null")
 }
 
-func noopEncoder(_ *encodeState, _ ugo.Object, _ encOpts) {}
+func noopEncoder(_ *encodeState, _ charlang.Object, _ encOpts) {}
 
-func optionsEncoder(e *encodeState, v ugo.Object, opts encOpts) {
+func optionsEncoder(e *encodeState, v charlang.Object, opts encOpts) {
 	opts.quoted = v.(*EncoderOptions).Quote
 	opts.escapeHTML = v.(*EncoderOptions).EscapeHTML
 	e.encode(v.(*EncoderOptions).Value, opts)
 }
 
-func boolEncoder(e *encodeState, v ugo.Object, opts encOpts) {
+func boolEncoder(e *encodeState, v charlang.Object, opts encOpts) {
 	if opts.quoted {
 		e.WriteByte('"')
 	}
-	if v.(ugo.Bool) {
+	if v.(charlang.Bool) {
 		e.WriteString("true")
 	} else {
 		e.WriteString("false")
@@ -210,8 +200,8 @@ func boolEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 	}
 }
 
-func intEncoder(e *encodeState, v ugo.Object, opts encOpts) {
-	b := strconv.AppendInt(e.scratch[:0], int64(v.(ugo.Int)), 10)
+func intEncoder(e *encodeState, v charlang.Object, opts encOpts) {
+	b := strconv.AppendInt(e.scratch[:0], int64(v.(charlang.Int)), 10)
 	if opts.quoted {
 		e.WriteByte('"')
 	}
@@ -221,8 +211,8 @@ func intEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 	}
 }
 
-func uintEncoder(e *encodeState, v ugo.Object, opts encOpts) {
-	b := strconv.AppendUint(e.scratch[:0], uint64(v.(ugo.Uint)), 10)
+func uintEncoder(e *encodeState, v charlang.Object, opts encOpts) {
+	b := strconv.AppendUint(e.scratch[:0], uint64(v.(charlang.Uint)), 10)
 	if opts.quoted {
 		e.WriteByte('"')
 	}
@@ -232,8 +222,8 @@ func uintEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 	}
 }
 
-func floatEncoder(e *encodeState, v ugo.Object, opts encOpts) {
-	f := float64(v.(ugo.Float))
+func floatEncoder(e *encodeState, v charlang.Object, opts encOpts) {
+	f := float64(v.(charlang.Float))
 	if math.IsInf(f, 0) || math.IsNaN(f) {
 		e.error(&UnsupportedValueError{v, strconv.FormatFloat(f, 'g', -1, 64)})
 	}
@@ -271,8 +261,8 @@ func floatEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 	}
 }
 
-func charEncoder(e *encodeState, v ugo.Object, opts encOpts) {
-	b := strconv.AppendInt(e.scratch[:0], int64(v.(ugo.Char)), 10)
+func charEncoder(e *encodeState, v charlang.Object, opts encOpts) {
+	b := strconv.AppendInt(e.scratch[:0], int64(v.(charlang.Char)), 10)
 	if opts.quoted {
 		e.WriteByte('"')
 	}
@@ -282,7 +272,7 @@ func charEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 	}
 }
 
-func stringEncoder(e *encodeState, v ugo.Object, opts encOpts) {
+func stringEncoder(e *encodeState, v charlang.Object, opts encOpts) {
 	if opts.quoted {
 		e2 := newEncodeState()
 		// Since we encode the string twice, we only need to escape HTML
@@ -294,7 +284,7 @@ func stringEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 	}
 }
 
-func mapEncoder(e *encodeState, v ugo.Object, opts encOpts) {
+func mapEncoder(e *encodeState, v charlang.Object, opts encOpts) {
 	if v == nil {
 		e.WriteString("null")
 		return
@@ -302,7 +292,7 @@ func mapEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 	if e.ptrLevel++; e.ptrLevel > startDetectingCyclesAfter {
 		// Start checking if we've run into a pointer cycle.
 		var ptr interface{}
-		if _, ok := v.(ugo.Map); ok {
+		if _, ok := v.(charlang.Map); ok {
 			ptr = reflect.ValueOf(v).Pointer()
 		} else { // *SyncMap
 			ptr = v
@@ -314,10 +304,10 @@ func mapEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 		defer delete(e.ptrSeen, ptr)
 	}
 
-	var m ugo.Map
+	var m charlang.Map
 	var ok bool
-	if m, ok = v.(ugo.Map); !ok {
-		sm := v.(*ugo.SyncMap)
+	if m, ok = v.(charlang.Map); !ok {
+		sm := v.(*charlang.SyncMap)
 		if sm == nil {
 			e.WriteString("null")
 			e.ptrLevel--
@@ -352,12 +342,12 @@ func mapEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 	e.ptrLevel--
 }
 
-func bytesEncoder(e *encodeState, v ugo.Object, _ encOpts) {
+func bytesEncoder(e *encodeState, v charlang.Object, _ encOpts) {
 	if v == nil {
 		e.WriteString("null")
 		return
 	}
-	s := v.(ugo.Bytes)
+	s := v.(charlang.Bytes)
 	e.WriteByte('"')
 	encodedLen := base64.StdEncoding.EncodedLen(len(s))
 	if encodedLen <= len(e.scratch) {
@@ -382,7 +372,7 @@ func bytesEncoder(e *encodeState, v ugo.Object, _ encOpts) {
 	e.WriteByte('"')
 }
 
-func arrayEncoder(e *encodeState, v ugo.Object, opts encOpts) {
+func arrayEncoder(e *encodeState, v charlang.Object, opts encOpts) {
 	if v == nil {
 		e.WriteString("null")
 		return
@@ -402,7 +392,7 @@ func arrayEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 		e.ptrSeen[ptr] = struct{}{}
 		defer delete(e.ptrSeen, ptr)
 	}
-	arr := v.(ugo.Array)
+	arr := v.(charlang.Array)
 	if arr == nil {
 		e.WriteString("null")
 		e.ptrLevel--
@@ -420,7 +410,7 @@ func arrayEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 	e.ptrLevel--
 }
 
-func objectPtrEncoder(e *encodeState, v ugo.Object, opts encOpts) {
+func objectPtrEncoder(e *encodeState, v charlang.Object, opts encOpts) {
 	if v == nil {
 		e.WriteString("null")
 		return
@@ -433,7 +423,7 @@ func objectPtrEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 		e.ptrSeen[v] = struct{}{}
 		defer delete(e.ptrSeen, v)
 	}
-	vv := v.(*ugo.ObjectPtr).Value
+	vv := v.(*charlang.ObjectPtr).Value
 	if vv == nil {
 		e.WriteString("null")
 	} else {
@@ -442,7 +432,7 @@ func objectPtrEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 	e.ptrLevel--
 }
 
-func textMarshalerEncoder(e *encodeState, v ugo.Object, opts encOpts) {
+func textMarshalerEncoder(e *encodeState, v charlang.Object, opts encOpts) {
 	if v == nil {
 		e.WriteString("null")
 		return
@@ -459,7 +449,7 @@ func textMarshalerEncoder(e *encodeState, v ugo.Object, opts encOpts) {
 	e.stringBytes(b, opts.escapeHTML)
 }
 
-func marshalerEncoder(e *encodeState, v ugo.Object, opts encOpts) {
+func marshalerEncoder(e *encodeState, v charlang.Object, opts encOpts) {
 	if v == nil {
 		e.WriteString("null")
 		return

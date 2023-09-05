@@ -1,9 +1,9 @@
-package ugo_test
+package charlang_test
 
 import (
 	"testing"
 
-	. "github.com/ozanh/ugo"
+	. "github.com/topxeq/charlang"
 )
 
 func TestBuiltinTypes(t *testing.T) {

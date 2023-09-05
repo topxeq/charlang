@@ -2,10 +2,10 @@
 
 ## Module List
 
-* [fmt](stdlib-fmt.md) module at `github.com/ozanh/ugo/stdlib/fmt`
-* [strings](stdlib-strings.md) module at `github.com/ozanh/ugo/stdlib/strings`
-* [time](stdlib-time.md) module at `github.com/ozanh/ugo/stdlib/time`
-* [json](stdlib-json.md) module at `github.com/ozanh/ugo/stdlib/json`
+* [fmt](stdlib-fmt.md) module at `github.com/topxeq/charlang/stdlib/fmt`
+* [strings](stdlib-strings.md) module at `github.com/topxeq/charlang/stdlib/strings`
+* [time](stdlib-time.md) module at `github.com/topxeq/charlang/stdlib/time`
+* [json](stdlib-json.md) module at `github.com/topxeq/charlang/stdlib/json`
 
 ## How-To
 
@@ -21,11 +21,11 @@ is deeply copied then.
 package main
 
 import (
-    "github.com/ozanh/ugo"
-    "github.com/ozanh/ugo/stdlib/fmt"
-    "github.com/ozanh/ugo/stdlib/json"
-    "github.com/ozanh/ugo/stdlib/strings"
-    "github.com/ozanh/ugo/stdlib/time"
+    "github.com/topxeq/charlang"
+    "github.com/topxeq/charlang/stdlib/fmt"
+    "github.com/topxeq/charlang/stdlib/json"
+    "github.com/topxeq/charlang/stdlib/strings"
+    "github.com/topxeq/charlang/stdlib/time"
 )
 
 func main() {

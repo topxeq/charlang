@@ -1,21 +1,9 @@
-// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
-// Use of this source code is governed by a MIT License
-// that can be found in the LICENSE file.
-
-// Copyright (c) 2019 Daniel Kang.
-// Use of this source code is governed by a MIT License
-// that can be found in the LICENSE.tengo file.
-
-// Copyright 2009 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE.golang file.
-
-package parser
+r
 
 import (
 	"strings"
 
-	"github.com/ozanh/ugo/token"
+	"github.com/topxeq/charlang/token"
 )
 
 // Stmt represents a statement in the AST.

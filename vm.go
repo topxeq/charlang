@@ -1,8 +1,4 @@
-// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
-// Use of this source code is governed by a MIT License
-// that can be found in the LICENSE file.
-
-package ugo
+package charlang
 
 import (
 	"errors"
@@ -12,8 +8,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/ozanh/ugo/parser"
-	"github.com/ozanh/ugo/token"
+	"github.com/topxeq/charlang/parser"
+	"github.com/topxeq/charlang/token"
 )
 
 const (

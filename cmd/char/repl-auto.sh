@@ -43,7 +43,7 @@ WID=$(xdotool search --class gnome-terminal | tail -1)
 test -z "$WID" && echoerr "Cannot find window id" || echo "Window ID:$WID"
 
 xtype 'clear && uname -a'
-xtype './ugo'
+xtype './char'
 xtype 'sum := func(...args) { var t=0; for v in args { t+=v }; return t }'
 xtype 'a := 11; b := 22'
 xtype 'c := sum(a, b); printf("%d + %d = %d\n", a, b, c)'

@@ -1,22 +1,18 @@
-// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
-// Use of this source code is governed by a MIT License
-// that can be found in the LICENSE file.
-
 package time
 
 import (
 	"reflect"
 	"time"
 
-	"github.com/ozanh/ugo"
-	"github.com/ozanh/ugo/registry"
-	"github.com/ozanh/ugo/token"
+	"github.com/topxeq/charlang"
+	"github.com/topxeq/charlang/registry"
+	"github.com/topxeq/charlang/token"
 )
 
 func init() {
 	registry.RegisterObjectConverter(reflect.TypeOf(time.Duration(0)),
 		func(in interface{}) (interface{}, bool) {
-			return ugo.Int(in.(time.Duration)), true
+			return charlang.Int(in.(time.Duration)), true
 		},
 	)
 
@@ -29,7 +25,7 @@ func init() {
 		func(in interface{}) (interface{}, bool) {
 			v := in.(*time.Time)
 			if v == nil {
-				return ugo.Undefined, true
+				return charlang.Undefined, true
 			}
 			return &Time{Value: *v}, true
 		},
@@ -44,7 +40,7 @@ func init() {
 		func(in interface{}) (interface{}, bool) {
 			v := in.(*time.Location)
 			if v == nil {
-				return ugo.Undefined, true
+				return charlang.Undefined, true
 			}
 			return &Location{Value: v}, true
 		},
@@ -56,64 +52,64 @@ func init() {
 	)
 }
 
-// ugo:doc
+// char:doc
 // ## Types
 // ### time
 //
 // Go Type
 //
 // ```go
-// // Time represents time values and implements ugo.Object interface.
+// // Time represents time values and implements charlang.Object interface.
 // type Time struct {
 //   Value time.Time
 // }
 // ```
 
-// Time represents time values and implements ugo.Object interface.
+// Time represents time values and implements charlang.Object interface.
 type Time struct {
 	Value time.Time
 }
 
-var _ ugo.NameCallerObject = (*Time)(nil)
+var _ charlang.NameCallerObject = (*Time)(nil)
 
-// TypeName implements ugo.Object interface.
+// TypeName implements charlang.Object interface.
 func (*Time) TypeName() string {
 	return "time"
 }
 
-// String implements ugo.Object interface.
+// String implements charlang.Object interface.
 func (o *Time) String() string {
 	return o.Value.String()
 }
 
-// IsFalsy implements ugo.Object interface.
+// IsFalsy implements charlang.Object interface.
 func (o *Time) IsFalsy() bool {
 	return o.Value.IsZero()
 }
 
-// Equal implements ugo.Object interface.
-func (o *Time) Equal(right ugo.Object) bool {
+// Equal implements charlang.Object interface.
+func (o *Time) Equal(right charlang.Object) bool {
 	if v, ok := right.(*Time); ok {
 		return o.Value.Equal(v.Value)
 	}
 	return false
 }
 
-// CanCall implements ugo.Object interface.
+// CanCall implements charlang.Object interface.
 func (*Time) CanCall() bool { return false }
 
-// Call implements ugo.Object interface.
-func (*Time) Call(args ...ugo.Object) (ugo.Object, error) {
-	return nil, ugo.ErrNotCallable
+// Call implements charlang.Object interface.
+func (*Time) Call(args ...charlang.Object) (charlang.Object, error) {
+	return nil, charlang.ErrNotCallable
 }
 
-// CanIterate implements ugo.Object interface.
+// CanIterate implements charlang.Object interface.
 func (*Time) CanIterate() bool { return false }
 
-// Iterate implements ugo.Object interface.
-func (*Time) Iterate() ugo.Iterator { return nil }
+// Iterate implements charlang.Object interface.
+func (*Time) Iterate() charlang.Iterator { return nil }
 
-// ugo:doc
+// char:doc
 // #### Overloaded time Operators
 //
 // - `time + int` -> time
@@ -126,12 +122,12 @@ func (*Time) Iterate() ugo.Iterator { return nil }
 //
 // Note that, `int` values as duration must be the right hand side operand.
 
-// BinaryOp implements ugo.Object interface.
+// BinaryOp implements charlang.Object interface.
 func (o *Time) BinaryOp(tok token.Token,
-	right ugo.Object) (ugo.Object, error) {
+	right charlang.Object) (charlang.Object, error) {
 
 	switch v := right.(type) {
-	case ugo.Int:
+	case charlang.Int:
 		switch tok {
 		case token.Add:
 			return &Time{Value: o.Value.Add(time.Duration(v))}, nil
@@ -141,35 +137,35 @@ func (o *Time) BinaryOp(tok token.Token,
 	case *Time:
 		switch tok {
 		case token.Sub:
-			return ugo.Int(o.Value.Sub(v.Value)), nil
+			return charlang.Int(o.Value.Sub(v.Value)), nil
 		case token.Less:
-			return ugo.Bool(o.Value.Before(v.Value)), nil
+			return charlang.Bool(o.Value.Before(v.Value)), nil
 		case token.LessEq:
-			return ugo.Bool(o.Value.Before(v.Value) || o.Value.Equal(v.Value)), nil
+			return charlang.Bool(o.Value.Before(v.Value) || o.Value.Equal(v.Value)), nil
 		case token.Greater:
-			return ugo.Bool(o.Value.After(v.Value)), nil
+			return charlang.Bool(o.Value.After(v.Value)), nil
 		case token.GreaterEq:
-			return ugo.Bool(o.Value.After(v.Value) || o.Value.Equal(v.Value)),
+			return charlang.Bool(o.Value.After(v.Value) || o.Value.Equal(v.Value)),
 				nil
 		}
-	case *ugo.UndefinedType:
+	case *charlang.UndefinedType:
 		switch tok {
 		case token.Less, token.LessEq:
-			return ugo.False, nil
+			return charlang.False, nil
 		case token.Greater, token.GreaterEq:
-			return ugo.True, nil
+			return charlang.True, nil
 		}
 	}
-	return nil, ugo.NewOperandTypeError(
+	return nil, charlang.NewOperandTypeError(
 		tok.String(),
 		o.TypeName(),
 		right.TypeName())
 }
 
-// IndexSet implements ugo.Object interface.
-func (*Time) IndexSet(_, _ ugo.Object) error { return ugo.ErrNotIndexAssignable }
+// IndexSet implements charlang.Object interface.
+func (*Time) IndexSet(_, _ charlang.Object) error { return charlang.ErrNotIndexAssignable }
 
-// ugo:doc
+// char:doc
 // #### time Getters
 //
 // Deprecated: Use method call. These selectors will return a callable object in
@@ -199,11 +195,11 @@ func (*Time) IndexSet(_, _ ugo.Object) error { return ugo.ErrNotIndexAssignable 
 // |.ISOWeek   | {"year": int, "week": int}                      |
 // |.Zone      | {"name": string, "offset": int}                 |
 
-// IndexGet implements ugo.Object interface.
-func (o *Time) IndexGet(index ugo.Object) (ugo.Object, error) {
-	v, ok := index.(ugo.String)
+// IndexGet implements charlang.Object interface.
+func (o *Time) IndexGet(index charlang.Object) (charlang.Object, error) {
+	v, ok := index.(charlang.String)
 	if !ok {
-		return ugo.Undefined, ugo.NewIndexTypeError("string", index.TypeName())
+		return charlang.Undefined, charlang.NewIndexTypeError("string", index.TypeName())
 	}
 
 	// For simplicity, we use method call for now. As getters are deprecated, we
@@ -213,12 +209,12 @@ func (o *Time) IndexGet(index ugo.Object) (ugo.Object, error) {
 	case "Date", "Clock", "UTC", "Unix", "UnixNano", "Year", "Month", "Day",
 		"Hour", "Minute", "Second", "Nanosecond", "IsZero", "Local", "Location",
 		"YearDay", "Weekday", "ISOWeek", "Zone":
-		return o.CallName(string(v), ugo.Call{})
+		return o.CallName(string(v), charlang.Call{})
 	}
-	return ugo.Undefined, nil
+	return charlang.Undefined, nil
 }
 
-// ugo:doc
+// char:doc
 // #### time Methods
 //
 // | Method                               | Return Type                                 |
@@ -254,28 +250,28 @@ func (o *Time) IndexGet(index ugo.Object) (ugo.Object, error) {
 // |.ISOWeek()                            | {"year": int, "week": int}                  |
 // |.Zone()                               | {"name": string, "offset": int}             |
 
-func (o *Time) CallName(name string, c ugo.Call) (ugo.Object, error) {
+func (o *Time) CallName(name string, c charlang.Call) (charlang.Object, error) {
 	fn, ok := methodTable[name]
 	if !ok {
-		return ugo.Undefined, ugo.ErrInvalidIndex.NewError(name)
+		return charlang.Undefined, charlang.ErrInvalidIndex.NewError(name)
 	}
 	return fn(o, &c)
 }
 
-var methodTable = map[string]func(*Time, *ugo.Call) (ugo.Object, error){
-	"Add": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+var methodTable = map[string]func(*Time, *charlang.Call) (charlang.Object, error){
+	"Add": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(1); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		d, ok := ugo.ToGoInt64(c.Get(0))
+		d, ok := charlang.ToGoInt64(c.Get(0))
 		if !ok {
 			return newArgTypeErr("1st", "int", c.Get(0).TypeName())
 		}
 		return timeAdd(o, d), nil
 	},
-	"Sub": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Sub": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(1); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 		t2, ok := ToTime(c.Get(0))
 		if !ok {
@@ -283,27 +279,27 @@ var methodTable = map[string]func(*Time, *ugo.Call) (ugo.Object, error){
 		}
 		return timeSub(o, t2), nil
 	},
-	"AddDate": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"AddDate": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(3); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		year, ok := ugo.ToGoInt(c.Get(0))
+		year, ok := charlang.ToGoInt(c.Get(0))
 		if !ok {
 			return newArgTypeErr("1st", "int", c.Get(0).TypeName())
 		}
-		month, ok := ugo.ToGoInt(c.Get(1))
+		month, ok := charlang.ToGoInt(c.Get(1))
 		if !ok {
 			return newArgTypeErr("2nd", "int", c.Get(1).TypeName())
 		}
-		day, ok := ugo.ToGoInt(c.Get(2))
+		day, ok := charlang.ToGoInt(c.Get(2))
 		if !ok {
 			return newArgTypeErr("3rd", "int", c.Get(2).TypeName())
 		}
 		return timeAddDate(o, year, month, day), nil
 	},
-	"After": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"After": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(1); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 		t2, ok := ToTime(c.Get(0))
 		if !ok {
@@ -311,9 +307,9 @@ var methodTable = map[string]func(*Time, *ugo.Call) (ugo.Object, error){
 		}
 		return timeAfter(o, t2), nil
 	},
-	"Before": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Before": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(1); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 		t2, ok := ToTime(c.Get(0))
 		if !ok {
@@ -321,33 +317,33 @@ var methodTable = map[string]func(*Time, *ugo.Call) (ugo.Object, error){
 		}
 		return timeBefore(o, t2), nil
 	},
-	"Format": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Format": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(1); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		format, ok := ugo.ToGoString(c.Get(0))
+		format, ok := charlang.ToGoString(c.Get(0))
 		if !ok {
 			return newArgTypeErr("1st", "string", c.Get(0).TypeName())
 		}
 		return timeFormat(o, format), nil
 	},
-	"AppendFormat": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"AppendFormat": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(2); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		b, ok := ugo.ToGoByteSlice(c.Get(0))
+		b, ok := charlang.ToGoByteSlice(c.Get(0))
 		if !ok {
 			return newArgTypeErr("1st", "bytes", c.Get(0).TypeName())
 		}
-		format, ok := ugo.ToGoString(c.Get(1))
+		format, ok := charlang.ToGoString(c.Get(1))
 		if !ok {
 			return newArgTypeErr("2nd", "string", c.Get(1).TypeName())
 		}
 		return timeAppendFormat(o, b, format), nil
 	},
-	"In": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"In": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(1); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 		loc, ok := ToLocation(c.Get(0))
 		if !ok {
@@ -355,29 +351,29 @@ var methodTable = map[string]func(*Time, *ugo.Call) (ugo.Object, error){
 		}
 		return timeIn(o, loc), nil
 	},
-	"Round": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Round": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(1); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		d, ok := ugo.ToGoInt64(c.Get(0))
+		d, ok := charlang.ToGoInt64(c.Get(0))
 		if !ok {
 			return newArgTypeErr("1st", "int", c.Get(0).TypeName())
 		}
 		return timeRound(o, d), nil
 	},
-	"Truncate": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Truncate": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(1); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		d, ok := ugo.ToGoInt64(c.Get(0))
+		d, ok := charlang.ToGoInt64(c.Get(0))
 		if !ok {
 			return newArgTypeErr("1st", "int", c.Get(0).TypeName())
 		}
 		return timeTruncate(o, d), nil
 	},
-	"Equal": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Equal": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(1); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 		t2, ok := ToTime(c.Get(0))
 		if !ok {
@@ -385,125 +381,125 @@ var methodTable = map[string]func(*Time, *ugo.Call) (ugo.Object, error){
 		}
 		return timeEqual(o, t2), nil
 	},
-	"Date": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Date": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 		y, m, d := o.Value.Date()
-		return ugo.Map{"year": ugo.Int(y), "month": ugo.Int(m),
-			"day": ugo.Int(d)}, nil
+		return charlang.Map{"year": charlang.Int(y), "month": charlang.Int(m),
+			"day": charlang.Int(d)}, nil
 	},
-	"Clock": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Clock": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 		h, m, s := o.Value.Clock()
-		return ugo.Map{"hour": ugo.Int(h), "minute": ugo.Int(m),
-			"second": ugo.Int(s)}, nil
+		return charlang.Map{"hour": charlang.Int(h), "minute": charlang.Int(m),
+			"second": charlang.Int(s)}, nil
 	},
-	"UTC": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"UTC": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 		return &Time{Value: o.Value.UTC()}, nil
 	},
-	"Unix": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Unix": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		return ugo.Int(o.Value.Unix()), nil
+		return charlang.Int(o.Value.Unix()), nil
 	},
-	"UnixNano": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"UnixNano": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		return ugo.Int(o.Value.UnixNano()), nil
+		return charlang.Int(o.Value.UnixNano()), nil
 	},
-	"Year": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Year": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		return ugo.Int(o.Value.Year()), nil
+		return charlang.Int(o.Value.Year()), nil
 	},
-	"Month": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Month": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		return ugo.Int(o.Value.Month()), nil
+		return charlang.Int(o.Value.Month()), nil
 	},
-	"Day": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Day": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		return ugo.Int(o.Value.Day()), nil
+		return charlang.Int(o.Value.Day()), nil
 	},
-	"Hour": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Hour": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		return ugo.Int(o.Value.Hour()), nil
+		return charlang.Int(o.Value.Hour()), nil
 	},
-	"Minute": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Minute": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		return ugo.Int(o.Value.Minute()), nil
+		return charlang.Int(o.Value.Minute()), nil
 	},
-	"Second": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Second": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		return ugo.Int(o.Value.Second()), nil
+		return charlang.Int(o.Value.Second()), nil
 	},
-	"Nanosecond": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Nanosecond": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		return ugo.Int(o.Value.Nanosecond()), nil
+		return charlang.Int(o.Value.Nanosecond()), nil
 	},
-	"IsZero": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"IsZero": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		return ugo.Bool(o.Value.IsZero()), nil
+		return charlang.Bool(o.Value.IsZero()), nil
 	},
-	"Local": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Local": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 		return &Time{Value: o.Value.Local()}, nil
 	},
-	"Location": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Location": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 		return &Location{Value: o.Value.Location()}, nil
 	},
-	"YearDay": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"YearDay": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		return ugo.Int(o.Value.YearDay()), nil
+		return charlang.Int(o.Value.YearDay()), nil
 	},
-	"Weekday": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Weekday": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
-		return ugo.Int(o.Value.Weekday()), nil
+		return charlang.Int(o.Value.Weekday()), nil
 	},
-	"ISOWeek": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"ISOWeek": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 		y, w := o.Value.ISOWeek()
-		return ugo.Map{"year": ugo.Int(y), "week": ugo.Int(w)}, nil
+		return charlang.Map{"year": charlang.Int(y), "week": charlang.Int(w)}, nil
 	},
-	"Zone": func(o *Time, c *ugo.Call) (ugo.Object, error) {
+	"Zone": func(o *Time, c *charlang.Call) (charlang.Object, error) {
 		if err := c.CheckLen(0); err != nil {
-			return ugo.Undefined, err
+			return charlang.Undefined, err
 		}
 		name, offset := o.Value.Zone()
-		return ugo.Map{"name": ugo.String(name), "offset": ugo.Int(offset)}, nil
+		return charlang.Map{"name": charlang.String(name), "offset": charlang.Int(offset)}, nil
 	},
 }
 
@@ -537,50 +533,50 @@ func (o *Time) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func timeAdd(t *Time, duration int64) ugo.Object {
+func timeAdd(t *Time, duration int64) charlang.Object {
 	return &Time{Value: t.Value.Add(time.Duration(duration))}
 }
 
-func timeSub(t1, t2 *Time) ugo.Object {
-	return ugo.Int(t1.Value.Sub(t2.Value))
+func timeSub(t1, t2 *Time) charlang.Object {
+	return charlang.Int(t1.Value.Sub(t2.Value))
 }
 
-func timeAddDate(t *Time, years, months, days int) ugo.Object {
+func timeAddDate(t *Time, years, months, days int) charlang.Object {
 	return &Time{Value: t.Value.AddDate(years, months, days)}
 }
 
-func timeAfter(t1, t2 *Time) ugo.Object {
-	return ugo.Bool(t1.Value.After(t2.Value))
+func timeAfter(t1, t2 *Time) charlang.Object {
+	return charlang.Bool(t1.Value.After(t2.Value))
 }
 
-func timeBefore(t1, t2 *Time) ugo.Object {
-	return ugo.Bool(t1.Value.Before(t2.Value))
+func timeBefore(t1, t2 *Time) charlang.Object {
+	return charlang.Bool(t1.Value.Before(t2.Value))
 }
 
-func timeFormat(t *Time, layout string) ugo.Object {
-	return ugo.String(t.Value.Format(layout))
+func timeFormat(t *Time, layout string) charlang.Object {
+	return charlang.String(t.Value.Format(layout))
 }
 
-func timeAppendFormat(t *Time, b []byte, layout string) ugo.Object {
-	return ugo.Bytes(t.Value.AppendFormat(b, layout))
+func timeAppendFormat(t *Time, b []byte, layout string) charlang.Object {
+	return charlang.Bytes(t.Value.AppendFormat(b, layout))
 }
 
-func timeIn(t *Time, loc *Location) ugo.Object {
+func timeIn(t *Time, loc *Location) charlang.Object {
 	return &Time{Value: t.Value.In(loc.Value)}
 }
 
-func timeRound(t *Time, duration int64) ugo.Object {
+func timeRound(t *Time, duration int64) charlang.Object {
 	return &Time{Value: t.Value.Round(time.Duration(duration))}
 }
 
-func timeTruncate(t *Time, duration int64) ugo.Object {
+func timeTruncate(t *Time, duration int64) charlang.Object {
 	return &Time{Value: t.Value.Truncate(time.Duration(duration))}
 }
 
-func timeEqual(t1, t2 *Time) ugo.Object {
-	return ugo.Bool(t1.Value.Equal(t2.Value))
+func timeEqual(t1, t2 *Time) charlang.Object {
+	return charlang.Bool(t1.Value.Equal(t2.Value))
 }
 
-func newArgTypeErr(pos, want, got string) (ugo.Object, error) {
-	return ugo.Undefined, ugo.NewArgumentTypeError(pos, want, got)
+func newArgTypeErr(pos, want, got string) (charlang.Object, error) {
+	return charlang.Undefined, charlang.NewArgumentTypeError(pos, want, got)
 }

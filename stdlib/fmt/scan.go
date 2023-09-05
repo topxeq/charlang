@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/ozanh/ugo"
-	"github.com/ozanh/ugo/registry"
+	"github.com/topxeq/charlang"
+	"github.com/topxeq/charlang/registry"
 )
 
 func init() {
@@ -15,7 +15,7 @@ func init() {
 			if sa.argValue != nil {
 				return sa.Arg(), true
 			}
-			return ugo.Undefined, false
+			return charlang.Undefined, false
 		},
 	)
 }
@@ -29,22 +29,22 @@ type ScanArg interface {
 	// Arg must return either a pointer to a basic Go type or implementations of
 	// fmt.Scanner interface.
 	Arg() interface{}
-	// Value must return scanned, non-nil uGO Object.
-	Value() ugo.Object
+	// Value must return scanned, non-nil Charlang Object.
+	Value() charlang.Object
 }
 
 // argValue is an interface implemented by the basic scannable types and used by
 // scanArg type.
 type argValue interface {
 	Arg() interface{}
-	Value() ugo.Object
+	Value() charlang.Object
 }
 
-// scanArg implements ugo.Object and ScanArg interfaces to provide arguments to
+// scanArg implements charlang.Object and ScanArg interfaces to provide arguments to
 // scan functions.
-// "Value" selector in uGO scripts gives the scanned value if scan was successful.
+// "Value" selector in Charlang scripts gives the scanned value if scan was successful.
 type scanArg struct {
-	ugo.ObjectImpl
+	charlang.ObjectImpl
 	argValue
 	ok bool
 }
@@ -57,20 +57,20 @@ func (o *scanArg) String() string { return "<scanArg>" }
 
 func (o *scanArg) IsFalsy() bool { return !o.ok }
 
-func (o *scanArg) IndexGet(index ugo.Object) (ugo.Object, error) {
+func (o *scanArg) IndexGet(index charlang.Object) (charlang.Object, error) {
 	if o.ok && index.String() == "Value" {
 		return o.Value(), nil
 	}
-	return ugo.Undefined, nil
+	return charlang.Undefined, nil
 }
 
 func (o *scanArg) Set(scanned bool) { o.ok = scanned }
 
-func newScanArgFunc(c ugo.Call) (ugo.Object, error) {
+func newScanArgFunc(c charlang.Call) (charlang.Object, error) {
 	typ := "string"
 	if c.Len() > 0 {
 		v := c.Get(0)
-		if b, ok := v.(*ugo.BuiltinFunction); ok {
+		if b, ok := v.(*charlang.BuiltinFunction); ok {
 			typ = b.Name
 		} else {
 			typ = v.String()
@@ -93,7 +93,7 @@ func newScanArgFunc(c ugo.Call) (ugo.Object, error) {
 	case "bytes":
 		scan.argValue = &bytesType{}
 	default:
-		return nil, ugo.ErrType.NewError(strconv.Quote(typ), "not implemented")
+		return nil, charlang.ErrType.NewError(strconv.Quote(typ), "not implemented")
 	}
 	return &scan, nil
 }
@@ -106,8 +106,8 @@ func (st *stringType) Arg() interface{} {
 	return &st.v
 }
 
-func (st *stringType) Value() ugo.Object {
-	return ugo.String(st.v)
+func (st *stringType) Value() charlang.Object {
+	return charlang.String(st.v)
 }
 
 type bytesType struct {
@@ -118,8 +118,8 @@ func (bt *bytesType) Arg() interface{} {
 	return &bt.v
 }
 
-func (bt *bytesType) Value() ugo.Object {
-	return ugo.Bytes(bt.v)
+func (bt *bytesType) Value() charlang.Object {
+	return charlang.Bytes(bt.v)
 }
 
 type intType struct {
@@ -130,8 +130,8 @@ func (it *intType) Arg() interface{} {
 	return &it.v
 }
 
-func (it *intType) Value() ugo.Object {
-	return ugo.Int(it.v)
+func (it *intType) Value() charlang.Object {
+	return charlang.Int(it.v)
 }
 
 type uintType struct {
@@ -142,8 +142,8 @@ func (ut *uintType) Arg() interface{} {
 	return &ut.v
 }
 
-func (ut *uintType) Value() ugo.Object {
-	return ugo.Uint(ut.v)
+func (ut *uintType) Value() charlang.Object {
+	return charlang.Uint(ut.v)
 }
 
 type floatType struct {
@@ -154,8 +154,8 @@ func (ft *floatType) Arg() interface{} {
 	return &ft.v
 }
 
-func (ft *floatType) Value() ugo.Object {
-	return ugo.Float(ft.v)
+func (ft *floatType) Value() charlang.Object {
+	return charlang.Float(ft.v)
 }
 
 type charType struct {
@@ -166,8 +166,8 @@ func (ct *charType) Arg() interface{} {
 	return &ct.v
 }
 
-func (ct *charType) Value() ugo.Object {
-	return ugo.Char(ct.v)
+func (ct *charType) Value() charlang.Object {
+	return charlang.Char(ct.v)
 }
 
 type boolType struct {
@@ -178,6 +178,6 @@ func (bt *boolType) Arg() interface{} {
 	return &bt.v
 }
 
-func (bt *boolType) Value() ugo.Object {
-	return ugo.Bool(bt.v)
+func (bt *boolType) Value() charlang.Object {
+	return charlang.Bool(bt.v)
 }

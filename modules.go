@@ -1,8 +1,4 @@
-// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
-// Use of this source code is governed by a MIT License
-// that can be found in the LICENSE file.
-
-package ugo
+package charlang
 
 import (
 	"errors"
@@ -112,7 +108,7 @@ func (m *ModuleMap) Copy() *ModuleMap {
 	return c
 }
 
-// SourceModule is an importable module that's written in uGO.
+// SourceModule is an importable module that's written in Charlang.
 type SourceModule struct {
 	Src []byte
 }
