@@ -1,20 +1,18 @@
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
+// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
-package charlang
+package ugo
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
-	"reflect"
 	"strconv"
 	"strings"
 
-	"github.com/topxeq/charlang/parser"
-	"github.com/topxeq/charlang/token"
+	"github.com/ozanh/ugo/parser"
+	"github.com/ozanh/ugo/token"
 )
 
 // Bytecode holds the compiled functions and constants.
@@ -25,86 +23,18 @@ type Bytecode struct {
 	NumModules int
 }
 
-// Encode writes encoded data of Bytecode to writer.
-func (bc *Bytecode) Encode(w io.Writer) error {
-	data, err := bc.MarshalBinary()
-	if err != nil {
-		return err
-	}
-
-	n, err := w.Write(data)
-	if err != nil {
-		return err
-	}
-
-	if n != len(data) {
-		return errors.New("short write")
-	}
-	return nil
+// Fprint writes constants and instructions to given Writer in a human readable form.
+func (bc *Bytecode) Fprint(w io.Writer) {
+	_, _ = fmt.Fprintln(w, "Bytecode")
+	_, _ = fmt.Fprintf(w, "Modules:%d\n", bc.NumModules)
+	bc.putConstants(w)
+	bc.Main.Fprint(w)
 }
 
-// Decode decodes Bytecode data from the reader.
-func (bc *Bytecode) Decode(r io.Reader, modules *ModuleMap, tmpBuf []byte) error {
-	dst := bytes.NewBuffer(tmpBuf)
-	if _, err := io.Copy(dst, r); err != nil {
-		return err
-	}
-	return bc.Unmarshal(dst.Bytes(), modules)
-}
-
-// Unmarshal unmarshals data and assigns receiver to the new Bytecode.
-func (bc *Bytecode) Unmarshal(data []byte, modules *ModuleMap) error {
-	err := bc.UnmarshalBinary(data)
-	if err != nil {
-		return err
-	}
-
-	if modules == nil {
-		modules = NewModuleMap()
-	}
-
-	return bc.fixObjects(modules)
-}
-
-func (bc *Bytecode) fixObjects(modules *ModuleMap) error {
-	const moduleNameKey = "__module_name__"
-	for i := range bc.Constants {
-		switch obj := bc.Constants[i].(type) {
-		case Map:
-			if v, ok := obj[moduleNameKey]; ok {
-				name, ok := v.(String)
-				if !ok {
-					continue
-				}
-
-				bmod := modules.Get(FromString(name))
-				if bmod == nil {
-					return fmt.Errorf("module '%s' not found", name)
-				}
-
-				// copy items from given module to decoded object if key exists in obj
-				for item := range obj {
-					if item == moduleNameKey {
-						// module name may not present in given map, skip it.
-						continue
-					}
-					o := bmod.(*BuiltinModule).Attrs[item]
-					// if item not exists in module, nil will not pass type check
-					want := reflect.TypeOf(obj[item])
-					got := reflect.TypeOf(o)
-					if want != got {
-						// this must not happen
-						return fmt.Errorf("module '%s' item '%s' type mismatch:"+
-							"want '%v', got '%v'", name, item, want, got)
-					}
-					obj[item] = o
-				}
-			}
-		case *Function:
-			return fmt.Errorf("Function type not decodable:'%s'", obj.Name)
-		}
-	}
-	return nil
+func (bc *Bytecode) String() string {
+	var buf bytes.Buffer
+	bc.Fprint(&buf)
+	return buf.String()
 }
 
 func (bc *Bytecode) putConstants(w io.Writer) {
@@ -123,22 +53,9 @@ func (bc *Bytecode) putConstants(w io.Writer) {
 			_, _ = fmt.Fprint(w, strings.Replace(str, "\n", "\n\t", c-1))
 			continue
 		}
-		_, _ = fmt.Fprintf(w, "%4d: %#v|%s\n", i, bc.Constants[i], bc.Constants[i].TypeName())
+		_, _ = fmt.Fprintf(w, "%4d: %#v|%s\n",
+			i, bc.Constants[i], bc.Constants[i].TypeName())
 	}
-}
-
-// Fprint writes constants and instructions to given Writer in a human readable form.
-func (bc *Bytecode) Fprint(w io.Writer) {
-	_, _ = fmt.Fprintln(w, "Bytecode")
-	_, _ = fmt.Fprintf(w, "Modules:%d\n", bc.NumModules)
-	bc.putConstants(w)
-	bc.Main.Fprint(w)
-}
-
-func (bc *Bytecode) String() string {
-	var buf bytes.Buffer
-	bc.Fprint(&buf)
-	return buf.String()
 }
 
 // CompiledFunction holds the constants and instructions to pass VM.
@@ -156,17 +73,13 @@ type CompiledFunction struct {
 
 var _ Object = (*CompiledFunction)(nil)
 
-func (*CompiledFunction) TypeCode() int {
-	return 185
-}
-
 // TypeName implements Object interface
 func (*CompiledFunction) TypeName() string {
-	return "compiled-function"
+	return "compiledFunction"
 }
 
 func (o *CompiledFunction) String() string {
-	return "<compiled-function>"
+	return "<compiledFunction>"
 }
 
 // Copy implements the Copier interface.
@@ -202,10 +115,10 @@ func (o *CompiledFunction) Copy() Object {
 	}
 }
 
-// CanIterate implements Object interface
-func (o *CompiledFunction) CanIterate() bool { return false }
+// CanIterate implements Object interface.
+func (*CompiledFunction) CanIterate() bool { return false }
 
-// Iterate implements Object interface
+// Iterate implements Object interface.
 func (*CompiledFunction) Iterate() Iterator { return nil }
 
 // IndexGet represents string values and implements Object interface.
@@ -218,23 +131,25 @@ func (*CompiledFunction) IndexSet(index, value Object) error {
 	return ErrNotIndexAssignable
 }
 
-// CanCall implements Object interface
-func (o *CompiledFunction) CanCall() bool { return true }
+// CanCall implements Object interface.
+func (*CompiledFunction) CanCall() bool { return true }
 
-// Call implements Object interface
-func (o *CompiledFunction) Call(...Object) (Object, error) {
-	return Undefined, nil
+// Call implements Object interface. CompiledFunction is not directly callable.
+// You should use Invoker to call it with a Virtual Machine. Because of this, it
+// always returns an error.
+func (*CompiledFunction) Call(...Object) (Object, error) {
+	return Undefined, ErrNotCallable
 }
 
-// BinaryOp implements Object interface
-func (o *CompiledFunction) BinaryOp(token.Token, Object) (Object, error) {
+// BinaryOp implements Object interface.
+func (*CompiledFunction) BinaryOp(token.Token, Object) (Object, error) {
 	return nil, ErrInvalidOperator
 }
 
-// IsFalsy implements Object interface
-func (o *CompiledFunction) IsFalsy() bool { return false }
+// IsFalsy implements Object interface.
+func (*CompiledFunction) IsFalsy() bool { return false }
 
-// Equal implements Object interface
+// Equal implements Object interface.
 func (o *CompiledFunction) Equal(right Object) bool {
 	v, ok := right.(*CompiledFunction)
 	return ok && o == v
@@ -282,4 +197,54 @@ func (o *CompiledFunction) Fprint(w io.Writer) {
 		_, _ = fmt.Fprintf(w, "Free:%v\n", o.Free)
 	}
 	_, _ = fmt.Fprintf(w, "SourceMap:%v\n", o.SourceMap)
+}
+
+func (o *CompiledFunction) identical(other *CompiledFunction) bool {
+	if o.NumParams != other.NumParams ||
+		o.NumLocals != other.NumLocals ||
+		o.Variadic != other.Variadic ||
+		len(o.Instructions) != len(other.Instructions) ||
+		len(o.Free) != len(other.Free) ||
+		string(o.Instructions) != string(other.Instructions) {
+		return false
+	}
+	for i := range o.Free {
+		if o.Free[i].Equal(other.Free[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func (o *CompiledFunction) equalSourceMap(other *CompiledFunction) bool {
+	if len(o.SourceMap) != len(other.SourceMap) {
+		return false
+	}
+	for k, v := range o.SourceMap {
+		vv, ok := other.SourceMap[k]
+		if !ok || vv != v {
+			return false
+		}
+	}
+	return true
+}
+
+func (o *CompiledFunction) hash32() uint32 {
+	hash := hashData32(2166136261, []byte{byte(o.NumParams)})
+	hash = hashData32(hash, []byte{byte(o.NumLocals)})
+	if o.Variadic {
+		hash = hashData32(hash, []byte{1})
+	} else {
+		hash = hashData32(hash, []byte{0})
+	}
+	hash = hashData32(hash, o.Instructions)
+	return hash
+}
+
+func hashData32(hash uint32, data []byte) uint32 {
+	for _, c := range data {
+		hash *= 16777619 // prime32
+		hash ^= uint32(c)
+	}
+	return hash
 }

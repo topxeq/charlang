@@ -5,12 +5,11 @@ import (
 	"math/rand"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/topxeq/charlang/parser"
-	"github.com/topxeq/charlang/token"
+	"github.com/ozanh/ugo/parser"
+	"github.com/ozanh/ugo/token"
 )
 
 var testFileSet = parser.NewFileSet()
@@ -275,8 +274,4 @@ func countLines(s string) int {
 		}
 	}
 	return n
-}
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
 }

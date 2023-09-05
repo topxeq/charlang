@@ -1,8 +1,8 @@
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
+// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
-package charlang
+package ugo
 
 import (
 	"context"
@@ -25,13 +25,11 @@ func NewEval(opts CompilerOptions, globals Object, args ...Object) *Eval {
 	if globals == nil {
 		globals = Map{}
 	}
-
 	if opts.SymbolTable == nil {
 		opts.SymbolTable = NewSymbolTable()
 	}
-
-	if opts.ModuleIndexes == nil {
-		opts.ModuleIndexes = NewModuleIndexes()
+	if opts.moduleStore == nil {
+		opts.moduleStore = newModuleStore()
 	}
 
 	return &Eval{
@@ -57,33 +55,6 @@ func (r *Eval) Run(ctx context.Context, script []byte) (Object, *Bytecode, error
 	if ctx == nil {
 		ctx = context.Background()
 	}
-
-	r.VM.modulesCache = r.ModulesCache
-	ret, err := r.run(ctx)
-	r.ModulesCache = r.VM.modulesCache
-	r.Locals = r.VM.GetLocals(r.Locals)
-	r.VM.Clear()
-
-	if err != nil {
-		return nil, bytecode, err
-	}
-	return ret, bytecode, nil
-}
-
-func (r *Eval) QuickRun(scriptA string) (Object, *Bytecode, error) {
-	bytecode, err := Compile([]byte(scriptA), r.Opts)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	bytecode.Main.NumParams = bytecode.Main.NumLocals
-	r.Opts.Constants = bytecode.Constants
-	r.fixOpPop(bytecode)
-	r.VM.SetBytecode(bytecode)
-
-	// if ctx == nil {
-	ctx := context.Background()
-	// }
 
 	r.VM.modulesCache = r.ModulesCache
 	ret, err := r.run(ctx)

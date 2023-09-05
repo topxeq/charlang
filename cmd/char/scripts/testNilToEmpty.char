@@ -1,9 +1,0 @@
-m := {}
-
-e := m["a"]
-
-pl("%v", isUndefined(e))
-
-s := nilToEmpty(m["a"])
-
-pl("s: %v", s)

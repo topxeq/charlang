@@ -1,12 +1,12 @@
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
+// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
-package charlang
+package ugo
 
 import (
-	"github.com/topxeq/charlang/parser"
-	"github.com/topxeq/charlang/token"
+	"github.com/ozanh/ugo/parser"
+	"github.com/ozanh/ugo/token"
 )
 
 func (c *Compiler) compileIfStmt(node *parser.IfStmt) error {
@@ -255,16 +255,31 @@ func (c *Compiler) compileDeclGlobal(node *parser.GenDecl) error {
 			return c.error(node, err)
 		}
 
-		idx := c.addConstant(ToString(spec.Ident.Name))
+		idx := c.addConstant(String(spec.Ident.Name))
 		symbol.Index = idx
 	}
 	return nil
 }
 
 func (c *Compiler) compileDeclValue(node *parser.GenDecl) error {
+	var (
+		isConst  bool
+		lastExpr parser.Expr
+	)
+	if node.Tok == token.Const {
+		isConst = true
+		defer func() { c.iotaVal = -1 }()
+	}
+
 	for _, sp := range node.Specs {
 		spec := sp.(*parser.ValueSpec)
-
+		if isConst {
+			if v, ok := spec.Data.(int); ok {
+				c.iotaVal = v
+			} else {
+				return c.errorf(node, "invalid iota value")
+			}
+		}
 		for i, ident := range spec.Idents {
 			leftExpr := []parser.Expr{ident}
 			var v parser.Expr
@@ -273,7 +288,13 @@ func (c *Compiler) compileDeclValue(node *parser.GenDecl) error {
 			}
 
 			if v == nil {
-				v = &parser.UndefinedLit{TokenPos: ident.Pos()}
+				if isConst && lastExpr != nil {
+					v = lastExpr
+				} else {
+					v = &parser.UndefinedLit{TokenPos: ident.Pos()}
+				}
+			} else {
+				lastExpr = v
 			}
 
 			rightExpr := []parser.Expr{v}
@@ -444,17 +465,20 @@ func (c *Compiler) compileDefine(
 	keyword token.Token,
 ) error {
 	symbol, exists := c.symbolTable.DefineLocal(ident)
-	if !allowRedefine && exists {
+	if !allowRedefine && exists && ident != "_" {
 		return c.errorf(node, "%q redeclared in this block", ident)
 	}
 
 	if symbol.Constant {
 		return c.errorf(node, "assignment to constant variable %q", ident)
 	}
+	if c.iotaVal > -1 && ident == "iota" && keyword == token.Const {
+		return c.errorf(node, "assignment to iota")
+	}
 
 	c.emit(node, OpDefineLocal, symbol.Index)
 	symbol.Assigned = true
-	symbol.Constant = keyword == token.Const
+	symbol.Constant = keyword == token.Const && ident != "_"
 	return nil
 }
 
@@ -571,7 +595,7 @@ func (c *Compiler) compileBranchStmt(node *parser.BranchStmt) error {
 			c.emit(node, OpFinalizer, curLoop.lastTryCatchIndex+1)
 			pos = c.emit(node, OpJump, 0)
 		}
-		curLoop.Breaks = append(curLoop.Breaks, pos)
+		curLoop.breaks = append(curLoop.breaks, pos)
 	case token.Continue:
 		curLoop := c.currentLoop()
 		if curLoop == nil {
@@ -585,7 +609,7 @@ func (c *Compiler) compileBranchStmt(node *parser.BranchStmt) error {
 			c.emit(node, OpFinalizer, curLoop.lastTryCatchIndex+1)
 			pos = c.emit(node, OpJump, 0)
 		}
-		curLoop.Continues = append(curLoop.Continues, pos)
+		curLoop.continues = append(curLoop.continues, pos)
 	default:
 		return c.errorf(node, "invalid branch statement: %s", node.Token.String())
 	}
@@ -613,7 +637,6 @@ func (c *Compiler) compileReturnStmt(node *parser.ReturnStmt) error {
 		if c.tryCatchIndex > -1 {
 			c.emit(node, OpFinalizer, 0)
 		}
-		c.emit(node, OpNull)
 		c.emit(node, OpReturn, 0)
 		return nil
 	}
@@ -687,11 +710,11 @@ func (c *Compiler) compileForStmt(stmt *parser.ForStmt) error {
 	}
 
 	// update all break/continue jump positions
-	for _, pos := range loop.Breaks {
+	for _, pos := range loop.breaks {
 		c.changeOperand(pos, postStmtPos)
 	}
 
-	for _, pos := range loop.Continues {
+	for _, pos := range loop.continues {
 		c.changeOperand(pos, postBodyPos)
 	}
 	return nil
@@ -785,11 +808,11 @@ func (c *Compiler) compileForInStmt(stmt *parser.ForInStmt) error {
 	c.changeOperand(postCondPos, postStmtPos)
 
 	// update all break/continue jump positions
-	for _, pos := range loop.Breaks {
+	for _, pos := range loop.breaks {
 		c.changeOperand(pos, postStmtPos)
 	}
 
-	for _, pos := range loop.Continues {
+	for _, pos := range loop.continues {
 		c.changeOperand(pos, postBodyPos)
 	}
 	return nil
@@ -806,7 +829,7 @@ func (c *Compiler) compileFuncLit(node *parser.FuncLit) error {
 		return c.error(node, err)
 	}
 
-	fork := c.fork(c.file, c.modulePath, symbolTable)
+	fork := c.fork(c.file, c.modulePath, c.moduleMap, symbolTable)
 	fork.variadic = node.Type.Params.VarArgs
 	if err := fork.Compile(node.Body); err != nil {
 		return err
@@ -977,12 +1000,32 @@ func (c *Compiler) compileSliceExpr(node *parser.SliceExpr) error {
 }
 
 func (c *Compiler) compileCallExpr(node *parser.CallExpr) error {
-	if err := c.Compile(node.Func); err != nil {
-		return err
+	var op = OpCall
+	var selExpr *parser.SelectorExpr
+	var isSelector bool
+	if node.Func != nil {
+		selExpr, isSelector = node.Func.(*parser.SelectorExpr)
+	}
+
+	if isSelector {
+		if err := c.Compile(selExpr.Expr); err != nil {
+			return err
+		}
+		op = OpCallName
+	} else {
+		if err := c.Compile(node.Func); err != nil {
+			return err
+		}
 	}
 
 	for _, arg := range node.Args {
 		if err := c.Compile(arg); err != nil {
+			return err
+		}
+	}
+
+	if isSelector {
+		if err := c.Compile(selExpr.Sel); err != nil {
 			return err
 		}
 	}
@@ -992,37 +1035,58 @@ func (c *Compiler) compileCallExpr(node *parser.CallExpr) error {
 		expand = 1
 	}
 
-	c.emit(node, OpCall, len(node.Args), expand)
+	c.emit(node, op, len(node.Args), expand)
 	return nil
 }
 
 func (c *Compiler) compileImportExpr(node *parser.ImportExpr) error {
-	if node.ModuleName == "" {
+	moduleName := node.ModuleName
+	if moduleName == "" {
 		return c.errorf(node, "empty module name")
 	}
 
-	mod := c.moduleMap.Get(node.ModuleName)
-	if mod == nil {
-		return c.errorf(node, "module '%s' not found", node.ModuleName)
+	importer := c.moduleMap.Get(moduleName)
+	if importer == nil {
+		return c.errorf(node, "module '%s' not found", moduleName)
 	}
 
-	v, err := mod.Import(node.ModuleName)
-	if err != nil {
-		return err
+	extImp, isExt := importer.(ExtImporter)
+	if isExt {
+		if name := extImp.Name(); name != "" {
+			moduleName = name
+		}
 	}
 
-	switch v := v.(type) {
-	case []byte:
-		module, exists := c.getModule(node.ModuleName)
-		if !exists {
-			module, err = c.compileModule(
-				node, node.ModuleName, v)
+	module, exists := c.getModule(moduleName)
+	if !exists {
+		mod, err := importer.Import(moduleName)
+		if err != nil {
+			return c.error(node, err)
+		}
+		switch v := mod.(type) {
+		case []byte:
+			var moduleMap *ModuleMap
+			if isExt {
+				moduleMap = c.moduleMap.Fork(moduleName)
+			} else {
+				moduleMap = c.baseModuleMap()
+			}
+			cidx, err := c.compileModule(node, moduleName, moduleMap, v)
 			if err != nil {
 				return err
 			}
+			module = c.addModule(moduleName, 1, cidx)
+		case Object:
+			module = c.addModule(moduleName, 2, c.addConstant(v))
+		default:
+			return c.errorf(node, "invalid import value type: %T", v)
 		}
+	}
+
+	switch module.typ {
+	case 1:
 		var numParams int
-		mod := c.constants[module.ConstantIndex]
+		mod := c.constants[module.constantIndex]
 		if cf, ok := mod.(*CompiledFunction); ok {
 			numParams = cf.NumParams
 			if cf.Variadic {
@@ -1032,8 +1096,7 @@ func (c *Compiler) compileImportExpr(node *parser.ImportExpr) error {
 		// load module
 		// if module is already stored, load from VM.modulesCache otherwise call compiled function
 		// and store copy of result to VM.modulesCache.
-		c.emit(node, OpLoadModule,
-			module.ConstantIndex, module.ModuleIndex)
+		c.emit(node, OpLoadModule, module.constantIndex, module.moduleIndex)
 		jumpPos := c.emit(node, OpJumpFalsy, 0)
 		// modules should not accept parameters, to suppress the wrong number of arguments error
 		// set all params to undefined
@@ -1041,23 +1104,18 @@ func (c *Compiler) compileImportExpr(node *parser.ImportExpr) error {
 			c.emit(node, OpNull)
 		}
 		c.emit(node, OpCall, numParams, 0)
-		c.emit(node, OpStoreModule, module.ModuleIndex)
+		c.emit(node, OpStoreModule, module.moduleIndex)
 		c.changeOperand(jumpPos, len(c.instructions))
-	case Object:
-		module, exists := c.getModule(node.ModuleName)
-		if !exists {
-			module = c.addModule(node.ModuleName, c.addConstant(v))
-		}
+	case 2:
 		// load module
 		// if module is already stored, load from VM.modulesCache otherwise copy object
 		// and store it to VM.modulesCache.
-		c.emit(node, OpLoadModule,
-			module.ConstantIndex, module.ModuleIndex)
+		c.emit(node, OpLoadModule, module.constantIndex, module.moduleIndex)
 		jumpPos := c.emit(node, OpJumpFalsy, 0)
-		c.emit(node, OpStoreModule, module.ModuleIndex)
+		c.emit(node, OpStoreModule, module.moduleIndex)
 		c.changeOperand(jumpPos, len(c.instructions))
 	default:
-		return c.errorf(node, "invalid import value type: %T", v)
+		return c.errorf(node, "invalid module type: %v", module.typ)
 	}
 	return nil
 }
@@ -1098,7 +1156,11 @@ func (c *Compiler) compileCondExpr(node *parser.CondExpr) error {
 func (c *Compiler) compileIdent(node *parser.Ident) error {
 	symbol, ok := c.symbolTable.Resolve(node.Name)
 	if !ok {
-		return c.errorf(node, "unresolved reference %q", node.Name)
+		if c.iotaVal < 0 || node.Name != "iota" {
+			return c.errorf(node, "unresolved reference %q", node.Name)
+		}
+		c.emit(node, OpConstant, c.addConstant(Int(c.iotaVal)))
+		return nil
 	}
 
 	switch symbol.Scope {
@@ -1128,7 +1190,7 @@ func (c *Compiler) compileArrayLit(node *parser.ArrayLit) error {
 func (c *Compiler) compileMapLit(node *parser.MapLit) error {
 	for _, elt := range node.Elements {
 		// key
-		c.emit(node, OpConstant, c.addConstant(ToString(elt.Key)))
+		c.emit(node, OpConstant, c.addConstant(String(elt.Key)))
 		// value
 		if err := c.Compile(elt.Value); err != nil {
 			return err

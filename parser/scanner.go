@@ -1,6 +1,6 @@
 // A modified version Go and Tengo parsers.
 
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
+// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
@@ -19,7 +19,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/topxeq/charlang/token"
+	"github.com/ozanh/ugo/token"
 )
 
 // byte order mark
@@ -37,7 +37,7 @@ const (
 // ScannerErrorHandler is an error handler for the scanner.
 type ScannerErrorHandler func(pos SourceFilePos, msg string)
 
-// Scanner reads the Tengo source text. It's based on Go's scanner
+// Scanner reads the uGO source text. It's based on Go's scanner
 // implementation.
 type Scanner struct {
 	file         *SourceFile         // source file handle

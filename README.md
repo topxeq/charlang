@@ -1,23 +1,23 @@
-# The Char Language (Charlang)
+# The uGO Language
 
-Charlang is based on uGo language with some minor modifications and some new builtin-functions. Thanks to ozanh(github.com/ozanh/ugo).
+[![Go Reference](https://pkg.go.dev/badge/github.com/ozanh/ugo.svg)](https://pkg.go.dev/github.com/ozanh/ugo)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ozanh/ugo)](https://goreportcard.com/report/github.com/ozanh/ugo)
+[![uGO Test](https://github.com/ozanh/ugo/actions/workflows/workflow.yml/badge.svg)](https://github.com/ozanh/ugo/actions/workflows/workflow.yml)
+[![uGO Dev Test](https://github.com/ozanh/ugodev/workflows/ugodev-test/badge.svg)](https://github.com/ozanh/ugodev/actions)
+[![Maintainability](https://api.codeclimate.com/v1/badges/a358e050217385db8002/maintainability)](https://codeclimate.com/github/ozanh/ugo/maintainability)
 
-## new features
-
-- Added new types Byte, Any.
-- Added functions: NewCommonError, NewError.
-- Added builtin functions: getRandomInt, writeResp, setRespHeader, writeRespHeader.
-- Added a global funtion wrapper: tk (TkFunction)
-
-# The Charlang Language
-
-[Go Reference](https://pkg.go.dev/github.com/topxeq/charlang)
-
-Charlang is a fast, dynamic scripting language to embed in Go applications.
-Charlang is compiled and executed as bytecode on stack-based VM that's written
+uGO is a fast, dynamic scripting language to embed in Go applications.
+uGO is compiled and executed as bytecode on stack-based VM that's written
 in native Go.
 
-Charlang is inspired by awesome script language [uGo](https://github.com/topxeq/charlang). A special thanks to uGo's creater and contributors.
+uGO is actively used in production to evaluate Sigma Rules' conditions, and to
+perform compromise assessment dynamically.
+
+To see how fast uGO is, please have a look at fibonacci
+[benchmarks](https://github.com/ozanh/ugobenchfib) (not updated frequently).
+
+> Play with uGO via [Playground](https://play.verigraf.com) built for
+> WebAssembly.
 
 **Fibonacci Example**
 
@@ -40,28 +40,40 @@ return fib(arg0)
 ## Features
 
 * Written in native Go (no cgo).
+* Supports Go 1.15 and above.
 * `if else` statements.
 * `for` and `for in` statements.
 * `try catch finally` statements.
 * `param`, `global`, `var` and `const` declarations.
 * Rich builtins.
-* Module support.
+* Pure uGO and Go Module support.
 * Go like syntax with additions.
+* Call uGO functions from Go.
+* Import uGO modules from any source (file system, HTTP, etc.).
+* Create wrapper functions for Go functions using code generation.
 
-## Why Charlang
+## Why uGO
+
+`uGO` name comes from the initials of my daughter's, wife's and my name. It is
+not related with Go.
 
 I needed a faster embedded scripting language with runtime error handling.
 
 ## Quick Start
 
-`go get -u github.com/topxeq/charlang`
+`go get github.com/ozanh/ugo@latest`
 
-Charlang has a REPL application to learn and test Charlang language thanks to
-`github.com/c-bata/go-prompt` library.
+uGO has a REPL application to learn and test uGO scripts.
 
-`go get -u github.com/topxeq/charlang/cmd/char`
+`go install github.com/ozanh/ugo/cmd/ugo@latest`
 
-`./char`
+`./ugo`
+
+![repl-gif](https://github.com/ozanh/ugo/blob/main/docs/repl.gif)
+
+This example is to show some features of uGO.
+
+<https://play.golang.org/p/1Tj6joRmLiX>
 
 ```go
 package main
@@ -69,7 +81,7 @@ package main
 import (
     "fmt"
 
-    ugo "github.com/topxeq/charlang"
+    "github.com/ozanh/ugo"
 )
 
 func main() {
@@ -126,14 +138,38 @@ return v
 }
 ```
 
+## Roadmap
+
+Examples for best practices (2023).
+
+Better Playground (2023).
+
+More standard library modules (2023).
+
+Configurable Stdin, Stdout and Stderr per Virtual Machine (2023).
+
+Deferring function calls (2024).
+
+Concurrency support (2024).
+
 ## Documentation
 
-* [Tutorial](https://github.com/topxeq/charlang/blob/main/docs/tutorial.md)
-* [Runtime Types](https://github.com/topxeq/charlang/blob/main/docs/runtime-types.md)
-* [Builtins](https://github.com/topxeq/charlang/blob/main/docs/builtins.md)
-* [Operators](https://github.com/topxeq/charlang/blob/main/docs/operators.md)
-* [Error Handling](https://github.com/topxeq/charlang/blob/main/docs/error-handling.md)
-* [Standard Library](https://github.com/topxeq/charlang/blob/main/docs/stdlib.md)
-* [Optimizer](https://github.com/topxeq/charlang/blob/main/docs/optimizer.md)
-* [Destructuring](https://github.com/topxeq/charlang/blob/main/docs/destructuring.md)
+* [Tutorial](https://github.com/ozanh/ugo/blob/main/docs/tutorial.md)
+* [Runtime Types](https://github.com/ozanh/ugo/blob/main/docs/runtime-types.md)
+* [Builtins](https://github.com/ozanh/ugo/blob/main/docs/builtins.md)
+* [Operators](https://github.com/ozanh/ugo/blob/main/docs/operators.md)
+* [Error Handling](https://github.com/ozanh/ugo/blob/main/docs/error-handling.md)
+* [Standard Library](https://github.com/ozanh/ugo/blob/main/docs/stdlib.md)
+* [Optimizer](https://github.com/ozanh/ugo/blob/main/docs/optimizer.md)
+* [Destructuring](https://github.com/ozanh/ugo/blob/main/docs/destructuring.md)
 
+## LICENSE
+
+uGO is licensed under the MIT License.
+
+See [LICENSE](LICENSE) for the full license text.
+
+## Acknowledgements
+
+uGO is inspired by script language [Tengo](https://github.com/d5/tengo)
+by Daniel Kang. A special thanks to Tengo's creater and contributors.

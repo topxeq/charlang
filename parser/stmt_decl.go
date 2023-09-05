@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE.golang file.
 
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
+// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/topxeq/charlang/token"
+	"github.com/ozanh/ugo/token"
 )
 
 // ----------------------------------------------------------------------------
@@ -28,8 +28,9 @@ type (
 
 	// A ValueSpec node represents a variable declaration
 	ValueSpec struct {
-		Idents []*Ident // TODO: slice is reserved for tuple assignment
-		Values []Expr   // initial values; or nil
+		Idents []*Ident    // TODO: slice is reserved for tuple assignment
+		Values []Expr      // initial values; or nil
+		Data   interface{} // iota
 	}
 
 	// A ParamSpec node represents a parameter declaration
@@ -99,7 +100,6 @@ func (*DeclStmt) stmtNode() {}
 // A BadDecl node is a placeholder for declarations containing
 // syntax errors for which no correct declaration nodes can be
 // created.
-//
 type BadDecl struct {
 	From, To Pos // position range of bad declaration
 }
@@ -110,7 +110,6 @@ type BadDecl struct {
 // Relationship between Tok value and Specs element type:
 //
 //	token.Var     *ValueSpec
-//
 type GenDecl struct {
 	TokPos Pos         // position of Tok
 	Tok    token.Token // Var

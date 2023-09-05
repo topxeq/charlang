@@ -1,10 +1,24 @@
 package fmt
 
 import (
+	"reflect"
 	"strconv"
 
-	ugo "github.com/topxeq/charlang"
+	"github.com/ozanh/ugo"
+	"github.com/ozanh/ugo/registry"
 )
+
+func init() {
+	registry.RegisterAnyConverter(reflect.TypeOf((*scanArg)(nil)),
+		func(in interface{}) (interface{}, bool) {
+			sa := in.(*scanArg)
+			if sa.argValue != nil {
+				return sa.Arg(), true
+			}
+			return ugo.Undefined, false
+		},
+	)
+}
 
 // ScanArg is an interface that wraps methods required to scan argument with
 // scan functions.
@@ -52,13 +66,14 @@ func (o *scanArg) IndexGet(index ugo.Object) (ugo.Object, error) {
 
 func (o *scanArg) Set(scanned bool) { o.ok = scanned }
 
-func newScanArg(args ...ugo.Object) (ugo.Object, error) {
+func newScanArgFunc(c ugo.Call) (ugo.Object, error) {
 	typ := "string"
-	if len(args) > 0 {
-		if b, ok := args[0].(*ugo.BuiltinFunction); ok {
+	if c.Len() > 0 {
+		v := c.Get(0)
+		if b, ok := v.(*ugo.BuiltinFunction); ok {
 			typ = b.Name
 		} else {
-			typ = args[0].String()
+			typ = v.String()
 		}
 	}
 	var scan scanArg
@@ -69,8 +84,6 @@ func newScanArg(args ...ugo.Object) (ugo.Object, error) {
 		scan.argValue = &intType{}
 	case "uint":
 		scan.argValue = &uintType{}
-	case "byte":
-		scan.argValue = &byteType{}
 	case "float":
 		scan.argValue = &floatType{}
 	case "bool":
@@ -94,7 +107,7 @@ func (st *stringType) Arg() interface{} {
 }
 
 func (st *stringType) Value() ugo.Object {
-	return ugo.ToString(st.v)
+	return ugo.String(st.v)
 }
 
 type bytesType struct {
@@ -131,18 +144,6 @@ func (ut *uintType) Arg() interface{} {
 
 func (ut *uintType) Value() ugo.Object {
 	return ugo.Uint(ut.v)
-}
-
-type byteType struct {
-	v byte
-}
-
-func (bt *byteType) Arg() interface{} {
-	return &bt.v
-}
-
-func (bt *byteType) Value() ugo.Object {
-	return ugo.Byte(bt.v)
 }
 
 type floatType struct {

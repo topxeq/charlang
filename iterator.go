@@ -1,8 +1,8 @@
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
+// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
-package charlang
+package ugo
 
 import (
 	"sync"
@@ -80,35 +80,7 @@ func (it *BytesIterator) Key() Object {
 func (it *BytesIterator) Value() Object {
 	i := it.i - 1
 	if i > -1 && i < len(it.V) {
-		return Byte(it.V[i]) // Int(it.V[i])
-	}
-	return Undefined
-}
-
-// CharsIterator represents an iterator for the bytes.
-type CharsIterator struct {
-	V Chars
-	i int
-}
-
-var _ Iterator = (*CharsIterator)(nil)
-
-// Next implements Iterator interface.
-func (it *CharsIterator) Next() bool {
-	it.i++
-	return it.i-1 < len(it.V)
-}
-
-// Key implements Iterator interface.
-func (it *CharsIterator) Key() Object {
-	return Int(it.i - 1)
-}
-
-// Value implements Iterator interface.
-func (it *CharsIterator) Value() Object {
-	i := it.i - 1
-	if i > -1 && i < len(it.V) {
-		return Char(it.V[i])
+		return Int(it.V[i])
 	}
 	return Undefined
 }
@@ -130,7 +102,7 @@ func (it *MapIterator) Next() bool {
 
 // Key implements Iterator interface.
 func (it *MapIterator) Key() Object {
-	return ToString(it.keys[it.i-1])
+	return String(it.keys[it.i-1])
 }
 
 // Value implements Iterator interface.
@@ -171,7 +143,7 @@ func (it *SyncIterator) Value() Object {
 
 // StringIterator represents an iterator for the string.
 type StringIterator struct {
-	V string
+	V String
 	i int
 	k int
 	r rune

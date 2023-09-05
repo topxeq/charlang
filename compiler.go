@@ -1,37 +1,19 @@
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
+// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
-package charlang
+package ugo
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"reflect"
-	"time"
 
-	"github.com/topxeq/charlang/parser"
-	"github.com/topxeq/charlang/token"
+	"github.com/ozanh/ugo/parser"
+	"github.com/ozanh/ugo/token"
 )
-
-// CompilerOptions represents customizable options for Compile().
-type CompilerOptions struct {
-	ModuleMap         *ModuleMap
-	ModulePath        string
-	ModuleIndexes     *ModuleIndexes
-	Constants         []Object
-	SymbolTable       *SymbolTable
-	Trace             io.Writer
-	TraceParser       bool
-	TraceCompiler     bool
-	TraceOptimizer    bool
-	OptimizerMaxCycle int
-	OptimizeConst     bool
-	OptimizeExpr      bool
-	constsCache       map[Object]int
-}
 
 var (
 	// DefaultCompilerOptions holds default Compiler options.
@@ -53,19 +35,80 @@ var (
 	}
 )
 
-// loopStmts represents a loopStmts construct that the compiler uses to track the current loopStmts.
-type loopStmts struct {
-	Continues         []int
-	Breaks            []int
-	lastTryCatchIndex int
-}
+// errSkip is a sentinel error for compiler.
+var errSkip = errors.New("skip")
 
-// CompilerError represents a compiler error.
-type CompilerError struct {
-	FileSet *parser.SourceFileSet
-	Node    parser.Node
-	Err     error
-}
+type (
+
+	// Compiler compiles the AST into a bytecode.
+	Compiler struct {
+		parent        *Compiler
+		file          *parser.SourceFile
+		constants     []Object
+		constsCache   map[Object]int
+		cfuncCache    map[uint32][]int
+		symbolTable   *SymbolTable
+		instructions  []byte
+		sourceMap     map[int]int
+		moduleMap     *ModuleMap
+		moduleStore   *moduleStore
+		modulePath    string
+		variadic      bool
+		loops         []*loopStmts
+		loopIndex     int
+		tryCatchIndex int
+		iotaVal       int
+		opts          CompilerOptions
+		trace         io.Writer
+		indent        int
+	}
+
+	// CompilerOptions represents customizable options for Compile().
+	CompilerOptions struct {
+		ModuleMap         *ModuleMap
+		ModulePath        string
+		Constants         []Object
+		SymbolTable       *SymbolTable
+		Trace             io.Writer
+		TraceParser       bool
+		TraceCompiler     bool
+		TraceOptimizer    bool
+		OptimizerMaxCycle int
+		OptimizeConst     bool
+		OptimizeExpr      bool
+		moduleStore       *moduleStore
+		constsCache       map[Object]int
+	}
+
+	// CompilerError represents a compiler error.
+	CompilerError struct {
+		FileSet *parser.SourceFileSet
+		Node    parser.Node
+		Err     error
+	}
+
+	// moduleStoreItem represents indexes of a single module.
+	moduleStoreItem struct {
+		typ           int
+		constantIndex int
+		moduleIndex   int
+	}
+
+	// moduleStore represents modules indexes and total count that are defined
+	// while compiling.
+	moduleStore struct {
+		count int
+		store map[string]moduleStoreItem
+	}
+
+	// loopStmts represents a loopStmts construct that the compiler uses to
+	// track the current loopStmts.
+	loopStmts struct {
+		continues         []int
+		breaks            []int
+		lastTryCatchIndex int
+	}
+)
 
 func (e *CompilerError) Error() string {
 	filePos := e.FileSet.Position(e.Node.Pos())
@@ -74,55 +117,6 @@ func (e *CompilerError) Error() string {
 
 func (e *CompilerError) Unwrap() error {
 	return e.Err
-}
-
-// ModuleIndex represents indexes of a single module.
-type ModuleIndex struct {
-	ConstantIndex int
-	ModuleIndex   int
-}
-
-// ModuleIndexes represents modules indexes and total count that are defined while compiling.
-type ModuleIndexes struct {
-	Count   int
-	Indexes map[string]ModuleIndex
-}
-
-// NewModuleIndexes returns a new ModuleIndexes object.
-func NewModuleIndexes() *ModuleIndexes {
-	return &ModuleIndexes{
-		Indexes: make(map[string]ModuleIndex),
-	}
-}
-
-// Reset resets ModuleIndexes to initial state to re-use.
-func (mi *ModuleIndexes) Reset() *ModuleIndexes {
-	mi.Count = 0
-	for k := range mi.Indexes {
-		delete(mi.Indexes, k)
-	}
-	return mi
-}
-
-// Compiler compiles the AST into a bytecode.
-type Compiler struct {
-	parent        *Compiler
-	file          *parser.SourceFile
-	constants     []Object
-	constsCache   map[Object]int
-	symbolTable   *SymbolTable
-	instructions  []byte
-	sourceMap     map[int]int
-	moduleMap     *ModuleMap
-	moduleIndexes *ModuleIndexes
-	modulePath    string
-	variadic      bool
-	loops         []*loopStmts
-	loopIndex     int
-	tryCatchIndex int
-	opts          CompilerOptions
-	trace         io.Writer
-	indent        int
 }
 
 // NewCompiler creates a new Compiler object.
@@ -135,15 +129,14 @@ func NewCompiler(file *parser.SourceFile, opts CompilerOptions) *Compiler {
 		opts.constsCache = make(map[Object]int)
 		for i := range opts.Constants {
 			switch opts.Constants[i].(type) {
-			case Int, Uint, Byte, Bool, Float, Char, undefined,
-				*CompiledFunction:
+			case Int, Uint, String, Bool, Float, Char, *UndefinedType:
 				opts.constsCache[opts.Constants[i]] = i
 			}
 		}
 	}
 
-	if opts.ModuleIndexes == nil {
-		opts.ModuleIndexes = NewModuleIndexes()
+	if opts.moduleStore == nil {
+		opts.moduleStore = newModuleStore()
 	}
 
 	var trace io.Writer
@@ -155,13 +148,15 @@ func NewCompiler(file *parser.SourceFile, opts CompilerOptions) *Compiler {
 		file:          file,
 		constants:     opts.Constants,
 		constsCache:   opts.constsCache,
+		cfuncCache:    make(map[uint32][]int),
 		symbolTable:   opts.SymbolTable,
 		sourceMap:     make(map[int]int),
 		moduleMap:     opts.ModuleMap,
-		moduleIndexes: opts.ModuleIndexes,
+		moduleStore:   opts.moduleStore,
 		modulePath:    opts.ModulePath,
 		loopIndex:     -1,
 		tryCatchIndex: -1,
+		iotaVal:       -1,
 		opts:          opts,
 		trace:         trace,
 	}
@@ -189,16 +184,13 @@ func Compile(script []byte, opts CompilerOptions) (*Bytecode, error) {
 	}
 
 	compiler := NewCompiler(srcFile, opts)
+	compiler.SetGlobalSymbolsIndex()
+
 	if opts.OptimizeConst || opts.OptimizeExpr {
-		optim, err := compiler.optimize(pf)
-		if err != nil {
+		err := compiler.optimize(pf)
+		if err != nil && err != errSkip {
 			return nil, err
 		}
-		if optim != nil && opts.TraceCompiler && !opts.TraceOptimizer {
-			_, _ = fmt.Fprintf(opts.Trace,
-				"<Optimization Took: %s>\n", optim.Duration())
-		}
-
 	}
 
 	if err := compiler.Compile(pf); err != nil {
@@ -212,29 +204,36 @@ func Compile(script []byte, opts CompilerOptions) (*Bytecode, error) {
 	return bc, nil
 }
 
+// SetGlobalSymbolsIndex sets index of a global symbol. This is only required
+// when a global symbol is defined in SymbolTable and provided to compiler.
+// Otherwise, caller needs to append the constant to Constants, set the symbol
+// index and provide it to the Compiler. This should be called before
+// Compiler.Compile call.
+func (c *Compiler) SetGlobalSymbolsIndex() {
+	symbols := c.symbolTable.Symbols()
+	for _, s := range symbols {
+		if s.Scope == ScopeGlobal && s.Index == -1 {
+			s.Index = c.addConstant(String(s.Name))
+		}
+	}
+}
+
 // optimize runs the Optimizer and returns Optimizer object and error from Optimizer.
-// Note:If optimizer cannot run for some reason, all returned values will be nil.
-func (c *Compiler) optimize(file *parser.File) (*SimpleOptimizer, error) {
+// Note:If optimizer cannot run for some reason, a nil optimizer and errSkip
+// error will be returned.
+func (c *Compiler) optimize(file *parser.File) error {
 	if c.opts.OptimizerMaxCycle < 1 {
-		return nil, nil
+		return errSkip
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	optim := NewOptimizer(file, c.symbolTable, c.opts)
 
-	o := NewOptimizer(
-		ctx,
-		file,
-		c.symbolTable,
-		c.opts,
-	)
-
-	if err := o.Optimize(); err != nil {
-		return o, err
+	if err := optim.Optimize(); err != nil {
+		return err
 	}
 
-	c.opts.OptimizerMaxCycle -= o.Total()
-	return o, nil
+	c.opts.OptimizerMaxCycle -= optim.Total()
+	return nil
 }
 
 // Bytecode returns compiled Bytecode ready to run in VM.
@@ -277,7 +276,7 @@ func (c *Compiler) Bytecode() *Bytecode {
 			Instructions: c.instructions,
 			SourceMap:    c.sourceMap,
 		},
-		NumModules: c.moduleIndexes.Count,
+		NumModules: c.moduleStore.count,
 	}
 }
 
@@ -327,8 +326,6 @@ func (c *Compiler) Compile(node parser.Node) error {
 		c.emit(node, OpConstant, c.addConstant(Int(node.Value)))
 	case *parser.UintLit:
 		c.emit(node, OpConstant, c.addConstant(Uint(node.Value)))
-	case *parser.ByteLit:
-		c.emit(node, OpConstant, c.addConstant(Byte(node.Value)))
 	case *parser.FloatLit:
 		c.emit(node, OpConstant, c.addConstant(Float(node.Value)))
 	case *parser.BoolLit:
@@ -338,7 +335,7 @@ func (c *Compiler) Compile(node parser.Node) error {
 			c.emit(node, OpFalse)
 		}
 	case *parser.StringLit:
-		c.emit(node, OpConstant, c.addConstant(ToString(node.Value)))
+		c.emit(node, OpConstant, c.addConstant(String(node.Value)))
 	case *parser.CharLit:
 		c.emit(node, OpConstant, c.addConstant(Char(node.Value)))
 	case *parser.UndefinedLit:
@@ -400,7 +397,7 @@ func (c *Compiler) Compile(node parser.Node) error {
 
 func (c *Compiler) changeOperand(opPos int, operand ...int) {
 	op := c.instructions[opPos]
-	inst := make([]byte, 8)
+	inst := make([]byte, 0, 8)
 	inst, err := MakeInstruction(inst, op, operand...)
 	if err != nil {
 		panic(err)
@@ -420,41 +417,56 @@ func (c *Compiler) addConstant(obj Object) (index int) {
 	defer func() {
 		if c.trace != nil {
 			printTrace(c.indent, c.trace,
-				fmt.Sprintf("CONST %04d %s", index, obj))
+				fmt.Sprintf("CONST %04d %v", index, obj))
 		}
 	}()
 
 	switch obj.(type) {
-	case Int, Uint, Byte, Bool, Float, Char, undefined:
+	case Int, Uint, String, Bool, Float, Char, *UndefinedType:
 		i, ok := c.constsCache[obj]
 		if ok {
 			index = i
 			return
 		}
-	case String:
-		c.constants = append(c.constants, obj)
-		index = len(c.constants) - 1
-		return
 	case *CompiledFunction:
-		for i, v := range c.constants {
-			if f, ok := v.(*CompiledFunction); ok {
-				if reflect.DeepEqual(f, obj) {
-					index = i
-					return
-				}
-			}
-		}
+		return c.addCompiledFunction(obj)
 	default:
 		// unhashable types cannot be stored in constsCache, append them to constants slice
 		// and return index
+		index = len(c.constants)
 		c.constants = append(c.constants, obj)
-		index = len(c.constants) - 1
 		return
 	}
 
+	index = len(c.constants)
 	c.constants = append(c.constants, obj)
-	index = len(c.constants) - 1
 	c.constsCache[obj] = index
+	return
+}
+
+func (c *Compiler) addCompiledFunction(obj Object) (index int) {
+	// Currently, caching compiled functions is only effective for functions
+	// used in const declarations.
+	// e.g.
+	// const (
+	// 	f = func() { return 1 }
+	// 	g
+	// )
+	//
+	cf := obj.(*CompiledFunction)
+	key := cf.hash32()
+	arr, ok := c.cfuncCache[key]
+	if ok {
+		for _, idx := range arr {
+			f := c.constants[idx].(*CompiledFunction)
+			if f.identical(cf) && f.equalSourceMap(cf) {
+				return idx
+			}
+		}
+	}
+	index = len(c.constants)
+	c.constants = append(c.constants, obj)
+	c.cfuncCache[key] = append(c.cfuncCache[key], index)
 	return
 }
 
@@ -464,7 +476,7 @@ func (c *Compiler) emit(node parser.Node, opcode Opcode, operands ...int) int {
 		filePos = node.Pos()
 	}
 
-	inst := make([]byte, 8)
+	inst := make([]byte, 0, 8)
 	inst, err := MakeInstruction(inst, opcode, operands...)
 	if err != nil {
 		panic(err)
@@ -495,37 +507,38 @@ func (c *Compiler) checkCyclicImports(node parser.Node, modulePath string) error
 	return nil
 }
 
-func (c *Compiler) addModule(name string, constantIndex int) ModuleIndex {
-	index := c.moduleIndexes.Count
-	c.moduleIndexes.Count++
-	c.moduleIndexes.Indexes[name] = ModuleIndex{
-		ConstantIndex: constantIndex,
-		ModuleIndex:   index,
+func (c *Compiler) addModule(name string, typ, constantIndex int) moduleStoreItem {
+	moduleIndex := c.moduleStore.count
+	c.moduleStore.count++
+	c.moduleStore.store[name] = moduleStoreItem{
+		typ:           typ,
+		constantIndex: constantIndex,
+		moduleIndex:   moduleIndex,
 	}
-	return c.moduleIndexes.Indexes[name]
+	return c.moduleStore.store[name]
 }
 
-func (c *Compiler) getModule(name string) (ModuleIndex, bool) {
-	indexes, ok := c.moduleIndexes.Indexes[name]
+func (c *Compiler) getModule(name string) (moduleStoreItem, bool) {
+	indexes, ok := c.moduleStore.store[name]
 	return indexes, ok
+}
+
+func (c *Compiler) baseModuleMap() *ModuleMap {
+	if c.parent == nil {
+		return c.moduleMap
+	}
+	return c.parent.baseModuleMap()
 }
 
 func (c *Compiler) compileModule(
 	node parser.Node,
 	modulePath string,
+	moduleMap *ModuleMap,
 	src []byte,
-) (ModuleIndex, error) {
-	var (
-		modIndex ModuleIndex
-		err      error
-	)
+) (int, error) {
+	var err error
 	if err = c.checkCyclicImports(node, modulePath); err != nil {
-		return modIndex, err
-	}
-
-	modIndex, exists := c.getModule(modulePath)
-	if exists {
-		return modIndex, nil
+		return 0, err
 	}
 
 	modFile := c.file.Set().AddFile(modulePath, -1, len(src))
@@ -538,32 +551,30 @@ func (c *Compiler) compileModule(
 	var file *parser.File
 	file, err = p.ParseFile()
 	if err != nil {
-		return modIndex, err
+		return 0, err
 	}
 
 	symbolTable := NewSymbolTable().
 		DisableBuiltin(c.symbolTable.DisabledBuiltins()...)
 
-	fork := c.fork(modFile, modulePath, symbolTable)
-	_, err = fork.optimize(file)
-	if err != nil {
-		err = c.error(node, err)
-		return modIndex, err
+	fork := c.fork(modFile, modulePath, moduleMap, symbolTable)
+	err = fork.optimize(file)
+	if err != nil && err != errSkip {
+		return 0, c.error(node, err)
 	}
 
 	if err = fork.Compile(file); err != nil {
-		return modIndex, err
+		return 0, err
 	}
 
 	bc := fork.Bytecode()
 	if bc.Main.NumLocals > 256 {
-		err = c.error(node, ErrSymbolLimit)
-		return modIndex, err
+		return 0, c.error(node, ErrSymbolLimit)
 	}
 
 	c.constants = bc.Constants
 	index := c.addConstant(bc.Main)
-	return c.addModule(modulePath, index), nil
+	return index, nil
 }
 
 func (c *Compiler) enterLoop() *loopStmts {
@@ -595,11 +606,11 @@ func (c *Compiler) currentLoop() *loopStmts {
 func (c *Compiler) fork(
 	file *parser.SourceFile,
 	modulePath string,
+	moduleMap *ModuleMap,
 	symbolTable *SymbolTable,
 ) *Compiler {
 	child := NewCompiler(file, CompilerOptions{
-		ModuleMap:         c.moduleMap,
-		ModuleIndexes:     c.moduleIndexes,
+		ModuleMap:         moduleMap,
 		ModulePath:        modulePath,
 		Constants:         c.constants,
 		SymbolTable:       symbolTable,
@@ -610,10 +621,13 @@ func (c *Compiler) fork(
 		OptimizerMaxCycle: c.opts.OptimizerMaxCycle,
 		OptimizeConst:     c.opts.OptimizeConst,
 		OptimizeExpr:      c.opts.OptimizeExpr,
+		moduleStore:       c.moduleStore,
 		constsCache:       c.constsCache,
 	})
 
 	child.parent = c
+	child.cfuncCache = c.cfuncCache
+
 	if modulePath == c.modulePath {
 		child.indent = c.indent
 	}
@@ -681,7 +695,7 @@ func untracec(c *Compiler) {
 func MakeInstruction(buf []byte, op Opcode, args ...int) ([]byte, error) {
 	operands := OpcodeOperands[op]
 	if len(operands) != len(args) {
-		return nil, fmt.Errorf(
+		return buf, fmt.Errorf(
 			"MakeInstruction: %s expected %d operands, but got %d",
 			OpcodeNames[op], len(operands), len(args),
 		)
@@ -705,7 +719,7 @@ func MakeInstruction(buf []byte, op Opcode, args ...int) ([]byte, error) {
 		buf = append(buf, byte(args[0]))
 		buf = append(buf, byte(args[1]))
 		return buf, nil
-	case OpCall:
+	case OpCall, OpCallName:
 		buf = append(buf, byte(args[0]))
 		buf = append(buf, byte(args[1]))
 		return buf, nil
@@ -719,8 +733,10 @@ func MakeInstruction(buf []byte, op Opcode, args ...int) ([]byte, error) {
 		OpSetupCatch, OpSetupFinally, OpNoOp:
 		return buf, nil
 	default:
-		return nil, fmt.Errorf("MakeInstruction: unknown Opcode %d %s",
-			op, OpcodeNames[op])
+		return buf, &Error{
+			Name:    "MakeInstruction",
+			Message: fmt.Sprintf("unknown Opcode %d %s", op, OpcodeNames[op]),
+		}
 	}
 }
 
@@ -767,4 +783,18 @@ func IterateInstructions(insts []byte,
 		}
 		i += offset
 	}
+}
+
+func newModuleStore() *moduleStore {
+	return &moduleStore{
+		store: make(map[string]moduleStoreItem),
+	}
+}
+
+func (ms *moduleStore) reset() *moduleStore {
+	ms.count = 0
+	for k := range ms.store {
+		delete(ms.store, k)
+	}
+	return ms
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
+// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
@@ -20,7 +20,6 @@ const (
 	Ident
 	Int
 	Uint
-	Byte
 	Float
 	Char
 	String
@@ -105,7 +104,6 @@ var tokens = [...]string{
 	Ident:        "IDENT",
 	Int:          "INT",
 	Uint:         "UINT",
-	Byte:         "BYTE",
 	Float:        "FLOAT",
 	Char:         "CHAR",
 	String:       "STRING",

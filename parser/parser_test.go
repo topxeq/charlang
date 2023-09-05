@@ -13,8 +13,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	. "github.com/topxeq/charlang/parser"
-	"github.com/topxeq/charlang/token"
+	. "github.com/ozanh/ugo/parser"
+	"github.com/ozanh/ugo/token"
 )
 
 var update = flag.Bool("update", false, "update golden files")
@@ -93,7 +93,10 @@ c := counter ? v3 : undefined
 	require.NoError(t, err)
 	var out bytes.Buffer
 	parse(sample, &out)
-	require.Equal(t, string(golden), out.String())
+	require.Equal(t,
+		strings.ReplaceAll(string(golden), "\r\n", "\n"),
+		strings.ReplaceAll(out.String(), "\r\n", "\n"),
+	)
 }
 
 func TestParserError(t *testing.T) {
@@ -491,7 +494,10 @@ const (
 	expectParseError(t, `var a,`)
 	expectParseError(t, `var ,a`)
 	expectParseError(t, `const a=1,b=2`)
-	expectParseError(t, `const (a=1,b)`)
+
+	// After iota support, this should be valid.
+	//	expectParseError(t, `const (a=1,b)`)
+
 	expectParseError(t, `const a`)
 	expectParseError(t, `const (a)`)
 	expectParseError(t, `const (a,b)`)
@@ -2172,6 +2178,23 @@ func TestParseTryThrow(t *testing.T) {
 	finally {}`)
 	expectParseError(t, `throw;`)
 	expectParseError(t, `throw`)
+}
+
+func TestParseRBraceEOF(t *testing.T) {
+	expectParseError(t, `if true {}}`)
+	expectParseError(t, `if true {}}else{}`)
+	expectParseError(t, `a:=1; if true {}}else{}`)
+	expectParseError(t, `if true {}} else{} return`)
+	expectParseError(t, `if true {} else if true {}{`)
+	expectParseError(t, `
+if true {
+
+}
+} else{
+
+}
+
+return`)
 }
 
 type pfn func(int, int) Pos          // position conversion function

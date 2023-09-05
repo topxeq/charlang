@@ -1,23 +1,20 @@
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
+// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
-package charlang
+package ugo
 
 import (
-	"math"
+	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/topxeq/charlang/token"
+	"github.com/ozanh/ugo/internal/compat"
+	"github.com/ozanh/ugo/token"
 )
 
 // Int represents signed integer values and implements Object interface.
 type Int int64
-
-func (Int) TypeCode() int {
-	return 107
-}
 
 // TypeName implements Object interface.
 func (Int) TypeName() string {
@@ -36,8 +33,6 @@ func (o Int) Equal(right Object) bool {
 		return o == v
 	case Uint:
 		return Uint(o) == v
-	case Byte:
-		return Byte(o) == v
 	case Float:
 		return Float(o) == v
 	case Char:
@@ -119,8 +114,6 @@ func (o Int) BinaryOp(tok token.Token, right Object) (Object, error) {
 		}
 	case Uint:
 		return Uint(o).BinaryOp(tok, right)
-	case Byte:
-		return Byte(o).BinaryOp(tok, right)
 	case Float:
 		return Float(o).BinaryOp(tok, right)
 	case Char:
@@ -145,7 +138,7 @@ func (o Int) BinaryOp(tok token.Token, right Object) (Object, error) {
 			right = Int(0)
 		}
 		return o.BinaryOp(tok, right)
-	case undefined:
+	case *UndefinedType:
 		switch tok {
 		case token.Less, token.LessEq:
 			return False, nil
@@ -160,160 +153,14 @@ func (o Int) BinaryOp(tok token.Token, right Object) (Object, error) {
 	)
 }
 
-type Byte byte
-
-func (Byte) TypeCode() int {
-	return 109
+// Format implements fmt.Formatter interface.
+func (o Int) Format(s fmt.State, verb rune) {
+	format := compat.FmtFormatString(s, verb)
+	fmt.Fprintf(s, format, int64(o))
 }
 
-// TypeName implements Object interface.
-func (Byte) TypeName() string {
-	return "byte"
-}
-
-// String implements Object interface.
-func (o Byte) String() string {
-	return strconv.FormatInt(int64(o), 10)
-}
-
-// Equal implements Object interface.
-func (o Byte) Equal(right Object) bool {
-	switch v := right.(type) {
-	case Byte:
-		return o == v
-	case Uint:
-		return Uint(o) == v
-	case Int:
-		return Int(o) == v
-	case Float:
-		return Float(o) == v
-	case Char:
-		return Char(o) == v
-	case Bool:
-		if v {
-			return o == 1
-		}
-
-		return o == 0
-	}
-	return false
-}
-
-// IsFalsy implements Object interface.
-func (o Byte) IsFalsy() bool { return o == 0 }
-
-// CanCall implements Object interface.
-func (o Byte) CanCall() bool { return false }
-
-// Call implements Object interface.
-func (o Byte) Call(_ ...Object) (Object, error) {
-	return nil, ErrNotCallable
-}
-
-// CanIterate implements Object interface.
-func (Byte) CanIterate() bool { return false }
-
-// Iterate implements Object interface.
-func (Byte) Iterate() Iterator { return nil }
-
-// IndexSet implements Object interface.
-func (Byte) IndexSet(index, value Object) error {
-	return ErrNotIndexAssignable
-}
-
-// IndexGet implements Object interface.
-func (Byte) IndexGet(index Object) (Object, error) {
-	return nil, ErrNotIndexable
-}
-
-// BinaryOp implements Object interface.
-func (o Byte) BinaryOp(tok token.Token, right Object) (Object, error) {
-	switch v := right.(type) {
-	case Byte:
-		switch tok {
-		case token.Add:
-			return o + v, nil
-		case token.Sub:
-			return o - v, nil
-		case token.Mul:
-			return o * v, nil
-		case token.Quo:
-			if v == 0 {
-				return nil, ErrZeroDivision
-			}
-			return o / v, nil
-		case token.Rem:
-			return o % v, nil
-		case token.And:
-			return o & v, nil
-		case token.Or:
-			return o | v, nil
-		case token.Xor:
-			return o ^ v, nil
-		case token.AndNot:
-			return o &^ v, nil
-		case token.Shl:
-			return o << v, nil
-		case token.Shr:
-			return o >> v, nil
-		case token.Less:
-			return Bool(o < v), nil
-		case token.LessEq:
-			return Bool(o <= v), nil
-		case token.Greater:
-			return Bool(o > v), nil
-		case token.GreaterEq:
-			return Bool(o >= v), nil
-		}
-	case Uint:
-		return Uint(o).BinaryOp(tok, right)
-	case Int:
-		return Int(o).BinaryOp(tok, right)
-		// return o.BinaryOp(tok, Int(v))
-	case Float:
-		return Float(o).BinaryOp(tok, right)
-	case Char:
-		switch tok {
-		case token.Add:
-			return Char(o) + v, nil
-		case token.Sub:
-			return Char(o) - v, nil
-		case token.Less:
-			return Bool(o < Byte(v)), nil
-		case token.LessEq:
-			return Bool(o <= Byte(v)), nil
-		case token.Greater:
-			return Bool(o > Byte(v)), nil
-		case token.GreaterEq:
-			return Bool(o >= Byte(v)), nil
-		}
-	case Bool:
-		if v {
-			right = Byte(1)
-		} else {
-			right = Byte(0)
-		}
-		return o.BinaryOp(tok, right)
-	case undefined:
-		switch tok {
-		case token.Less, token.LessEq:
-			return False, nil
-		case token.Greater, token.GreaterEq:
-			return True, nil
-		}
-	}
-	return nil, NewOperandTypeError(
-		tok.String(),
-		o.TypeName(),
-		right.TypeName(),
-	)
-}
-
+// Uint represents unsigned integer values and implements Object interface.
 type Uint uint64
-
-func (Uint) TypeCode() int {
-	return 111
-}
 
 // TypeName implements Object interface.
 func (Uint) TypeName() string {
@@ -330,8 +177,6 @@ func (o Uint) Equal(right Object) bool {
 	switch v := right.(type) {
 	case Uint:
 		return o == v
-	case Byte:
-		return o == Uint(v)
 	case Int:
 		return o == Uint(v)
 	case Float:
@@ -413,8 +258,6 @@ func (o Uint) BinaryOp(tok token.Token, right Object) (Object, error) {
 		case token.GreaterEq:
 			return Bool(o >= v), nil
 		}
-	case Byte:
-		return o.BinaryOp(tok, Uint(v))
 	case Int:
 		return o.BinaryOp(tok, Uint(v))
 	case Float:
@@ -441,7 +284,7 @@ func (o Uint) BinaryOp(tok token.Token, right Object) (Object, error) {
 			right = Uint(0)
 		}
 		return o.BinaryOp(tok, right)
-	case undefined:
+	case *UndefinedType:
 		switch tok {
 		case token.Less, token.LessEq:
 			return False, nil
@@ -456,12 +299,14 @@ func (o Uint) BinaryOp(tok token.Token, right Object) (Object, error) {
 	)
 }
 
+// Format implements fmt.Formatter interface.
+func (o Uint) Format(s fmt.State, verb rune) {
+	format := compat.FmtFormatString(s, verb)
+	fmt.Fprintf(s, format, uint64(o))
+}
+
 // Float represents float values and implements Object interface.
 type Float float64
-
-func (Float) TypeCode() int {
-	return 115
-}
 
 // TypeName implements Object interface.
 func (Float) TypeName() string {
@@ -482,8 +327,6 @@ func (o Float) Equal(right Object) bool {
 		return o == Float(v)
 	case Uint:
 		return o == Float(v)
-	case Byte:
-		return o == Float(v)
 	case Bool:
 		if v {
 			return o == 1
@@ -494,7 +337,12 @@ func (o Float) Equal(right Object) bool {
 }
 
 // IsFalsy implements Object interface.
-func (o Float) IsFalsy() bool { return math.IsNaN(float64(o)) }
+func (o Float) IsFalsy() bool {
+	// IEEE 754 says that only NaNs satisfy f != f.
+	// See math.IsNan
+	f := float64(o)
+	return f != f
+}
 
 // CanCall implements Object interface.
 func (o Float) CanCall() bool { return false }
@@ -549,8 +397,6 @@ func (o Float) BinaryOp(tok token.Token, right Object) (Object, error) {
 		return o.BinaryOp(tok, Float(v))
 	case Uint:
 		return o.BinaryOp(tok, Float(v))
-	case Byte:
-		return o.BinaryOp(tok, Float(v))
 	case Bool:
 		if v {
 			right = Float(1)
@@ -558,7 +404,7 @@ func (o Float) BinaryOp(tok token.Token, right Object) (Object, error) {
 			right = Float(0)
 		}
 		return o.BinaryOp(tok, right)
-	case undefined:
+	case *UndefinedType:
 		switch tok {
 		case token.Less, token.LessEq:
 			return False, nil
@@ -573,12 +419,14 @@ func (o Float) BinaryOp(tok token.Token, right Object) (Object, error) {
 	)
 }
 
+// Format implements fmt.Formatter interface.
+func (o Float) Format(s fmt.State, verb rune) {
+	format := compat.FmtFormatString(s, verb)
+	fmt.Fprintf(s, format, float64(o))
+}
+
 // Char represents a rune and implements Object interface.
 type Char rune
-
-func (Char) TypeCode() int {
-	return 113
-}
 
 // TypeName implements Object interface.
 func (Char) TypeName() string {
@@ -599,8 +447,6 @@ func (o Char) Equal(right Object) bool {
 		return Int(o) == v
 	case Uint:
 		return Uint(o) == v
-	case Byte:
-		return Byte(o) == v
 	case Float:
 		return Float(o) == v
 	case Bool:
@@ -708,21 +554,6 @@ func (o Char) BinaryOp(tok token.Token, right Object) (Object, error) {
 		case token.GreaterEq:
 			return Bool(Uint(o) >= v), nil
 		}
-	case Byte:
-		switch tok {
-		case token.Add:
-			return o + Char(v), nil
-		case token.Sub:
-			return o - Char(v), nil
-		case token.Less:
-			return Bool(Byte(o) < v), nil
-		case token.LessEq:
-			return Bool(Byte(o) <= v), nil
-		case token.Greater:
-			return Bool(Byte(o) > v), nil
-		case token.GreaterEq:
-			return Bool(Byte(o) >= v), nil
-		}
 	case Bool:
 		if v {
 			right = Char(1)
@@ -733,12 +564,12 @@ func (o Char) BinaryOp(tok token.Token, right Object) (Object, error) {
 	case String:
 		if tok == token.Add {
 			var sb strings.Builder
-			sb.Grow(len(v.Value) + 4)
+			sb.Grow(len(v) + 4)
 			sb.WriteRune(rune(o))
-			sb.WriteString(FromString(v))
-			return ToString(sb.String()), nil
+			sb.WriteString(string(v))
+			return String(sb.String()), nil
 		}
-	case undefined:
+	case *UndefinedType:
 		switch tok {
 		case token.Less, token.LessEq:
 			return False, nil
@@ -751,4 +582,10 @@ func (o Char) BinaryOp(tok token.Token, right Object) (Object, error) {
 		o.TypeName(),
 		right.TypeName(),
 	)
+}
+
+// Format implements fmt.Formatter interface.
+func (o Char) Format(s fmt.State, verb rune) {
+	format := compat.FmtFormatString(s, verb)
+	fmt.Fprintf(s, format, rune(o))
 }

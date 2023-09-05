@@ -1,7 +1,0 @@
-saveText("abc\n123", "a.txt")
-
-pln("file exists: ", ifFileExists("a.txt"))
-
-fcT := loadText("a.txt")
-
-pl("file content: %v", fcT)

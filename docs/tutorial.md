@@ -10,7 +10,7 @@ step before execution for remote processes, and deserialization will solve
 version differences to a certain degree.
 
 Main script and uGO source modules in uGO are all functions which have
-`compiled-function` type name. Parameters can be defined for main function with
+`compiledFunction` type name. Parameters can be defined for main function with
 [`param`](#param) statement and main function returns a value with `return`
 statement as well. If return statement is missing, `undefined` value is returned
 by default. All functions return single value but thanks to
@@ -54,7 +54,7 @@ package main
 import (
   "fmt"
 
-  ugo "github.com/topxeq/charlang"
+  "github.com/ozanh/ugo"
 )
 
 func main() {
@@ -385,8 +385,6 @@ Reassignment is checked during compilation and an error is thrown.
 An initializer for a constant is required while declaring. The const declaration
 creates a read-only reference to a value. It does not mean the value it holds is
 immutable.
-Currently, `iota` is not supported but will be added for enumeration.
-Unlike Go, constant variables can be initialized with any value.
 
 ```go
 const (
@@ -398,6 +396,92 @@ const c       // illegal, no initializer
 
 a = 2         // illegal, reassignment
 b.foo = "baz" // legal
+```
+
+`iota` is supported as well.
+
+```go
+const (
+  x = iota
+  y
+  z
+)
+println(x, y, z) // 0 1 2
+```
+
+```go
+const (
+  x = 1<<iota
+  y
+  z
+)
+println(x, y, z) // 1 2 4
+```
+
+```go
+const (
+  _ = 1<<iota
+  x
+  y
+  z
+)
+println(x, y, z) // 2 4 8
+```
+
+```go
+const (
+  x = 1+iota
+  _
+  z
+)
+println(x, z) // 1 3
+```
+
+```go
+const (
+  x = func() { return iota }() // illegal, compile error
+)
+```
+
+```go
+const (
+  iota = 1 // illegal, compile error
+)
+```
+
+RHS of the assignment can be any expression so `iota` can be used with them as well.
+
+```go
+const (
+  x = [iota]
+  y
+)
+println(x) // [0]
+println(y) // [1]
+```
+
+```go
+const (
+  _ = iota
+  x = "string" + iota
+  y
+)
+println(x) // string1
+println(y) // string2
+```
+
+**Warning:** if a variable named `iota` is created before `const` assignments,
+`iota` is not used for enumeration and it is treated as normal variable.
+
+```go
+iota := "foo"
+
+const (
+  x = iota
+  y
+)
+println(x) // foo
+println(y) // foo
 ```
 
 ## Values and Value Types
@@ -432,7 +516,7 @@ types](runtime-types.md) for more information.
 | array             | value array                          | `[]Object`            |
 | map               | value map with string keys           | `map[string]Object`   |
 | undefined         | [undefined](#undefined-values) value | -                     |
-| compiled-function | [function](#function-values) value   | -                     |
+| compiledFunction  | [function](#function-values) value   | -                     |
 
 ### Error Values
 
@@ -1027,8 +1111,60 @@ implemented by object. If not implemented, same object is returned which copies
 the value under the hood by Go.
 
 ```go
-// Copier wraps the Copy method to create a deep copy of the object.
+// Copier wraps the Copy method to create a deep copy of an object.
 type Copier interface {
   Copy() Object
+}
+```
+
+### IndexDeleter interface
+
+`delete` builtin checks if the given object implements `IndexDeleter` interface
+to delete an element from the object. `map` and `syncMap` implement this
+interface.
+
+```go
+// IndexDeleter wraps the IndexDelete method to delete an index of an object.
+type IndexDeleter interface {
+    IndexDelete(Object) error
+}
+```
+
+### LengthGetter interface
+
+`len` builtin checks if the given object implements `IndexDeleter` interface
+to get the length of an object. `array`, `bytes`, `string`, `map` and `syncMap`
+implement this interface.
+
+```go
+// LengthGetter wraps the Len method to get the number of elements of an object.
+type LengthGetter interface {
+    Len() int
+}
+```
+
+### Object Interface Extensions
+
+Note that `ExCallerObject` will replace the existing Object interface in the
+future.
+
+```go
+// ExCallerObject is an interface for objects that can be called with CallEx
+// method. It is an extended version of the Call method that can be used to
+// call an object with a Call struct. Objects implementing this interface is
+// called with CallEx method instead of Call method.
+// Note that CanCall() should return true for objects implementing this
+// interface.
+type ExCallerObject interface {
+    Object
+    CallEx(c Call) (Object, error)
+}
+
+// NameCallerObject is an interface for objects that can be called with CallName
+// method to call a method of an object. Objects implementing this interface can
+// reduce allocations by not creating a callable object for each method call.
+type NameCallerObject interface {
+    Object
+    CallName(name string, c Call) (Object, error)
 }
 ```

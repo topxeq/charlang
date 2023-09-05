@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	. "github.com/topxeq/charlang"
-	. "github.com/topxeq/charlang/stdlib/fmt"
+	. "github.com/ozanh/ugo"
+	. "github.com/ozanh/ugo/stdlib/fmt"
 )
 
 func Example() {
@@ -212,7 +212,7 @@ func TestScript(t *testing.T) {
 		// sprint
 		{
 			s: `return fmt.Sprint(1, 2, "c", 'd')`,
-			r: String("1 2cd"),
+			r: String("1 2c100"),
 		},
 		{
 			s: `return fmt.Sprintf("%.1f%s%c%d", 1.2, "abc", 'e', 18u)`,
@@ -220,7 +220,7 @@ func TestScript(t *testing.T) {
 		},
 		{
 			s: `return fmt.Sprintln(1.2, "abc", 'e', 18u)`,
-			r: String("1.2 abc e 18\n"),
+			r: String("1.2 abc 101 18\n"),
 		},
 		// runtime errors
 		{

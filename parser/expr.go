@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
+// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
@@ -15,7 +15,7 @@ package parser
 import (
 	"strings"
 
-	"github.com/topxeq/charlang/token"
+	"github.com/ozanh/ugo/token"
 )
 
 // Expr represents an expression node in the AST.
@@ -389,28 +389,6 @@ func (e *UintLit) End() Pos {
 }
 
 func (e *UintLit) String() string {
-	return e.Literal
-}
-
-type ByteLit struct {
-	Value    byte
-	ValuePos Pos
-	Literal  string
-}
-
-func (e *ByteLit) exprNode() {}
-
-// Pos returns the position of first character belonging to the node.
-func (e *ByteLit) Pos() Pos {
-	return e.ValuePos
-}
-
-// End returns the position of first character immediately after the node.
-func (e *ByteLit) End() Pos {
-	return Pos(int(e.ValuePos) + len(e.Literal))
-}
-
-func (e *ByteLit) String() string {
 	return e.Literal
 }
 

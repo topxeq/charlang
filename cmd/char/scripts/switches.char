@@ -1,9 +1,0 @@
-global argsG
-
-e := ifSwitchExists(argsG, "-v")
-
-pr("e: ", e, "\n")
-
-num := getSwitch(argsG, "-num=", 0)
-
-pr("num: ", num, "\n")

@@ -1,6 +1,6 @@
 // A modified version Go and Tengo parsers.
 
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
+// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/topxeq/charlang/token"
+	"github.com/ozanh/ugo/token"
 )
 
 // Mode value is a set of flags for parser.
@@ -188,6 +188,7 @@ func (p *Parser) ParseFile() (file *File, err error) {
 	}
 
 	stmts := p.parseStmtList()
+	p.expect(token.EOF)
 	if p.errors.Len() > 0 {
 		return nil, p.errors.Err()
 	}
@@ -437,15 +438,6 @@ func (p *Parser) parseOperand() Expr {
 		v, _ := strconv.ParseUint(strings.TrimSuffix(p.tokenLit, "u"), 0, 64)
 		x := &UintLit{
 			Value:    v,
-			ValuePos: p.pos,
-			Literal:  p.tokenLit,
-		}
-		p.next()
-		return x
-	case token.Byte:
-		v, _ := strconv.ParseUint(strings.TrimSuffix(p.tokenLit, "b"), 0, 64)
-		x := &ByteLit{
-			Value:    byte(v),
 			ValuePos: p.pos,
 			Literal:  p.tokenLit,
 		}
@@ -701,7 +693,7 @@ func (p *Parser) parseStmt() (stmt Stmt) {
 	case token.Var, token.Const, token.Global, token.Param:
 		return &DeclStmt{Decl: p.parseDecl()}
 	case // simple statements
-		token.Func, token.Ident, token.Int, token.Uint, token.Byte, token.Float,
+		token.Func, token.Ident, token.Int, token.Uint, token.Float,
 		token.Char, token.String, token.True, token.False, token.Undefined,
 		token.LParen, token.LBrace, token.LBrack, token.Add, token.Sub,
 		token.Mul, token.And, token.Xor, token.Not, token.Import:
@@ -750,7 +742,10 @@ func (p *Parser) parseDecl() Decl {
 	}
 }
 
-func (p *Parser) parseGenDecl(keyword token.Token, fn func(token.Token, bool) Spec) *GenDecl {
+func (p *Parser) parseGenDecl(
+	keyword token.Token,
+	fn func(token.Token, bool, interface{}) Spec,
+) *GenDecl {
 	if p.trace {
 		defer untracep(tracep(p, "GenDecl("+keyword.String()+")"))
 	}
@@ -760,13 +755,13 @@ func (p *Parser) parseGenDecl(keyword token.Token, fn func(token.Token, bool) Sp
 	if p.token == token.LParen {
 		lparen = p.pos
 		p.next()
-		for p.token != token.RParen && p.token != token.EOF {
-			list = append(list, fn(keyword, true))
+		for iota := 0; p.token != token.RParen && p.token != token.EOF; iota++ { //nolint:predeclared
+			list = append(list, fn(keyword, true, iota))
 		}
 		rparen = p.expect(token.RParen)
 		p.expectSemi()
 	} else {
-		list = append(list, fn(keyword, false))
+		list = append(list, fn(keyword, false, 0))
 		p.expectSemi()
 	}
 	return &GenDecl{
@@ -778,7 +773,7 @@ func (p *Parser) parseGenDecl(keyword token.Token, fn func(token.Token, bool) Sp
 	}
 }
 
-func (p *Parser) parseParamSpec(keyword token.Token, multi bool) Spec {
+func (p *Parser) parseParamSpec(keyword token.Token, multi bool, _ interface{}) Spec {
 	if p.trace {
 		defer untracep(tracep(p, keyword.String()+"Spec"))
 	}
@@ -808,7 +803,7 @@ func (p *Parser) parseParamSpec(keyword token.Token, multi bool) Spec {
 	return spec
 }
 
-func (p *Parser) parseValueSpec(keyword token.Token, multi bool) Spec {
+func (p *Parser) parseValueSpec(keyword token.Token, multi bool, data interface{}) Spec {
 	if p.trace {
 		defer untracep(tracep(p, keyword.String()+"Spec"))
 	}
@@ -823,7 +818,9 @@ func (p *Parser) parseValueSpec(keyword token.Token, multi bool) Spec {
 			expr = p.parseExpr()
 		}
 		if keyword == token.Const && expr == nil {
-			p.error(p.pos, "missing initializer in const declaration")
+			if v, ok := data.(int); ok && v == 0 {
+				p.error(p.pos, "missing initializer in const declaration")
+			}
 		}
 		idents = append(idents, ident)
 		values = append(values, expr)
@@ -840,6 +837,7 @@ func (p *Parser) parseValueSpec(keyword token.Token, multi bool) Spec {
 	spec := &ValueSpec{
 		Idents: idents,
 		Values: values,
+		Data:   data,
 	}
 	return spec
 }

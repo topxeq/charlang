@@ -1,8 +1,8 @@
-// Copyright (c) 2020 Ozan Hacıbekiroğlu.
+// Copyright (c) 2020-2023 Ozan Hacıbekiroğlu.
 // Use of this source code is governed by a MIT License
 // that can be found in the LICENSE file.
 
-package charlang
+package ugo
 
 import (
 	"fmt"
@@ -55,8 +55,6 @@ var (
 
 	// ErrType represents a type error.
 	ErrType = &Error{Name: "TypeError"}
-
-	ErrCommon = &Error{Name: "Error"}
 )
 
 // NewOperandTypeError creates a new Error from ErrType.
@@ -84,31 +82,3 @@ func NewIndexValueTypeError(expectType, foundType string) *Error {
 	return ErrType.NewError(
 		fmt.Sprintf("index value type expected %s, found %s", expectType, foundType))
 }
-
-// char start
-func NewCommonError(formatA string, argsA ...interface{}) *Error {
-	return ErrCommon.NewError(
-		fmt.Sprintf(formatA, argsA...))
-}
-
-func NewError(nameA string, formatA string, argsA ...interface{}) *Error {
-	errT := ErrCommon.NewError(fmt.Sprintf(formatA, argsA...))
-
-	errT.Name = nameA
-
-	return errT
-}
-
-func NewFromError(errA error) *Error {
-	if errA == nil {
-		return nil
-	}
-
-	errT := ErrCommon.NewError(errA.Error())
-
-	errT.Name = "error"
-
-	return errT
-}
-
-// char end

@@ -1,5 +1,0 @@
-global argsG
-
-pln("args:", argsG)
-
-pl("arg 1: %v", getParam(argsG, 1, "no"))

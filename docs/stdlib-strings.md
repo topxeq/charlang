@@ -45,6 +45,14 @@ if s contains only white space.
 
 ---
 
+`FieldsFunc(s string, f func(char) bool) -> array`
+
+Splits the string s at each run of Unicode code points c satisfying f(c),
+and returns an array of slices of s. If all code points in s satisfy
+f(c) or the string is empty, an empty array is returned.
+
+---
+
 `HasPrefix(s string, prefix string) -> bool`
 
 Reports whether the string s begins with prefix.
@@ -74,7 +82,7 @@ Returns the index of the first instance of any char from chars in s, or
 `IndexByte(s string, c char|int) -> int`
 
 Returns the index of the first byte value of c in s, or -1 if byte value
-of c is not present in s.
+of c is not present in s. c's integer value must be between 0 and 255.
 
 ---
 
@@ -82,6 +90,13 @@ of c is not present in s.
 
 Returns the index of the first instance of the char c, or -1 if char is
 not present in s.
+
+---
+
+`IndexFunc(s string, f func(char) bool) -> int`
+
+Returns the index into s of the first Unicode code point satisfying f(c),
+or -1 if none do.
 
 ---
 
@@ -110,7 +125,22 @@ Returns the index of the last instance of any char from chars in s, or
 `LastIndexByte(s string, c char|int) -> int`
 
 Returns the index of byte value of the last instance of c in s, or -1
-if c is not present in s.
+if c is not present in s. c's integer value must be between 0 and 255.
+
+---
+
+`LastIndexFunc(s string, f func(char) bool) -> int`
+
+Returns the index into s of the last Unicode code point satisfying f(c),
+or -1 if none do.
+
+---
+
+`Map(f func(char) char, s string) -> string`
+
+Returns a copy of the string s with all its characters modified
+according to the mapping function f. If f returns a negative value, the
+character is dropped from the string with no replacement.
 
 ---
 
@@ -175,8 +205,8 @@ n determines the number of substrings to return:
 
 `Title(s string) -> string`
 
-Returns a copy of the string s with all Unicode letters that begin words
-mapped to their Unicode title case.
+Deprecated: Returns a copy of the string s with all Unicode letters that
+begin words mapped to their Unicode title case.
 
 ---
 
@@ -199,42 +229,70 @@ Returns s with all Unicode letters mapped to their upper case.
 
 ---
 
-`Trim(s, cutset string) -> string`
+`ToValidUTF8(s string[, replacement string]) -> string`
+
+Returns a copy of the string s with each run of invalid UTF-8 byte
+sequences replaced by the replacement string, which may be empty.
+
+---
+
+`Trim(s string, cutset string) -> string`
 
 Returns a slice of the string s with all leading and trailing Unicode
 code points contained in cutset removed.
 
 ---
 
-`TrimLeft(s, cutset string) -> string`
+`TrimFunc(s string, f func(char) bool) -> string`
+
+Returns a slice of the string s with all leading and trailing Unicode
+code points satisfying f removed.
+
+---
+
+`TrimLeft(s string, cutset string) -> string`
 
 Returns a slice of the string s with all leading Unicode code points
 contained in cutset removed.
 
 ---
 
-`TrimPrefix(s, prefix string) -> string`
+`TrimLeftFunc(s string, f func(char) bool) -> string`
+
+Returns a slice of the string s with all leading Unicode code points
+c satisfying f(c) removed.
+
+---
+
+`TrimPrefix(s string, prefix string) -> string`
 
 Returns s without the provided leading prefix string. If s doesn't start
 with prefix, s is returned unchanged.
 
 ---
 
-`TrimRight(s, cutset string) -> string`
+`TrimRight(s string, cutset string) -> string`
 
 Returns a slice of the string s with all trailing Unicode code points
 contained in cutset removed.
 
 ---
 
-`TrimSpace(s) -> string`
+`TrimRightFunc(s string, f func(char) bool) -> string`
+
+Returns a slice of the string s with all trailing Unicode code points
+c satisfying f(c) removed.
+
+---
+
+`TrimSpace(s string) -> string`
 
 Returns a slice of the string s, with all leading and trailing white
 space removed, as defined by Unicode.
 
 ---
 
-`TrimSuffix(s, suffix string) -> string`
+`TrimSuffix(s string, suffix string) -> string`
 
 Returns s without the provided trailing suffix string. If s doesn't end
 with suffix, s is returned unchanged.

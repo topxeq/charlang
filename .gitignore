@@ -1,10 +1,23 @@
 .vscode
+.DS_Store
 
 # repl binary
-cmd/ugo/ugo
-cmd/ugo/ugo.exe
+/ugo
+/cmd/ugo/ugo
 
-# test and benchmark files
-ugo.test
-cpu.out
-mem.out
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+# Profiling files
+*.prof
+
+/TODO*
