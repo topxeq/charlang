@@ -1,0 +1,40 @@
+// not working now
+try {
+
+f1 := func(a) {
+    try {
+        for {
+            pl("a=%v", a)
+            sleep(1.1)
+        }
+    } catch err {
+        pl("err1: %v", err)
+    }
+} 
+
+f2 := func(a, b) {
+    try {
+        for {
+            pl("a+b=%v", a+b)
+            sleep(2.1)
+        }
+    } catch err {
+        pl("err2: %v", err)
+    }
+} 
+
+go(f1, 3)
+
+go(f2, 5, 2)
+
+// f1(2)
+
+for {
+    pl("main")
+    sleep(3.1)
+   
+}
+
+} catch errG {
+    pl("errG: %v", errG)
+}

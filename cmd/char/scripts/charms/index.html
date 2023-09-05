@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title></title>
+<script>
+    function calClick() {
+        fetch("/charms/add",
+        {
+            method: "POST",
+            mode: "cors",
+            credentials: 'include',
+            headers: {
+                'Accept': 'text/plain',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: "a1=" + encodeURIComponent(document.getElementById("input1").value) + "&a2=" + encodeURIComponent(document.getElementById("input2").value)
+        })
+        .then(function(res){
+            return res.text(); 
+        })
+        .then(function(data){
+            console.log( JSON.stringify( data ) ); 
+        })
+
+    }
+
+    // window.onload = function() {};
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("document loaded");
+    });
+</script>
+</head>
+<body>
+<div id="div1">
+    <input id="input1" type="number" value="2">
+    <span> + </span>
+    <input id="input2" type="number" value="3">
+    <span id="resultSpan"> = </span>
+    <button onclick="calClick()">Cal</button>
+</div>
+</body>
+</html>

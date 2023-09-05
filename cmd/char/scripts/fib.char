@@ -1,0 +1,27 @@
+global argsG
+
+var fib
+
+fib = func(x) {
+    if x < 2 {
+        return x
+    }
+
+    return fib(x-1) + fib(x-2)
+}
+
+countT := getParam(argsG)
+
+t1 := dateTime()
+pln(t1)
+
+rsT := fib(toInt(countT))
+
+t2 := dateTime()
+pln(t2)
+
+diffT := t2 - t1
+
+pln("diff:", diffT / 1000000, "ms")
+
+pln(rsT)
