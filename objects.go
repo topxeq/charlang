@@ -27,10 +27,15 @@ var (
 	Undefined Object = &UndefinedType{}
 )
 
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, StringBuilder: 307, Database: 309, Any: 999
+
 // Object represents an object in the VM.
 type Object interface {
 	// TypeName should return the name of the type.
 	TypeName() string
+
+	// TypeCode should return the code of the type.
+	TypeCode() int
 
 	// String should return a string of the type's value.
 	String() string
@@ -201,6 +206,10 @@ type ObjectImpl struct{}
 
 var _ Object = ObjectImpl{}
 
+func (ObjectImpl) TypeCode() int {
+	return 101
+}
+
 // TypeName implements Object interface.
 func (ObjectImpl) TypeName() string {
 	panic(ErrNotImplemented)
@@ -250,6 +259,10 @@ func (ObjectImpl) BinaryOp(_ token.Token, _ Object) (Object, error) {
 // the UndefinedType in type switches only.
 type UndefinedType struct {
 	ObjectImpl
+}
+
+func (o *UndefinedType) TypeCode() int {
+	return 0
 }
 
 // TypeName implements Object interface.
@@ -308,6 +321,10 @@ func (*UndefinedType) IndexSet(key, value Object) error {
 
 // Bool represents boolean values and implements Object interface.
 type Bool bool
+
+func (Bool) TypeCode() int {
+	return 103
+}
 
 // TypeName implements Object interface.
 func (Bool) TypeName() string {
@@ -478,6 +495,10 @@ type String string
 
 var _ LengthGetter = String("")
 
+func (String) TypeCode() int {
+	return 105
+}
+
 // TypeName implements Object interface.
 func (String) TypeName() string {
 	return "string"
@@ -603,6 +624,57 @@ func (o String) Format(s fmt.State, verb rune) {
 	fmt.Fprintf(s, format, string(o))
 }
 
+func ToStringObject(argA interface{}) String {
+	switch nv := argA.(type) {
+	case String:
+		return String{Value: nv.Value}
+	case Object:
+		return String{Value: nv.String()}
+	case string:
+		return String{Value: nv}
+	case nil:
+		return String{Value: ""}
+	case []byte:
+		return String{Value: string(nv)}
+	}
+	return String{Value: fmt.Sprintf("%v", argA)}
+}
+
+func ToIntObject(argA interface{}, defaultA ...int) Int {
+	defaultT := 0
+	if len(defaultA) > 0 {
+		defaultT = defaultA[0]
+	}
+	switch nv := argA.(type) {
+	case String:
+		return Int(tk.StrToInt(nv.Value, defaultT))
+	case Int:
+		return nv
+	case Float:
+		return Int(nv)
+	case Object:
+		return Int(tk.StrToInt(nv.String(), defaultT))
+	case string:
+		return Int(tk.StrToInt(nv, defaultT))
+	case int:
+		return Int(nv)
+	case int64:
+		return Int(nv)
+	case int32:
+		return Int(nv)
+	case uint8:
+		return Int(nv)
+	case nil:
+		return Int(defaultT)
+	case []byte:
+		return Int(tk.StrToInt(string(nv), defaultT))
+	case time.Duration:
+		return Int(nv)
+	}
+
+	return Int(defaultT)
+}
+
 // Bytes represents byte slice and implements Object interface.
 type Bytes []byte
 
@@ -611,6 +683,10 @@ var (
 	_ Copier       = Bytes{}
 	_ LengthGetter = Bytes{}
 )
+
+func (Bytes) TypeCode() int {
+	return 137
+}
 
 // TypeName implements Object interface.
 func (Bytes) TypeName() string {
@@ -879,6 +955,10 @@ var (
 	_ LengthGetter = Array{}
 )
 
+func (Array) TypeCode() int {
+	return 131
+}
+
 // TypeName implements Object interface.
 func (Array) TypeName() string {
 	return "array"
@@ -1110,6 +1190,10 @@ var (
 	_ LengthGetter = Map{}
 )
 
+func (Map) TypeCode() int {
+	return 133
+}
+
 // TypeName implements Object interface.
 func (Map) TypeName() string {
 	return "map"
@@ -1261,6 +1345,10 @@ var (
 	_ LengthGetter = (*SyncMap)(nil)
 )
 
+func (*SyncMap) TypeCode() int {
+	return 153
+}
+
 // RLock locks the underlying mutex for reading.
 func (o *SyncMap) RLock() {
 	o.mu.RLock()
@@ -1407,6 +1495,10 @@ func (o *Error) Unwrap() error {
 	return o.Cause
 }
 
+func (*Error) TypeCode() int {
+	return 155
+}
+
 // TypeName implements Object interface.
 func (*Error) TypeName() string {
 	return "error"
@@ -1537,6 +1629,10 @@ func (o *RuntimeError) addTrace(pos parser.Pos) {
 		}
 	}
 	o.Trace = append(o.Trace, pos)
+}
+
+func (*RuntimeError) TypeCode() int {
+	return 157
 }
 
 // TypeName implements Object interface.

@@ -12,6 +12,10 @@ import (
 // Int represents signed integer values and implements Object interface.
 type Int int64
 
+func (Int) TypeCode() int {
+	return 107
+}
+
 // TypeName implements Object interface.
 func (Int) TypeName() string {
 	return "int"
@@ -157,6 +161,10 @@ func (o Int) Format(s fmt.State, verb rune) {
 
 // Uint represents unsigned integer values and implements Object interface.
 type Uint uint64
+
+func (Uint) TypeCode() int {
+	return 111
+}
 
 // TypeName implements Object interface.
 func (Uint) TypeName() string {
@@ -304,6 +312,10 @@ func (o Uint) Format(s fmt.State, verb rune) {
 // Float represents float values and implements Object interface.
 type Float float64
 
+func (Float) TypeCode() int {
+	return 115
+}
+
 // TypeName implements Object interface.
 func (Float) TypeName() string {
 	return "float"
@@ -423,6 +435,10 @@ func (o Float) Format(s fmt.State, verb rune) {
 
 // Char represents a rune and implements Object interface.
 type Char rune
+
+func (Char) TypeCode() int {
+	return 113
+}
 
 // TypeName implements Object interface.
 func (Char) TypeName() string {
