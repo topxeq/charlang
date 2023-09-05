@@ -1,4 +1,4 @@
-r
+package parser
 
 import (
 	"strings"
