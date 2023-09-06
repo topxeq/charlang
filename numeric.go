@@ -31,6 +31,8 @@ func (o Int) Equal(right Object) bool {
 	switch v := right.(type) {
 	case Int:
 		return o == v
+	case Byte:
+		return o == Int(v)
 	case Uint:
 		return Uint(o) == v
 	case Float:
@@ -131,6 +133,21 @@ func (o Int) BinaryOp(tok token.Token, right Object) (Object, error) {
 		case token.GreaterEq:
 			return Bool(o >= Int(v)), nil
 		}
+	case Byte:
+		switch tok {
+		case token.Add:
+			return Byte(o) + v, nil
+		case token.Sub:
+			return Byte(o) - v, nil
+		case token.Less:
+			return Bool(o < Int(v)), nil
+		case token.LessEq:
+			return Bool(o <= Int(v)), nil
+		case token.Greater:
+			return Bool(o > Int(v)), nil
+		case token.GreaterEq:
+			return Bool(o >= Int(v)), nil
+		}
 	case Bool:
 		if v {
 			right = Int(1)
@@ -182,6 +199,8 @@ func (o Uint) Equal(right Object) bool {
 	case Uint:
 		return o == v
 	case Int:
+		return o == Uint(v)
+	case Byte:
 		return o == Uint(v)
 	case Float:
 		return Float(o) == v
@@ -281,6 +300,21 @@ func (o Uint) BinaryOp(tok token.Token, right Object) (Object, error) {
 		case token.GreaterEq:
 			return Bool(o >= Uint(v)), nil
 		}
+	case Byte:
+		switch tok {
+		case token.Add:
+			return Byte(o) + v, nil
+		case token.Sub:
+			return Byte(o) - v, nil
+		case token.Less:
+			return Bool(o < Uint(v)), nil
+		case token.LessEq:
+			return Bool(o <= Uint(v)), nil
+		case token.Greater:
+			return Bool(o > Uint(v)), nil
+		case token.GreaterEq:
+			return Bool(o >= Uint(v)), nil
+		}
 	case Bool:
 		if v {
 			right = Uint(1)
@@ -334,6 +368,10 @@ func (o Float) Equal(right Object) bool {
 	case Int:
 		return o == Float(v)
 	case Uint:
+		return o == Float(v)
+	case Char:
+		return o == Float(v)
+	case Byte:
 		return o == Float(v)
 	case Bool:
 		if v {
@@ -405,6 +443,10 @@ func (o Float) BinaryOp(tok token.Token, right Object) (Object, error) {
 		return o.BinaryOp(tok, Float(v))
 	case Uint:
 		return o.BinaryOp(tok, Float(v))
+	case Char:
+		return o.BinaryOp(tok, Float(v))
+	case Byte:
+		return o.BinaryOp(tok, Float(v))
 	case Bool:
 		if v {
 			right = Float(1)
@@ -459,6 +501,8 @@ func (o Char) Equal(right Object) bool {
 		return Int(o) == v
 	case Uint:
 		return Uint(o) == v
+	case Byte:
+		return o == Char(v)
 	case Float:
 		return Float(o) == v
 	case Bool:
@@ -550,6 +594,21 @@ func (o Char) BinaryOp(tok token.Token, right Object) (Object, error) {
 			return Bool(Int(o) > v), nil
 		case token.GreaterEq:
 			return Bool(Int(o) >= v), nil
+		}
+	case Byte:
+		switch tok {
+		case token.Add:
+			return Byte(o) + v, nil
+		case token.Sub:
+			return Byte(o) - v, nil
+		case token.Less:
+			return Bool(o < Char(v)), nil
+		case token.LessEq:
+			return Bool(o <= Char(v)), nil
+		case token.Greater:
+			return Bool(o > Char(v)), nil
+		case token.GreaterEq:
+			return Bool(o >= Char(v)), nil
 		}
 	case Uint:
 		switch tok {

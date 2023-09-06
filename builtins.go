@@ -29,6 +29,13 @@ const (
 
 	// char add start
 	BuiltinSystemCmd
+	BuiltinGetParam
+	BuiltinGetSwitch
+	BuiltinIfSwitchExists
+	BuiltinTypeCode
+	// BuiltinTypeName
+	BuiltinPl
+	BuiltinPln
 	BuiltinTestByText
 	BuiltinTestByStartsWith
 	BuiltinTestByReg
@@ -98,6 +105,19 @@ var BuiltinsMap = map[string]BuiltinType{
 	"testByText":       BuiltinTestByText,
 	"testByStartsWith": BuiltinTestByStartsWith,
 	"testByReg":        BuiltinTestByReg,
+
+	// data type related
+	"typeCode": BuiltinTypeCode,
+	// "typeName": BuiltinTypeName,
+
+	// print related
+	"pl":  BuiltinPl,
+	"pln": BuiltinPln,
+
+	// command-line related
+	"ifSwitchExists": BuiltinIfSwitchExists,
+	"getSwitch":      BuiltinGetSwitch,
+	"getParam":       BuiltinGetParam,
 
 	// os/system related
 	"systemCmd": BuiltinSystemCmd,
@@ -171,6 +191,43 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
 	// char add start
+	BuiltinIfSwitchExists: &BuiltinFunction{
+		Name:    "ifSwitchExists", // usage: if ifSwitchExists(argsG, "-verbose") {...}
+		Value:   callExAdapter(builtinIfSwitchExistsFunc),
+		ValueEx: builtinIfSwitchExistsFunc,
+	},
+	BuiltinGetSwitch: &BuiltinFunction{
+		Name:    "getSwitch",
+		Value:   callExAdapter(builtinGetSwitchFunc),
+		ValueEx: builtinGetSwitchFunc,
+	},
+	BuiltinGetParam: &BuiltinFunction{
+		Name:    "getParam", // usage: getParam(argsG, 1, "default")
+		Value:   callExAdapter(builtinGetParamFunc),
+		ValueEx: builtinGetParamFunc,
+	},
+	BuiltinPln: &BuiltinFunction{
+		Name: "pln",
+		Value: func(args ...Object) (Object, error) {
+			return fnAVAR(tk.Pln)(NewCall(nil, args))
+		},
+		ValueEx: fnAVAR(tk.Pln),
+	},
+	BuiltinTypeCode: &BuiltinFunction{
+		Name:    "typeCode",
+		Value:   callExAdapter(builtinTypeCodeFunc),
+		ValueEx: builtinTypeCodeFunc,
+	},
+	// BuiltinTypeName: &BuiltinFunction{
+	// 	Name:    "typeName",
+	// 	Value:   callExAdapter(builtinTypeNameFunc),
+	// 	ValueEx: builtinTypeNameFunc,
+	// },
+	BuiltinPl: &BuiltinFunction{
+		Name:    "pl", // usage: the same as printf, but with a line-end(\n) at the end
+		Value:   callExAdapter(builtinPlFunc),
+		ValueEx: builtinPlFunc,
+	},
 	BuiltinPass: &BuiltinFunction{
 		Name:    "pass",
 		Value:   callExAdapter(builtinPassFunc),
@@ -1011,6 +1068,15 @@ func fnASVSRS(fn func(string, ...string) string) CallableExFunc {
 	}
 }
 
+// like tk.Pln
+func fnAVAR(fn func(...interface{})) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		vargs := toArgsA(0, c)
+		fn(vargs...)
+		return nil, nil
+	}
+}
+
 // like fmt.printf
 func fnASVARIE(fn func(string, ...interface{}) (int, error)) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
@@ -1159,6 +1225,153 @@ func builtinTestByRegFunc(c Call) (Object, error) {
 
 func builtinPassFunc(c Call) (Object, error) {
 	return Undefined, nil
+}
+
+func builtinPlFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+	if len(args) < 1 {
+		return Undefined, nil
+	}
+
+	v, ok := args[0].(String)
+	if !ok {
+		return Undefined, NewCommonError("required format string")
+	}
+
+	tk.Pl(v.String(), ObjectsToI(args[1:])...)
+
+	return Undefined, nil
+}
+
+func builtinTypeCodeFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+	return ToIntObject(args[0].TypeCode()), nil
+}
+
+// func builtinTypeNameFunc(c Call) (Object, error) {
+// 	args := c.GetArgs()
+// 	return ToString(args[0].TypeName()), nil
+// }
+
+func builtinGetParamFunc(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	defaultT := ToStringObject("")
+	idxT := 1
+
+	if argsA == nil {
+		return defaultT, nil
+	}
+
+	if len(argsA) < 1 {
+		return defaultT, nil
+	}
+
+	if len(argsA) > 1 {
+		idxT = tk.StrToInt(argsA[1].String(), 1)
+	}
+
+	if len(argsA) > 2 {
+		defaultT = ToStringObject(argsA[2].String())
+	}
+
+	listT, ok := argsA[0].(Array)
+
+	if !ok {
+		return defaultT, nil
+	}
+
+	var cnt int
+	for _, v := range listT {
+		argT := v.String()
+		if tk.StartsWith(argT, "-") {
+			continue
+		}
+
+		if cnt == idxT {
+			if _, ok := v.(String); ok {
+				if tk.StartsWith(argT, "\"") && tk.EndsWith(argT, "\"") {
+					return ToStringObject(argT[1 : len(argT)-1]), nil
+				}
+			}
+
+			return v, nil
+		}
+
+		cnt++
+
+	}
+
+	return defaultT, nil
+}
+
+func builtinGetSwitchFunc(c Call) (Object, error) {
+	argsA := c.GetArgs()
+	defaultT := ToStringObject("")
+
+	if argsA == nil {
+		return defaultT, nil
+	}
+
+	if len(argsA) < 2 {
+		return defaultT, nil
+	}
+
+	if len(argsA) > 2 {
+		defaultT = ToStringObject(argsA[2].String())
+	}
+
+	switchStrT := argsA[1].String()
+
+	tmpStrT := ""
+
+	listT, ok := argsA[0].(Array)
+
+	if !ok {
+		return defaultT, nil
+	}
+
+	for _, v := range listT {
+		argOT, ok := v.(String)
+		if !ok {
+			continue
+		}
+
+		argT := FromStringObject(argOT)
+		if tk.StartsWith(argT, switchStrT) {
+			tmpStrT = argT[len(switchStrT):]
+			if tk.StartsWith(tmpStrT, "\"") && tk.EndsWith(tmpStrT, "\"") {
+				return ToStringObject(tmpStrT[1 : len(tmpStrT)-1]), nil
+			}
+
+			return ToStringObject(tmpStrT), nil
+		}
+
+	}
+
+	return defaultT, nil
+}
+
+func builtinIfSwitchExistsFunc(c Call) (Object, error) {
+	argsA := c.GetArgs()
+	if len(argsA) < 2 {
+		return Bool(false), nil
+	}
+
+	argListT, ok := argsA[0].(Array)
+
+	if !ok {
+		return Bool(false), nil
+	}
+
+	listT := ObjectsToS(argListT)
+
+	if listT == nil {
+		return Bool(false), nil
+	}
+
+	return Bool(tk.IfSwitchExistsWhole(listT, argsA[1].String())), nil
+
 }
 
 // char add end

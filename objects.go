@@ -655,6 +655,10 @@ func ToStringObject(argA interface{}) String {
 	return String{Value: fmt.Sprintf("%v", argA)}
 }
 
+func FromStringObject(argA String) string {
+	return argA.Value
+}
+
 func ToIntObject(argA interface{}, defaultA ...int) Int {
 	defaultT := 0
 	if len(defaultA) > 0 {
