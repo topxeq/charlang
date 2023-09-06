@@ -4,6 +4,10 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", getSeq(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "exit.char")
+
+testByText(rs, "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n", getSeq(), "exit.char")
+
 rs = systemCmd("char", "-gopath", "typeCodeAndName.char")
 
 testByText(rs, "typeCode of a: 107\ntypeName of a: int\ntypeCode of b: 105\ntypeName of b: string\ntypeCode of c: 131\ntypeName of c: array\ntypeCode of d: 131\ntypeName of d: array\n", getSeq(), "typeCodeAndName.char")
@@ -22,8 +26,22 @@ testByText(rs, "type of c1: char\ninternal type of c1: int32\nvalue of c1: 97\nc
 
 rs = systemCmd("char", "-gopath", "compile.char")
 
-testByText(rs, "r1=3.3\nv0=true\nv1=value1\nvargs=[1 2 3a]\n(string)\"abctruevalue13.3\"\n", getSeq(), "compile.char")
+testByText(rs, "r1=3.3\nv0=true\nv1=value1\nvargs=[1 2 3a]\n(charlang.String)\"abctruevalue13.3\"\n", getSeq(), "compile.char")
 
 rs = systemCmd("char", "-gopath", "funcParam.char")
 
-testByText(rs, "[1 2 a]\n[1 cc a]\n{\"field1\":1,\"field2\":\"23.8\"}\n{\"field1\":true,\"field2\":\"23.8\",\"field3\":\"dd\"}\n", getSeq(), "funcParam.char")
+testByText(rs, "[1, 2, \"a\"]\n[1, \"cc\", \"a\"]\n{\"field1\":1,\"field2\":\"23.8\"}\n{\"field1\":true,\"field2\":\"23.8\",\"field3\":\"dd\"}\n", getSeq(), "funcParam.char")
+
+rs = systemCmd("char", "-gopath", "json.char")
+
+testByReg(rs, `(?sm)jsonStrT: {\"name\": \"Peter\", \"age\": 19, \"身高\": 175, \"father\": .*?}\n\n---\n\nresult: .*?\nname: Peter\nage: 19\nfather: .*?\n\n---\n\nappleT: map\[.*?\]\n\n---\n\nJSON: {\n  \"Color\": \"Red红的\",\n  \"Ingredients\": \[\n  {\n    \"Amount\": 0.3,\n    \"Name\": \"Protein\"\n  },\n  {\n    \"Amount\": 10.4,\n    \"Name\": \"Sugar糖分\"\n  }\n\],\n  \"Type\": \"apple\",\n  \"Weight重量\": 10,\n  \"canEat\": true\n}\n`, getSeq(), "json.char")
+
+rs = systemCmd("char", "-gopath", "threadRun1.char")
+
+testByText(rs, "(main) a=15\n(thread) v0=6\n(thread) v0=7\n(main) a=25\n(thread) v0=8\n(main) a=35\n(thread) v0=9\n(main) a=45\n(thread) v0=10\n(main) a=55\n", getSeq(), "threadRun1.char")
+
+rs = systemCmd("char", "-gopath", "threadRun2.char")
+
+testByText(rs, "(main) a=15\n(thread) v0=16\n(thread) v0=17\n(main) a=27\n(thread) v0=28\n(main) a=38\n(thread) v0=39\n(main) a=49\n(thread) v0=50\n(main) a=60\n", getSeq(), "threadRun2.char")
+
+

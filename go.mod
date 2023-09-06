@@ -8,6 +8,11 @@ require (
 )
 
 require (
+	github.com/denisenkom/go-mssqldb v0.12.3
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/mattn/go-runewidth v0.0.14 // indirect
+	github.com/mattn/go-sqlite3 v1.14.17
+	github.com/sijms/go-ora/v2 v2.7.17
+	github.com/topxeq/tk v1.0.5
 	golang.org/x/sys v0.7.0 // indirect
 )

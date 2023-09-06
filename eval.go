@@ -38,7 +38,7 @@ func NewEval(opts CompilerOptions, globals Object, args ...Object) *Eval {
 
 // Run compiles, runs given script and returns last value on stack.
 func (r *Eval) Run(ctx context.Context, script []byte) (Object, *Bytecode, error) {
-	bytecode, err := Compile(script, r.Opts)
+	bytecode, err := Compile(script, &(r.Opts))
 	if err != nil {
 		return nil, nil, err
 	}

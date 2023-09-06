@@ -32,14 +32,22 @@ import (
 // 	return bytecodeT
 // }
 
-func quickCompileFunc(argsA ...charlang.Object) (charlang.Object, error) {
+// func callExAdapter(fn charlang.CallableExFunc) charlang.CallableFunc {
+// 	return func(argsA ...charlang.Object) (charlang.Object, error) {
+// 		return fn(charlang.Call{args: argsA})
+// 	}
+// }
+
+func quickCompileFunc(c charlang.Call) (charlang.Object, error) {
+	argsA := c.GetArgs()
+
 	lenT := len(argsA)
 
 	if lenT < 1 {
 		return nil, fmt.Errorf("not enough parameters")
 	}
 
-	byteCodeT := charlang.QuickCompile(tk.ToStr(argsA[0])) // quickCompile(tk.ToStr(argsA[0])) //
+	byteCodeT := charlang.QuickCompile(tk.ToStr(argsA[0]), c.VM().GetCompilerOptions()) // quickCompile(tk.ToStr(argsA[0])) //
 
 	if tk.IsError(byteCodeT) {
 		return nil, byteCodeT.(error)
@@ -135,8 +143,9 @@ func goRunCompiledFunc(argsA ...charlang.Object) (charlang.Object, error) {
 // Module represents time module.
 var Module = map[string]charlang.Object{
 	"compile": &charlang.Function{
-		Name:  "compile",
-		Value: quickCompileFunc,
+		Name:    "compile",
+		Value:   charlang.CallExAdapter(quickCompileFunc),
+		ValueEx: quickCompileFunc,
 	},
 	"runCompiled": &charlang.Function{
 		Name:  "runCompiled",

@@ -854,6 +854,217 @@ func (o Bytes) Format(s fmt.State, verb rune) {
 	fmt.Fprintf(s, format, []byte(o))
 }
 
+// Chars represents byte slice and implements Object interface.
+type Chars []rune
+
+var (
+	_ Object       = Chars{}
+	_ Copier       = Chars{}
+	_ LengthGetter = Chars{}
+)
+
+func (Chars) TypeCode() int {
+	return 139
+}
+
+// TypeName implements Object interface.
+func (Chars) TypeName() string {
+	return "chars"
+}
+
+func (o Chars) String() string {
+	return string(o)
+}
+
+// Copy implements Copier interface.
+func (o Chars) Copy() Object {
+	cp := make(Chars, len(o))
+	copy(cp, o)
+	return cp
+}
+
+// CanIterate implements Object interface.
+func (Chars) CanIterate() bool { return true }
+
+// Iterate implements Object interface.
+func (o Chars) Iterate() Iterator {
+	return &CharsIterator{V: o}
+}
+
+// IndexSet implements Object interface.
+func (o Chars) IndexSet(index, value Object) error {
+	var idx int
+	switch v := index.(type) {
+	case Int:
+		idx = int(v)
+	case Uint:
+		idx = int(v)
+	default:
+		return NewIndexTypeError("int|uint", index.TypeName())
+	}
+
+	if idx >= 0 && idx < len(o) {
+		switch v := value.(type) {
+		case Byte:
+			o[idx] = rune(v)
+		case Int:
+			o[idx] = rune(v)
+		case Char:
+			o[idx] = rune(v)
+		case Uint:
+			o[idx] = rune(v)
+		default:
+			return NewIndexValueTypeError("int|uint", value.TypeName())
+		}
+		return nil
+	}
+	return ErrIndexOutOfBounds
+}
+
+// IndexGet represents string values and implements Object interface.
+func (o Chars) IndexGet(index Object) (Object, error) {
+	var idx int
+	switch v := index.(type) {
+	case Int:
+		idx = int(v)
+	case Uint:
+		idx = int(v)
+	default:
+		return nil, NewIndexTypeError("int|uint|char", index.TypeName())
+	}
+
+	if idx >= 0 && idx < len(o) {
+		return Char(o[idx]), nil
+	}
+	return nil, ErrIndexOutOfBounds
+}
+
+// Equal implements Object interface.
+func (o Chars) Equal(right Object) bool {
+	if v, ok := right.(Chars); ok {
+		return string(o) == string(v)
+	}
+
+	if v, ok := right.(String); ok {
+		return string(o) == v.Value
+	}
+	return false
+}
+
+// IsFalsy implements Object interface.
+func (o Chars) IsFalsy() bool { return len(o) == 0 }
+
+// CanCall implements Object interface.
+func (o Chars) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (o Chars) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// BinaryOp implements Object interface.
+func (o Chars) BinaryOp(tok token.Token, right Object) (Object, error) {
+	switch v := right.(type) {
+	case Chars:
+		switch tok {
+		case token.Add:
+			return append(o, v...), nil
+		case token.Less:
+			for i1, v1 := range o {
+				if v1 < v[i1] {
+					return Bool(true), nil
+				}
+			}
+
+			return Bool(false), nil // Bool(bytes.Compare(o, v) == -1), nil
+		case token.LessEq:
+			for i1, v1 := range o {
+				if v1 > v[i1] {
+					return Bool(false), nil
+				}
+			}
+
+			return Bool(true), nil
+			// cmp := bytes.Compare(o, v)
+			// return Bool(cmp == 0 || cmp == -1), nil
+		case token.Greater:
+			for i1, v1 := range o {
+				if v1 > v[i1] {
+					return Bool(true), nil
+				}
+			}
+
+			return Bool(false), nil
+			// return Bool(bytes.Compare(o, v) == 1), nil
+		case token.GreaterEq:
+			for i1, v1 := range o {
+				if v1 < v[i1] {
+					return Bool(false), nil
+				}
+			}
+
+			return Bool(true), nil
+			// cmp := bytes.Compare(o, v)
+			// return Bool(cmp == 0 || cmp == 1), nil
+		}
+	// case Bytes:
+	// 	switch tok {
+	// 	case token.Add:
+	// 		return append(o, v...), nil
+	// 	case token.Less:
+	// 		return Bool(bytes.Compare(o, v) == -1), nil
+	// 	case token.LessEq:
+	// 		cmp := bytes.Compare(o, v)
+	// 		return Bool(cmp == 0 || cmp == -1), nil
+	// 	case token.Greater:
+	// 		return Bool(bytes.Compare(o, v) == 1), nil
+	// 	case token.GreaterEq:
+	// 		cmp := bytes.Compare(o, v)
+	// 		return Bool(cmp == 0 || cmp == 1), nil
+	// 	}
+	case String:
+		switch tok {
+		case token.Add:
+			return append(o, ([]rune(FromStringObject(v)))...), nil
+			// return append(o, v.Value...), nil
+		case token.Less:
+			return Bool(string(o) < FromStringObject(v)), nil
+			// return Bool(string(o) < v.Value), nil
+		case token.LessEq:
+			return Bool(string(o) <= FromStringObject(v)), nil
+			// return Bool(string(o) <= v.Value), nil
+		case token.Greater:
+			return Bool(string(o) > FromStringObject(v)), nil
+			// return Bool(string(o) > v.Value), nil
+		case token.GreaterEq:
+			return Bool(string(o) >= FromStringObject(v)), nil
+			// return Bool(string(o) >= v.Value), nil
+		}
+	case *UndefinedType:
+		switch tok {
+		case token.Less, token.LessEq:
+			return False, nil
+		case token.Greater, token.GreaterEq:
+			return True, nil
+		}
+	}
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+// Len implements LengthGetter interface.
+func (o Chars) Len() int {
+	return len(o)
+}
+
+// Format implements fmt.Formatter interface.
+func (o Chars) Format(s fmt.State, verb rune) {
+	format := compat.FmtFormatString(s, verb)
+	fmt.Fprintf(s, format, []rune(o))
+}
+
 // Function represents a function object and implements Object interface.
 type Function struct {
 	ObjectImpl

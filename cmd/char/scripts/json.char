@@ -1,0 +1,51 @@
+// convert JSON string to object with Golang standard library
+
+jsonStrT := `{"name": "Peter", "age": 19, "身高": 175, "father": {"name": "Jordan 约翰", "age": 56, "身高": 172}}`
+pln("jsonStrT:", jsonStrT)
+pln("\n---\n")
+
+
+outT := fromJson(jsonStrT)
+
+if isErrX(outT) {
+	pln("failed to generate JSON:", outT)
+	return
+}
+
+pln("result:", outT)
+
+pln("name:", outT.name)
+pln("age:", outT.age)
+pln("father:", outT.father)
+
+pln("\n---\n")
+
+// convert object to JSON string
+appleT := {
+	"Type": "apple",
+	"Color": "Red红的",
+	"Weight重量": 10,
+	"canEat": true,
+	"Ingredients" : [
+		{
+			"Name": "Protein",
+			"Amount": 0.3,
+		},
+		{
+			"Name": "Sugar糖分",
+			"Amount": 10.4,
+		},
+	],
+}
+
+pl("appleT: %v", appleT)
+pln("\n---\n")
+
+newJSONT := toJson(appleT, "-sort", "-indent")
+
+if isErrX(newJSONT) {
+	pln("failed to generate JSON:", newJSONT)
+	return
+}
+
+pl("JSON: %v", newJSONT)

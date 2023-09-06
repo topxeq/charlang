@@ -1455,10 +1455,10 @@ func runArgs(argsA ...string) interface{} {
 	moduleMap.AddBuiltinModule("ex", ugoex.Module)
 
 	opts := &charlang.CompilerOptions{
-		ModulePath:        "", //"(repl)",
-		ModuleMap:         moduleMap,
-		SymbolTable:       charlang.NewSymbolTable(),
-		OptimizerMaxCycle: charlang.TraceCompilerOptions.OptimizerMaxCycle,
+		// ModulePath:        "", //"(repl)",
+		ModuleMap: moduleMap,
+		// SymbolTable:       charlang.NewSymbolTable(),
+		// OptimizerMaxCycle: charlang.TraceCompilerOptions.OptimizerMaxCycle,
 		// TraceParser:       traceParser,
 		// TraceOptimizer:    traceOptimizer,
 		// TraceCompiler:     traceCompiler,
@@ -1466,7 +1466,7 @@ func runArgs(argsA ...string) interface{} {
 		// OptimizeExpr:      !noOptimizer,
 	}
 
-	bytecodeT, errT := charlang.Compile([]byte(fcT), *opts) // charlang.DefaultCompilerOptions)
+	bytecodeT, errT := charlang.Compile([]byte(fcT), opts) // charlang.DefaultCompilerOptions)
 	if errT != nil {
 		return errT
 	}

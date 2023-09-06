@@ -368,7 +368,7 @@ func QuickCompile(codeA string, compilerOptionsA ...*CompilerOptions) interface{
 		compilerOptionsT = &DefaultCompilerOptions
 	}
 
-	bytecodeT, errT := Compile([]byte(codeA), *compilerOptionsT)
+	bytecodeT, errT := Compile([]byte(codeA), compilerOptionsT)
 	if errT != nil {
 		return errT
 	}
@@ -404,7 +404,7 @@ func QuickRun(codeA interface{}, globalsA map[string]interface{}, additionsA ...
 			return fmt.Errorf("invalid parameter")
 		}
 
-		nv, errT = Compile([]byte(codeT), DefaultCompilerOptions)
+		nv, errT = Compile([]byte(codeT), &DefaultCompilerOptions)
 		if errT != nil {
 			return errT
 		}
@@ -557,12 +557,12 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 
 	fcT := codeA
 
-	var compilerOptionsT CompilerOptions
+	var compilerOptionsT *CompilerOptions
 
 	if compilerOptionsA == nil {
-		compilerOptionsT = DefaultCompilerOptions
+		compilerOptionsT = &DefaultCompilerOptions
 	} else {
-		compilerOptionsT = *compilerOptionsA
+		compilerOptionsT = compilerOptionsA
 	}
 
 	bytecodeT, errT := Compile([]byte(fcT), compilerOptionsT)
@@ -1047,7 +1047,7 @@ func SetCfgString(fileNameA string, strA string) string {
 }
 
 func NewChar(codeA string) (interface{}, error) {
-	bytecodeT, errT := Compile([]byte(codeA), DefaultCompilerOptions)
+	bytecodeT, errT := Compile([]byte(codeA), &DefaultCompilerOptions)
 	// if errT != nil {
 	// 	return nil, errT
 	// }

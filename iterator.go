@@ -81,6 +81,34 @@ func (it *BytesIterator) Value() Object {
 	return Undefined
 }
 
+// CharsIterator represents an iterator for the chars.
+type CharsIterator struct {
+	V Chars
+	i int
+}
+
+var _ Iterator = (*CharsIterator)(nil)
+
+// Next implements Iterator interface.
+func (it *CharsIterator) Next() bool {
+	it.i++
+	return it.i-1 < len(it.V)
+}
+
+// Key implements Iterator interface.
+func (it *CharsIterator) Key() Object {
+	return Int(it.i - 1)
+}
+
+// Value implements Iterator interface.
+func (it *CharsIterator) Value() Object {
+	i := it.i - 1
+	if i > -1 && i < len(it.V) {
+		return Int(it.V[i])
+	}
+	return Undefined
+}
+
 // MapIterator represents an iterator for the map.
 type MapIterator struct {
 	V    Map

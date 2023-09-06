@@ -84,6 +84,10 @@ func (vm *VM) Clear() *VM {
 	return vm
 }
 
+func (vm *VM) GetCompilerOptions() *CompilerOptions {
+	return vm.bytecode.CompilerOptionsM
+}
+
 // GetGlobals returns global variables.
 func (vm *VM) GetGlobals() Object {
 	return vm.globals

@@ -17,10 +17,11 @@ import (
 
 // Bytecode holds the compiled functions and constants.
 type Bytecode struct {
-	FileSet    *parser.SourceFileSet
-	Main       *CompiledFunction
-	Constants  []Object
-	NumModules int
+	FileSet          *parser.SourceFileSet
+	Main             *CompiledFunction
+	Constants        []Object
+	NumModules       int
+	CompilerOptionsM *CompilerOptions
 }
 
 // Fprint writes constants and instructions to given Writer in a human readable form.

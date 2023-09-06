@@ -5,7 +5,7 @@ ex := import("ex")
 sourceT := `
 param (v0)
 
-for {
+for i := 0; i < 5; i++ {
 	v0[0] ++
 
 	pl("(thread) v0=%v", v0[0])
@@ -19,17 +19,15 @@ return
 
 c1 := ex.compile(sourceT)
 
-plo(c1)
-
 a := [5]
 
 ex.goRunCompiled(c1, a)
 
-for {
+for i := 0; i < 5; i++ {
 	a[0] += 10
 
 	pl("(main) a=%v", a[0])
 
-	sleep(1.0)
+	sleep(1.3)
 }
 

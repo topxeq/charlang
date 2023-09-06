@@ -159,7 +159,7 @@ func NewCompiler(file *parser.SourceFile, opts CompilerOptions) *Compiler {
 }
 
 // Compile compiles given script to Bytecode.
-func Compile(script []byte, opts CompilerOptions) (*Bytecode, error) {
+func Compile(script []byte, opts *CompilerOptions) (*Bytecode, error) {
 	fileSet := parser.NewFileSet()
 	moduleName := opts.ModulePath
 
@@ -179,7 +179,7 @@ func Compile(script []byte, opts CompilerOptions) (*Bytecode, error) {
 		return nil, err
 	}
 
-	compiler := NewCompiler(srcFile, opts)
+	compiler := NewCompiler(srcFile, *opts)
 	compiler.SetGlobalSymbolsIndex()
 
 	if opts.OptimizeConst || opts.OptimizeExpr {
@@ -197,6 +197,9 @@ func Compile(script []byte, opts CompilerOptions) (*Bytecode, error) {
 	if bc.Main.NumLocals > 256 {
 		return nil, ErrSymbolLimit
 	}
+
+	bc.CompilerOptionsM = opts
+
 	return bc, nil
 }
 

@@ -28,7 +28,13 @@ const (
 	BuiltinAppend BuiltinType = iota
 
 	// char add start
+	BuiltinSleep
+	BuiltinExit
 	BuiltinSystemCmd
+	BuiltinIsErrX
+	BuiltinToJSON
+	BuiltinFromJSON
+	BuiltinPlo
 	BuiltinGetParam
 	BuiltinGetSwitch
 	BuiltinIfSwitchExists
@@ -110,14 +116,30 @@ var BuiltinsMap = map[string]BuiltinType{
 	"typeCode": BuiltinTypeCode,
 	// "typeName": BuiltinTypeName,
 
+	// control related
+	"exit": BuiltinExit,
+
 	// print related
 	"pl":  BuiltinPl,
 	"pln": BuiltinPln,
+	"plo": BuiltinPlo,
+
+	// error related
+	"isErrX": BuiltinIsErrX,
+
+	// encode/decode related
+	"toJSON":   BuiltinToJSON,
+	"toJson":   BuiltinToJSON,
+	"fromJSON": BuiltinFromJSON,
+	"fromJson": BuiltinFromJSON,
 
 	// command-line related
 	"ifSwitchExists": BuiltinIfSwitchExists,
 	"getSwitch":      BuiltinGetSwitch,
 	"getParam":       BuiltinGetParam,
+
+	// thread related
+	"sleep": BuiltinSleep,
 
 	// os/system related
 	"systemCmd": BuiltinSystemCmd,
@@ -191,19 +213,49 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
 	// char add start
+	BuiltinExit: &BuiltinFunction{
+		Name:  "exit", // usage: exit() or exit(1)
+		Value: builtinExitFunc,
+	},
+	BuiltinSleep: &BuiltinFunction{
+		Name:  "sleep", // usage: sleep(1.2) sleep for 1.2 seconds
+		Value: builtinSleepFunc,
+	},
+	BuiltinIsErrX: &BuiltinFunction{
+		Name:    "isErrX", // usage: isErrX(err1), check if err1 is error or error string(which starts with TXERROR:)
+		Value:   CallExAdapter(builtinIsErrXFunc),
+		ValueEx: builtinIsErrXFunc,
+	},
+	BuiltinToJSON: &BuiltinFunction{
+		Name:    "toJSON",
+		Value:   CallExAdapter(builtinToJSONFunc),
+		ValueEx: builtinToJSONFunc,
+	},
+	BuiltinFromJSON: &BuiltinFunction{
+		Name:    "fromJSON",
+		Value:   CallExAdapter(builtinFromJSONFunc),
+		ValueEx: builtinFromJSONFunc,
+	},
+	BuiltinPlo: &BuiltinFunction{
+		Name: "plo",
+		Value: func(args ...Object) (Object, error) {
+			return fnAVAR(tk.Plo)(NewCall(nil, args))
+		},
+		ValueEx: fnAVAR(tk.Plo),
+	},
 	BuiltinIfSwitchExists: &BuiltinFunction{
 		Name:    "ifSwitchExists", // usage: if ifSwitchExists(argsG, "-verbose") {...}
-		Value:   callExAdapter(builtinIfSwitchExistsFunc),
+		Value:   CallExAdapter(builtinIfSwitchExistsFunc),
 		ValueEx: builtinIfSwitchExistsFunc,
 	},
 	BuiltinGetSwitch: &BuiltinFunction{
 		Name:    "getSwitch",
-		Value:   callExAdapter(builtinGetSwitchFunc),
+		Value:   CallExAdapter(builtinGetSwitchFunc),
 		ValueEx: builtinGetSwitchFunc,
 	},
 	BuiltinGetParam: &BuiltinFunction{
 		Name:    "getParam", // usage: getParam(argsG, 1, "default")
-		Value:   callExAdapter(builtinGetParamFunc),
+		Value:   CallExAdapter(builtinGetParamFunc),
 		ValueEx: builtinGetParamFunc,
 	},
 	BuiltinPln: &BuiltinFunction{
@@ -215,22 +267,22 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinTypeCode: &BuiltinFunction{
 		Name:    "typeCode",
-		Value:   callExAdapter(builtinTypeCodeFunc),
+		Value:   CallExAdapter(builtinTypeCodeFunc),
 		ValueEx: builtinTypeCodeFunc,
 	},
 	// BuiltinTypeName: &BuiltinFunction{
 	// 	Name:    "typeName",
-	// 	Value:   callExAdapter(builtinTypeNameFunc),
+	// 	Value:   CallExAdapter(builtinTypeNameFunc),
 	// 	ValueEx: builtinTypeNameFunc,
 	// },
 	BuiltinPl: &BuiltinFunction{
 		Name:    "pl", // usage: the same as printf, but with a line-end(\n) at the end
-		Value:   callExAdapter(builtinPlFunc),
+		Value:   CallExAdapter(builtinPlFunc),
 		ValueEx: builtinPlFunc,
 	},
 	BuiltinPass: &BuiltinFunction{
 		Name:    "pass",
-		Value:   callExAdapter(builtinPassFunc),
+		Value:   CallExAdapter(builtinPassFunc),
 		ValueEx: builtinPassFunc,
 	},
 	BuiltinGetSeq: &BuiltinFunction{
@@ -242,17 +294,17 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinTestByText: &BuiltinFunction{
 		Name:    "testByText",
-		Value:   callExAdapter(builtinTestByTextFunc),
+		Value:   CallExAdapter(builtinTestByTextFunc),
 		ValueEx: builtinTestByTextFunc,
 	},
 	BuiltinTestByStartsWith: &BuiltinFunction{
 		Name:    "testByStartsWith",
-		Value:   callExAdapter(builtinTestByStartsWithFunc),
+		Value:   CallExAdapter(builtinTestByStartsWithFunc),
 		ValueEx: builtinTestByStartsWithFunc,
 	},
 	BuiltinTestByReg: &BuiltinFunction{
 		Name:    "testByReg",
-		Value:   callExAdapter(builtinTestByRegFunc),
+		Value:   CallExAdapter(builtinTestByRegFunc),
 		ValueEx: builtinTestByRegFunc,
 	},
 	BuiltinSystemCmd: &BuiltinFunction{
@@ -265,7 +317,7 @@ var BuiltinObjects = [...]Object{
 	// char add end
 	BuiltinAppend: &BuiltinFunction{
 		Name:    "append",
-		Value:   callExAdapter(builtinAppendFunc),
+		Value:   CallExAdapter(builtinAppendFunc),
 		ValueEx: builtinAppendFunc,
 	},
 	BuiltinDelete: &BuiltinFunction{
@@ -350,7 +402,7 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinBytes: &BuiltinFunction{
 		Name:    "bytes",
-		Value:   callExAdapter(builtinBytesFunc),
+		Value:   CallExAdapter(builtinBytesFunc),
 		ValueEx: builtinBytesFunc,
 	},
 	BuiltinChars: &BuiltinFunction{
@@ -360,27 +412,27 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinPrintf: &BuiltinFunction{
 		Name:    "printf",
-		Value:   callExAdapter(builtinPrintfFunc),
+		Value:   CallExAdapter(builtinPrintfFunc),
 		ValueEx: builtinPrintfFunc,
 	},
 	BuiltinPrintln: &BuiltinFunction{
 		Name:    "println",
-		Value:   callExAdapter(builtinPrintlnFunc),
+		Value:   CallExAdapter(builtinPrintlnFunc),
 		ValueEx: builtinPrintlnFunc,
 	},
 	BuiltinSprintf: &BuiltinFunction{
 		Name:    "sprintf",
-		Value:   callExAdapter(builtinSprintfFunc),
+		Value:   CallExAdapter(builtinSprintfFunc),
 		ValueEx: builtinSprintfFunc,
 	},
 	BuiltinGlobals: &BuiltinFunction{
 		Name:    "globals",
-		Value:   callExAdapter(builtinGlobalsFunc),
+		Value:   CallExAdapter(builtinGlobalsFunc),
 		ValueEx: builtinGlobalsFunc,
 	},
 	BuiltinIsError: &BuiltinFunction{
 		Name:    "isError",
-		Value:   callExAdapter(builtinIsErrorFunc),
+		Value:   CallExAdapter(builtinIsErrorFunc),
 		ValueEx: builtinIsErrorFunc,
 	},
 	BuiltinIsInt: &BuiltinFunction{
@@ -1014,7 +1066,7 @@ func builtinIsCallableFunc(arg Object) Object { return Bool(arg.CanCall()) }
 
 func builtinIsIterableFunc(arg Object) Object { return Bool(arg.CanIterate()) }
 
-func callExAdapter(fn CallableExFunc) CallableFunc {
+func CallExAdapter(fn CallableExFunc) CallableFunc {
 	return func(args ...Object) (Object, error) {
 		return fn(Call{args: args})
 	}
@@ -1372,6 +1424,103 @@ func builtinIfSwitchExistsFunc(c Call) (Object, error) {
 
 	return Bool(tk.IfSwitchExistsWhole(listT, argsA[1].String())), nil
 
+}
+
+func builtinToJSONFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	cObjT := ConvertFromObject(args[0])
+
+	rsT := tk.ToJSONX(cObjT, ObjectsToS(args[1:])...)
+
+	return ToStringObject(rsT), nil
+}
+
+func builtinFromJSONFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	jsonTextT := args[0].String()
+
+	jObjT := tk.FromJSONWithDefault(jsonTextT, nil)
+
+	cObjT := ConvertToObject(jObjT)
+
+	return cObjT, nil
+}
+
+func builtinIsErrXFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	switch nv := args[0].(type) {
+	case *Error, *RuntimeError:
+		return True, nil
+	case String:
+		if strings.HasPrefix(nv.Value, "TXERROR:") {
+			return True, nil
+		}
+	case *Any:
+		_, ok := nv.Value.(error)
+
+		if ok {
+			return True, nil
+		}
+
+		s1, ok := nv.Value.(string)
+
+		if ok {
+			if strings.HasPrefix(s1, "TXERROR:") {
+				return True, nil
+			}
+
+			return True, nil
+		}
+
+		return False, nil
+	}
+
+	return False, nil
+}
+
+func builtinSleepFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	v := args[0].String()
+
+	f := tk.StrToFloat64WithDefaultValue(v, 0)
+
+	if f <= 0 {
+		return Undefined, NewCommonError("invalid time")
+	}
+
+	tk.Sleep(f)
+
+	return Undefined, nil
+}
+
+func builtinExitFunc(args ...Object) (Object, error) {
+	resultT := 0
+
+	if len(args) > 0 {
+		resultT = tk.StrToIntWithDefaultValue(args[0].String(), 0)
+	}
+
+	os.Exit(resultT)
+
+	return Undefined, nil
 }
 
 // char add end
