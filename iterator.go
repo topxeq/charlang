@@ -98,7 +98,7 @@ func (it *MapIterator) Next() bool {
 
 // Key implements Iterator interface.
 func (it *MapIterator) Key() Object {
-	return String(it.keys[it.i-1])
+	return ToStringObject(it.keys[it.i-1])
 }
 
 // Value implements Iterator interface.
@@ -149,11 +149,11 @@ var _ Iterator = (*StringIterator)(nil)
 
 // Next implements Iterator interface.
 func (it *StringIterator) Next() bool {
-	if it.i > len(it.V)-1 {
+	if it.i > len(it.V.Value)-1 {
 		return false
 	}
 
-	r, s := utf8.DecodeRuneInString(string(it.V)[it.i:])
+	r, s := utf8.DecodeRuneInString(it.V.Value[it.i:])
 	if r == utf8.RuneError || s == 0 {
 		return false
 	}

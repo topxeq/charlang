@@ -130,6 +130,6 @@ func (m *BuiltinModule) Import(moduleName string) (interface{}, error) {
 	}
 
 	cp := Map(m.Attrs).Copy()
-	cp.(Map)[AttrModuleName] = String(moduleName)
+	cp.(Map)[AttrModuleName] = ToStringObject(moduleName)
 	return cp, nil
 }

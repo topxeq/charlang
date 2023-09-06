@@ -259,9 +259,9 @@ func (so *SimpleOptimizer) slowEvalExpr(expr parser.Expr) (parser.Expr, bool) {
 
 	switch v := obj.(type) {
 	case String:
-		l := strconv.Quote(string(v))
+		l := strconv.Quote(v.Value)
 		expr = &parser.StringLit{
-			Value:    string(v),
+			Value:    v.Value,
 			Literal:  l,
 			ValuePos: expr.Pos(),
 		}
@@ -909,7 +909,7 @@ func isLitFalsy(expr parser.Expr) (bool, bool) {
 	case *parser.FloatLit:
 		return Float(v.Value).IsFalsy(), true
 	case *parser.StringLit:
-		return String(v.Value).IsFalsy(), true
+		return ToStringObject(v.Value).IsFalsy(), true
 	case *parser.CharLit:
 		return Char(v.Value).IsFalsy(), true
 	case *parser.UndefinedLit:

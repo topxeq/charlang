@@ -29,7 +29,7 @@ func ToObject(v interface{}) (ret Object, err error) {
 	case nil:
 		ret = Undefined
 	case string:
-		ret = String(v)
+		ret = ToStringObject(v)
 	case int64:
 		ret = Int(v)
 	case int:
@@ -122,7 +122,7 @@ func ToObjectAlt(v interface{}) (ret Object, err error) {
 	case nil:
 		ret = Undefined
 	case string:
-		ret = String(v)
+		ret = ToStringObject(v)
 	case bool:
 		if v {
 			ret = True
@@ -221,7 +221,7 @@ func ToInterface(o Object) (ret interface{}) {
 	case Int:
 		ret = int64(o)
 	case String:
-		ret = string(o)
+		ret = o.Value
 	case Bytes:
 		ret = []byte(o)
 	case Array:
@@ -274,7 +274,7 @@ func ToString(o Object) (v String, ok bool) {
 	}
 	vv, ok := ToGoString(o)
 	if ok {
-		v = String(vv)
+		v = ToStringObject(vv)
 	}
 	return
 }
@@ -382,8 +382,8 @@ func ToGoByteSlice(o Object) (v []byte, ok bool) {
 	case Bytes:
 		v, ok = o, true
 	case String:
-		v, ok = make([]byte, len(o)), true
-		copy(v, o)
+		v, ok = make([]byte, len(o.Value)), true
+		copy(v, o.Value)
 	}
 	return
 }
@@ -405,7 +405,7 @@ func ToGoInt(o Object) (v int, ok bool) {
 			v = 1
 		}
 	case String:
-		if vv, err := strconv.ParseInt(string(o), 0, 0); err == nil {
+		if vv, err := strconv.ParseInt(o.Value, 0, 0); err == nil {
 			v = int(vv)
 			ok = true
 		}
@@ -431,7 +431,7 @@ func ToGoInt64(o Object) (v int64, ok bool) {
 			v = 1
 		}
 	case String:
-		if vv, err := strconv.ParseInt(string(o), 0, 64); err == nil {
+		if vv, err := strconv.ParseInt(o.Value, 0, 64); err == nil {
 			v = vv
 			ok = true
 		}
@@ -457,7 +457,7 @@ func ToGoUint64(o Object) (v uint64, ok bool) {
 			v = 1
 		}
 	case String:
-		if vv, err := strconv.ParseUint(string(o), 0, 64); err == nil {
+		if vv, err := strconv.ParseUint(o.Value, 0, 64); err == nil {
 			v = vv
 			ok = true
 		}
@@ -483,7 +483,7 @@ func ToGoFloat64(o Object) (v float64, ok bool) {
 			v = 1
 		}
 	case String:
-		if vv, err := strconv.ParseFloat(string(o), 64); err == nil {
+		if vv, err := strconv.ParseFloat(o.Value, 64); err == nil {
 			v = vv
 			ok = true
 		}
@@ -504,7 +504,7 @@ func ToGoRune(o Object) (v rune, ok bool) {
 		v, ok = rune(o), true
 	case String:
 		ok = true
-		v, _ = utf8.DecodeRuneInString(string(o))
+		v, _ = utf8.DecodeRuneInString(o.Value)
 	case Bool:
 		ok = true
 		if o {

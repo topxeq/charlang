@@ -8,10 +8,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/topxeq/charlang/internal/compat"
 	"github.com/topxeq/charlang/parser"
 	"github.com/topxeq/charlang/token"
+	"github.com/topxeq/tk"
 )
 
 const (
@@ -189,6 +191,16 @@ func (c *Call) shift() (Object, bool) {
 }
 
 func (c *Call) callArgs() []Object {
+	if len(c.args) == 0 {
+		return c.vargs
+	}
+	args := make([]Object, 0, c.Len())
+	args = append(args, c.args...)
+	args = append(args, c.vargs...)
+	return args
+}
+
+func (c *Call) GetArgs() []Object {
 	if len(c.args) == 0 {
 		return c.vargs
 	}
@@ -491,9 +503,12 @@ func (o Bool) Format(s fmt.State, verb rune) {
 }
 
 // String represents string values and implements Object interface.
-type String string
+type String struct {
+	ObjectImpl
+	Value string
+}
 
-var _ LengthGetter = String("")
+var _ LengthGetter = ToStringObject("")
 
 func (String) TypeCode() int {
 	return 105
@@ -505,7 +520,7 @@ func (String) TypeName() string {
 }
 
 func (o String) String() string {
-	return string(o)
+	return o.Value
 }
 
 // CanIterate implements Object interface.
@@ -534,8 +549,8 @@ func (o String) IndexGet(index Object) (Object, error) {
 	default:
 		return nil, NewIndexTypeError("int|uint|char", index.TypeName())
 	}
-	if idx >= 0 && idx < len(o) {
-		return Int(o[idx]), nil
+	if idx >= 0 && idx < len(o.Value) {
+		return Int(o.Value[idx]), nil
 	}
 	return nil, ErrIndexOutOfBounds
 }
@@ -543,16 +558,16 @@ func (o String) IndexGet(index Object) (Object, error) {
 // Equal implements Object interface.
 func (o String) Equal(right Object) bool {
 	if v, ok := right.(String); ok {
-		return o == v
+		return o.Value == v.Value
 	}
 	if v, ok := right.(Bytes); ok {
-		return string(o) == string(v)
+		return o.Value == string(v)
 	}
 	return false
 }
 
 // IsFalsy implements Object interface.
-func (o String) IsFalsy() bool { return len(o) == 0 }
+func (o String) IsFalsy() bool { return len(o.Value) == 0 }
 
 // CanCall implements Object interface.
 func (o String) CanCall() bool { return false }
@@ -568,31 +583,31 @@ func (o String) BinaryOp(tok token.Token, right Object) (Object, error) {
 	case String:
 		switch tok {
 		case token.Add:
-			return o + v, nil
+			return String{Value: o.Value + v.Value}, nil
 		case token.Less:
-			return Bool(o < v), nil
+			return Bool(o.Value < v.Value), nil
 		case token.LessEq:
-			return Bool(o <= v), nil
+			return Bool(o.Value <= v.Value), nil
 		case token.Greater:
-			return Bool(o > v), nil
+			return Bool(o.Value > v.Value), nil
 		case token.GreaterEq:
-			return Bool(o >= v), nil
+			return Bool(o.Value >= v.Value), nil
 		}
 	case Bytes:
 		switch tok {
 		case token.Add:
 			var sb strings.Builder
-			sb.WriteString(string(o))
+			sb.WriteString(string(o.Value))
 			sb.Write(v)
-			return String(sb.String()), nil
+			return ToStringObject(sb.String()), nil
 		case token.Less:
-			return Bool(string(o) < string(v)), nil
+			return Bool(o.Value < string(v)), nil
 		case token.LessEq:
-			return Bool(string(o) <= string(v)), nil
+			return Bool(o.Value <= string(v)), nil
 		case token.Greater:
-			return Bool(string(o) > string(v)), nil
+			return Bool(o.Value > string(v)), nil
 		case token.GreaterEq:
-			return Bool(string(o) >= string(v)), nil
+			return Bool(o.Value >= string(v)), nil
 		}
 	case *UndefinedType:
 		switch tok {
@@ -604,7 +619,7 @@ func (o String) BinaryOp(tok token.Token, right Object) (Object, error) {
 	}
 
 	if tok == token.Add {
-		return o + String(right.String()), nil
+		return String{Value: o.Value + right.String()}, nil
 	}
 
 	return nil, NewOperandTypeError(
@@ -615,13 +630,13 @@ func (o String) BinaryOp(tok token.Token, right Object) (Object, error) {
 
 // Len implements LengthGetter interface.
 func (o String) Len() int {
-	return len(o)
+	return len(o.Value)
 }
 
 // Format implements fmt.Formatter interface.
 func (o String) Format(s fmt.State, verb rune) {
 	format := compat.FmtFormatString(s, verb)
-	fmt.Fprintf(s, format, string(o))
+	fmt.Fprintf(s, format, o.Value)
 }
 
 func ToStringObject(argA interface{}) String {
@@ -763,7 +778,7 @@ func (o Bytes) Equal(right Object) bool {
 	}
 
 	if v, ok := right.(String); ok {
-		return string(o) == string(v)
+		return string(o) == v.Value
 	}
 	return false
 }
@@ -800,15 +815,15 @@ func (o Bytes) BinaryOp(tok token.Token, right Object) (Object, error) {
 	case String:
 		switch tok {
 		case token.Add:
-			return append(o, v...), nil
+			return append(o, v.Value...), nil
 		case token.Less:
-			return Bool(string(o) < string(v)), nil
+			return Bool(string(o) < v.Value), nil
 		case token.LessEq:
-			return Bool(string(o) <= string(v)), nil
+			return Bool(string(o) <= v.Value), nil
 		case token.Greater:
-			return Bool(string(o) > string(v)), nil
+			return Bool(string(o) > v.Value), nil
 		case token.GreaterEq:
-			return Bool(string(o) >= string(v)), nil
+			return Bool(string(o) >= v.Value), nil
 		}
 	case *UndefinedType:
 		switch tok {
@@ -1542,11 +1557,11 @@ func (o *Error) IsFalsy() bool { return true }
 func (o *Error) IndexGet(index Object) (Object, error) {
 	s := index.String()
 	if s == "Name" {
-		return String(o.Name), nil
+		return ToStringObject(o.Name), nil
 	}
 
 	if s == "Message" {
-		return String(o.Message), nil
+		return ToStringObject(o.Message), nil
 	}
 
 	if s == "New" {

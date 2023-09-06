@@ -576,10 +576,10 @@ func (o Char) BinaryOp(tok token.Token, right Object) (Object, error) {
 	case String:
 		if tok == token.Add {
 			var sb strings.Builder
-			sb.Grow(len(v) + 4)
+			sb.Grow(len(v.Value) + 4)
 			sb.WriteRune(rune(o))
-			sb.WriteString(string(v))
-			return String(sb.String()), nil
+			sb.WriteString(v.Value)
+			return ToStringObject(sb.String()), nil
 		}
 	case *UndefinedType:
 		switch tok {

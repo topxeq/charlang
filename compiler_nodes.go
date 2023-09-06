@@ -251,7 +251,7 @@ func (c *Compiler) compileDeclGlobal(node *parser.GenDecl) error {
 			return c.error(node, err)
 		}
 
-		idx := c.addConstant(String(spec.Ident.Name))
+		idx := c.addConstant(ToStringObject(spec.Ident.Name))
 		symbol.Index = idx
 	}
 	return nil
@@ -1186,7 +1186,7 @@ func (c *Compiler) compileArrayLit(node *parser.ArrayLit) error {
 func (c *Compiler) compileMapLit(node *parser.MapLit) error {
 	for _, elt := range node.Elements {
 		// key
-		c.emit(node, OpConstant, c.addConstant(String(elt.Key)))
+		c.emit(node, OpConstant, c.addConstant(ToStringObject(elt.Key)))
 		// value
 		if err := c.Compile(elt.Value); err != nil {
 			return err

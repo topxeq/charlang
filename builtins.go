@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/topxeq/charlang/token"
+	"github.com/topxeq/tk"
 )
 
 var (
@@ -25,6 +26,17 @@ type BuiltinType byte
 // Builtins
 const (
 	BuiltinAppend BuiltinType = iota
+
+	// char add start
+	BuiltinSystemCmd
+	BuiltinTestByText
+	BuiltinTestByStartsWith
+	BuiltinTestByReg
+	BuiltinGetSeq
+	BuiltinPass
+
+	// char add end
+
 	BuiltinDelete
 	BuiltinCopy
 	BuiltinRepeat
@@ -80,6 +92,22 @@ const (
 
 // BuiltinsMap is list of builtin types, exported for REPL.
 var BuiltinsMap = map[string]BuiltinType{
+	// char add start
+
+	// internal & debug related
+	"testByText":       BuiltinTestByText,
+	"testByStartsWith": BuiltinTestByStartsWith,
+	"testByReg":        BuiltinTestByReg,
+
+	// os/system related
+	"systemCmd": BuiltinSystemCmd,
+
+	// misc related
+	"getSeq": BuiltinGetSeq,
+	"pass":   BuiltinPass,
+
+	// char add end
+
 	"append":      BuiltinAppend,
 	"delete":      BuiltinDelete,
 	"copy":        BuiltinCopy,
@@ -142,6 +170,42 @@ var BuiltinObjects = [...]Object{
 		Value:   funcPiOROe(builtinMakeArrayFunc),
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
+	// char add start
+	BuiltinPass: &BuiltinFunction{
+		Name:    "pass",
+		Value:   callExAdapter(builtinPassFunc),
+		ValueEx: builtinPassFunc,
+	},
+	BuiltinGetSeq: &BuiltinFunction{
+		Name: "getSeq",
+		Value: func(args ...Object) (Object, error) {
+			return fnARI(tk.GetSeq)(NewCall(nil, args))
+		},
+		ValueEx: fnARI(tk.GetSeq),
+	},
+	BuiltinTestByText: &BuiltinFunction{
+		Name:    "testByText",
+		Value:   callExAdapter(builtinTestByTextFunc),
+		ValueEx: builtinTestByTextFunc,
+	},
+	BuiltinTestByStartsWith: &BuiltinFunction{
+		Name:    "testByStartsWith",
+		Value:   callExAdapter(builtinTestByStartsWithFunc),
+		ValueEx: builtinTestByStartsWithFunc,
+	},
+	BuiltinTestByReg: &BuiltinFunction{
+		Name:    "testByReg",
+		Value:   callExAdapter(builtinTestByRegFunc),
+		ValueEx: builtinTestByRegFunc,
+	},
+	BuiltinSystemCmd: &BuiltinFunction{
+		Name: "systemCmd",
+		Value: func(args ...Object) (Object, error) {
+			return fnASVSRS(tk.SystemCmd)(NewCall(nil, args))
+		},
+		ValueEx: fnASVSRS(tk.SystemCmd),
+	},
+	// char add end
 	BuiltinAppend: &BuiltinFunction{
 		Name:    "append",
 		Value:   callExAdapter(builtinAppendFunc),
@@ -422,7 +486,7 @@ func builtinAppendFunc(c Call) (Object, error) {
 
 func builtinDeleteFunc(arg Object, key string) (err error) {
 	if v, ok := arg.(IndexDeleter); ok {
-		err = v.IndexDelete(String(key))
+		err = v.IndexDelete(ToStringObject(key))
 	} else {
 		err = NewArgumentTypeError(
 			"1st",
@@ -457,7 +521,7 @@ func builtinRepeatFunc(arg Object, count int) (ret Object, err error) {
 		}
 		ret = out
 	case String:
-		ret = String(strings.Repeat(string(v), count))
+		ret = ToStringObject(strings.Repeat(v.String(), count))
 	case Bytes:
 		ret = Bytes(bytes.Repeat(v, count))
 	default:
@@ -485,7 +549,7 @@ func builtinContainsFunc(arg0, arg1 Object) (Object, error) {
 			}
 		}
 	case String:
-		ok = strings.Contains(string(obj), arg1.String())
+		ok = strings.Contains(obj.String(), arg1.String())
 	case Bytes:
 		switch v := arg1.(type) {
 		case Int:
@@ -495,7 +559,7 @@ func builtinContainsFunc(arg0, arg1 Object) (Object, error) {
 		case Char:
 			ok = bytes.Contains(obj, []byte{byte(v)})
 		case String:
-			ok = bytes.Contains(obj, []byte(v))
+			ok = bytes.Contains(obj, []byte(v.String()))
 		case Bytes:
 			ok = bytes.Contains(obj, v)
 		default:
@@ -551,11 +615,11 @@ func builtinSortFunc(arg Object) (ret Object, err error) {
 		})
 		ret = arg
 	case String:
-		s := []rune(obj)
+		s := []rune(obj.String())
 		sort.Slice(s, func(i, j int) bool {
 			return s[i] < s[j]
 		})
-		ret = String(s)
+		ret = ToStringObject(s)
 	case Bytes:
 		sort.Slice(obj, func(i, j int) bool {
 			return obj[i] < obj[j]
@@ -595,11 +659,11 @@ func builtinSortReverseFunc(arg Object) (Object, error) {
 		}
 		return obj, nil
 	case String:
-		s := []rune(obj)
+		s := []rune(obj.String())
 		sort.Slice(s, func(i, j int) bool {
 			return s[j] < s[i]
 		})
-		return String(s), nil
+		return ToStringObject(s), nil
 	case Bytes:
 		sort.Slice(obj, func(i, j int) bool {
 			return obj[j] < obj[i]
@@ -620,7 +684,7 @@ func builtinErrorFunc(arg Object) Object {
 	return &Error{Name: "error", Message: arg.String()}
 }
 
-func builtinTypeNameFunc(arg Object) Object { return String(arg.TypeName()) }
+func builtinTypeNameFunc(arg Object) Object { return ToStringObject(arg.TypeName()) }
 
 func builtinBoolFunc(arg Object) Object { return Bool(!arg.IsFalsy()) }
 
@@ -645,7 +709,7 @@ func builtinCharFunc(arg Object) (Object, error) {
 	)
 }
 
-func builtinStringFunc(arg Object) Object { return String(arg.String()) }
+func builtinStringFunc(arg Object) Object { return ToStringObject(arg.String()) }
 
 func builtinBytesFunc(c Call) (Object, error) {
 	size := c.Len()
@@ -684,9 +748,9 @@ func builtinBytesFunc(c Call) (Object, error) {
 func builtinCharsFunc(arg Object) (ret Object, err error) {
 	switch obj := arg.(type) {
 	case String:
-		s := string(obj)
+		s := obj.Value
 		ret = make(Array, 0, utf8.RuneCountInString(s))
-		sz := len(obj)
+		sz := len(obj.Value)
 		i := 0
 
 		for i < sz {
@@ -739,6 +803,26 @@ func builtinPrintfFunc(c Call) (ret Object, err error) {
 	return
 }
 
+// char add start
+func builtinSystemCmdFunc(c Call) (ret Object, err error) {
+	ret = Undefined
+	switch size := c.Len(); size {
+	case 0:
+		_, err = fmt.Fprintln(PrintWriter)
+	case 1:
+		_, err = fmt.Fprintln(PrintWriter, c.Get(0))
+	default:
+		vargs := make([]interface{}, 0, size)
+		for i := 0; i < size; i++ {
+			vargs = append(vargs, c.Get(i))
+		}
+		_, err = fmt.Fprintln(PrintWriter, vargs...)
+	}
+	return
+}
+
+// char add end
+
 func builtinPrintlnFunc(c Call) (ret Object, err error) {
 	ret = Undefined
 	switch size := c.Len(); size {
@@ -762,14 +846,14 @@ func builtinSprintfFunc(c Call) (ret Object, err error) {
 	case 0:
 		err = ErrWrongNumArguments.NewError("want>=1 got=0")
 	case 1:
-		ret = String(c.Get(0).String())
+		ret = ToStringObject(c.Get(0).String())
 	default:
 		format, _ := c.shift()
 		vargs := make([]interface{}, 0, size-1)
 		for i := 0; i < size-1; i++ {
 			vargs = append(vargs, c.Get(i))
 		}
-		ret = String(fmt.Sprintf(format.String(), vargs...))
+		ret = ToStringObject(fmt.Sprintf(format.String(), vargs...))
 	}
 	return
 }
@@ -878,3 +962,203 @@ func callExAdapter(fn CallableExFunc) CallableFunc {
 		return fn(Call{args: args})
 	}
 }
+
+// char add start
+func toArgsA(offset int, c Call) []interface{} {
+	size := c.Len()
+	vargs := make([]interface{}, 0, size-offset)
+	for i := offset; i < size; i++ {
+		vargs = append(vargs, c.Get(i))
+	}
+	return vargs
+}
+
+func toArgsS(offset int, c Call) []string {
+	size := c.Len()
+	vargs := make([]string, 0, size-offset)
+	for i := offset; i < size; i++ {
+		vargs = append(vargs, c.Get(i).String())
+	}
+	return vargs
+}
+
+// like tk.GetOSName
+func fnARS(fn func() string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		rs := fn()
+		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.GetSeq
+func fnARI(fn func() int) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		rs := fn()
+		return ToIntObject(rs), nil
+	}
+}
+
+// like tk.SystemCmd
+func fnASVSRS(fn func(string, ...string) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 1 {
+			return Undefined, ErrWrongNumArguments.NewError(
+				"want>=1 got=" + strconv.Itoa(c.Len()))
+		}
+		vargs := toArgsS(1, c)
+		rs := fn(c.Get(0).String(), vargs...)
+		return ToStringObject(rs), nil
+	}
+}
+
+// like fmt.printf
+func fnASVARIE(fn func(string, ...interface{}) (int, error)) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 1 {
+			return Undefined, ErrWrongNumArguments.NewError(
+				"want>=1 got=" + strconv.Itoa(c.Len()))
+		}
+		vargs := toArgsA(1, c)
+		n, err := fn(c.Get(0).String(), vargs...)
+		return Int(n), err
+	}
+}
+
+func builtinTestByTextFunc(c Call) (ret Object, err error) {
+	argsA := c.GetArgs()
+
+	lenT := len(argsA)
+
+	if lenT < 2 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	v1 := argsA[0]
+	v2 := argsA[1]
+
+	var v3 string
+	var v4 string
+
+	if lenT > 3 {
+		v3 = tk.ToStr(argsA[2])
+		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+	} else if lenT > 2 {
+		v3 = tk.ToStr(argsA[2])
+	} else {
+		v3 = tk.ToStr(tk.GetSeq())
+	}
+
+	nv1, ok := v1.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v1): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	nv2, ok := v2.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	if nv1.Value == nv2.Value {
+		tk.Pl("test %v%v passed", v3, v4)
+	} else {
+		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	return nil, nil
+}
+
+func builtinTestByStartsWithFunc(c Call) (Object, error) {
+	argsA := c.GetArgs()
+	lenT := len(argsA)
+
+	if lenT < 2 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	v1 := argsA[0]
+	v2 := argsA[1]
+
+	var v3 string
+	var v4 string
+
+	if lenT > 3 {
+		v3 = tk.ToStr(argsA[2])
+		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+	} else if lenT > 2 {
+		v3 = tk.ToStr(argsA[2])
+	} else {
+		v3 = tk.ToStr(tk.GetSeq())
+	}
+
+	nv1, ok := v1.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v1): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	nv2, ok := v2.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	if strings.HasPrefix(nv1.Value, nv2.Value) {
+		tk.Pl("test %v%v passed", v3, v4)
+	} else {
+		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	return nil, nil
+}
+
+func builtinTestByRegFunc(c Call) (Object, error) {
+	argsA := c.GetArgs()
+	lenT := len(argsA)
+
+	if lenT < 2 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	v1 := argsA[0]
+	v2 := argsA[1]
+
+	var v3 string
+	var v4 string
+
+	if lenT > 3 {
+		v3 = tk.ToStr(argsA[2])
+		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+	} else if lenT > 2 {
+		v3 = tk.ToStr(argsA[2])
+	} else {
+		v3 = tk.ToStr(tk.GetSeq())
+	}
+
+	nv1, ok := v1.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v1): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	nv2, ok := v2.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	if tk.RegMatchX(nv1.Value, nv2.Value) {
+		tk.Pl("test %v%v passed", v3, v4)
+	} else {
+		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	return nil, nil
+}
+
+func builtinPassFunc(c Call) (Object, error) {
+	return Undefined, nil
+}
+
+// char add end

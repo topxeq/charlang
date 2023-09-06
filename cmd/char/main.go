@@ -7,7 +7,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"flag"
 	"fmt"
 	"io"
 	"math/rand"
@@ -18,18 +17,13 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"strconv"
-	"strings"
 	"time"
-
-	"github.com/c-bata/go-prompt"
 
 	"github.com/topxeq/charlang"
 	// ugofmt "github.com/topxeq/charlang/stdlib/fmt"
 	// ugotime "github.com/topxeq/charlang/stdlib/time"
 	// ugostrings "github.com/topxeq/charlang/stdlib/strings"
 	ugoex "github.com/topxeq/charlang/stdlib/ex"
-	"github.com/topxeq/charlang/token"
 	"github.com/topxeq/tk"
 	// _ "github.com/denisenkom/go-mssqldb"
 	// _ "github.com/godror/godror"
@@ -53,7 +47,7 @@ Charlang V` + charlang.VersionG + `
 `
 
 const (
-	title         = "Char"
+	title         = "Charlang"
 	promptPrefix  = ">>> "
 	promptPrefix2 = "... "
 )
@@ -71,483 +65,483 @@ var (
 	initialSuggLen int
 )
 
-var scriptGlobals = &charlang.SyncMap{
-	Map: charlang.Map{
-		"Gosched": &charlang.Function{
-			Name: "Gosched",
-			Value: func(args ...charlang.Object) (charlang.Object, error) {
-				runtime.Gosched()
-				return charlang.Undefined, nil
-			},
-		},
-		"versionG": charlang.ToString(charlang.VersionG),
-		"argsG":    charlang.ConvertToObject(os.Args[1:]),
-		"tk":       charlang.TkFunction,
-		// "tk": &charlang.Function{
-		// 	Name: "Do",
-		// 	Value: func(args ...charlang.Object) (charlang.Object, error) {
-
-		// 		if len(args) < 1 {
-		// 			return charlang.Undefined, charlang.NewCommonError("not enough paramters")
-		// 		}
-
-		// 		if args[0].TypeName() != "string" {
-		// 			return charlang.Undefined, charlang.NewCommonError("invalid type for command")
-		// 		}
-
-		// 		cmdT := args[0].String()
-
-		// 		switch cmdT {
-		// 		case "test":
-		// 			tk.Pl("args: %v", args[1:])
-		// 			return charlang.ConvertToObject("Response!"), nil
-
-		// 		case "getNowTime":
-		// 			return charlang.ConvertToObject(time.Now()), nil
-
-		// 		default:
-		// 			return charlang.Undefined, charlang.NewCommonError("unknown comman")
-		// 		}
-
-		// 		return charlang.Undefined, nil
-		// 	},
-		// },
-	},
-}
-
-var grepl *repl
-
-type repl struct {
-	ctx          context.Context
-	eval         *charlang.Eval
-	lastBytecode *charlang.Bytecode
-	lastResult   charlang.Object
-	multiline    string
-	werr         prompt.ConsoleWriter
-	wout         prompt.ConsoleWriter
-	stdout       io.Writer
-	commands     map[string]func()
-}
-
-func newREPL(ctx context.Context, stdout io.Writer, cw prompt.ConsoleWriter) *repl {
-	moduleMap := charlang.NewModuleMap()
-	// moduleMap.AddBuiltinModule("time", ugotime.Module).
-	// 	AddBuiltinModule("strings", ugostrings.Module).
-	moduleMap.AddBuiltinModule("ex", ugoex.Module)
-
-	opts := charlang.CompilerOptions{
-		ModulePath:        "(repl)",
-		ModuleMap:         moduleMap,
-		SymbolTable:       charlang.NewSymbolTable(),
-		OptimizerMaxCycle: charlang.TraceCompilerOptions.OptimizerMaxCycle,
-		TraceParser:       traceParser,
-		TraceOptimizer:    traceOptimizer,
-		TraceCompiler:     traceCompiler,
-		OptimizeConst:     !noOptimizer,
-		OptimizeExpr:      !noOptimizer,
-	}
-
-	if stdout == nil {
-		stdout = os.Stdout
-	}
-
-	if traceEnabled {
-		opts.Trace = stdout
-	}
-
-	r := &repl{
-		ctx:    ctx,
-		eval:   charlang.NewEval(opts, scriptGlobals),
-		werr:   cw,
-		wout:   cw,
-		stdout: stdout,
-	}
-
-	r.commands = map[string]func(){
-		".bytecode":      r.cmdBytecode,
-		".builtins":      r.cmdBuiltins,
-		".gc":            r.cmdGC,
-		".globals":       r.cmdGlobals,
-		".globals+":      r.cmdGlobalsVerbose,
-		".locals":        r.cmdLocals,
-		".locals+":       r.cmdLocalsVerbose,
-		".return":        r.cmdReturn,
-		".return+":       r.cmdReturnVerbose,
-		".symbols":       r.cmdSymbols,
-		".modules_cache": r.cmdModulesCache,
-		".memory_stats":  r.cmdMemoryStats,
-		".reset":         r.cmdReset,
-		".exit":          func() { os.Exit(0) },
-	}
-	return r
-}
-
-func (r *repl) cmdBytecode() {
-	_, _ = fmt.Fprintf(r.stdout, "%s\n", r.lastBytecode)
-}
-
-func (r *repl) cmdBuiltins() {
-	builtins := make([]string, len(charlang.BuiltinsMap))
-
-	for k, v := range charlang.BuiltinsMap {
-		remarkT := ""
-		if nv, ok := (charlang.BuiltinObjects[v]).(*charlang.BuiltinFunction); ok {
-			remarkT = nv.Remark
-		}
-		builtins[v] = fmt.Sprint(charlang.BuiltinObjects[v].TypeName(), ":", k, remarkT)
-	}
-	_, _ = fmt.Fprintln(r.stdout, strings.Join(builtins, "\n"))
-}
-
-func (*repl) cmdGC() { runtime.GC() }
-
-func (r *repl) cmdGlobals() {
-	_, _ = fmt.Fprintf(r.stdout, "%+v\n", r.eval.Globals)
-}
-
-func (r *repl) cmdGlobalsVerbose() {
-	_, _ = fmt.Fprintf(r.stdout, "%#v\n", r.eval.Globals)
-}
-
-func (r *repl) cmdLocals() {
-	_, _ = fmt.Fprintf(r.stdout, "%+v\n", r.eval.Locals)
-}
-
-func (r *repl) cmdLocalsVerbose() {
-	fmt.Fprintf(r.stdout, "%#v\n", r.eval.Locals)
-}
-
-func (r *repl) cmdReturn() {
-	_, _ = fmt.Fprintf(r.stdout, "%#v\n", r.lastResult)
-}
-
-func (r *repl) cmdReturnVerbose() {
-	if r.lastResult != nil {
-		_, _ = fmt.Fprintf(r.stdout,
-			"GoType:%[1]T, TypeName:%[2]s, Value:%#[1]v\n",
-			r.lastResult, r.lastResult.TypeName())
-	} else {
-		_, _ = fmt.Fprintln(r.stdout, "<nil>")
-	}
-}
-
-func (r *repl) cmdReset() {
-	grepl = newREPL(r.ctx, r.stdout, r.wout)
-}
-
-func (r *repl) cmdSymbols() {
-	_, _ = fmt.Fprintf(r.stdout, "%v\n", r.eval.Opts.SymbolTable.Symbols())
-}
-
-func (r *repl) cmdMemoryStats() {
-	// writeMemStats writes the formatted current, total and OS memory
-	// being used. As well as the number of garbage collection cycles completed.
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-
-	_, _ = fmt.Fprintf(r.stdout, "Go Memory Stats see: "+
-		"https://golang.org/pkg/runtime/#MemStats\n\n")
-	_, _ = fmt.Fprintf(r.stdout, "HeapAlloc = %s", humanFriendlySize(m.HeapAlloc))
-	_, _ = fmt.Fprintf(r.stdout, "\tHeapObjects = %v", m.HeapObjects)
-	_, _ = fmt.Fprintf(r.stdout, "\tSys = %s", humanFriendlySize(m.Sys))
-	_, _ = fmt.Fprintf(r.stdout, "\tNumGC = %v\n", m.NumGC)
-}
-
-func (r *repl) cmdModulesCache() {
-	_, _ = fmt.Fprintf(r.stdout, "%v\n", r.eval.ModulesCache)
-}
-
-func (r *repl) writeErrorStr(msg string) {
-	r.werr.SetColor(prompt.Red, prompt.DefaultColor, true)
-	r.werr.WriteStr(msg)
-	_ = r.werr.Flush()
-}
-
-func (r *repl) writeStr(msg string) {
-	r.wout.SetColor(prompt.Green, prompt.DefaultColor, false)
-	r.wout.WriteStr(msg)
-	_ = r.wout.Flush()
-}
-
-func (r *repl) executor(line string) {
-	switch {
-	case line == "":
-		if !isMultiline {
-			return
-		}
-	case line[0] == '.':
-		if fn, ok := r.commands[line]; ok {
-			fn()
-			return
-		}
-	case strings.HasSuffix(line, "\\"):
-		isMultiline = true
-		r.multiline += line[:len(line)-1] + "\n"
-		return
-	}
-	r.executeScript(line)
-}
-
-func (r *repl) executeScript(line string) {
-	defer func() {
-		isMultiline = false
-		r.multiline = ""
-	}()
-
-	var err error
-	r.lastResult, r.lastBytecode, err = r.eval.Run(r.ctx, []byte(r.multiline+line))
-	if err != nil {
-		r.writeErrorStr(fmt.Sprintf("\n%+v\n", err))
-		return
-	}
-
-	if err != nil {
-		r.writeErrorStr(fmt.Sprintf("VM:\n     %+v\n", err))
-		return
-	}
-
-	switch v := r.lastResult.(type) {
-	case charlang.String:
-		r.writeStr(fmt.Sprintf("%q\n", v.Value))
-	case charlang.Char:
-		r.writeStr(fmt.Sprintf("%q\n", rune(v)))
-	case charlang.Bytes:
-		r.writeStr(fmt.Sprintf("%v\n", []byte(v)))
-	default:
-		r.writeStr(fmt.Sprintf("%v\n", r.lastResult))
-	}
-
-	symbols := r.eval.Opts.SymbolTable.Symbols()
-	suggestions = suggestions[:initialSuggLen]
-
-	for _, s := range symbols {
-		if s.Scope != charlang.ScopeBuiltin {
-			suggestions = append(suggestions,
-				prompt.Suggest{
-					Text:        s.Name,
-					Description: string(s.Scope) + " variable",
-				},
-			)
-		}
-	}
-}
-
-func humanFriendlySize(b uint64) string {
-	if b < 1024 {
-		return fmt.Sprint(strconv.FormatUint(b, 10), " bytes")
-	}
-
-	if b >= 1024 && b < 1024*1024 {
-		return fmt.Sprint(strconv.FormatFloat(
-			float64(b)/1024, 'f', 1, 64), " KiB")
-	}
-
-	return fmt.Sprint(strconv.FormatFloat(
-		float64(b)/1024/1024, 'f', 1, 64), " MiB")
-}
-
-func completer(in prompt.Document) []prompt.Suggest {
-	// w := in.GetWordBeforeCursorWithSpace()
-	return nil
-	// return prompt.FilterHasPrefix(suggestions, w, true)
-}
-
-var suggestions = []prompt.Suggest{
-	// Commands
-	{Text: ".bytecode", Description: "Print Bytecode"},
-	{Text: ".builtins", Description: "Print Builtins"},
-	{Text: ".reset", Description: "Reset"},
-	{Text: ".locals", Description: "Print Locals"},
-	{Text: ".locals+", Description: "Print Locals (verbose)"},
-	{Text: ".globals", Description: "Print Globals"},
-	{Text: ".globals+", Description: "Print Globals (verbose)"},
-	{Text: ".return", Description: "Print Last Return Result"},
-	{Text: ".return+", Description: "Print Last Return Result (verbose)"},
-	{Text: ".modules_cache", Description: "Print Modules Cache"},
-	{Text: ".memory_stats", Description: "Print Memory Stats"},
-	{Text: ".gc", Description: "Run Go GC"},
-	{Text: ".symbols", Description: "Print Symbols"},
-	{Text: ".exit", Description: "Exit"},
-}
-
-func init() {
-	// add builtins to suggestions
-	for k, v := range charlang.BuiltinsMap {
-		remarkT := ""
-		if nv, ok := (charlang.BuiltinObjects[v]).(*charlang.BuiltinFunction); ok {
-			remarkT = nv.Remark
-		}
-
-		suggestions = append(suggestions,
-			prompt.Suggest{
-				Text:        k,
-				Description: "Builtin " + k + remarkT,
-			},
-		)
-	}
-
-	for tok := token.Question + 3; tok.IsKeyword(); tok++ {
-		s := tok.String()
-		suggestions = append(suggestions, prompt.Suggest{
-			Text:        s,
-			Description: "keyword " + s,
-		})
-	}
-	initialSuggLen = len(suggestions)
-}
-
-func newPrompt(
-	executor func(s string),
-	w io.Writer,
-	poptions ...prompt.Option,
-) *prompt.Prompt {
-
-	// _, _ = fmt.Fprintln(w, "Copyright (c) 2020 Ozan Hacıbekiroğlu")
-	// _, _ = fmt.Fprintln(w, "License: MIT")
-	_, _ = fmt.Fprintln(w, "Press Ctrl+D to exit or use .exit command")
-	_, _ = fmt.Fprintln(w, logo)
-
-	options := []prompt.Option{
-		prompt.OptionPrefix(promptPrefix),
-		prompt.OptionHistory([]string{
-			"a := 1",
-			"sum := func(...a) { total:=0; for v in a { total+=v }; return total }",
-			"func(a, b){ return a*b }(2, 3)",
-			`println("")`,
-			`var (x, y, z); if x { y } else { z }`,
-			`var (x, y, z); x ? y : z`,
-			`for i := 0; i < 3; i++ { }`,
-			`m := {}; for k,v in m { printf("%s:%v\n", k, v) }`,
-			`try { } catch err { } finally { }`,
-		}),
-		prompt.OptionLivePrefix(func() (string, bool) {
-			if isMultiline {
-				return promptPrefix2, true
-			}
-			return "", false
-		}),
-		prompt.OptionTitle(title),
-		prompt.OptionPrefixTextColor(prompt.Yellow),
-		prompt.OptionPreviewSuggestionTextColor(prompt.Blue),
-		prompt.OptionSelectedSuggestionBGColor(prompt.LightGray),
-		prompt.OptionSuggestionBGColor(prompt.DarkGray),
-	}
-
-	options = append(options, poptions...)
-	return prompt.New(executor, completer, options...)
-}
-
-func parseFlags(
-	flagset *flag.FlagSet,
-	args []string,
-) (filePath string, timeout time.Duration, err error) {
-
-	var trace string
-	flagset.StringVar(&trace, "dir", "",
-		`directory to scan`)
-	flagset.StringVar(&trace, "trace", "",
-		`Comma separated units: -trace parser,optimizer,compiler`)
-	flagset.BoolVar(&noOptimizer, "no-optimizer", false, `Disable optimization`)
-	flagset.DurationVar(&timeout, "timeout", 0,
-		"Program timeout. It is applicable if a script file is provided and "+
-			"must be non-zero duration")
-
-	flagset.Usage = func() {
-		_, _ = fmt.Fprint(flagset.Output(),
-			"Usage: ugo [flags] [uGO script file]\n\n",
-			"If script file is not provided, REPL terminal application is started\n",
-			"Use - to read from stdin\n\n",
-			"\nFlags:\n",
-		)
-		flagset.PrintDefaults()
-	}
-
-	if err = flagset.Parse(args); err != nil {
-		return
-	}
-
-	if trace != "" {
-		traceEnabled = true
-		trace = "," + trace + ","
-		if strings.Contains(trace, ",parser,") {
-			traceParser = true
-		}
-		if strings.Contains(trace, ",optimizer,") {
-			traceOptimizer = true
-		}
-		if strings.Contains(trace, ",compiler,") {
-			traceCompiler = true
-		}
-	}
-
-	if flagset.NArg() != 1 {
-		return
-	}
-
-	filePath = flagset.Arg(0)
-	if filePath == "-" {
-		return
-	}
-
-	if _, err = os.Stat(filePath); err != nil {
-		return
-	}
-	return
-}
-
-func executeScript(ctx context.Context, scr []byte, traceOut io.Writer) error {
-	opts := charlang.DefaultCompilerOptions
-	if traceEnabled {
-		opts.Trace = traceOut
-		opts.TraceParser = traceParser
-		opts.TraceCompiler = traceCompiler
-		opts.TraceOptimizer = traceOptimizer
-	}
-
-	opts.ModuleMap = nil // charlang.NewModuleMap().
-	// AddBuiltinModule("time", ugotime.Module).
-	// AddBuiltinModule("strings", ugostrings.Module).
-	// AddBuiltinModule("fmt", ugofmt.Module)
-
-	bc, err := charlang.Compile(scr, opts)
-	if err != nil {
-		return err
-	}
-
-	vm := charlang.NewVM(bc)
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		_, err = vm.Run(scriptGlobals)
-	}()
-
-	select {
-	case <-done:
-	case <-ctx.Done():
-		vm.Abort()
-		<-done
-		if err == nil {
-			err = ctx.Err()
-		}
-	}
-	return err
-}
-
-func checkErr(err error, f func()) {
-	if err == nil {
-		return
-	}
-
-	defer os.Exit(1)
-	_, _ = fmt.Fprintf(os.Stderr, "%+v\n", err)
-
-	e := err.(*charlang.RuntimeError)
-	fmt.Printf("Trace: %v\n", e.StackTrace())
-
-	if f != nil {
-		f()
-	}
-}
+// var scriptGlobals = &charlang.SyncMap{
+// 	Map: charlang.Map{
+// 		"Gosched": &charlang.Function{
+// 			Name: "Gosched",
+// 			Value: func(args ...charlang.Object) (charlang.Object, error) {
+// 				runtime.Gosched()
+// 				return charlang.Undefined, nil
+// 			},
+// 		},
+// 		"versionG": charlang.ToString(charlang.VersionG),
+// 		"argsG":    charlang.ConvertToObject(os.Args[1:]),
+// 		"tk":       charlang.TkFunction,
+// 		// "tk": &charlang.Function{
+// 		// 	Name: "Do",
+// 		// 	Value: func(args ...charlang.Object) (charlang.Object, error) {
+
+// 		// 		if len(args) < 1 {
+// 		// 			return charlang.Undefined, charlang.NewCommonError("not enough paramters")
+// 		// 		}
+
+// 		// 		if args[0].TypeName() != "string" {
+// 		// 			return charlang.Undefined, charlang.NewCommonError("invalid type for command")
+// 		// 		}
+
+// 		// 		cmdT := args[0].String()
+
+// 		// 		switch cmdT {
+// 		// 		case "test":
+// 		// 			tk.Pl("args: %v", args[1:])
+// 		// 			return charlang.ConvertToObject("Response!"), nil
+
+// 		// 		case "getNowTime":
+// 		// 			return charlang.ConvertToObject(time.Now()), nil
+
+// 		// 		default:
+// 		// 			return charlang.Undefined, charlang.NewCommonError("unknown comman")
+// 		// 		}
+
+// 		// 		return charlang.Undefined, nil
+// 		// 	},
+// 		// },
+// 	},
+// }
+
+// var grepl *repl
+
+// type repl struct {
+// 	ctx          context.Context
+// 	eval         *charlang.Eval
+// 	lastBytecode *charlang.Bytecode
+// 	lastResult   charlang.Object
+// 	multiline    string
+// 	werr         prompt.ConsoleWriter
+// 	wout         prompt.ConsoleWriter
+// 	stdout       io.Writer
+// 	commands     map[string]func()
+// }
+
+// func newREPL(ctx context.Context, stdout io.Writer, cw prompt.ConsoleWriter) *repl {
+// 	moduleMap := charlang.NewModuleMap()
+// 	// moduleMap.AddBuiltinModule("time", ugotime.Module).
+// 	// 	AddBuiltinModule("strings", ugostrings.Module).
+// 	moduleMap.AddBuiltinModule("ex", ugoex.Module)
+
+// 	opts := charlang.CompilerOptions{
+// 		ModulePath:        "(repl)",
+// 		ModuleMap:         moduleMap,
+// 		SymbolTable:       charlang.NewSymbolTable(),
+// 		OptimizerMaxCycle: charlang.TraceCompilerOptions.OptimizerMaxCycle,
+// 		TraceParser:       traceParser,
+// 		TraceOptimizer:    traceOptimizer,
+// 		TraceCompiler:     traceCompiler,
+// 		OptimizeConst:     !noOptimizer,
+// 		OptimizeExpr:      !noOptimizer,
+// 	}
+
+// 	if stdout == nil {
+// 		stdout = os.Stdout
+// 	}
+
+// 	if traceEnabled {
+// 		opts.Trace = stdout
+// 	}
+
+// 	r := &repl{
+// 		ctx:    ctx,
+// 		eval:   charlang.NewEval(opts, scriptGlobals),
+// 		werr:   cw,
+// 		wout:   cw,
+// 		stdout: stdout,
+// 	}
+
+// 	r.commands = map[string]func(){
+// 		".bytecode":      r.cmdBytecode,
+// 		".builtins":      r.cmdBuiltins,
+// 		".gc":            r.cmdGC,
+// 		".globals":       r.cmdGlobals,
+// 		".globals+":      r.cmdGlobalsVerbose,
+// 		".locals":        r.cmdLocals,
+// 		".locals+":       r.cmdLocalsVerbose,
+// 		".return":        r.cmdReturn,
+// 		".return+":       r.cmdReturnVerbose,
+// 		".symbols":       r.cmdSymbols,
+// 		".modules_cache": r.cmdModulesCache,
+// 		".memory_stats":  r.cmdMemoryStats,
+// 		".reset":         r.cmdReset,
+// 		".exit":          func() { os.Exit(0) },
+// 	}
+// 	return r
+// }
+
+// func (r *repl) cmdBytecode() {
+// 	_, _ = fmt.Fprintf(r.stdout, "%s\n", r.lastBytecode)
+// }
+
+// func (r *repl) cmdBuiltins() {
+// 	builtins := make([]string, len(charlang.BuiltinsMap))
+
+// 	for k, v := range charlang.BuiltinsMap {
+// 		remarkT := ""
+// 		if nv, ok := (charlang.BuiltinObjects[v]).(*charlang.BuiltinFunction); ok {
+// 			remarkT = nv.Remark
+// 		}
+// 		builtins[v] = fmt.Sprint(charlang.BuiltinObjects[v].TypeName(), ":", k, remarkT)
+// 	}
+// 	_, _ = fmt.Fprintln(r.stdout, strings.Join(builtins, "\n"))
+// }
+
+// func (*repl) cmdGC() { runtime.GC() }
+
+// func (r *repl) cmdGlobals() {
+// 	_, _ = fmt.Fprintf(r.stdout, "%+v\n", r.eval.Globals)
+// }
+
+// func (r *repl) cmdGlobalsVerbose() {
+// 	_, _ = fmt.Fprintf(r.stdout, "%#v\n", r.eval.Globals)
+// }
+
+// func (r *repl) cmdLocals() {
+// 	_, _ = fmt.Fprintf(r.stdout, "%+v\n", r.eval.Locals)
+// }
+
+// func (r *repl) cmdLocalsVerbose() {
+// 	fmt.Fprintf(r.stdout, "%#v\n", r.eval.Locals)
+// }
+
+// func (r *repl) cmdReturn() {
+// 	_, _ = fmt.Fprintf(r.stdout, "%#v\n", r.lastResult)
+// }
+
+// func (r *repl) cmdReturnVerbose() {
+// 	if r.lastResult != nil {
+// 		_, _ = fmt.Fprintf(r.stdout,
+// 			"GoType:%[1]T, TypeName:%[2]s, Value:%#[1]v\n",
+// 			r.lastResult, r.lastResult.TypeName())
+// 	} else {
+// 		_, _ = fmt.Fprintln(r.stdout, "<nil>")
+// 	}
+// }
+
+// func (r *repl) cmdReset() {
+// 	grepl = newREPL(r.ctx, r.stdout, r.wout)
+// }
+
+// func (r *repl) cmdSymbols() {
+// 	_, _ = fmt.Fprintf(r.stdout, "%v\n", r.eval.Opts.SymbolTable.Symbols())
+// }
+
+// func (r *repl) cmdMemoryStats() {
+// 	// writeMemStats writes the formatted current, total and OS memory
+// 	// being used. As well as the number of garbage collection cycles completed.
+// 	var m runtime.MemStats
+// 	runtime.ReadMemStats(&m)
+
+// 	_, _ = fmt.Fprintf(r.stdout, "Go Memory Stats see: "+
+// 		"https://golang.org/pkg/runtime/#MemStats\n\n")
+// 	_, _ = fmt.Fprintf(r.stdout, "HeapAlloc = %s", humanFriendlySize(m.HeapAlloc))
+// 	_, _ = fmt.Fprintf(r.stdout, "\tHeapObjects = %v", m.HeapObjects)
+// 	_, _ = fmt.Fprintf(r.stdout, "\tSys = %s", humanFriendlySize(m.Sys))
+// 	_, _ = fmt.Fprintf(r.stdout, "\tNumGC = %v\n", m.NumGC)
+// }
+
+// func (r *repl) cmdModulesCache() {
+// 	_, _ = fmt.Fprintf(r.stdout, "%v\n", r.eval.ModulesCache)
+// }
+
+// func (r *repl) writeErrorStr(msg string) {
+// 	r.werr.SetColor(prompt.Red, prompt.DefaultColor, true)
+// 	r.werr.WriteStr(msg)
+// 	_ = r.werr.Flush()
+// }
+
+// func (r *repl) writeStr(msg string) {
+// 	r.wout.SetColor(prompt.Green, prompt.DefaultColor, false)
+// 	r.wout.WriteStr(msg)
+// 	_ = r.wout.Flush()
+// }
+
+// func (r *repl) executor(line string) {
+// 	switch {
+// 	case line == "":
+// 		if !isMultiline {
+// 			return
+// 		}
+// 	case line[0] == '.':
+// 		if fn, ok := r.commands[line]; ok {
+// 			fn()
+// 			return
+// 		}
+// 	case strings.HasSuffix(line, "\\"):
+// 		isMultiline = true
+// 		r.multiline += line[:len(line)-1] + "\n"
+// 		return
+// 	}
+// 	r.executeScript(line)
+// }
+
+// func (r *repl) executeScript(line string) {
+// 	defer func() {
+// 		isMultiline = false
+// 		r.multiline = ""
+// 	}()
+
+// 	var err error
+// 	r.lastResult, r.lastBytecode, err = r.eval.Run(r.ctx, []byte(r.multiline+line))
+// 	if err != nil {
+// 		r.writeErrorStr(fmt.Sprintf("\n%+v\n", err))
+// 		return
+// 	}
+
+// 	if err != nil {
+// 		r.writeErrorStr(fmt.Sprintf("VM:\n     %+v\n", err))
+// 		return
+// 	}
+
+// 	switch v := r.lastResult.(type) {
+// 	case charlang.String:
+// 		r.writeStr(fmt.Sprintf("%q\n", v.Value))
+// 	case charlang.Char:
+// 		r.writeStr(fmt.Sprintf("%q\n", rune(v)))
+// 	case charlang.Bytes:
+// 		r.writeStr(fmt.Sprintf("%v\n", []byte(v)))
+// 	default:
+// 		r.writeStr(fmt.Sprintf("%v\n", r.lastResult))
+// 	}
+
+// 	symbols := r.eval.Opts.SymbolTable.Symbols()
+// 	suggestions = suggestions[:initialSuggLen]
+
+// 	for _, s := range symbols {
+// 		if s.Scope != charlang.ScopeBuiltin {
+// 			suggestions = append(suggestions,
+// 				prompt.Suggest{
+// 					Text:        s.Name,
+// 					Description: string(s.Scope) + " variable",
+// 				},
+// 			)
+// 		}
+// 	}
+// }
+
+// func humanFriendlySize(b uint64) string {
+// 	if b < 1024 {
+// 		return fmt.Sprint(strconv.FormatUint(b, 10), " bytes")
+// 	}
+
+// 	if b >= 1024 && b < 1024*1024 {
+// 		return fmt.Sprint(strconv.FormatFloat(
+// 			float64(b)/1024, 'f', 1, 64), " KiB")
+// 	}
+
+// 	return fmt.Sprint(strconv.FormatFloat(
+// 		float64(b)/1024/1024, 'f', 1, 64), " MiB")
+// }
+
+// func completer(in prompt.Document) []prompt.Suggest {
+// 	// w := in.GetWordBeforeCursorWithSpace()
+// 	return nil
+// 	// return prompt.FilterHasPrefix(suggestions, w, true)
+// }
+
+// var suggestions = []prompt.Suggest{
+// 	// Commands
+// 	{Text: ".bytecode", Description: "Print Bytecode"},
+// 	{Text: ".builtins", Description: "Print Builtins"},
+// 	{Text: ".reset", Description: "Reset"},
+// 	{Text: ".locals", Description: "Print Locals"},
+// 	{Text: ".locals+", Description: "Print Locals (verbose)"},
+// 	{Text: ".globals", Description: "Print Globals"},
+// 	{Text: ".globals+", Description: "Print Globals (verbose)"},
+// 	{Text: ".return", Description: "Print Last Return Result"},
+// 	{Text: ".return+", Description: "Print Last Return Result (verbose)"},
+// 	{Text: ".modules_cache", Description: "Print Modules Cache"},
+// 	{Text: ".memory_stats", Description: "Print Memory Stats"},
+// 	{Text: ".gc", Description: "Run Go GC"},
+// 	{Text: ".symbols", Description: "Print Symbols"},
+// 	{Text: ".exit", Description: "Exit"},
+// }
+
+// func init() {
+// 	// add builtins to suggestions
+// 	for k, v := range charlang.BuiltinsMap {
+// 		remarkT := ""
+// 		if nv, ok := (charlang.BuiltinObjects[v]).(*charlang.BuiltinFunction); ok {
+// 			remarkT = nv.Remark
+// 		}
+
+// 		suggestions = append(suggestions,
+// 			prompt.Suggest{
+// 				Text:        k,
+// 				Description: "Builtin " + k + remarkT,
+// 			},
+// 		)
+// 	}
+
+// 	for tok := token.Question + 3; tok.IsKeyword(); tok++ {
+// 		s := tok.String()
+// 		suggestions = append(suggestions, prompt.Suggest{
+// 			Text:        s,
+// 			Description: "keyword " + s,
+// 		})
+// 	}
+// 	initialSuggLen = len(suggestions)
+// }
+
+// func newPrompt(
+// 	executor func(s string),
+// 	w io.Writer,
+// 	poptions ...prompt.Option,
+// ) *prompt.Prompt {
+
+// 	// _, _ = fmt.Fprintln(w, "Copyright (c) 2020 Ozan Hacıbekiroğlu")
+// 	// _, _ = fmt.Fprintln(w, "License: MIT")
+// 	_, _ = fmt.Fprintln(w, "Press Ctrl+D to exit or use .exit command")
+// 	_, _ = fmt.Fprintln(w, logo)
+
+// 	options := []prompt.Option{
+// 		prompt.OptionPrefix(promptPrefix),
+// 		prompt.OptionHistory([]string{
+// 			"a := 1",
+// 			"sum := func(...a) { total:=0; for v in a { total+=v }; return total }",
+// 			"func(a, b){ return a*b }(2, 3)",
+// 			`println("")`,
+// 			`var (x, y, z); if x { y } else { z }`,
+// 			`var (x, y, z); x ? y : z`,
+// 			`for i := 0; i < 3; i++ { }`,
+// 			`m := {}; for k,v in m { printf("%s:%v\n", k, v) }`,
+// 			`try { } catch err { } finally { }`,
+// 		}),
+// 		prompt.OptionLivePrefix(func() (string, bool) {
+// 			if isMultiline {
+// 				return promptPrefix2, true
+// 			}
+// 			return "", false
+// 		}),
+// 		prompt.OptionTitle(title),
+// 		prompt.OptionPrefixTextColor(prompt.Yellow),
+// 		prompt.OptionPreviewSuggestionTextColor(prompt.Blue),
+// 		prompt.OptionSelectedSuggestionBGColor(prompt.LightGray),
+// 		prompt.OptionSuggestionBGColor(prompt.DarkGray),
+// 	}
+
+// 	options = append(options, poptions...)
+// 	return prompt.New(executor, completer, options...)
+// }
+
+// func parseFlags(
+// 	flagset *flag.FlagSet,
+// 	args []string,
+// ) (filePath string, timeout time.Duration, err error) {
+
+// 	var trace string
+// 	flagset.StringVar(&trace, "dir", "",
+// 		`directory to scan`)
+// 	flagset.StringVar(&trace, "trace", "",
+// 		`Comma separated units: -trace parser,optimizer,compiler`)
+// 	flagset.BoolVar(&noOptimizer, "no-optimizer", false, `Disable optimization`)
+// 	flagset.DurationVar(&timeout, "timeout", 0,
+// 		"Program timeout. It is applicable if a script file is provided and "+
+// 			"must be non-zero duration")
+
+// 	flagset.Usage = func() {
+// 		_, _ = fmt.Fprint(flagset.Output(),
+// 			"Usage: ugo [flags] [uGO script file]\n\n",
+// 			"If script file is not provided, REPL terminal application is started\n",
+// 			"Use - to read from stdin\n\n",
+// 			"\nFlags:\n",
+// 		)
+// 		flagset.PrintDefaults()
+// 	}
+
+// 	if err = flagset.Parse(args); err != nil {
+// 		return
+// 	}
+
+// 	if trace != "" {
+// 		traceEnabled = true
+// 		trace = "," + trace + ","
+// 		if strings.Contains(trace, ",parser,") {
+// 			traceParser = true
+// 		}
+// 		if strings.Contains(trace, ",optimizer,") {
+// 			traceOptimizer = true
+// 		}
+// 		if strings.Contains(trace, ",compiler,") {
+// 			traceCompiler = true
+// 		}
+// 	}
+
+// 	if flagset.NArg() != 1 {
+// 		return
+// 	}
+
+// 	filePath = flagset.Arg(0)
+// 	if filePath == "-" {
+// 		return
+// 	}
+
+// 	if _, err = os.Stat(filePath); err != nil {
+// 		return
+// 	}
+// 	return
+// }
+
+// func executeScript(ctx context.Context, scr []byte, traceOut io.Writer) error {
+// 	opts := charlang.DefaultCompilerOptions
+// 	if traceEnabled {
+// 		opts.Trace = traceOut
+// 		opts.TraceParser = traceParser
+// 		opts.TraceCompiler = traceCompiler
+// 		opts.TraceOptimizer = traceOptimizer
+// 	}
+
+// 	opts.ModuleMap = nil // charlang.NewModuleMap().
+// 	// AddBuiltinModule("time", ugotime.Module).
+// 	// AddBuiltinModule("strings", ugostrings.Module).
+// 	// AddBuiltinModule("fmt", ugofmt.Module)
+
+// 	bc, err := charlang.Compile(scr, opts)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	vm := charlang.NewVM(bc)
+// 	done := make(chan struct{})
+// 	go func() {
+// 		defer close(done)
+// 		_, err = vm.Run(scriptGlobals)
+// 	}()
+
+// 	select {
+// 	case <-done:
+// 	case <-ctx.Done():
+// 		vm.Abort()
+// 		<-done
+// 		if err == nil {
+// 			err = ctx.Err()
+// 		}
+// 	}
+// 	return err
+// }
+
+// func checkErr(err error, f func()) {
+// 	if err == nil {
+// 		return
+// 	}
+
+// 	defer os.Exit(1)
+// 	_, _ = fmt.Fprintf(os.Stderr, "%+v\n", err)
+
+// 	e := err.(*charlang.RuntimeError)
+// 	fmt.Printf("Trace: %v\n", e.StackTrace())
+
+// 	if f != nil {
+// 		f()
+// 	}
+// }
 
 // func main() {
 // 	// filePath, timeout, err := parseFlags(flag.CommandLine, os.Args[1:])
@@ -647,7 +641,7 @@ func runInteractiveShell() int {
 	var following bool
 	var source string
 
-	tk.Pl("Char %v", charlang.VersionG)
+	tk.Pl("Charlang %v by TopXeQ", charlang.VersionG)
 
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -1488,7 +1482,7 @@ func runArgs(argsA ...string) interface{} {
 
 	envT["tk"] = charlang.TkFunction
 	envT["argsG"] = charlang.ConvertToObject(os.Args)
-	envT["versionG"] = charlang.ToString(charlang.VersionG)
+	envT["versionG"] = charlang.ToStringObject(charlang.VersionG)
 
 	retT, errT := charlang.NewVM(bytecodeT).Run(
 		envT,

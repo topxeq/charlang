@@ -209,7 +209,7 @@ func (c *Compiler) SetGlobalSymbolsIndex() {
 	symbols := c.symbolTable.Symbols()
 	for _, s := range symbols {
 		if s.Scope == ScopeGlobal && s.Index == -1 {
-			s.Index = c.addConstant(String(s.Name))
+			s.Index = c.addConstant(ToStringObject(s.Name))
 		}
 	}
 }
@@ -331,7 +331,7 @@ func (c *Compiler) Compile(node parser.Node) error {
 			c.emit(node, OpFalse)
 		}
 	case *parser.StringLit:
-		c.emit(node, OpConstant, c.addConstant(String(node.Value)))
+		c.emit(node, OpConstant, c.addConstant(ToStringObject(node.Value)))
 	case *parser.CharLit:
 		c.emit(node, OpConstant, c.addConstant(Char(node.Value)))
 	case *parser.UndefinedLit:
