@@ -1459,17 +1459,25 @@ func runArgs(argsA ...string) interface{} {
 		ModuleMap: moduleMap,
 		// SymbolTable:       charlang.NewSymbolTable(),
 		// OptimizerMaxCycle: charlang.TraceCompilerOptions.OptimizerMaxCycle,
-		// TraceParser:       traceParser,
-		// TraceOptimizer:    traceOptimizer,
-		// TraceCompiler:     traceCompiler,
+		// TraceParser:    true,
+		// TraceOptimizer: true,
+		// TraceCompiler:  true,
 		// OptimizeConst:     !noOptimizer,
 		// OptimizeExpr:      !noOptimizer,
+		// Trace:             os.Stdout,
+		// TraceParser:       true,
+		// TraceCompiler:     true,
+		// TraceOptimizer:    true,
+		// OptimizerMaxCycle: 1<<8 - 1,
+		// OptimizeConst:     false,
+		// OptimizeExpr:      false,
 	}
-
+	// tk.Pln(2.1)
 	bytecodeT, errT := charlang.Compile([]byte(fcT), opts) // charlang.DefaultCompilerOptions)
 	if errT != nil {
 		return errT
 	}
+	// tk.Pln(2.2)
 
 	// inParasT := make(charlang.Map, len(paraMapT))
 	// for k, v := range paraMapT {

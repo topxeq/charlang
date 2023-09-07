@@ -2,6 +2,7 @@ package charlang
 
 import (
 	"bytes"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"github.com/topxeq/charlang/internal/compat"
 	"github.com/topxeq/charlang/parser"
 	"github.com/topxeq/charlang/token"
+	"github.com/topxeq/sqltk"
 	"github.com/topxeq/tk"
 )
 
@@ -29,7 +31,7 @@ var (
 	Undefined Object = &UndefinedType{}
 )
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, StringBuilder: 307, Database: 309, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, StringBuilder: 307, Database: 309, Time: 311, Location: 313, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -214,7 +216,10 @@ func (c *Call) GetArgs() []Object {
 // helps to implement Object interface by embedding and overriding methods in
 // custom implementations. String and TypeName must be implemented otherwise
 // calling these methods causes panic.
-type ObjectImpl struct{}
+type ObjectImpl struct {
+	Members map[string]Object
+	Methods map[string]*Function
+}
 
 var _ Object = ObjectImpl{}
 
@@ -1131,6 +1136,10 @@ type BuiltinFunction struct {
 
 var _ ExCallerObject = (*BuiltinFunction)(nil)
 
+func (*BuiltinFunction) TypeCode() int {
+	return 183
+}
+
 // TypeName implements Object interface.
 func (*BuiltinFunction) TypeName() string {
 	return "builtinFunction"
@@ -1167,14 +1176,240 @@ func (*BuiltinFunction) CanCall() bool { return true }
 
 // Call implements Object interface.
 func (o *BuiltinFunction) Call(args ...Object) (Object, error) {
+	// tk.Pl("*BuiltinFunction Call: %v", args)
 	return o.Value(args...)
 }
 
 func (o *BuiltinFunction) CallEx(c Call) (Object, error) {
+	// tk.Pl("*BuiltinFunction CallEx: %v", c)
 	if o.ValueEx != nil {
 		return o.ValueEx(c)
 	}
 	return o.Value(c.callArgs()...)
+}
+
+func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
+	// tk.Pl("*BuiltinFunction IndexGet: %v", index)
+
+	nv, ok := index.(String)
+	if !ok {
+		return Undefined, NewIndexTypeError("string", index.TypeName())
+	}
+
+	fNameT := o.Name + "." + FromStringObject(nv)
+
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if o.Methods == nil {
+		o.Methods = map[string]*Function{}
+	}
+
+	switch fNameT {
+	case "any.new":
+		fT, ok := o.Methods["any.new"]
+		if !ok {
+			o.Methods["any.new"] = &Function{
+				Name: "any.new",
+				Value: func(args ...Object) (Object, error) {
+					return builtinNewAnyFunc(args...)
+				}}
+			fT = o.Methods["any.new"]
+		}
+
+		return fT, nil
+	case "database.connect":
+		fT, ok := o.Methods["database.connect"]
+		if !ok {
+			o.Methods["database.connect"] = &Function{
+				Name: "database.connect",
+				Value: func(args ...Object) (Object, error) {
+
+					nv0, ok := args[0].(String)
+
+					if !ok {
+						return NewCommonError("invalid paramter 1"), nil
+					}
+
+					nv1, ok := args[1].(String)
+
+					if !ok {
+						return NewCommonError("invalid paramter 2"), nil
+					}
+
+					rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
+					if tk.IsError(rsT) {
+						return NewFromError(rsT.(error)), nil
+					}
+
+					return Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
+				}}
+			fT = o.Methods["database.connect"]
+		}
+
+		return fT, nil
+	case "database.formatSQLValue", "database.format":
+		fT, ok := o.Methods["database.formatSQLValue"]
+		if !ok {
+			o.Methods["database.formatSQLValue"] = &Function{
+				Name: "database.formatSQLValue",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough paramters"), nil
+					}
+
+					nv0 := args[0].String()
+
+					return ToStringObject(sqltk.FormatSQLValue(nv0)), nil
+				}}
+			fT = o.Methods["database.formatSQLValue"]
+		}
+
+		return fT, nil
+	case "database.oneColumnToArray", "database.oneColToAry":
+		fT, ok := o.Methods["database.oneColumnToArray"]
+		if !ok {
+			o.Methods["database.oneColumnToArray"] = &Function{
+				Name: "database.oneColumnToArray",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough paramters"), nil
+					}
+
+					nv0, ok := args[0].(Array)
+					if !ok {
+						return NewCommonError("invalid paramter 1"), nil
+					}
+
+					aryT := Array{}
+					for i, v := range nv0 {
+						if i == 0 {
+							continue
+						}
+
+						aryT = append(aryT, v.(Array)[0])
+					}
+
+					return aryT, nil
+				}}
+			fT = o.Methods["database.oneColumnToArray"]
+		}
+
+		return fT, nil
+	case "statusResult.success":
+		fT, ok := o.Methods["statusResult.success"]
+		if !ok {
+			o.Methods["statusResult.success"] = &Function{
+				Name: "statusResult.success",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return StatusResultSuccess, nil
+					}
+
+					return StatusResult{Status: "success", Value: args[0].String()}, nil
+				}}
+			fT = o.Methods["statusResult.success"]
+		}
+
+		return fT, nil
+	case "statusResult.fail":
+		fT, ok := o.Methods["statusResult.fail"]
+		if !ok {
+			o.Methods["statusResult.fail"] = &Function{
+				Name: "statusResult.fail",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return StatusResultFail, nil
+					}
+
+					return StatusResult{Status: "fail", Value: args[0].String()}, nil
+				}}
+			fT = o.Methods["statusResult.fail"]
+		}
+
+		return fT, nil
+	case "time.format":
+		fT, ok := o.Methods["time.format"]
+		if !ok {
+			o.Methods["time.format"] = &Function{
+				Name: "time.format",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return ToStringObject(tk.FormatTime(time.Now(), ObjectsToS(args)...)), nil
+					}
+
+					return ToStringObject(tk.FormatTime(args[0].(*Time).Value, ObjectsToS(args[1:])...)), nil
+				}}
+			fT = o.Methods["time.format"]
+		}
+
+		return fT, nil
+	case "time.now":
+		fT, ok := o.Methods["time.now"]
+		if !ok {
+			o.Methods["time.now"] = &Function{
+				Name: "time.now",
+				Value: func(args ...Object) (Object, error) {
+					return &Time{Value: time.Now()}, nil
+				}}
+			fT = o.Methods["time.now"]
+		}
+
+		return fT, nil
+	case "time.timeFormatRFC1123":
+		mT, ok := o.Members["time.timeFormatRFC1123"]
+		if !ok {
+			o.Members["time.timeFormatRFC1123"] = ToStringObject(time.RFC1123)
+			mT = o.Members["time.timeFormatRFC1123"]
+		}
+
+		return mT, nil
+	case "time.second":
+		mT, ok := o.Members["time.second"]
+		if !ok {
+			o.Members["time.second"] = Int(time.Second)
+			mT = o.Members["time.second"]
+		}
+
+		return mT, nil
+	case "time.timeFormatCompact":
+		mT, ok := o.Members["time.timeFormatCompact"]
+		if !ok {
+			o.Members["time.timeFormatCompact"] = ToStringObject(tk.TimeFormatCompact)
+			mT = o.Members["time.timeFormatCompact"]
+		}
+
+		return mT, nil
+	case "time.timeFormat":
+		mT, ok := o.Members["time.timeFormat"]
+		if !ok {
+			o.Members["time.timeFormat"] = ToStringObject(tk.TimeFormat)
+			mT = o.Members["time.timeFormat"]
+		}
+
+		return mT, nil
+	case "time.timeFormatMS":
+		mT, ok := o.Members["time.timeFormatMS"]
+		if !ok {
+			o.Members["time.timeFormatMS"] = ToStringObject(tk.TimeFormatMS)
+			mT = o.Members["time.timeFormatMS"]
+		}
+
+		return mT, nil
+	case "time.timeFormatMSCompact":
+		mT, ok := o.Members["time.timeFormatMSCompact"]
+		if !ok {
+			o.Members["time.timeFormatMSCompact"] = ToStringObject(tk.TimeFormatMSCompact)
+			mT = o.Members["time.timeFormatMSCompact"]
+		}
+
+		return mT, nil
+	}
+
+	return nil, ErrNotIndexable
+
+	// return Undefined, nil
 }
 
 // Array represents array of objects and implements Object interface.
@@ -2052,5 +2287,1348 @@ func (st StackTrace) Format(s fmt.State, verb rune) {
 		default:
 			_, _ = fmt.Fprintf(s, "%v", []parser.SourceFilePos(st))
 		}
+	}
+}
+
+// Time represents time values and implements Object interface.
+type Time struct {
+	Value time.Time
+}
+
+var _ NameCallerObject = (*Time)(nil)
+
+func (*Time) TypeCode() int {
+	return 311
+}
+
+// TypeName implements Object interface.
+func (*Time) TypeName() string {
+	return "time"
+}
+
+// String implements Object interface.
+func (o *Time) String() string {
+	return o.Value.String()
+}
+
+// IsFalsy implements Object interface.
+func (o *Time) IsFalsy() bool {
+	return o.Value.IsZero()
+}
+
+// Equal implements Object interface.
+func (o *Time) Equal(right Object) bool {
+	if v, ok := right.(*Time); ok {
+		return o.Value.Equal(v.Value)
+	}
+	return false
+}
+
+// CanCall implements Object interface.
+func (*Time) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (*Time) Call(args ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// CanIterate implements Object interface.
+func (*Time) CanIterate() bool { return false }
+
+// Iterate implements Object interface.
+func (*Time) Iterate() Iterator { return nil }
+
+// char:doc
+// #### Overloaded time Operators
+//
+// - `time + int` -> time
+// - `time - int` -> time
+// - `time - time` -> int
+// - `time < time` -> bool
+// - `time > time` -> bool
+// - `time <= time` -> bool
+// - `time >= time` -> bool
+//
+// Note that, `int` values as duration must be the right hand side operand.
+
+// BinaryOp implements Object interface.
+func (o *Time) BinaryOp(tok token.Token,
+	right Object) (Object, error) {
+
+	switch v := right.(type) {
+	case Int:
+		switch tok {
+		case token.Add:
+			return &Time{Value: o.Value.Add(time.Duration(v))}, nil
+		case token.Sub:
+			return &Time{Value: o.Value.Add(time.Duration(-v))}, nil
+		}
+	case *Time:
+		switch tok {
+		case token.Sub:
+			return Int(o.Value.Sub(v.Value)), nil
+		case token.Less:
+			return Bool(o.Value.Before(v.Value)), nil
+		case token.LessEq:
+			return Bool(o.Value.Before(v.Value) || o.Value.Equal(v.Value)), nil
+		case token.Greater:
+			return Bool(o.Value.After(v.Value)), nil
+		case token.GreaterEq:
+			return Bool(o.Value.After(v.Value) || o.Value.Equal(v.Value)),
+				nil
+		}
+	case *UndefinedType:
+		switch tok {
+		case token.Less, token.LessEq:
+			return False, nil
+		case token.Greater, token.GreaterEq:
+			return True, nil
+		}
+	}
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+// IndexSet implements Object interface.
+func (*Time) IndexSet(_, _ Object) error { return ErrNotIndexAssignable }
+
+// char:doc
+// #### time Getters
+//
+// Deprecated: Use method call. These selectors will return a callable object in
+// the future. See methods.
+//
+// Dynamically calculated getters for a time value are as follows:
+//
+// | Selector  | Return Type                                     |
+// |:----------|:------------------------------------------------|
+// |.Date      | {"year": int, "month": int, "day": int}         |
+// |.Clock     | {"hour": int, "minute": int, "second": int}     |
+// |.UTC       | time                                            |
+// |.Unix      | int                                             |
+// |.UnixNano  | int                                             |
+// |.Year      | int                                             |
+// |.Month     | int                                             |
+// |.Day       | int                                             |
+// |.Hour      | int                                             |
+// |.Minute    | int                                             |
+// |.Second    | int                                             |
+// |.NanoSecond| int                                             |
+// |.IsZero    | bool                                            |
+// |.Local     | time                                            |
+// |.Location  | location                                        |
+// |.YearDay   | int                                             |
+// |.Weekday   | int                                             |
+// |.ISOWeek   | {"year": int, "week": int}                      |
+// |.Zone      | {"name": string, "offset": int}                 |
+
+// IndexGet implements Object interface.
+func (o *Time) IndexGet(index Object) (Object, error) {
+	tk.Pl("Time IndexGet: %v", index)
+
+	v, ok := index.(String)
+	if !ok {
+		return Undefined, NewIndexTypeError("string", index.TypeName())
+	}
+
+	// For simplicity, we use method call for now. As getters are deprecated, we
+	// will return callable object in the future here.
+
+	switch v.Value {
+	case "Date", "Clock", "UTC", "Unix", "UnixNano", "Year", "Month", "Day",
+		"Hour", "Minute", "Second", "Nanosecond", "IsZero", "Local", "Location",
+		"YearDay", "Weekday", "ISOWeek", "Zone":
+		return o.CallName(v.Value, Call{})
+	}
+	return Undefined, nil
+}
+
+// char:doc
+// #### time Methods
+//
+// | Method                               | Return Type                                 |
+// |:-------------------------------------|:--------------------------------------------|
+// |.Add(duration int)                    | time                                        |
+// |.Sub(t2 time)                         | int                                         |
+// |.AddDate(year int, month int, day int)| int                                         |
+// |.After(t2 time)                       | bool                                        |
+// |.Before(t2 time)                      | bool                                        |
+// |.Format(layout string)                | string                                      |
+// |.AppendFormat(b bytes, layout string) | bytes                                       |
+// |.In(loc location)                     | time                                        |
+// |.Round(duration int)                  | time                                        |
+// |.Truncate(duration int)               | time                                        |
+// |.Equal(t2 time)                       | bool                                        |
+// |.Date()                               | {"year": int, "month": int, "day": int}     |
+// |.Clock()                              | {"hour": int, "minute": int, "second": int} |
+// |.UTC()                                | time                                        |
+// |.Unix()                               | int                                         |
+// |.UnixNano()                           | int                                         |
+// |.Year()                               | int                                         |
+// |.Month()                              | int                                         |
+// |.Day()                                | int                                         |
+// |.Hour()                               | int                                         |
+// |.Minute()                             | int                                         |
+// |.Second()                             | int                                         |
+// |.NanoSecond()                         | int                                         |
+// |.IsZero()                             | bool                                        |
+// |.Local()                              | time                                        |
+// |.Location()                           | location                                    |
+// |.YearDay()                            | int                                         |
+// |.Weekday()                            | int                                         |
+// |.ISOWeek()                            | {"year": int, "week": int}                  |
+// |.Zone()                               | {"name": string, "offset": int}             |
+
+func (o *Time) CallName(name string, c Call) (Object, error) {
+	// tk.Pl("Time CallName: %v", name)
+
+	fn, ok := methodTableForTime[strings.ToLower(name)]
+	if !ok {
+		return Undefined, ErrInvalidIndex.NewError(name)
+	}
+	return fn(o, &c)
+}
+
+var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
+	"add": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(1); err != nil {
+			return Undefined, err
+		}
+		d, ok := ToGoInt64(c.Get(0))
+		if !ok {
+			return newArgTypeErr("1st", "int", c.Get(0).TypeName())
+		}
+		return timeAdd(o, d), nil
+	},
+	"sub": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(1); err != nil {
+			return Undefined, err
+		}
+		t2, ok := ToTime(c.Get(0))
+		if !ok {
+			return newArgTypeErr("1st", "time", c.Get(0).TypeName())
+		}
+		return timeSub(o, t2), nil
+	},
+	"adddate": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(3); err != nil {
+			return Undefined, err
+		}
+		year, ok := ToGoInt(c.Get(0))
+		if !ok {
+			return newArgTypeErr("1st", "int", c.Get(0).TypeName())
+		}
+		month, ok := ToGoInt(c.Get(1))
+		if !ok {
+			return newArgTypeErr("2nd", "int", c.Get(1).TypeName())
+		}
+		day, ok := ToGoInt(c.Get(2))
+		if !ok {
+			return newArgTypeErr("3rd", "int", c.Get(2).TypeName())
+		}
+		return timeAddDate(o, year, month, day), nil
+	},
+	"after": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(1); err != nil {
+			return Undefined, err
+		}
+		t2, ok := ToTime(c.Get(0))
+		if !ok {
+			return newArgTypeErr("1st", "time", c.Get(0).TypeName())
+		}
+		return timeAfter(o, t2), nil
+	},
+	"before": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(1); err != nil {
+			return Undefined, err
+		}
+		t2, ok := ToTime(c.Get(0))
+		if !ok {
+			return newArgTypeErr("1st", "time", c.Get(0).TypeName())
+		}
+		return timeBefore(o, t2), nil
+	},
+	"format": func(o *Time, c *Call) (Object, error) {
+		// if err := c.CheckLen(1); err != nil {
+		// 	return Undefined, err
+		// }
+
+		var format string = ""
+		var ok bool
+		if c.Len() < 1 {
+			format = tk.TimeFormat
+		} else {
+			format, ok = ToGoString(c.Get(0))
+			if !ok {
+				return newArgTypeErr("1st", "string", c.Get(0).TypeName())
+			}
+		}
+
+		return timeFormat(o, format), nil
+	},
+	"appendformat": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(2); err != nil {
+			return Undefined, err
+		}
+		b, ok := ToGoByteSlice(c.Get(0))
+		if !ok {
+			return newArgTypeErr("1st", "bytes", c.Get(0).TypeName())
+		}
+		format, ok := ToGoString(c.Get(1))
+		if !ok {
+			return newArgTypeErr("2nd", "string", c.Get(1).TypeName())
+		}
+		return timeAppendFormat(o, b, format), nil
+	},
+	"in": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(1); err != nil {
+			return Undefined, err
+		}
+		loc, ok := ToLocation(c.Get(0))
+		if !ok {
+			return newArgTypeErr("1st", "location", c.Get(0).TypeName())
+		}
+		return timeIn(o, loc), nil
+	},
+	"round": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(1); err != nil {
+			return Undefined, err
+		}
+		d, ok := ToGoInt64(c.Get(0))
+		if !ok {
+			return newArgTypeErr("1st", "int", c.Get(0).TypeName())
+		}
+		return timeRound(o, d), nil
+	},
+	"truncate": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(1); err != nil {
+			return Undefined, err
+		}
+		d, ok := ToGoInt64(c.Get(0))
+		if !ok {
+			return newArgTypeErr("1st", "int", c.Get(0).TypeName())
+		}
+		return timeTruncate(o, d), nil
+	},
+	"equal": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(1); err != nil {
+			return Undefined, err
+		}
+		t2, ok := ToTime(c.Get(0))
+		if !ok {
+			return newArgTypeErr("1st", "time", c.Get(0).TypeName())
+		}
+		return timeEqual(o, t2), nil
+	},
+	"date": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		y, m, d := o.Value.Date()
+		return Map{"year": Int(y), "month": Int(m),
+			"day": Int(d)}, nil
+	},
+	"getinfo": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		zoneT, offsetT := o.Value.Zone()
+		return Map{"Time": o, "Formal": String{Value: o.Value.Format(tk.TimeFormat)}, "Compact": String{Value: o.Value.Format(tk.TimeFormatCompact)}, "Full": String{Value: fmt.Sprintf("%v", o.Value)}, "Year": Int(o.Value.Year()), "Month": Int(o.Value.Month()), "Day": Int(o.Value.Day()), "Hour": Int(o.Value.Hour()), "Minute": Int(o.Value.Minute()), "Second": Int(o.Value.Second()), "Zone": ConvertToObject(zoneT), "Offset": ConvertToObject(offsetT), "UnixNano": Int(o.Value.UnixNano()), "WeekDay": Int(o.Value.Weekday()), "NanoSec": Int(o.Value.Nanosecond()), "MilliSec": Int(o.Value.Nanosecond() / 1000000)}, nil
+	},
+	"clock": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		h, m, s := o.Value.Clock()
+		return Map{"hour": Int(h), "minute": Int(m),
+			"second": Int(s)}, nil
+	},
+	"utc": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return &Time{Value: o.Value.UTC()}, nil
+	},
+	"unix": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Int(o.Value.Unix()), nil
+	},
+	"unixnano": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Int(o.Value.UnixNano()), nil
+	},
+	"year": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Int(o.Value.Year()), nil
+	},
+	"month": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Int(o.Value.Month()), nil
+	},
+	"day": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Int(o.Value.Day()), nil
+	},
+	"hour": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Int(o.Value.Hour()), nil
+	},
+	"minute": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Int(o.Value.Minute()), nil
+	},
+	"second": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Int(o.Value.Second()), nil
+	},
+	"nanosecond": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Int(o.Value.Nanosecond()), nil
+	},
+	"iszero": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Bool(o.Value.IsZero()), nil
+	},
+	"local": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return &Time{Value: o.Value.Local()}, nil
+	},
+	"location": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return &Location{Value: o.Value.Location()}, nil
+	},
+	"yearday": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Int(o.Value.YearDay()), nil
+	},
+	"weekday": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Int(o.Value.Weekday()), nil
+	},
+	"isoweek": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		y, w := o.Value.ISOWeek()
+		return Map{"year": Int(y), "week": Int(w)}, nil
+	},
+	"zone": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		name, offset := o.Value.Zone()
+		return Map{"name": ToStringObject(name), "offset": Int(offset)}, nil
+	},
+}
+
+// MarshalBinary implements encoding.BinaryMarshaler interface.
+func (o *Time) MarshalBinary() ([]byte, error) {
+	return o.Value.MarshalBinary()
+}
+
+// MarshalJSON implements json.JSONMarshaler interface.
+func (o *Time) MarshalJSON() ([]byte, error) {
+	return o.Value.MarshalJSON()
+}
+
+// UnmarshalBinary implements encoding.BinaryUnmarshaler interface.
+func (o *Time) UnmarshalBinary(data []byte) error {
+	var t time.Time
+	if err := t.UnmarshalBinary(data); err != nil {
+		return err
+	}
+	o.Value = t
+	return nil
+}
+
+// UnmarshalJSON implements json.JSONUnmarshaler interface.
+func (o *Time) UnmarshalJSON(data []byte) error {
+	var t time.Time
+	if err := t.UnmarshalJSON(data); err != nil {
+		return err
+	}
+	o.Value = t
+	return nil
+}
+
+func timeAdd(t *Time, duration int64) Object {
+	return &Time{Value: t.Value.Add(time.Duration(duration))}
+}
+
+func timeSub(t1, t2 *Time) Object {
+	return Int(t1.Value.Sub(t2.Value))
+}
+
+func timeAddDate(t *Time, years, months, days int) Object {
+	return &Time{Value: t.Value.AddDate(years, months, days)}
+}
+
+func timeAfter(t1, t2 *Time) Object {
+	return Bool(t1.Value.After(t2.Value))
+}
+
+func timeBefore(t1, t2 *Time) Object {
+	return Bool(t1.Value.Before(t2.Value))
+}
+
+func timeFormat(t *Time, layout string) Object {
+	return ToStringObject(t.Value.Format(layout))
+}
+
+func timeAppendFormat(t *Time, b []byte, layout string) Object {
+	return Bytes(t.Value.AppendFormat(b, layout))
+}
+
+func timeIn(t *Time, loc *Location) Object {
+	return &Time{Value: t.Value.In(loc.Value)}
+}
+
+func timeRound(t *Time, duration int64) Object {
+	return &Time{Value: t.Value.Round(time.Duration(duration))}
+}
+
+func timeTruncate(t *Time, duration int64) Object {
+	return &Time{Value: t.Value.Truncate(time.Duration(duration))}
+}
+
+func timeEqual(t1, t2 *Time) Object {
+	return Bool(t1.Value.Equal(t2.Value))
+}
+
+func newArgTypeErr(pos, want, got string) (Object, error) {
+	return Undefined, NewArgumentTypeError(pos, want, got)
+}
+
+// ToTime will try to convert given given Object to *Time value.
+func ToTime(o Object) (ret *Time, ok bool) {
+	switch o := o.(type) {
+	case *Time:
+		ret, ok = o, true
+	case Int:
+		v := time.Unix(int64(o), 0)
+		ret, ok = &Time{Value: v}, true
+	case String:
+		v, err := time.Parse(time.RFC3339Nano, string(o.Value))
+		if err != nil {
+			v, err = time.Parse(time.RFC3339, string(o.Value))
+		}
+		if err == nil {
+			ret, ok = &Time{Value: v}, true
+		}
+	}
+	return
+}
+
+// ToLocation will try to convert given Object to *Location value.
+func ToLocation(o Object) (ret *Location, ok bool) {
+	if v, isString := o.(String); isString {
+		var err error
+		o, err = loadLocationFunc(v.Value)
+		if err != nil {
+			return
+		}
+	}
+	ret, ok = o.(*Location)
+	return
+}
+
+// Location represents location values and implements Object interface.
+type Location struct {
+	ObjectImpl
+	Value *time.Location
+}
+
+func (*Location) TypeCode() int {
+	return 313
+}
+
+// TypeName implements Object interface.
+func (*Location) TypeName() string {
+	return "location"
+}
+
+// String implements Object interface.
+func (o *Location) String() string {
+	return o.Value.String()
+}
+
+// IsFalsy implements Object interface.
+func (o *Location) IsFalsy() bool {
+	return o.Value == nil
+}
+
+// Equal implements Object interface.
+func (o *Location) Equal(right Object) bool {
+	if v, ok := right.(*Location); ok {
+		return v == o || v.String() == o.String()
+	}
+	if v, ok := right.(String); ok {
+		return o.String() == v.String()
+	}
+	return false
+}
+
+func loadLocationFunc(name string) (Object, error) {
+	l, err := time.LoadLocation(name)
+	if err != nil {
+		return Undefined, err
+	}
+	return &Location{Value: l}, nil
+}
+
+type Database struct {
+	ObjectImpl
+	Value           *sql.DB
+	DBType          string
+	DBConnectString string
+}
+
+var _ Object = Database{}
+
+// func NewStringBuilder() *StringBuilder {
+// 	return &StringBuilder{}
+// }
+
+// func NewStringBuilderValue(vA interface{}) StringBuilder {
+// 	return StringBuilder{}
+// }
+
+func (o Database) TypeCode() int {
+	return 309
+}
+
+func (o Database) TypeName() string {
+	return "database"
+}
+
+func (o Database) String() string {
+	return fmt.Sprintf("%v", o)
+}
+
+func (o Database) Equal(right Object) bool {
+	if v, ok := right.(Database); ok {
+		return o.Value == v.Value
+	}
+
+	return false
+}
+
+func (o Database) IsFalsy() bool { return false }
+
+func (Database) CanCall() bool { return false }
+
+func (Database) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (Database) CanIterate() bool { return false }
+
+func (Database) Iterate() Iterator { return nil }
+
+func (o Database) IndexGet(index Object) (value Object, err error) {
+	nv, ok := index.(String)
+	if !ok {
+		return nil, ErrNotIndexable
+	}
+
+	fNameT := nv.Value
+
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if o.Methods == nil {
+		o.Methods = map[string]*Function{}
+	}
+
+	switch fNameT {
+	case "toAny":
+		fT, ok := o.Methods["toAny"]
+		if !ok {
+			o.Methods["toAny"] = &Function{
+				Name: "toAny",
+				Value: func(args ...Object) (Object, error) {
+					return NewAny(o.Value), nil
+				},
+			}
+
+			fT = o.Methods["toAny"]
+		}
+		return fT, nil
+	case "connect":
+		fT, ok := o.Methods["connect"]
+		if !ok {
+			o.Methods["connect"] = &Function{
+				Name: "connect",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 2 {
+						return NewCommonError("not enough paramters"), nil
+					}
+
+					nv0, ok := args[0].(String)
+
+					if !ok {
+						return NewCommonError("invalid paramter 1"), nil
+					}
+
+					nv1, ok := args[1].(String)
+
+					if !ok {
+						return NewCommonError("invalid paramter 2"), nil
+					}
+
+					rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
+					if tk.IsError(rsT) {
+						return NewFromError(rsT.(error)), nil
+					}
+
+					o.DBType = nv0.Value
+					o.DBConnectString = nv1.Value
+					o.Value = rsT.(*sql.DB)
+
+					return Undefined, nil
+				},
+			}
+
+			fT = o.Methods["connect"]
+		}
+		return fT, nil
+	case "query":
+		fT, ok := o.Methods["query"]
+		if !ok {
+			o.Methods["query"] = &Function{
+				Name: "query",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.QueryDBX(o.Value, s0.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["query"]
+		}
+		return fT, nil
+	case "queryRecs":
+		fT, ok := o.Methods["queryRecs"]
+		if !ok {
+			o.Methods["queryRecs"] = &Function{
+				Name: "queryRecs",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.QueryDBRecsX(o.Value, s0.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryRecs"]
+		}
+		return fT, nil
+	case "queryMap":
+		fT, ok := o.Methods["queryMap"]
+		if !ok {
+			o.Methods["queryMap"] = &Function{
+				Name: "queryMap",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					s1, ok := args[1].(String)
+					if !ok {
+						return NewArgumentTypeError("second", "string",
+							args[1].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[2:])
+
+					return ConvertToObject(sqltk.QueryDBMapX(o.Value, s0.Value, s1.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryMap"]
+		}
+		return fT, nil
+	case "queryMapArray":
+		fT, ok := o.Methods["queryMapArray"]
+		if !ok {
+			o.Methods["queryMapArray"] = &Function{
+				Name: "queryMapArray",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					s1, ok := args[1].(String)
+					if !ok {
+						return NewArgumentTypeError("second", "string",
+							args[1].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[2:])
+
+					return ConvertToObject(sqltk.QueryDBMapArrayX(o.Value, s0.Value, s1.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryMapArray"]
+		}
+		return fT, nil
+	case "queryCount":
+		fT, ok := o.Methods["queryCount"]
+		if !ok {
+			o.Methods["queryCount"] = &Function{
+				Name: "queryCount",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.QueryCountX(o.Value, s0.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryCount"]
+		}
+		return fT, nil
+	case "queryFloat":
+		fT, ok := o.Methods["queryFloat"]
+		if !ok {
+			o.Methods["queryFloat"] = &Function{
+				Name: "queryFloat",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.QueryFloatX(o.Value, s0.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryFloat"]
+		}
+		return fT, nil
+	case "queryString":
+		fT, ok := o.Methods["queryString"]
+		if !ok {
+			o.Methods["queryString"] = &Function{
+				Name: "queryString",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.QueryStringX(o.Value, s0.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryString"]
+		}
+		return fT, nil
+	case "exec":
+		fT, ok := o.Methods["exec"]
+		if !ok {
+			o.Methods["exec"] = &Function{
+				Name: "exec",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.ExecDBX(o.Value, s0.Value, objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["exec"]
+		}
+		return fT, nil
+	case "close":
+		fT, ok := o.Methods["close"]
+		if !ok {
+			o.Methods["close"] = &Function{
+				Name: "close",
+				Value: func(args ...Object) (Object, error) {
+					o.Value.Close()
+					return Undefined, nil
+				},
+			}
+
+			fT = o.Methods["close"]
+		}
+		return fT, nil
+	}
+	return nil, ErrNotIndexable
+}
+
+func (Database) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+func (o Database) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, ErrInvalidOperator
+}
+
+type StatusResult struct {
+	ObjectImpl
+	Status string
+	Value  string
+}
+
+var StatusResultInvalid = StatusResult{Status: "", Value: ""}
+var StatusResultSuccess = StatusResult{Status: "success", Value: ""}
+var StatusResultFail = StatusResult{Status: "fail", Value: ""}
+
+func (o StatusResult) TypeCode() int {
+	return 303
+}
+
+func (o StatusResult) TypeName() string {
+	return "statusResult"
+}
+
+func (o StatusResult) String() string {
+	return `{"Status": ` + tk.ObjectToJSON(o.Status) + `, "Value": ` + tk.ObjectToJSON(o.Value) + `}`
+}
+
+func (StatusResult) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o StatusResult) Equal(right Object) bool {
+	nv, ok := right.(StatusResult)
+	if !ok {
+		return false
+	}
+
+	return ((nv.Status == o.Status) && (nv.Value == o.Value))
+}
+
+func (o StatusResult) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, ErrInvalidOperator
+}
+
+func GenStatusResult(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return StatusResultInvalid, nil
+	}
+
+	if len(args) == 1 {
+		nv, ok := args[0].(String)
+
+		if !ok {
+			return StatusResultInvalid, nil
+		}
+
+		mapT := tk.JSONToMapStringString(nv.Value)
+		if mapT == nil {
+			return StatusResultInvalid, nil
+		}
+
+		statusT, ok := mapT["Status"]
+		if !ok {
+			return StatusResultInvalid, nil
+		}
+
+		return StatusResult{Status: statusT, Value: mapT["Value"]}, nil
+	}
+
+	nv0, ok := args[0].(String)
+
+	if !ok {
+		return StatusResultInvalid, nil
+	}
+
+	nv1, ok := args[1].(String)
+
+	if !ok {
+		return StatusResultInvalid, nil
+	}
+
+	return StatusResult{Status: nv0.Value, Value: nv1.Value}, nil
+
+}
+
+func (o StatusResult) IndexGet(index Object) (Object, error) {
+	nv, ok := index.(String)
+	if !ok {
+		return nil, ErrNotIndexable
+	}
+
+	fNameT := nv.Value
+
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if o.Methods == nil {
+		o.Methods = map[string]*Function{}
+	}
+
+	switch fNameT {
+	case "status":
+		fT, ok := o.Methods["status"]
+		if !ok {
+			o.Methods["status"] = &Function{
+				Name: "status",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return ToStringObject(o.Status), nil
+					}
+
+					nv, ok := args[0].(String)
+
+					if !ok {
+						return StatusResultInvalid, nil
+					}
+
+					o.Status = nv.Value
+					return StatusResultSuccess, nil
+				}}
+			fT = o.Methods["status"]
+		}
+		return fT, nil
+	case "value":
+		fT, ok := o.Methods["value"]
+		if !ok {
+			o.Methods["value"] = &Function{
+				Name: "value",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return ToStringObject(o.Value), nil
+					}
+
+					nv, ok := args[0].(String)
+
+					if !ok {
+						return StatusResultInvalid, nil
+					}
+
+					o.Value = nv.Value
+					return StatusResultSuccess, nil
+				}}
+			fT = o.Methods["value"]
+		}
+		return fT, nil
+	case "isValid":
+		fT, ok := o.Methods["isValid"]
+		if !ok {
+			o.Methods["isValid"] = &Function{
+				Name: "isValid",
+				Value: func(args ...Object) (Object, error) {
+					return Bool(o.Status != ""), nil
+				}}
+			fT = o.Methods["isValid"]
+		}
+		return fT, nil
+	case "isSuccess":
+		fT, ok := o.Methods["isSuccess"]
+		if !ok {
+			o.Methods["isSuccess"] = &Function{
+				Name: "isSuccess",
+				Value: func(args ...Object) (Object, error) {
+					return Bool(o.Status == "success"), nil
+				}}
+			fT = o.Methods["isSuccess"]
+		}
+		return fT, nil
+	case "toString", "toJSON":
+		fT, ok := o.Methods["toString"]
+		if !ok {
+			o.Methods["toString"] = &Function{
+				Name: "toString",
+				Value: func(args ...Object) (Object, error) {
+					return ToStringObject(o.String()), nil
+				}}
+			fT = o.Methods["toString"]
+		}
+		return fT, nil
+	case "fromString", "set":
+		fT, ok := o.Methods["fromString"]
+		if !ok {
+			o.Methods["fromString"] = &Function{
+				Name: "fromString",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						o.Status = ""
+						o.Value = ""
+						return StatusResultInvalid, nil
+					}
+
+					if len(args) == 1 {
+						nv, ok := args[0].(String)
+
+						if !ok {
+							o.Status = ""
+							o.Value = ""
+							return StatusResultInvalid, nil
+						}
+
+						mapT := tk.JSONToMapStringString(nv.Value)
+						if mapT == nil {
+							o.Status = ""
+							o.Value = ""
+							return StatusResultInvalid, nil
+						}
+
+						statusT, ok := mapT["Status"]
+						if !ok {
+							o.Status = ""
+							o.Value = ""
+							return StatusResultInvalid, nil
+						}
+
+						o.Status = statusT
+						o.Value = mapT["Value"]
+						return StatusResultSuccess, nil
+					}
+
+					nv0, ok := args[0].(String)
+
+					if !ok {
+						o.Status = ""
+						o.Value = ""
+						return StatusResultInvalid, nil
+					}
+
+					nv1, ok := args[1].(String)
+
+					if !ok {
+						o.Status = ""
+						o.Value = ""
+						return StatusResultInvalid, nil
+					}
+
+					o.Status = nv0.Value
+					o.Value = nv1.Value
+					return StatusResultSuccess, nil
+				}}
+			fT = o.Methods["fromString"]
+		}
+		return fT, nil
+	}
+
+	return nil, ErrNotIndexable
+}
+
+func (StatusResult) IndexSet(key, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+// Any represents container object and implements the Object interfaces.
+type Any struct {
+	ObjectImpl
+	Value        interface{}
+	OriginalType string
+	OriginalCode int
+}
+
+var (
+	_ Object = (*Any)(nil)
+	_ Copier = (*Any)(nil)
+)
+
+func (o *Any) TypeCode() int {
+	return 999
+}
+
+// TypeName implements Object interface.
+func (*Any) TypeName() string {
+	return "any"
+}
+
+// String implements Object interface.
+func (o *Any) String() string {
+	return tk.ToStr(o.Value)
+}
+
+// Copy implements Copier interface.
+func (o *Any) Copy() Object {
+	return &Any{
+		Value:        o.Value,
+		OriginalType: o.OriginalType,
+		OriginalCode: o.OriginalCode,
+	}
+}
+
+// Equal implements Object interface.
+func (o *Any) Equal(right Object) bool {
+	if v, ok := right.(*Any); ok {
+		return v.Value == o.Value
+	}
+	return false
+}
+
+// IsFalsy implements Object interface.
+func (o *Any) IsFalsy() bool { return false }
+
+// IndexGet implements Object interface.
+func (o *Any) IndexGet(index Object) (Object, error) {
+	s := index.String()
+	if s == "type" {
+		return ToStringObject(o.OriginalType), nil
+	}
+
+	if s == "code" {
+		return Int(o.OriginalCode), nil
+	}
+
+	// if s == "New" {
+	// 	return &Function{
+	// 		Name: "New",
+	// 		Value: func(args ...Object) (Object, error) {
+	// 			switch len(args) {
+	// 			case 1:
+	// 				return o.NewError(args[0].String()), nil
+	// 			case 0:
+	// 				return o.NewError(o.Message), nil
+	// 			default:
+	// 				msgs := make([]string, len(args))
+	// 				for i := range args {
+	// 					msgs[i] = args[0].String()
+	// 				}
+	// 				return o.NewError(msgs...), nil
+	// 			}
+	// 		},
+	// 	}, nil
+	// }
+	return Undefined, nil
+}
+
+// // NewError creates a new Error and sets original Error as its cause which can be unwrapped.
+// func (o *Error) NewError(messages ...string) *Error {
+// 	cp := o.Copy().(*Error)
+// 	cp.Message = strings.Join(messages, " ")
+// 	cp.Cause = o
+// 	return cp
+// }
+
+// IndexSet implements Object interface.
+func (*Any) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+// BinaryOp implements Object interface.
+func (o *Any) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, ErrInvalidOperator
+}
+
+// CanCall implements Object interface.
+func (*Any) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (*Any) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// CanIterate implements Object interface.
+func (*Any) CanIterate() bool { return false }
+
+// Iterate implements Object interface.
+func (*Any) Iterate() Iterator { return nil }
+
+func NewAny(vA interface{}, argsA ...string) *Any {
+	originalT := ""
+
+	if len(argsA) > 0 {
+		originalT = argsA[0]
+	}
+
+	originalCodeT := -1
+
+	nv, ok := vA.(Object)
+
+	if ok {
+		originalCodeT = nv.TypeCode()
+	}
+
+	return &Any{
+		Value:        vA,
+		OriginalType: originalT,
+		OriginalCode: originalCodeT,
 	}
 }

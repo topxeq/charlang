@@ -7,7 +7,6 @@ go 1.17
 // replace github.com/topxeq/goph v0.0.0 => ../../../goph
 
 require (
-	github.com/c-bata/go-prompt v0.2.6
 	github.com/topxeq/charlang v0.0.0
 	github.com/topxeq/tk v1.0.6
 
@@ -40,11 +39,8 @@ require (
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/mattn/go-colorable v0.1.7 // indirect
-	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mattn/go-sqlite3 v1.14.17 // indirect
-	github.com/mattn/go-tty v0.0.3 // indirect
 	github.com/mholt/archiver/v3 v3.5.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -54,7 +50,6 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.14 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/sftp v1.13.4 // indirect
-	github.com/pkg/term v1.2.0-beta.2 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sijms/go-ora/v2 v2.7.17 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
@@ -64,6 +59,7 @@ require (
 	github.com/topxeq/mahonia v0.0.0-20190828060648-12b0599ddd1a // indirect
 	github.com/topxeq/regexpx v0.0.0-20230721063247-f118dbe089d7 // indirect
 	github.com/topxeq/socks v0.0.0-20230721063359-4740c5e460e9 // indirect
+	github.com/topxeq/sqltk v0.0.0 // indirect
 	github.com/topxeq/uuid v0.0.0-20210318003930-0d149e412ca1 // indirect
 	github.com/topxeq/xmlx v0.3.0 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect

@@ -1,0 +1,16 @@
+timeT := time()
+
+pl("%v", timeT.format())
+
+pl("%v", timeT.format(time.timeFormatRFC1123))
+
+pl("%v", timeT.format(time.timeFormatCompact))
+
+pl("%v", timeT.format(time.timeFormatMS))
+
+pl("%v", timeT.format(time.timeFormatMSCompact))
+
+pl("%v", timeT.format("2006"))
+
+pl("%v", timeT.format("2006-01-02 15:04:05.000"))
+

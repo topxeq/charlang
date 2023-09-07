@@ -188,10 +188,12 @@ func Compile(script []byte, opts *CompilerOptions) (*Bytecode, error) {
 			return nil, err
 		}
 	}
+	// tk.Pln(2.3)
 
 	if err := compiler.Compile(pf); err != nil {
 		return nil, err
 	}
+	// tk.Pln(2.4)
 
 	bc := compiler.Bytecode()
 	if bc.Main.NumLocals > 256 {
@@ -420,8 +422,10 @@ func (c *Compiler) addConstant(obj Object) (index int) {
 		}
 	}()
 
+	// tk.Pl("addConstant: %T %#v %+v", obj, obj, obj)
+
 	switch obj.(type) {
-	case Int, Uint, String, Bool, Float, Char, *UndefinedType:
+	case Byte, Int, Uint, Bool, Float, Char, *UndefinedType: // String,
 		i, ok := c.constsCache[obj]
 		if ok {
 			index = i

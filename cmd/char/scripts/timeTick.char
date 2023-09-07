@@ -1,0 +1,36 @@
+t1 := toTime("19710801")
+pln("t1:", t1)
+
+rs := t1.getInfo()
+pln(rs)
+
+// timeToTick $tick1 $t1
+// pln tick1: $tick1
+
+// timeToTickInt $tick1Int $t1
+// pln tick1Int: $tick1Int
+
+// mt $tick2 $t1 toTick
+// pln tick2: $tick2
+
+// mt $tick2Int $t1 toTickInt
+// pln tick2Int: $tick2Int
+
+// toTime $t2 $tick1
+// pln t2: $t2
+
+// convert $t3 $tick2 time
+// pln t3: $t3
+
+// tickToTime $t4 $tick2
+// pln t4: $t4
+
+// timeToGlobal $t5 $t2
+// pln t5: $t5
+
+// toTime $t6 19710801 -global
+// pln t6: $t6
+
+// timeToLocal $t7 $t6
+// pln t7: $t7
+

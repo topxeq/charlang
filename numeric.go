@@ -660,3 +660,156 @@ func (o Char) Format(s fmt.State, verb rune) {
 	format := compat.FmtFormatString(s, verb)
 	fmt.Fprintf(s, format, rune(o))
 }
+
+type Byte byte
+
+func (Byte) TypeCode() int {
+	return 109
+}
+
+// TypeName implements Object interface.
+func (Byte) TypeName() string {
+	return "byte"
+}
+
+// String implements Object interface.
+func (o Byte) String() string {
+	return strconv.FormatInt(int64(o), 10)
+}
+
+// Equal implements Object interface.
+func (o Byte) Equal(right Object) bool {
+	switch v := right.(type) {
+	case Byte:
+		return o == v
+	case Int:
+		return Int(o) == v
+	case Uint:
+		return Uint(o) == v
+	case Float:
+		return Float(o) == v
+	case Char:
+		return Char(o) == v
+	case Bool:
+		if v {
+			return o == 1
+		}
+		return o == 0
+	}
+	return false
+}
+
+// IsFalsy implements Object interface.
+func (o Byte) IsFalsy() bool { return o == 0 }
+
+// CanCall implements Object interface.
+func (o Byte) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (o Byte) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// CanIterate implements Object interface.
+func (Byte) CanIterate() bool { return false }
+
+// Iterate implements Object interface.
+func (Byte) Iterate() Iterator { return nil }
+
+// IndexSet implements Object interface.
+func (Byte) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+// IndexGet implements Object interface.
+func (Byte) IndexGet(index Object) (Object, error) {
+	return nil, ErrNotIndexable
+}
+
+// BinaryOp implements Object interface.
+func (o Byte) BinaryOp(tok token.Token, right Object) (Object, error) {
+	switch v := right.(type) {
+	case Byte:
+		switch tok {
+		case token.Add:
+			return o + v, nil
+		case token.Sub:
+			return o - v, nil
+		case token.Mul:
+			return o * v, nil
+		case token.Quo:
+			if v == 0 {
+				return nil, ErrZeroDivision
+			}
+			return o / v, nil
+		case token.Rem:
+			return o % v, nil
+		case token.And:
+			return o & v, nil
+		case token.Or:
+			return o | v, nil
+		case token.Xor:
+			return o ^ v, nil
+		case token.AndNot:
+			return o &^ v, nil
+		case token.Shl:
+			return o << v, nil
+		case token.Shr:
+			return o >> v, nil
+		case token.Less:
+			return Bool(o < v), nil
+		case token.LessEq:
+			return Bool(o <= v), nil
+		case token.Greater:
+			return Bool(o > v), nil
+		case token.GreaterEq:
+			return Bool(o >= v), nil
+		}
+	case Int:
+		return Int(o).BinaryOp(tok, right)
+	case Uint:
+		return Uint(o).BinaryOp(tok, right)
+	case Float:
+		return Float(o).BinaryOp(tok, right)
+	case Char:
+		switch tok {
+		case token.Add:
+			return Char(o) + v, nil
+		case token.Sub:
+			return Char(o) - v, nil
+		case token.Less:
+			return Bool(Char(o) < v), nil
+		case token.LessEq:
+			return Bool(Char(o) <= v), nil
+		case token.Greater:
+			return Bool(Char(o) > v), nil
+		case token.GreaterEq:
+			return Bool(Char(o) >= v), nil
+		}
+	case Bool:
+		if v {
+			right = Int(1)
+		} else {
+			right = Int(0)
+		}
+		return o.BinaryOp(tok, right)
+	case *UndefinedType:
+		switch tok {
+		case token.Less, token.LessEq:
+			return False, nil
+		case token.Greater, token.GreaterEq:
+			return True, nil
+		}
+	}
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName(),
+	)
+}
+
+// Format implements fmt.Formatter interface.
+func (o Byte) Format(s fmt.State, verb rune) {
+	format := compat.FmtFormatString(s, verb)
+	fmt.Fprintf(s, format, byte(o))
+}

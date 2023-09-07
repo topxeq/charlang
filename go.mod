@@ -13,6 +13,11 @@ require (
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/sijms/go-ora/v2 v2.7.17
-	github.com/topxeq/tk v1.0.5
+	github.com/topxeq/sqltk v0.0.0
+	github.com/topxeq/tk v1.0.6
 	golang.org/x/sys v0.7.0 // indirect
 )
+
+replace github.com/topxeq/tk v1.0.6 => ../tk
+
+replace github.com/topxeq/sqltk v0.0.0 => ../sqltk

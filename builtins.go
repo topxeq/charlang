@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/topxeq/charlang/token"
@@ -28,6 +29,9 @@ const (
 	BuiltinAppend BuiltinType = iota
 
 	// char add start
+	BuiltinToTime
+	BuiltinNewAny
+	BuiltinTime
 	BuiltinSleep
 	BuiltinExit
 	BuiltinSystemCmd
@@ -115,6 +119,12 @@ var BuiltinsMap = map[string]BuiltinType{
 	// data type related
 	"typeCode": BuiltinTypeCode,
 	// "typeName": BuiltinTypeName,
+	"time":   BuiltinTime,
+	"newAny": BuiltinNewAny,
+
+	"toTime": BuiltinToTime,
+
+	// time related
 
 	// control related
 	"exit": BuiltinExit,
@@ -213,6 +223,18 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
 	// char add start
+	BuiltinNewAny: &BuiltinFunction{
+		Name:  "newAny",
+		Value: builtinNewAnyFunc,
+	},
+	BuiltinTime: &BuiltinFunction{
+		Name:  "time", // new a Time object
+		Value: builtinTimeFunc,
+	},
+	BuiltinToTime: &BuiltinFunction{
+		Name:  "toTime", // new a Time object
+		Value: builtinTimeFunc,
+	},
 	BuiltinExit: &BuiltinFunction{
 		Name:  "exit", // usage: exit() or exit(1)
 		Value: builtinExitFunc,
@@ -1067,6 +1089,7 @@ func builtinIsCallableFunc(arg Object) Object { return Bool(arg.CanCall()) }
 func builtinIsIterableFunc(arg Object) Object { return Bool(arg.CanIterate()) }
 
 func CallExAdapter(fn CallableExFunc) CallableFunc {
+	// tk.Pl("CallExAdapter: %v", fn)
 	return func(args ...Object) (Object, error) {
 		return fn(Call{args: args})
 	}
@@ -1522,5 +1545,88 @@ func builtinExitFunc(args ...Object) (Object, error) {
 
 	return Undefined, nil
 }
+
+func builtinTimeFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return &Time{Value: time.Now()}, nil
+	}
+
+	switch obj := args[0].(type) {
+	case Int:
+		return &Time{Value: tk.GetTimeFromUnixTimeStampMid(obj.String())}, nil
+	// case Float:
+	// 	return DateTime{Value: float64(obj)}, nil
+	case *Time:
+		return &Time{Value: obj.Value}, nil
+	case String:
+		rsT := tk.ToTime(obj.Value, ObjectsToI(args[1:])...)
+
+		if tk.IsError(rsT) {
+			return Undefined, NewCommonError("failed to convert time: %v", rsT)
+		}
+		return &Time{Value: rsT.(time.Time)}, nil
+	default:
+		return Undefined, NewCommonError("failed to convert time")
+	}
+}
+
+func builtinNewAnyFunc(args ...Object) (Object, error) {
+	if len(args) < 1 {
+		return &Any{Value: nil}, nil
+	}
+
+	var s1s string
+
+	s1, ok := args[0].(String)
+
+	if !ok {
+		s1s = args[0].String()
+	} else {
+		s1s = s1.Value
+	}
+
+	switch s1s {
+	case "strings.Builder", "*strings.Builder", "stringBuilder":
+		return builtinMakeStringBuilderFunc(args[1:]...)
+		// case "mux":
+		// 	return Any{
+		// 		Value:        http.NewServeMux(),
+		// 		OriginalType: "*http.ServeMux",
+		// 	}, nil
+	}
+
+	return &Any{Value: nil}, nil
+}
+
+func builtinMakeStringBuilderFunc(args ...Object) (Object, error) {
+	return &Any{
+		Value:        new(strings.Builder),
+		OriginalType: "StringBuilder",
+	}, nil
+}
+
+// func builtinToTimeFunc(args ...Object) (Object, error) {
+// 	if len(args) < 1 {
+// 		return &Time{Value: time.Now()}, nil
+// 	}
+
+// 	switch obj := args[0].(type) {
+// 	case Int:
+// 		return &Time{Value: tk.GetTimeFromUnixTimeStampMid(obj.String())}, nil
+// 	// case Float:
+// 	// 	return DateTime{Value: float64(obj)}, nil
+// 	case Time:
+// 		return &Time{Value: obj.Value}, nil
+// 	case String:
+// 		rsT := tk.ToTime(obj)
+
+// 		if tk.IsError(rsT) {
+// 			return Undefined, NewCommonError("failed to convert time")
+// 		}
+// 		return &Time{Value: rsT.(time.Time)}, nil
+// 	default:
+// 		return Undefined, NewCommonError("failed to convert time")
+// 	}
+// }
 
 // char add end
