@@ -29,6 +29,11 @@ const (
 	BuiltinAppend BuiltinType = iota
 
 	// char add start
+	BuiltinTypeOfAny
+	BuiltinToStr
+	BuiltinCallNamedFunc
+	BuiltinNewObj
+	BuiltinMethod
 	BuiltinToTime
 	BuiltinNewAny
 	BuiltinTime
@@ -39,6 +44,7 @@ const (
 	BuiltinToJSON
 	BuiltinFromJSON
 	BuiltinPlo
+	BuiltinPlt
 	BuiltinGetParam
 	BuiltinGetSwitch
 	BuiltinIfSwitchExists
@@ -117,12 +123,19 @@ var BuiltinsMap = map[string]BuiltinType{
 	"testByReg":        BuiltinTestByReg,
 
 	// data type related
-	"typeCode": BuiltinTypeCode,
+	"typeCode":  BuiltinTypeCode,
+	"typeOfAny": BuiltinTypeOfAny,
 	// "typeName": BuiltinTypeName,
 	"time":   BuiltinTime,
 	"newAny": BuiltinNewAny,
 
 	"toTime": BuiltinToTime,
+
+	// new related
+	"newObj": BuiltinNewObj,
+
+	// convert related
+	"toStr": BuiltinToStr,
 
 	// time related
 
@@ -133,9 +146,14 @@ var BuiltinsMap = map[string]BuiltinType{
 	"pl":  BuiltinPl,
 	"pln": BuiltinPln,
 	"plo": BuiltinPlo,
+	"plt": BuiltinPlt,
 
 	// error related
 	"isErrX": BuiltinIsErrX,
+
+	// member/method related
+	"method":        BuiltinMethod,
+	"callNamedFunc": BuiltinCallNamedFunc,
 
 	// encode/decode related
 	"toJSON":   BuiltinToJSON,
@@ -223,6 +241,31 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
 	// char add start
+	BuiltinTypeOfAny: &BuiltinFunction{
+		Name:    "typeOfAny",
+		Value:   CallExAdapter(builtinTypeOfAnyFunc),
+		ValueEx: builtinTypeOfAnyFunc,
+	},
+	BuiltinToStr: &BuiltinFunction{
+		Name:    "toStr", // usage: toStr(any)
+		Value:   CallExAdapter(builtinToStrFunc),
+		ValueEx: builtinToStrFunc,
+	},
+	BuiltinCallNamedFunc: &BuiltinFunction{
+		Name:    "callNamedFunc",
+		Value:   CallExAdapter(builtinCallNamedFuncFunc),
+		ValueEx: builtinCallNamedFuncFunc,
+	},
+	BuiltinNewObj: &BuiltinFunction{
+		Name:    "newObj",
+		Value:   CallExAdapter(builtinNewObjFunc),
+		ValueEx: builtinNewObjFunc,
+	},
+	BuiltinMethod: &BuiltinFunction{
+		Name:    "method",
+		Value:   CallExAdapter(builtinMethodFunc),
+		ValueEx: builtinMethodFunc,
+	},
 	BuiltinNewAny: &BuiltinFunction{
 		Name:  "newAny",
 		Value: builtinNewAnyFunc,
@@ -264,6 +307,11 @@ var BuiltinObjects = [...]Object{
 			return fnAVAR(tk.Plo)(NewCall(nil, args))
 		},
 		ValueEx: fnAVAR(tk.Plo),
+	},
+	BuiltinPlt: &BuiltinFunction{
+		Name:    "plt",
+		Value:   CallExAdapter(builtinPltFunc),
+		ValueEx: builtinPltFunc,
 	},
 	BuiltinIfSwitchExists: &BuiltinFunction{
 		Name:    "ifSwitchExists", // usage: if ifSwitchExists(argsG, "-verbose") {...}
@@ -1570,6 +1618,82 @@ func builtinTimeFunc(args ...Object) (Object, error) {
 	}
 }
 
+var namedFuncMapG = map[string]interface{}{
+	"fmt.Fprintf": fmt.Fprintf,
+}
+
+func builtinCallNamedFuncFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	str1 := args[0].String()
+
+	fn1, ok := namedFuncMapG[str1]
+
+	if !ok {
+		return Undefined, NewCommonError("named func not found")
+	}
+
+	rsT := tk.ReflectCallFuncQuick(fn1, ObjectsToI(args[1:]))
+
+	return ConvertToObject(rsT), nil
+}
+
+func builtinNewObjFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	rsT := tk.NewObject(ObjectsToI(args)...)
+
+	return ConvertToObject(rsT), nil
+}
+
+func builtinMethodFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	var name1 string = ""
+
+	var objT interface{}
+
+	objT = args[0]
+
+	nv1, ok := args[0].(Object)
+
+	if ok {
+		objT = ConvertFromObject(nv1)
+	}
+
+	name1 = args[1].String()
+
+	// map1, ok := methodMapG[str1]
+
+	// if !ok {
+	// 	return Undefined, NewCommonError("method not found 1")
+	// }
+
+	// map2, ok := map1[name1]
+
+	// if !ok {
+	// 	return Undefined, NewCommonError("method not found 2")
+	// }
+
+	paramsT := ObjectsToI(args[2:])
+
+	rsT := tk.ReflectCallMethodQuick(objT, name1, paramsT...)
+
+	return ConvertToObject(rsT), nil
+}
+
 func builtinNewAnyFunc(args ...Object) (Object, error) {
 	if len(args) < 1 {
 		return &Any{Value: nil}, nil
@@ -1603,6 +1727,66 @@ func builtinMakeStringBuilderFunc(args ...Object) (Object, error) {
 		Value:        new(strings.Builder),
 		OriginalType: "StringBuilder",
 	}, nil
+}
+
+func builtinToStrFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return ToStringObject(""), nil
+	}
+
+	rsT := tk.ToStr(ConvertFromObject(args[0]))
+
+	return ToStringObject(rsT), nil
+}
+
+func builtinTypeOfAnyFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	any1, ok := args[0].(*Any)
+
+	if !ok {
+		return nil, fmt.Errorf("not any type")
+	}
+
+	rsT := fmt.Sprintf("%T", any1.Value)
+
+	return ToStringObject(rsT), nil
+}
+
+func builtinPltFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	lenT := len(args)
+
+	if lenT < 1 {
+		n, e := fmt.Println()
+		return Int(n), e
+	}
+
+	if lenT == 1 {
+		n, e := fmt.Printf("(%v)%#v\n", args[0].TypeName(), args[0])
+		return Int(n), e
+	}
+
+	countT := 0
+	for i, v := range args {
+		n, e := fmt.Printf("[%v] (%v)%#v\n", i, v.TypeCode(), v)
+
+		countT += n
+
+		if e != nil {
+			return Int(countT), e
+		}
+
+	}
+
+	return Int(countT), nil
 }
 
 // func builtinToTimeFunc(args ...Object) (Object, error) {

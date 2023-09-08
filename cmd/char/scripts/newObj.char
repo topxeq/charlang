@@ -1,0 +1,13 @@
+buf1 := newObj("bytesBuffer")
+
+pl("buf1 type: %v", typeOfAny(buf1))
+
+method(buf1, "WriteString", "abc")
+
+rs := method(buf1, "Bytes")[0]
+
+plt(rs)
+
+rs = toStr(rs)
+
+plo(rs)

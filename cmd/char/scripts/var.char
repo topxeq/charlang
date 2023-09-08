@@ -1,0 +1,16 @@
+// define a variable before using it
+var a
+
+a = 1
+
+println(a)
+
+// assign a value of another type to a
+a = "abc"
+
+println(a)
+
+// define and assign in one step
+b := true
+
+println(b)

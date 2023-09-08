@@ -4,6 +4,14 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", getSeq(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "newObj.char")
+
+testByText(rs, "buf1 type: *bytes.Buffer\n(bytes)[]byte{0x61, 0x62, 0x63}\n(charlang.String)\"abc\"\n", getSeq(), "newObj.char")
+
+rs = systemCmd("char", "-gopath", "var.char")
+
+testByText(rs, "1\nabc\ntrue\n", getSeq(), "var.char")
+
 rs = systemCmd("char", "-gopath", "exit.char")
 
 testByText(rs, "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n", getSeq(), "exit.char")

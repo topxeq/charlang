@@ -1,0 +1,9 @@
+global tk
+
+rs := tk("test", "param1", "param2", [1, 2, "s"])
+
+pln(rs)
+
+rs := tk("pl", "param1", "param2", [1, 2, "s"])
+
+pln(rs)
