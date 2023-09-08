@@ -1,0 +1,15 @@
+t1 := time()
+
+// plt(t1)
+
+format1 := getNamedValue("time.DateTime")
+
+s1 := t1.format(format1)
+
+plt(s1)
+
+format2 := getNamedValue("tk.TimeFormatCompact")
+
+s2 := t1.format(format2)
+
+plt(s2)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -29,13 +30,28 @@ const (
 	BuiltinAppend BuiltinType = iota
 
 	// char add start
+	BuiltinGetClipText
+	BuiltinSetClipText
+	BuiltinRegQuote
+	BuiltinAny
+	BuiltinTrim
+	BuiltinStrTrim
+	BuiltinRegFindAll
+	BuiltinCheckErrX
+	BuiltinLoadText
+	BuiltinSaveText
+	BuiltinJoinPath
+	BuiltinGetEnv
+	BuiltinSetEnv
 	BuiltinTypeOfAny
 	BuiltinToStr
 	BuiltinCallNamedFunc
+	BuiltinCallInternalFunc
+	BuiltinGetNamedValue
 	BuiltinNewObj
 	BuiltinMethod
 	BuiltinToTime
-	BuiltinNewAny
+	// BuiltinNewAny
 	BuiltinTime
 	BuiltinSleep
 	BuiltinExit
@@ -126,8 +142,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"typeCode":  BuiltinTypeCode,
 	"typeOfAny": BuiltinTypeOfAny,
 	// "typeName": BuiltinTypeName,
-	"time":   BuiltinTime,
-	"newAny": BuiltinNewAny,
+	"time": BuiltinTime,
+	// "newAny": BuiltinNewAny,
+	"any": BuiltinAny,
 
 	"toTime": BuiltinToTime,
 
@@ -136,6 +153,14 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// convert related
 	"toStr": BuiltinToStr,
+
+	// string related
+	"trim":    BuiltinTrim,
+	"strTrim": BuiltinStrTrim,
+
+	// regex related
+	"regFindAll": BuiltinRegFindAll,
+	"regQuote":   BuiltinRegQuote,
 
 	// time related
 
@@ -149,11 +174,14 @@ var BuiltinsMap = map[string]BuiltinType{
 	"plt": BuiltinPlt,
 
 	// error related
-	"isErrX": BuiltinIsErrX,
+	"isErrX":    BuiltinIsErrX,
+	"checkErrX": BuiltinCheckErrX,
 
 	// member/method related
-	"method":        BuiltinMethod,
-	"callNamedFunc": BuiltinCallNamedFunc,
+	"method":           BuiltinMethod,
+	"callNamedFunc":    BuiltinCallNamedFunc,
+	"callInternalFunc": BuiltinCallInternalFunc,
+	"getNamedValue":    BuiltinGetNamedValue,
 
 	// encode/decode related
 	"toJSON":   BuiltinToJSON,
@@ -166,11 +194,24 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getSwitch":      BuiltinGetSwitch,
 	"getParam":       BuiltinGetParam,
 
+	// clipboard related
+	"getClipText": BuiltinGetClipText,
+	"setClipText": BuiltinSetClipText,
+
 	// thread related
 	"sleep": BuiltinSleep,
 
 	// os/system related
 	"systemCmd": BuiltinSystemCmd,
+	"getEnv":    BuiltinGetEnv,
+	"setEnv":    BuiltinSetEnv,
+
+	// path related
+	"joinPath": BuiltinJoinPath,
+
+	// file related
+	"loadText": BuiltinLoadText,
+	"saveText": BuiltinSaveText,
 
 	// misc related
 	"getSeq": BuiltinGetSeq,
@@ -241,6 +282,51 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
 	// char add start
+	BuiltinTrim: &BuiltinFunction{
+		Name:    "trim",
+		Value:   CallExAdapter(builtinTrimFunc),
+		ValueEx: builtinTrimFunc,
+	},
+	BuiltinStrTrim: &BuiltinFunction{
+		Name:    "strTrim",
+		Value:   CallExAdapter(builtinStrTrimFunc),
+		ValueEx: builtinStrTrimFunc,
+	},
+	BuiltinRegFindAll: &BuiltinFunction{
+		Name:    "regFindAll",
+		Value:   fnASSIRLs(tk.RegFindAllX),
+		ValueEx: fnASSIRLsex(tk.RegFindAllX),
+	},
+	BuiltinCheckErrX: &BuiltinFunction{
+		Name:    "checkErrX",
+		Value:   CallExAdapter(builtinCheckErrXFunc),
+		ValueEx: builtinCheckErrXFunc,
+	},
+	BuiltinLoadText: &BuiltinFunction{
+		Name:    "loadText",
+		Value:   fnASRS(tk.LoadStringFromFile),
+		ValueEx: fnASRSex(tk.LoadStringFromFile),
+	},
+	BuiltinSaveText: &BuiltinFunction{
+		Name:    "saveText",
+		Value:   fnASSRS(tk.SaveStringToFile),
+		ValueEx: fnASSRSex(tk.SaveStringToFile),
+	},
+	BuiltinJoinPath: &BuiltinFunction{
+		Name:    "joinPath",
+		Value:   fnAVsRS(filepath.Join),
+		ValueEx: fnAVsRSex(filepath.Join),
+	},
+	BuiltinGetEnv: &BuiltinFunction{
+		Name:    "getEnv",
+		Value:   CallExAdapter(builtinGetEnvFunc),
+		ValueEx: builtinGetEnvFunc,
+	},
+	BuiltinSetEnv: &BuiltinFunction{
+		Name:    "setEnv",
+		Value:   fnASSRE(os.Setenv),
+		ValueEx: fnASSREex(os.Setenv),
+	},
 	BuiltinTypeOfAny: &BuiltinFunction{
 		Name:    "typeOfAny",
 		Value:   CallExAdapter(builtinTypeOfAnyFunc),
@@ -256,6 +342,16 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinCallNamedFuncFunc),
 		ValueEx: builtinCallNamedFuncFunc,
 	},
+	BuiltinCallInternalFunc: &BuiltinFunction{
+		Name:    "callInternalFunc",
+		Value:   CallExAdapter(builtinCallInternalFuncFunc),
+		ValueEx: builtinCallInternalFuncFunc,
+	},
+	BuiltinGetNamedValue: &BuiltinFunction{
+		Name:    "getNamedValue",
+		Value:   CallExAdapter(builtinGetNamedValueFunc),
+		ValueEx: builtinGetNamedValueFunc,
+	},
 	BuiltinNewObj: &BuiltinFunction{
 		Name:    "newObj",
 		Value:   CallExAdapter(builtinNewObjFunc),
@@ -266,9 +362,28 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinMethodFunc),
 		ValueEx: builtinMethodFunc,
 	},
-	BuiltinNewAny: &BuiltinFunction{
-		Name:  "newAny",
-		Value: builtinNewAnyFunc,
+	// BuiltinNewAny: &BuiltinFunction{
+	// 	Name:  "newAny",
+	// 	Value: builtinNewAnyFunc,
+	// },
+	BuiltinGetClipText: &BuiltinFunction{
+		Name:    "getClipText",
+		Value:   fnARS(tk.GetClipText),
+		ValueEx: fnARSex(tk.GetClipText),
+	},
+	BuiltinSetClipText: &BuiltinFunction{
+		Name:    "setClipText",
+		Value:   fnASRE(tk.SetClipText),
+		ValueEx: fnASREex(tk.SetClipText),
+	},
+	BuiltinRegQuote: &BuiltinFunction{
+		Name:    "regQuote",
+		Value:   CallExAdapter(builtinRegQuoteFunc),
+		ValueEx: builtinRegQuoteFunc,
+	},
+	BuiltinAny: &BuiltinFunction{
+		Name:  "any",
+		Value: builtinAnyFunc,
 	},
 	BuiltinTime: &BuiltinFunction{
 		Name:  "time", // new a Time object
@@ -304,9 +419,9 @@ var BuiltinObjects = [...]Object{
 	BuiltinPlo: &BuiltinFunction{
 		Name: "plo",
 		Value: func(args ...Object) (Object, error) {
-			return fnAVAR(tk.Plo)(NewCall(nil, args))
+			return fnAVaRex(tk.Plo)(NewCall(nil, args))
 		},
-		ValueEx: fnAVAR(tk.Plo),
+		ValueEx: fnAVaRex(tk.Plo),
 	},
 	BuiltinPlt: &BuiltinFunction{
 		Name:    "plt",
@@ -329,11 +444,9 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinGetParamFunc,
 	},
 	BuiltinPln: &BuiltinFunction{
-		Name: "pln",
-		Value: func(args ...Object) (Object, error) {
-			return fnAVAR(tk.Pln)(NewCall(nil, args))
-		},
-		ValueEx: fnAVAR(tk.Pln),
+		Name:    "pln",
+		Value:   fnAVaR(tk.Pln),
+		ValueEx: fnAVaRex(tk.Pln),
 	},
 	BuiltinTypeCode: &BuiltinFunction{
 		Name:    "typeCode",
@@ -358,9 +471,9 @@ var BuiltinObjects = [...]Object{
 	BuiltinGetSeq: &BuiltinFunction{
 		Name: "getSeq",
 		Value: func(args ...Object) (Object, error) {
-			return fnARI(tk.GetSeq)(NewCall(nil, args))
+			return fnARIex(tk.GetSeq)(NewCall(nil, args))
 		},
-		ValueEx: fnARI(tk.GetSeq),
+		ValueEx: fnARIex(tk.GetSeq),
 	},
 	BuiltinTestByText: &BuiltinFunction{
 		Name:    "testByText",
@@ -378,11 +491,9 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinTestByRegFunc,
 	},
 	BuiltinSystemCmd: &BuiltinFunction{
-		Name: "systemCmd",
-		Value: func(args ...Object) (Object, error) {
-			return fnASVSRS(tk.SystemCmd)(NewCall(nil, args))
-		},
-		ValueEx: fnASVSRS(tk.SystemCmd),
+		Name:    "systemCmd",
+		Value:   fnASVsRS(tk.SystemCmd),
+		ValueEx: fnASVsRSex(tk.SystemCmd),
 	},
 	// char add end
 	BuiltinAppend: &BuiltinFunction{
@@ -1162,16 +1273,182 @@ func toArgsS(offset int, c Call) []string {
 	return vargs
 }
 
+// func converters
+
 // like tk.GetOSName
-func fnARS(fn func() string) CallableExFunc {
+func fnARS(fn func() string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		rs := fn()
+		return ToStringObject(rs), nil
+	}
+}
+
+func fnARSex(fn func() string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		rs := fn()
 		return ToStringObject(rs), nil
 	}
 }
 
+// like os.GetEnv
+func fnASRS(fn func(string) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String())
+		return ToStringObject(rs), nil
+	}
+}
+
+func fnASRSex(fn func(string) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(c.Get(0).String())
+		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.SetClipText
+func fnASRE(fn func(string) error) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+func fnASREex(fn func(string) error) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(c.Get(0).String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.RegFindAllX
+func fnASSIRLs(fn func(string, string, int) []string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 3 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String(), tk.ToInt(ConvertFromObject(args[2])))
+		return ConvertToObject(rs), nil
+	}
+}
+
+func fnASSIRLsex(fn func(string, string, int) []string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 3 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(c.Get(0).String(), c.Get(1).String(), tk.ToInt(ConvertFromObject(c.Get(2))))
+		return ConvertToObject(rs), nil
+	}
+}
+
+// // like tk.LoadStringFromFile
+// func fnASRSe(fn func(string) string) CallableFunc {
+// 	return func(args ...Object) (ret Object, err error) {
+// 		if len(args) < 1 {
+// 			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+// 		}
+
+// 		rs := fn(args[0].String())
+// 		return ToStringObject(rs), nil
+// 	}
+// }
+
+// func fnASRSeex(fn func(string) string) CallableExFunc {
+// 	return func(c Call) (ret Object, err error) {
+// 		if c.Len() < 1 {
+// 			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+// 		}
+
+// 		rs := fn(c.Get(0).String())
+// 		return ToStringObject(rs), nil
+// 	}
+// }
+
+// like tk.SaveStringToFile
+func fnASSRS(fn func(string, string) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ToStringObject(rs), nil
+	}
+}
+
+func fnASSRSex(fn func(string, string) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(c.Get(0).String(), c.Get(1).String())
+		return ToStringObject(rs), nil
+	}
+}
+
+// like os.SetEnv
+func fnASSRE(fn func(string, string) error) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+func fnASSREex(fn func(string, string) error) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like filepath.Join
+func fnAVsRS(fn func(...string) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		rs := fn(ObjectsToS(args)...)
+		return ToStringObject(rs), nil
+	}
+}
+
+func fnAVsRSex(fn func(...string) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		rs := fn(ObjectsToS(args)...)
+		return ToStringObject(rs), nil
+	}
+}
+
 // like tk.GetSeq
-func fnARI(fn func() int) CallableExFunc {
+func fnARIex(fn func() int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		rs := fn()
 		return ToIntObject(rs), nil
@@ -1179,7 +1456,19 @@ func fnARI(fn func() int) CallableExFunc {
 }
 
 // like tk.SystemCmd
-func fnASVSRS(fn func(string, ...string) string) CallableExFunc {
+func fnASVsRS(fn func(string, ...string) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return Undefined, ErrWrongNumArguments.NewError(
+				"want>=1 got=" + strconv.Itoa(len(args)))
+		}
+		vargs := ObjectsToS(args[1:])
+		rs := fn(args[0].String(), vargs...)
+		return ToStringObject(rs), nil
+	}
+}
+
+func fnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
 			return Undefined, ErrWrongNumArguments.NewError(
@@ -1192,7 +1481,15 @@ func fnASVSRS(fn func(string, ...string) string) CallableExFunc {
 }
 
 // like tk.Pln
-func fnAVAR(fn func(...interface{})) CallableExFunc {
+func fnAVaR(fn func(...interface{})) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		vargs := ObjectsToI(args)
+		fn(vargs...)
+		return nil, nil
+	}
+}
+
+func fnAVaRex(fn func(...interface{})) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		vargs := toArgsA(0, c)
 		fn(vargs...)
@@ -1201,7 +1498,7 @@ func fnAVAR(fn func(...interface{})) CallableExFunc {
 }
 
 // like fmt.printf
-func fnASVARIE(fn func(string, ...interface{}) (int, error)) CallableExFunc {
+func fnASVaRIEex(fn func(string, ...interface{}) (int, error)) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
 			return Undefined, ErrWrongNumArguments.NewError(
@@ -1213,6 +1510,7 @@ func fnASVARIE(fn func(string, ...interface{}) (int, error)) CallableExFunc {
 	}
 }
 
+// builtin funcs
 func builtinTestByTextFunc(c Call) (ret Object, err error) {
 	argsA := c.GetArgs()
 
@@ -1622,6 +1920,21 @@ var namedFuncMapG = map[string]interface{}{
 	"fmt.Fprintf": fmt.Fprintf,
 }
 
+var namedValueMapG = map[string]interface{}{
+	"tk.TimeFormat":            tk.TimeFormat,            // "2006-01-02 15:04:05"
+	"tk.TimeFormatMS":          tk.TimeFormatMS,          // "2006-01-02 15:04:05.000"
+	"tk.TimeFormatMSCompact":   tk.TimeFormatMSCompact,   // "20060102150405.000"
+	"tk.TimeFormatCompact":     tk.TimeFormatCompact,     // "20060102150405"
+	"tk.TimeFormatCompact2":    tk.TimeFormatCompact2,    // "2006/01/02 15:04:05"
+	"tk.TimeFormatDateCompact": tk.TimeFormatDateCompact, // "20060102"
+
+	"time.Layout":   time.Layout,
+	"time.RFC3339":  time.RFC3339,
+	"time.DateTime": time.DateTime,
+	"time.DateOnly": time.DateOnly,
+	"time.TimeOnly": time.TimeOnly,
+}
+
 func builtinCallNamedFuncFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -1640,6 +1953,36 @@ func builtinCallNamedFuncFunc(c Call) (Object, error) {
 	rsT := tk.ReflectCallFuncQuick(fn1, ObjectsToI(args[1:]))
 
 	return ConvertToObject(rsT), nil
+}
+
+func builtinCallInternalFuncFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	rsT := tk.ReflectCallFuncQuick(ConvertFromObject(args[0]), ObjectsToI(args[1:]))
+
+	return ConvertToObject(rsT), nil
+}
+
+func builtinGetNamedValueFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	str1 := args[0].String()
+
+	v1, ok := namedValueMapG[str1]
+
+	if !ok {
+		return Undefined, NewCommonError("named value not found")
+	}
+
+	return ConvertToObject(v1), nil
 }
 
 func builtinNewObjFunc(c Call) (Object, error) {
@@ -1692,6 +2035,50 @@ func builtinMethodFunc(c Call) (Object, error) {
 	rsT := tk.ReflectCallMethodQuick(objT, name1, paramsT...)
 
 	return ConvertToObject(rsT), nil
+}
+
+func builtinRegQuoteFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	return ToStringObject(tk.RegQuote(args[0].String())), nil
+}
+
+func builtinGetClipTextFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	return ToStringObject(tk.GetClipText()), nil
+}
+
+func builtinAnyFunc(args ...Object) (Object, error) {
+	switch obj := args[0].(type) {
+	case Int:
+		return &Any{Value: int(obj)}, nil
+	case Float:
+		return &Any{Value: float64(obj)}, nil
+	case Char:
+		return &Any{Value: rune(obj)}, nil
+	case Uint:
+		return &Any{Value: uint64(obj)}, nil
+	case Byte:
+		return &Any{Value: byte(obj)}, nil
+	case String:
+		return &Any{Value: obj.Value}, nil
+	case Bool:
+		if obj {
+			return &Any{Value: true}, nil
+		}
+		return &Any{Value: false}, nil
+	default:
+		return &Any{Value: obj}, nil
+	}
 }
 
 func builtinNewAnyFunc(args ...Object) (Object, error) {
@@ -1812,5 +2199,68 @@ func builtinPltFunc(c Call) (Object, error) {
 // 		return Undefined, NewCommonError("failed to convert time")
 // 	}
 // }
+
+func builtinGetEnvFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	rsT := os.Getenv(args[0].String())
+
+	return ToStringObject(rsT), nil
+}
+
+func builtinCheckErrXFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	rsT, errT := builtinIsErrXFunc(c)
+
+	if errT != nil && rsT == True {
+		fmt.Printf("Error: %v\n", args[0])
+		os.Exit(0)
+	}
+
+	return rsT, nil
+}
+
+func builtinTrimFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	arg0 := args[0]
+
+	_, ok := arg0.(*UndefinedType)
+	if ok {
+		return ToStringObject(""), nil
+	}
+
+	return ToStringObject(tk.Trim(arg0.String(), ObjectsToS(args[1:])...)), nil
+}
+
+func builtinStrTrimFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	arg0 := args[0]
+
+	_, ok := arg0.(String)
+	if !ok {
+		return nil, fmt.Errorf("invalid type: %v", arg0.TypeName())
+	}
+
+	return ToStringObject(tk.Trim(arg0.String(), ObjectsToS(args[1:])...)), nil
+}
 
 // char add end

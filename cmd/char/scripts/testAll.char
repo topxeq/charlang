@@ -4,6 +4,12 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", getSeq(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "getNamedValue.char")
+
+//testByReg(rs, `(?sm)(string)\"2023-09-08 15:51:14\"\n(string)\"20230908155114\"\n`, getSeq(), "getNamedValue.char")
+// testByReg(rs, `(?sm)\(string\)\"\d{4}\-\d{2}\"\n\(string\)\"\d{14}\"\n`, getSeq(), "getNamedValue.char")
+testByReg(rs, `(?sm)\(string\)\"\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\"\n\(string\)\"\d{14}\"\n`, getSeq(), "getNamedValue.char")
+
 rs = systemCmd("char", "-gopath", "newObj.char")
 
 testByText(rs, "buf1 type: *bytes.Buffer\n(bytes)[]byte{0x61, 0x62, 0x63}\n(charlang.String)\"abc\"\n", getSeq(), "newObj.char")
