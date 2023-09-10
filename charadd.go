@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/topxeq/tk"
@@ -62,9 +63,191 @@ var TkFunction = &Function{
 	},
 }
 
+var namedFuncMapG = map[string]interface{}{
+	"fmt.Fprintf": fmt.Fprintf,
+}
+
+var namedValueMapG = map[string]interface{}{
+	"tk.TimeFormat":            tk.TimeFormat,            // "2006-01-02 15:04:05"
+	"tk.TimeFormatMS":          tk.TimeFormatMS,          // "2006-01-02 15:04:05.000"
+	"tk.TimeFormatMSCompact":   tk.TimeFormatMSCompact,   // "20060102150405.000"
+	"tk.TimeFormatCompact":     tk.TimeFormatCompact,     // "20060102150405"
+	"tk.TimeFormatCompact2":    tk.TimeFormatCompact2,    // "2006/01/02 15:04:05"
+	"tk.TimeFormatDateCompact": tk.TimeFormatDateCompact, // "20060102"
+
+	"time.Layout":   time.Layout,
+	"time.RFC3339":  time.RFC3339,
+	"time.DateTime": time.DateTime,
+	"time.DateOnly": time.DateOnly,
+	"time.TimeOnly": time.TimeOnly,
+}
+
+// first arg of each func is the object reference
+var methodFuncMapG = map[int]map[string]*Function{
+	307: map[string]*Function{
+		"toStr": &Function{
+			Name: "toStr",
+			Value: func(args ...Object) (Object, error) {
+				return ToStringObject(((*strings.Builder)(args[0].(StringBuilder).Value)).String()), nil
+			},
+		},
+		"write": &Function{
+			Name: "write",
+			Value: func(args ...Object) (Object, error) {
+				var errT error
+
+				o := args[0].(StringBuilder)
+
+				argsT := args[1:]
+
+				countT := 0
+
+				for _, v := range argsT {
+					tmpCountT := 0
+					switch nv := v.(type) {
+					case String:
+						tmpCountT, errT = o.Value.WriteString(nv.Value)
+
+						if errT != nil {
+							tmpCountT = 0
+						}
+					case Bytes:
+						tmpCountT, errT = o.Value.Write([]byte(nv))
+
+						if errT != nil {
+							tmpCountT = 0
+						}
+					case Char:
+						tmpCountT, errT = o.Value.WriteRune(rune(nv))
+
+						if errT != nil {
+							tmpCountT = 0
+						}
+					case Byte:
+						errT = o.Value.WriteByte(byte(nv))
+
+						if errT != nil {
+							tmpCountT = 0
+						} else {
+							tmpCountT = 1
+						}
+					default:
+						tmpCountT, errT = o.Value.WriteString(nv.String())
+
+						if errT != nil {
+							tmpCountT = 0
+						}
+
+					}
+
+					countT += tmpCountT
+				}
+
+				return Int(countT), nil
+			},
+		},
+		"writeStr": &Function{
+			Name: "writeStr",
+			Value: func(args ...Object) (Object, error) {
+				var errT error
+
+				o := args[0].(StringBuilder)
+
+				argsT := args[1:]
+
+				if len(argsT) < 1 {
+					return NewCommonError("not enough parameters"), nil
+				}
+
+				rsT, errT := o.Value.WriteString(argsT[0].String())
+
+				if errT != nil {
+					return NewFromError(errT), nil
+				}
+
+				return Int(rsT), nil
+			},
+		},
+		"writeBytes": &Function{
+			Name: "writeBytes",
+			Value: func(argsA ...Object) (Object, error) {
+				var errT error
+
+				o := argsA[0].(StringBuilder)
+
+				args := argsA[1:]
+
+				if len(args) < 1 {
+					return NewCommonError("not enough parameters"), nil
+				}
+
+				nv, ok := args[0].(Bytes)
+				if !ok {
+					return NewCommonError("invalid parameter type: %v", args[0].TypeName()), nil
+				}
+
+				rsT, errT := o.Value.Write([]byte(nv))
+				if errT != nil {
+					return NewFromError(errT), nil
+				}
+
+				return Int(rsT), nil
+			},
+		},
+		"clear": &Function{
+			Name: "clear",
+			Value: func(argsA ...Object) (Object, error) {
+				o := argsA[0].(StringBuilder)
+
+				o.Value.Reset()
+				return Undefined, nil
+			},
+		},
+		"reset": &Function{
+			Name: "reset",
+			Value: func(argsA ...Object) (Object, error) {
+				o := argsA[0].(StringBuilder)
+
+				o.Value.Reset()
+				return Undefined, nil
+			},
+		},
+	},
+}
+
 // objects
 
 // common funcs
+
+func GetObjectMethodFunc(o Object, index Object) (Object, error) {
+	nv, ok := index.(String)
+	if !ok {
+		return nil, ErrNotIndexable
+	}
+
+	fNameT := nv.Value
+
+	// tk.Pln("GetObjectMethodFunc:", index, o, o.TypeCode())
+
+	map1, ok := methodFuncMapG[o.TypeCode()]
+
+	if !ok {
+		return nil, ErrNotIndexable
+	}
+
+	f1, ok := map1[fNameT]
+
+	if !ok {
+		return nil, ErrNotIndexable
+	}
+
+	return &Function{
+		Name: f1.Name,
+		Value: func(args ...Object) (Object, error) {
+			return (*f1).Call(append([]Object{o}, args...)...)
+		}}, nil
+
+}
 
 func QuickCompile(codeA string, compilerOptionsA ...*CompilerOptions) interface{} {
 	var compilerOptionsT *CompilerOptions
@@ -566,6 +749,8 @@ func ConvertFromObject(vA Object) interface{} {
 	case String:
 		return nv.Value
 	case *String:
+		return nv.Value
+	case StringBuilder:
 		return nv.Value
 	case Bytes:
 		return []byte(nv)

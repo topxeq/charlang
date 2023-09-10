@@ -1,23 +1,32 @@
 # The Char Language (Charlang)
 
-Charlang is based on uGo language with some minor modifications and some new builtin-functions. Thanks to ozanh(github.com/ozanh/ugo).
+[Charlang](http://topget.org/charlang) is a fast, dynamic scripting language to embed in Go applications.
+Charlang is compiled and executed as bytecode on stack-based VM that's written
+in native Go. Charlang has a more-common runtime error handling(try-catch-finally) than Golang.
+
+Charlang is inspired by and based on awesome script language [uGo](https://github.com/ozanh/ugo). A special thanks to uGo's creater([ozanh](https://github.com/ozanh)) and contributors.
+
+## Features
+
+* Written in native Go (no cgo).
+* `if else` statements.
+* `for` and `for in` statements.
+* `try catch finally` statements.
+* `param`, `global`, `var` and `const` declarations.
+* Rich builtins.
+* Module support.
+* Go like syntax with additions.
 
 ## new features
 
-- Added new types Byte, Any.
-- Added functions: NewCommonError, NewError.
-- Added builtin functions: getRandomInt, writeResp, setRespHeader, writeRespHeader.
-- Added a global funtion wrapper: tk (TkFunction)
-
-# The Charlang Language
+- Added new types such as Byte, Any...
+- Added functions: NewCommonError, NewError and more...
+- Added builtin functions: getRandomInt, writeResp, setRespHeader, writeRespHeader and much more...
+- Added some global variables and resources.
+- Added a new thread-model.
+- Added runtime/dynamically script compiling and running capability.
 
 [Go Reference](https://pkg.go.dev/github.com/topxeq/charlang)
-
-Charlang is a fast, dynamic scripting language to embed in Go applications.
-Charlang is compiled and executed as bytecode on stack-based VM that's written
-in native Go.
-
-Charlang is inspired by awesome script language [uGo](https://github.com/topxeq/charlang). A special thanks to uGo's creater and contributors.
 
 **Fibonacci Example**
 
@@ -34,30 +43,16 @@ fib = func(x) {
     }
     return fib(x-1) + fib(x-2)
 }
+
 return fib(arg0)
+
 ```
-
-## Features
-
-* Written in native Go (no cgo).
-* `if else` statements.
-* `for` and `for in` statements.
-* `try catch finally` statements.
-* `param`, `global`, `var` and `const` declarations.
-* Rich builtins.
-* Module support.
-* Go like syntax with additions.
-
-## Why Charlang
-
-I needed a faster embedded scripting language with runtime error handling.
 
 ## Quick Start
 
 `go get -u github.com/topxeq/charlang`
 
-Charlang has a REPL application to learn and test Charlang language thanks to
-`github.com/c-bata/go-prompt` library.
+Charlang has a REPL application to learn and test Charlang language.
 
 `go get -u github.com/topxeq/charlang/cmd/char`
 
@@ -69,7 +64,7 @@ package main
 import (
     "fmt"
 
-    ugo "github.com/topxeq/charlang"
+    "github.com/topxeq/charlang"
 )
 
 func main() {
@@ -110,14 +105,14 @@ if err != undefined {
 return v
 `
 
-    bytecode, err := ugo.Compile([]byte(script), ugo.DefaultCompilerOptions)
+    bytecode, err := charlang.Compile([]byte(script), charlang.DefaultCompilerOptions)
     if err != nil {
         panic(err)
     }
-    globals := ugo.Map{"multiplier": ugo.Int(2)}
-    ret, err := ugo.NewVM(bytecode).Run(
+    globals := charlang.Map{"multiplier": charlang.Int(2)}
+    ret, err := charlang.NewVM(bytecode).Run(
         globals,
-        ugo.Int(1), ugo.Int(2), ugo.Int(3), ugo.Int(4),
+        charlang.Int(1), charlang.Int(2), charlang.Int(3), charlang.Int(4),
     )
     if err != nil {
         panic(err)
@@ -128,12 +123,25 @@ return v
 
 ## Documentation
 
-* [Tutorial](https://github.com/topxeq/charlang/blob/main/docs/tutorial.md)
-* [Runtime Types](https://github.com/topxeq/charlang/blob/main/docs/runtime-types.md)
-* [Builtins](https://github.com/topxeq/charlang/blob/main/docs/builtins.md)
-* [Operators](https://github.com/topxeq/charlang/blob/main/docs/operators.md)
-* [Error Handling](https://github.com/topxeq/charlang/blob/main/docs/error-handling.md)
-* [Standard Library](https://github.com/topxeq/charlang/blob/main/docs/stdlib.md)
-* [Optimizer](https://github.com/topxeq/charlang/blob/main/docs/optimizer.md)
-* [Destructuring](https://github.com/topxeq/charlang/blob/main/docs/destructuring.md)
+### Get the binary
+
+Download the binary release files according to your OS from the website: [Charlang Homepage](http://topget.org/charlang).
+
+### Start running the shell or scripts
+
+After download, extract the executable from the zip file, put it into a directory, better in the system path.
+
+Then type 'char' in the terminal/console to start the interactive command-line shell interface. Also you can run some scripts using command like 'char test.char', or 'char -example basic.char'.
+
+Using command-line switch '-view' will show the source code of the script instead of run it.
+
+### Hello world!
+
+```go
+pln("Hello world!")
+
+```
+
+The function 'pln' is the same as 'println' in other languages.
+
 

@@ -2,6 +2,7 @@ package charlang
 
 import (
 	"bytes"
+	"compress/flate"
 	"errors"
 	"fmt"
 	"io"
@@ -15,6 +16,8 @@ import (
 
 	"github.com/topxeq/charlang/token"
 	"github.com/topxeq/tk"
+
+	"github.com/mholt/archiver/v3"
 )
 
 var (
@@ -29,13 +32,23 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
-	// char add start
+	BuiltintRegFindFirstGroups
+	BuiltintWriteStr
+	BuiltintStrSplitLines
+	BuiltinNew
+	BuiltinStringBuilder
+	BuiltinStrReplace
+	BuiltinGetErrStrX
+	BuiltinSshUpload
+	BuiltinArchiveFilesToZip
+	BuiltinGetOSName
 	BuiltinGetClipText
 	BuiltinSetClipText
 	BuiltinRegQuote
 	BuiltinAny
 	BuiltinTrim
 	BuiltinStrTrim
+	BuiltinRegFindFirst
 	BuiltinRegFindAll
 	BuiltinCheckErrX
 	BuiltinLoadText
@@ -65,7 +78,7 @@ const (
 	BuiltinGetSwitch
 	BuiltinIfSwitchExists
 	BuiltinTypeCode
-	// BuiltinTypeName
+	BuiltinTypeName
 	BuiltinPl
 	BuiltinPln
 	BuiltinTestByText
@@ -73,8 +86,6 @@ const (
 	BuiltinTestByReg
 	BuiltinGetSeq
 	BuiltinPass
-
-	// char add end
 
 	BuiltinDelete
 	BuiltinCopy
@@ -84,7 +95,6 @@ const (
 	BuiltinSort
 	BuiltinSortReverse
 	BuiltinError
-	BuiltinTypeName
 	BuiltinBool
 	BuiltinInt
 	BuiltinUint
@@ -131,7 +141,7 @@ const (
 
 // BuiltinsMap is list of builtin types, exported for REPL.
 var BuiltinsMap = map[string]BuiltinType{
-	// char add start
+	// funcs start
 
 	// internal & debug related
 	"testByText":       BuiltinTestByText,
@@ -140,11 +150,14 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// data type related
 	"typeCode":  BuiltinTypeCode,
+	"typeName":  BuiltinTypeName,
 	"typeOfAny": BuiltinTypeOfAny,
-	// "typeName": BuiltinTypeName,
-	"time": BuiltinTime,
-	// "newAny": BuiltinNewAny,
-	"any": BuiltinAny,
+
+	"new": BuiltinNew,
+
+	"time":          BuiltinTime,
+	"stringBuilder": BuiltinStringBuilder,
+	"any":           BuiltinAny,
 
 	"toTime": BuiltinToTime,
 
@@ -155,12 +168,16 @@ var BuiltinsMap = map[string]BuiltinType{
 	"toStr": BuiltinToStr,
 
 	// string related
-	"trim":    BuiltinTrim,
-	"strTrim": BuiltinStrTrim,
+	"trim":          BuiltinTrim,
+	"strTrim":       BuiltinStrTrim,
+	"strReplace":    BuiltinStrReplace,
+	"strSplitLines": BuiltintStrSplitLines,
 
 	// regex related
-	"regFindAll": BuiltinRegFindAll,
-	"regQuote":   BuiltinRegQuote,
+	"regFindFirst":       BuiltinRegFindFirst,
+	"regFindFirstGroups": BuiltintRegFindFirstGroups, // obtain the first match of a regular expression and return a list of all matching groups, where the first item is the complete matching result and the second item is the first matching group..., usage example: result := regFindFirstGroups(str1, regex1)
+	"regFindAll":         BuiltinRegFindAll,
+	"regQuote":           BuiltinRegQuote,
 
 	// time related
 
@@ -174,7 +191,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"plt": BuiltinPlt,
 
 	// error related
-	"isErrX":    BuiltinIsErrX,
+	"isErrX":     BuiltinIsErrX,
+	"getErrStrX": BuiltinGetErrStrX,
+
 	"checkErrX": BuiltinCheckErrX,
 
 	// member/method related
@@ -182,6 +201,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"callNamedFunc":    BuiltinCallNamedFunc,
 	"callInternalFunc": BuiltinCallInternalFunc,
 	"getNamedValue":    BuiltinGetNamedValue,
+
+	// read/write related
+	"writeStr": BuiltintWriteStr,
 
 	// encode/decode related
 	"toJSON":   BuiltinToJSON,
@@ -205,19 +227,25 @@ var BuiltinsMap = map[string]BuiltinType{
 	"systemCmd": BuiltinSystemCmd,
 	"getEnv":    BuiltinGetEnv,
 	"setEnv":    BuiltinSetEnv,
+	"getOsName": BuiltinGetOSName,
+	"getOSName": BuiltinGetOSName,
 
 	// path related
-	"joinPath": BuiltinJoinPath,
+	"joinPath": BuiltinJoinPath, // join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
 
 	// file related
 	"loadText": BuiltinLoadText,
 	"saveText": BuiltinSaveText,
 
+	// compress/zip related
+	"archiveFilesToZip": BuiltinArchiveFilesToZip, // Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
+
+	// ssh related
+	"sshUpload": BuiltinSshUpload,
+
 	// misc related
 	"getSeq": BuiltinGetSeq,
 	"pass":   BuiltinPass,
-
-	// char add end
 
 	"append":      BuiltinAppend,
 	"delete":      BuiltinDelete,
@@ -228,7 +256,6 @@ var BuiltinsMap = map[string]BuiltinType{
 	"sort":        BuiltinSort,
 	"sortReverse": BuiltinSortReverse,
 	"error":       BuiltinError,
-	"typeName":    BuiltinTypeName,
 	"bool":        BuiltinBool,
 	"int":         BuiltinInt,
 	"uint":        BuiltinUint,
@@ -271,6 +298,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	":makeArray": BuiltinMakeArray,
 	"cap":        BuiltinCap,
+
+	// funcs end
+
 }
 
 // BuiltinObjects is list of builtins, exported for REPL.
@@ -282,6 +312,56 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
 	// char add start
+	BuiltintRegFindFirstGroups: &BuiltinFunction{
+		Name:    "regFindFirstGroups",
+		Value:   fnASSRLs(tk.RegFindFirstGroupsX),
+		ValueEx: fnASSRLsex(tk.RegFindFirstGroupsX),
+	},
+	BuiltintWriteStr: &BuiltinFunction{
+		Name:    "writeStr",
+		Value:   CallExAdapter(builtinWriteStrFunc),
+		ValueEx: builtinWriteStrFunc,
+	},
+	BuiltinNew: &BuiltinFunction{
+		Name:    "new",
+		Value:   CallExAdapter(builtinNewFunc),
+		ValueEx: builtinNewFunc,
+	},
+	BuiltinStringBuilder: &BuiltinFunction{
+		Name:    "stringBuilder",
+		Value:   CallExAdapter(builtinStringBuilderFunc),
+		ValueEx: builtinStringBuilderFunc,
+	},
+	BuiltintStrSplitLines: &BuiltinFunction{
+		Name:    "strSplitLines",
+		Value:   fnASRLs(tk.SplitLines),
+		ValueEx: fnASRLsex(tk.SplitLines),
+	},
+	BuiltinStrReplace: &BuiltinFunction{
+		Name:    "strReplace",
+		Value:   fnASVsRS(tk.StringReplace),
+		ValueEx: fnASVsRSex(tk.StringReplace),
+	},
+	BuiltinGetErrStrX: &BuiltinFunction{
+		Name:    "getErrStrX",
+		Value:   fnAARS(tk.GetErrStrX),
+		ValueEx: fnAARSex(tk.GetErrStrX),
+	},
+	BuiltinSshUpload: &BuiltinFunction{
+		Name:    "sshUpload",
+		Value:   CallExAdapter(builtinSshUploadFunc),
+		ValueEx: builtinSshUploadFunc,
+	},
+	BuiltinArchiveFilesToZip: &BuiltinFunction{
+		Name:    "archiveFilesToZip",
+		Value:   CallExAdapter(builtinArchiveFilesToZipFunc),
+		ValueEx: builtinArchiveFilesToZipFunc,
+	},
+	BuiltinGetOSName: &BuiltinFunction{
+		Name:    "getOSName",
+		Value:   fnARS(tk.GetOSName),
+		ValueEx: fnARSex(tk.GetOSName),
+	},
 	BuiltinTrim: &BuiltinFunction{
 		Name:    "trim",
 		Value:   CallExAdapter(builtinTrimFunc),
@@ -291,6 +371,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strTrim",
 		Value:   CallExAdapter(builtinStrTrimFunc),
 		ValueEx: builtinStrTrimFunc,
+	},
+	BuiltinRegFindFirst: &BuiltinFunction{
+		Name:    "regFindFirst",
+		Value:   fnASSIRS(tk.RegFindFirstX),
+		ValueEx: fnASSIRSex(tk.RegFindFirstX),
 	},
 	BuiltinRegFindAll: &BuiltinFunction{
 		Name:    "regFindAll",
@@ -453,11 +538,6 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinTypeCodeFunc),
 		ValueEx: builtinTypeCodeFunc,
 	},
-	// BuiltinTypeName: &BuiltinFunction{
-	// 	Name:    "typeName",
-	// 	Value:   CallExAdapter(builtinTypeNameFunc),
-	// 	ValueEx: builtinTypeNameFunc,
-	// },
 	BuiltinPl: &BuiltinFunction{
 		Name:    "pl", // usage: the same as printf, but with a line-end(\n) at the end
 		Value:   CallExAdapter(builtinPlFunc),
@@ -744,12 +824,38 @@ func builtinAppendFunc(c Call) (Object, error) {
 			for _, v := range args {
 				n++
 				switch vv := v.(type) {
+				case Byte:
+					obj = append(obj, byte(vv))
 				case Int:
 					obj = append(obj, byte(vv))
 				case Uint:
 					obj = append(obj, byte(vv))
 				case Char:
 					obj = append(obj, byte(vv))
+				default:
+					return Undefined, NewArgumentTypeError(
+						strconv.Itoa(n),
+						"int|uint|char",
+						vv.TypeName(),
+					)
+				}
+			}
+		}
+		return obj, nil
+	case Chars:
+		n := 0
+		for _, args := range [][]Object{c.args, c.vargs} {
+			for _, v := range args {
+				n++
+				switch vv := v.(type) {
+				case Byte:
+					obj = append(obj, rune(vv))
+				case Int:
+					obj = append(obj, rune(vv))
+				case Uint:
+					obj = append(obj, rune(vv))
+				case Char:
+					obj = append(obj, rune(vv))
 				default:
 					return Undefined, NewArgumentTypeError(
 						strconv.Itoa(n),
@@ -1290,7 +1396,30 @@ func fnARSex(fn func() string) CallableExFunc {
 	}
 }
 
-// like os.GetEnv
+// like tk.GetErrStrX
+func fnAARS(fn func(interface{}) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(ConvertFromObject(args[0]))
+		return ToStringObject(rs), nil
+	}
+}
+
+func fnAARSex(fn func(interface{}) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(ConvertFromObject(c.Get(0)))
+		return ToStringObject(rs), nil
+	}
+}
+
+// / like os.GetEnv
 func fnASRS(fn func(string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -1332,6 +1461,75 @@ func fnASREex(fn func(string) error) CallableExFunc {
 		}
 
 		rs := fn(c.Get(0).String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.RegFindFirstX
+func fnASSIRS(fn func(string, string, int) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 3 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String(), tk.ToInt(ConvertFromObject(args[2])))
+		return ToStringObject(rs), nil
+	}
+}
+
+func fnASSIRSex(fn func(string, string, int) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 3 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(c.Get(0).String(), c.Get(1).String(), tk.ToInt(ConvertFromObject(c.Get(2))))
+		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.SplitLines
+func fnASRLs(fn func(string) []string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+func fnASRLsex(fn func(string) []string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(c.Get(0).String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.RegFindFirstGroupsX
+func fnASSRLs(fn func(string, string) []string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+func fnASSRLsex(fn func(string, string) []string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(c.Get(0).String(), c.Get(1).String())
 		return ConvertToObject(rs), nil
 	}
 }
@@ -1916,25 +2114,6 @@ func builtinTimeFunc(args ...Object) (Object, error) {
 	}
 }
 
-var namedFuncMapG = map[string]interface{}{
-	"fmt.Fprintf": fmt.Fprintf,
-}
-
-var namedValueMapG = map[string]interface{}{
-	"tk.TimeFormat":            tk.TimeFormat,            // "2006-01-02 15:04:05"
-	"tk.TimeFormatMS":          tk.TimeFormatMS,          // "2006-01-02 15:04:05.000"
-	"tk.TimeFormatMSCompact":   tk.TimeFormatMSCompact,   // "20060102150405.000"
-	"tk.TimeFormatCompact":     tk.TimeFormatCompact,     // "20060102150405"
-	"tk.TimeFormatCompact2":    tk.TimeFormatCompact2,    // "2006/01/02 15:04:05"
-	"tk.TimeFormatDateCompact": tk.TimeFormatDateCompact, // "20060102"
-
-	"time.Layout":   time.Layout,
-	"time.RFC3339":  time.RFC3339,
-	"time.DateTime": time.DateTime,
-	"time.DateOnly": time.DateOnly,
-	"time.TimeOnly": time.TimeOnly,
-}
-
 func builtinCallNamedFuncFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -2219,14 +2398,14 @@ func builtinCheckErrXFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("not enough parameters")
 	}
 
-	rsT, errT := builtinIsErrXFunc(c)
+	objT := ConvertFromObject(args[0])
 
-	if errT != nil && rsT == True {
-		fmt.Printf("Error: %v\n", args[0])
+	if tk.IsErrX(objT) {
+		fmt.Printf("Error: %v\n", tk.GetErrStrX(objT))
 		os.Exit(0)
 	}
 
-	return rsT, nil
+	return args[0], nil
 }
 
 func builtinTrimFunc(c Call) (Object, error) {
@@ -2261,6 +2440,292 @@ func builtinStrTrimFunc(c Call) (Object, error) {
 	}
 
 	return ToStringObject(tk.Trim(arg0.String(), ObjectsToS(args[1:])...)), nil
+}
+
+func builtinArchiveFilesToZipFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	arg0 := args[0]
+
+	nv1, ok := arg0.(String)
+	if !ok {
+		return nil, fmt.Errorf("invalid type: %v", arg0.TypeName())
+	}
+
+	vs := ObjectsToI(args[1:])
+
+	fileNamesT := make([]string, 0, len(vs))
+	args1T := make([]string, 0, len(vs))
+
+	for _, vi1 := range vs {
+		nvs, ok := vi1.(string)
+
+		if ok {
+			if !strings.HasPrefix(nvs, "-") {
+				fileNamesT = append(fileNamesT, nvs)
+			} else {
+				args1T = append(args1T, nvs)
+			}
+
+			continue
+		}
+
+		nvsa, ok := vi1.([]string)
+		if ok {
+			for _, vj1 := range nvsa {
+				fileNamesT = append(fileNamesT, vj1)
+			}
+
+			continue
+		}
+
+		nvsi, ok := vi1.([]interface{})
+		if ok {
+			for _, vj1 := range nvsi {
+				fileNamesT = append(fileNamesT, tk.ToStr(vj1))
+			}
+
+			continue
+		}
+
+	}
+
+	z := &archiver.Zip{
+		CompressionLevel:  flate.DefaultCompression,
+		OverwriteExisting: tk.IfSwitchExistsWhole(args1T, "-overwrite"),
+		MkdirAll:          tk.IfSwitchExistsWhole(args1T, "-makeDirs"),
+		// SelectiveCompression:   true,
+		// ImplicitTopLevelFolder: false,
+		// ContinueOnError:        false,
+		FileMethod: archiver.Deflate,
+	}
+
+	errT := z.Archive(fileNamesT, nv1.String())
+
+	return ConvertToObject(errT), nil
+}
+
+func builtinSshUploadFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v5, v6 string
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-path=", v5))
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+
+	withProgressT := tk.IfSwitchExistsWhole(pa, "-progress")
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if v5 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy path")), nil
+	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+	}
+
+	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	defer sshT.Close()
+
+	if withProgressT {
+		fmt.Println()
+		errT = sshT.UploadWithProgressFunc(v5, v6, func(i interface{}) interface{} {
+			fmt.Printf("\rprogress: %v                ", tk.IntToKMGT(i))
+			return ""
+		}, pa...)
+	} else {
+		errT = sshT.Upload(v5, v6, pa...)
+	}
+
+	fmt.Println()
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	return ConvertToObject(errT), nil
+}
+
+func builtinStringBuilderFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		rs := StringBuilder{Value: new(strings.Builder)}
+		rs.Value.WriteString("")
+		return rs, nil
+	}
+
+	s := args[0].String()
+
+	rs := StringBuilder{Value: new(strings.Builder)}
+
+	rs.Value.WriteString(s)
+
+	return rs, nil
+}
+
+func builtinNewFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+	}
+
+	s1 := args[0].String()
+
+	// tk.Pln(s1, args)
+
+	switch s1 {
+	case "bool":
+		if len(args) > 1 {
+			return Bool(!args[1].IsFalsy()), nil
+		} else {
+			return Bool(false), nil
+		}
+	case "byte":
+		if len(args) > 1 {
+			return Byte(tk.ToInt(args[1].String(), 0)), nil
+		} else {
+			return Byte(0), nil
+		}
+	case "int":
+		if len(args) > 1 {
+			return Int(tk.ToInt(args[1].String(), 0)), nil
+		} else {
+			return Int(0), nil
+		}
+	case "uint":
+		if len(args) > 1 {
+			return Uint(tk.ToInt(args[1].String(), 0)), nil
+		} else {
+			return Uint(0), nil
+		}
+	case "char":
+		if len(args) > 1 {
+			return Char(tk.ToInt(args[1].String(), 0)), nil
+		} else {
+			return Char(0), nil
+		}
+	case "float":
+		if len(args) > 1 {
+			return Char(tk.ToFloat(args[1].String(), 0.0)), nil
+		} else {
+			return Char(0), nil
+		}
+	case "str", "string":
+		if len(args) > 1 {
+			return String{Value: args[1].String()}, nil
+		} else {
+			return String{Value: ""}, nil
+		}
+	case "array", "list":
+		if len(args) > 1 {
+			return make(Array, 0, tk.ToInt(args[1].String(), 0)), nil
+		} else {
+			return make(Array, 0, 0), nil
+		}
+	case "map":
+		if len(args) > 1 {
+			return make(Map, tk.ToInt(args[1].String(), 0)), nil
+		} else {
+			return make(Map, 0), nil
+		}
+	case "stringBuilder":
+		return builtinStringBuilderFunc(Call{args: args[1:]})
+	}
+
+	return Undefined, NewCommonError("invalid data type: %v", s1)
+}
+
+func builtinWriteStrFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	s1, ok := args[1].(String)
+
+	if !ok {
+		s1 = ToStringObject(args[1].String())
+	}
+
+	if args[0].TypeName() == "any" {
+		vT := args[0].(*Any)
+		switch nv := vT.Value.(type) {
+		case *strings.Builder:
+			n, errT := nv.WriteString(s1.Value)
+
+			if errT != nil {
+				return NewCommonError("%v", errT), nil
+			}
+
+			return Int(n), nil
+
+		case string:
+			s1.Value = nv + s1.Value
+			return Int(len(s1.Value)), nil
+		case io.StringWriter:
+			n, errT := nv.WriteString(s1.Value)
+
+			if errT != nil {
+				return Int(n), nil
+			}
+
+			return NewCommonError("%v", errT), nil
+		default:
+			return NewCommonError("invalid type: %T", vT.Value), nil
+
+		}
+	} else if args[0].TypeName() == "stringBuilder" {
+		vT := args[0].(StringBuilder)
+		n, errT := vT.Value.WriteString(s1.Value)
+
+		if errT != nil {
+			return NewCommonError("%v", errT), nil
+		}
+
+		return Int(n), nil
+	}
+
+	return NewCommonError("%v", "invalid data"), nil
 }
 
 // char add end

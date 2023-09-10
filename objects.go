@@ -224,7 +224,8 @@ type ObjectImpl struct {
 var _ Object = ObjectImpl{}
 
 func (ObjectImpl) TypeCode() int {
-	return 101
+	panic(ErrNotImplemented)
+	// return 101
 }
 
 // TypeName implements Object interface.
@@ -233,8 +234,9 @@ func (ObjectImpl) TypeName() string {
 }
 
 // String implements Object interface.
-func (ObjectImpl) String() string {
-	panic(ErrNotImplemented)
+func (o ObjectImpl) String() string {
+	return fmt.Sprintf("%v", o)
+	// panic(ErrNotImplemented)
 }
 
 // Equal implements Object interface.
@@ -258,12 +260,12 @@ func (ObjectImpl) CanIterate() bool { return false }
 func (ObjectImpl) Iterate() Iterator { return nil }
 
 // IndexGet implements Object interface.
-func (ObjectImpl) IndexGet(index Object) (value Object, err error) {
+func (o ObjectImpl) IndexGet(index Object) (value Object, err error) {
 	return nil, ErrNotIndexable
 }
 
 // IndexSet implements Object interface.
-func (ObjectImpl) IndexSet(index, value Object) error {
+func (o ObjectImpl) IndexSet(index, value Object) error {
 	return ErrNotIndexAssignable
 }
 
@@ -1079,6 +1081,10 @@ type Function struct {
 }
 
 var _ Object = (*Function)(nil)
+
+func (*Function) TypeCode() int {
+	return 181
+}
 
 // TypeName implements Object interface.
 func (*Function) TypeName() string {
@@ -3631,4 +3637,215 @@ func NewAny(vA interface{}, argsA ...string) *Any {
 		OriginalType: originalT,
 		OriginalCode: originalCodeT,
 	}
+}
+
+type StringBuilder struct {
+	ObjectImpl
+	Value *strings.Builder
+}
+
+var _ Object = StringBuilder{}
+
+// func NewStringBuilder() *StringBuilder {
+// 	return &StringBuilder{}
+// }
+
+// func NewStringBuilderValue(vA interface{}) StringBuilder {
+// 	return StringBuilder{}
+// }
+
+func (o StringBuilder) TypeCode() int {
+	return 307
+}
+
+func (o StringBuilder) TypeName() string {
+	return "stringBuilder"
+}
+
+func (o StringBuilder) String() string {
+	return fmt.Sprintf("%v", *(o.Value))
+}
+
+func (o StringBuilder) Equal(right Object) bool {
+	if v, ok := right.(StringBuilder); ok {
+		return o.Value.String() == v.Value.String()
+	}
+
+	return false
+}
+
+func (o StringBuilder) IsFalsy() bool { return false }
+
+func (StringBuilder) CanCall() bool { return false }
+
+func (StringBuilder) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (StringBuilder) CanIterate() bool { return false }
+
+func (StringBuilder) Iterate() Iterator { return nil }
+
+func (o StringBuilder) IndexGet(index Object) (value Object, err error) {
+	return GetObjectMethodFunc(o, index)
+	// 	nv, ok := index.(String)
+	// 	if !ok {
+	// 		return nil, ErrNotIndexable
+	// 	}
+
+	// 	fNameT := nv.Value
+
+	// 	if o.Members == nil {
+	// 		o.Members = map[string]Object{}
+	// 	}
+
+	// 	if o.Methods == nil {
+	// 		o.Methods = map[string]*Function{}
+	// 	}
+
+	// 	switch fNameT {
+	// 	case "write":
+	// 		fT, ok := o.Methods["write"]
+	// 		if !ok {
+	// 			o.Methods["write"] = &Function{
+	// 				Name: "write",
+	// 				Value: func(args ...Object) (Object, error) {
+
+	// 					countT := 0
+	// 					var errT error
+
+	// 					for _, v := range args {
+	// 						tmpCountT := 0
+	// 						switch nv := v.(type) {
+	// 						case String:
+	// 							tmpCountT, errT = o.Value.WriteString(nv.Value)
+
+	// 							if errT != nil {
+	// 								tmpCountT = 0
+	// 							}
+	// 						case Bytes:
+	// 							tmpCountT, errT = o.Value.Write([]byte(nv))
+
+	// 							if errT != nil {
+	// 								tmpCountT = 0
+	// 							}
+	// 						case Char:
+	// 							tmpCountT, errT = o.Value.WriteRune(rune(nv))
+
+	// 							if errT != nil {
+	// 								tmpCountT = 0
+	// 							}
+	// 						case Byte:
+	// 							errT = o.Value.WriteByte(byte(nv))
+
+	// 							if errT != nil {
+	// 								tmpCountT = 0
+	// 							} else {
+	// 								tmpCountT = 1
+	// 							}
+	// 						default:
+	// 							tmpCountT, errT = o.Value.WriteString(nv.String())
+
+	// 							if errT != nil {
+	// 								tmpCountT = 0
+	// 							}
+
+	// 						}
+
+	// 						countT += tmpCountT
+	// 					}
+
+	// 					return Int(countT), nil
+	// 				}}
+	// 			fT = o.Methods["write"]
+	// 		}
+	// 		return fT, nil
+	// 	case "writeString":
+	// 		fT, ok := o.Methods["writeString"]
+	// 		if !ok {
+	// 			o.Methods["writeString"] = &Function{
+	// 				Name: "writeString",
+	// 				Value: func(args ...Object) (Object, error) {
+	// 					if len(args) < 1 {
+	// 						return Int(0), NewCommonError("not enough parameters")
+	// 					}
+
+	// 					rsT, errT := o.Value.WriteString(args[0].String())
+
+	// 					if errT != nil {
+	// 						return Int(rsT), NewFromError(errT)
+	// 					}
+
+	// 					return Int(rsT), nil
+	// 				}}
+	// 			fT = o.Methods["writeString"]
+	// 		}
+	// 		return fT, nil
+	// 	case "writeBytes":
+	// 		fT, ok := o.Methods["writeBytes"]
+	// 		if !ok {
+	// 			o.Methods["writeBytes"] = &Function{
+	// 				Name: "writeBytes",
+	// 				Value: func(args ...Object) (Object, error) {
+	// 					if len(args) < 1 {
+	// 						return Int(0), NewCommonError("not enough parameters")
+	// 					}
+
+	// 					nv, ok := args[0].(Bytes)
+	// 					if !ok {
+	// 						return Int(0), NewCommonError("invalid parameter")
+	// 					}
+
+	// 					rsT, errT := o.Value.Write([]byte(nv))
+	// 					if errT != nil {
+	// 						return Int(rsT), NewFromError(errT)
+	// 					}
+
+	// 					return Int(rsT), nil
+	// 				}}
+	// 			fT = o.Methods["writeBytes"]
+	// 		}
+	// 		return fT, nil
+	// 	case "toString":
+	// 		fT, ok := o.Methods["toString"]
+	// 		if !ok {
+	// 			o.Methods["toString"] = &Function{
+	// 				Name: "toString",
+	// 				Value: func(args ...Object) (Object, error) {
+	// 					return ToStringObject(o.Value.String()), nil
+	// 				}}
+	// 			fT = o.Methods["toString"]
+	// 		}
+	// 		return fT, nil
+	// 	case "reset", "clear":
+	// 		fT, ok := o.Methods["reset"]
+	// 		if !ok {
+	// 			o.Methods["reset"] = &Function{
+	// 				Name: "reset",
+	// 				Value: func(args ...Object) (Object, error) {
+	// 					o.Value.Reset()
+	// 					return Undefined, nil
+	// 				}}
+	// 			fT = o.Methods["reset"]
+	// 		}
+	// 		return fT, nil
+	// 	}
+
+	// 	return nil, ErrNotIndexable
+}
+
+func (StringBuilder) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+func (o StringBuilder) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, ErrInvalidOperator
+}
+
+func (o StringBuilder) Copy() Object {
+	rsT := StringBuilder{Value: new(strings.Builder)}
+
+	rsT.Value.WriteString(o.Value.String())
+
+	return rsT
 }

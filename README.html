@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>The Char Language &lpar;Charlang&rpar;</title>
+        <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+        
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+        
+    </head>
+    <body class="vscode-body vscode-light">
+        <h1 id="the-char-language-charlang">The Char Language (Charlang)</h1>
+<p><a href="http://topget.org/charlang">Charlang</a> is a fast, dynamic scripting language to embed in Go applications.
+Charlang is compiled and executed as bytecode on stack-based VM that's written
+in native Go. Charlang has a more-common runtime error handling(try-catch-finally) than Golang.</p>
+<p>Charlang is inspired by and based on awesome script language <a href="https://github.com/ozanh/ugo">uGo</a>. A special thanks to uGo's creater(<a href="https://github.com/ozanh">ozanh</a>) and contributors.</p>
+<h2 id="features">Features</h2>
+<ul>
+<li>Written in native Go (no cgo).</li>
+<li><code>if else</code> statements.</li>
+<li><code>for</code> and <code>for in</code> statements.</li>
+<li><code>try catch finally</code> statements.</li>
+<li><code>param</code>, <code>global</code>, <code>var</code> and <code>const</code> declarations.</li>
+<li>Rich builtins.</li>
+<li>Module support.</li>
+<li>Go like syntax with additions.</li>
+</ul>
+<h2 id="new-features">new features</h2>
+<ul>
+<li>Added new types such as Byte, Any...</li>
+<li>Added functions: NewCommonError, NewError and more...</li>
+<li>Added builtin functions: getRandomInt, writeResp, setRespHeader, writeRespHeader and much more...</li>
+<li>Added some global variables and resources.</li>
+<li>Added a new thread-model.</li>
+<li>Added runtime/dynamically script compiling and running capability.</li>
+</ul>
+<p><a href="https://pkg.go.dev/github.com/topxeq/charlang">Go Reference</a></p>
+<p><strong>Fibonacci Example</strong></p>
+<pre><code class="language-go">param arg0
+
+<span class="hljs-keyword">var</span> fib
+
+fib = <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(x)</span></span> {
+    <span class="hljs-keyword">if</span> x == <span class="hljs-number">0</span> {
+        <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>
+    } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> x == <span class="hljs-number">1</span> {
+        <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>
+    }
+    <span class="hljs-keyword">return</span> fib(x<span class="hljs-number">-1</span>) + fib(x<span class="hljs-number">-2</span>)
+}
+
+<span class="hljs-keyword">return</span> fib(arg0)
+
+</code></pre>
+<h2 id="quick-start">Quick Start</h2>
+<p><code>go get -u github.com/topxeq/charlang</code></p>
+<p>Charlang has a REPL application to learn and test Charlang language.</p>
+<p><code>go get -u github.com/topxeq/charlang/cmd/char</code></p>
+<p><code>./char</code></p>
+<pre><code class="language-go"><span class="hljs-keyword">package</span> main
+
+<span class="hljs-keyword">import</span> (
+    <span class="hljs-string">&quot;fmt&quot;</span>
+
+    <span class="hljs-string">&quot;github.com/topxeq/charlang&quot;</span>
+)
+
+<span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> {
+    script := <span class="hljs-string">`
+param ...args
+
+mapEach := func(seq, fn) {
+
+    if !isArray(seq) {
+        return error(&quot;want array, got &quot; + typeName(seq))
+    }
+
+    var out = []
+
+    if sz := len(seq); sz &gt; 0 {
+        out = repeat([0], sz)
+    } else {
+        return out
+    }
+
+    try {
+        for i, v in seq {
+            out[i] = fn(v)
+        }
+    } catch err {
+        println(err)
+    } finally {
+        return out, err
+    }
+}
+
+global multiplier
+
+v, err := mapEach(args, func(x) { return x*multiplier })
+if err != undefined {
+    return err
+}
+return v
+`</span>
+
+    bytecode, err := charlang.Compile([]<span class="hljs-type">byte</span>(script), charlang.DefaultCompilerOptions)
+    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+        <span class="hljs-built_in">panic</span>(err)
+    }
+    globals := charlang.Map{<span class="hljs-string">&quot;multiplier&quot;</span>: charlang.Int(<span class="hljs-number">2</span>)}
+    ret, err := charlang.NewVM(bytecode).Run(
+        globals,
+        charlang.Int(<span class="hljs-number">1</span>), charlang.Int(<span class="hljs-number">2</span>), charlang.Int(<span class="hljs-number">3</span>), charlang.Int(<span class="hljs-number">4</span>),
+    )
+    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+        <span class="hljs-built_in">panic</span>(err)
+    }
+    fmt.Println(ret) <span class="hljs-comment">// [2, 4, 6, 8]</span>
+}
+</code></pre>
+<h2 id="documentation">Documentation</h2>
+<h3 id="get-the-binary">Get the binary</h3>
+<p>Download the binary release files according to your OS: <a href="http://topget.org/pub/char.zip">Windows(zip)</a>.</p>
+<h3 id="hello-world">Hello world!</h3>
+<pre><code class="language-go">pln(<span class="hljs-string">&quot;Hello world!&quot;</span>)
+
+</code></pre>
+
+        
+        
+    </body>
+    </html>

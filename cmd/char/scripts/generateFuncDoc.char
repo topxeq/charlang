@@ -1,0 +1,77 @@
+dirT := getEnv("GOPATH")
+
+pathT := joinPath(dirT, `src`, `github.com`, `topxeq`, `charlang`, `builtins.go`)
+
+mdPathT := joinPath(dirT, `src`, `github.com`, `topxeq`, `charlang`, `funcs.md`)
+
+plt(pathT)
+
+fcT := loadText(pathT)
+
+checkErrX(fcT)
+
+docBodyT := regFindFirst(fcT, `(?sm)// funcs start(.*?)// funcs end`, 1)
+
+plt(docBodyT)
+
+checkErrX(docBodyT)
+
+// pln("done")
+
+docBodyT = strReplace(docBodyT, "\r", "")
+
+linesT := strSplitLines(docBodyT)
+
+bufT := new("stringBuilder")
+
+// plt(bufT)
+
+// bufT.writeStr("## 谢语言指令参考（Xielang Instruction Reference）\n\n")
+writeStr(bufT, "## 谢语言指令参考（Xielang Instruction Reference）\n\n")
+
+// plt(bufT.toStr())
+
+for i, v in linesT {
+	tv := strTrim(v)
+
+	if tv == "" {
+		continue
+	}
+
+	pln(i, tv)
+
+    tmp1 := regFindFirst(tv, `//\s+(.* related)`, 1)
+
+    if !isErrX(tmp1) {
+        writeStr(bufT, "### --- " + tmp1 + " ---" + "\n\n")
+        continue
+    }
+
+    tmp1 = regFindFirstGroups(tv, `^"(.*?)":\s*\w+\s*,\s*//\s*(.*?)\s*$`)
+
+    if !isErrX(tmp1) && len(tmp1) > 0 {
+        writeStr(bufT, "**" + tmp1[1] + "**" + ": " + tmp1[2] + "\n\n")
+        continue
+    }
+
+    tmp1 = regFindFirstGroups(tv, `^"(.*?)":\s*\w+\s*,\s*$`)
+
+    if !isErrX(tmp1) && len(tmp1) > 0 {
+        writeStr(bufT, "**" + tmp1[1] + "**" + "\n\n")
+        continue
+    }
+
+    writeStr(bufT, tv + "\n")
+}
+
+// writeStr(bufT, "\n\n" + "```" + "\n" + docBodyT + "```" + "\n")
+
+pln(bufT.toStr())
+
+rs := saveText(toStr(bufT), mdPathT)
+// rs := saveText(bufT.toStr(), mdPathT)
+
+checkErrX(rs)
+
+pln("done")
+
