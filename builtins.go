@@ -42,6 +42,7 @@ const (
 	BuiltinSshUpload
 	BuiltinArchiveFilesToZip
 	BuiltinGetOSName
+	BuiltinGetOSArch
 	BuiltinGetClipText
 	BuiltinSetClipText
 	BuiltinRegQuote
@@ -229,6 +230,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"setEnv":    BuiltinSetEnv,
 	"getOsName": BuiltinGetOSName,
 	"getOSName": BuiltinGetOSName,
+	"getOSArch": BuiltinGetOSArch,
+	"getOsArch": BuiltinGetOSArch,
 
 	// path related
 	"joinPath": BuiltinJoinPath, // join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
@@ -361,6 +364,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getOSName",
 		Value:   fnARS(tk.GetOSName),
 		ValueEx: fnARSex(tk.GetOSName),
+	},
+	BuiltinGetOSArch: &BuiltinFunction{
+		Name:    "getOSArch",
+		Value:   fnARS(tk.GetOSArch),
+		ValueEx: fnARSex(tk.GetOSArch),
 	},
 	BuiltinTrim: &BuiltinFunction{
 		Name:    "trim",
