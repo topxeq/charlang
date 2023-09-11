@@ -853,10 +853,10 @@ func ObjectsToBytes(aryA []Object) []byte {
 func DownloadStringFromSSH(sshA string, filePathA string) string {
 	aryT := tk.Split(sshA, ":")
 
-	basePathT, errT := tk.EnsureBasePath("char")
+	basePathT := tk.EnsureBasePathInHome("char")
 
-	if errT != nil {
-		return tk.GenerateErrorStringF("failed to find base path: %v", errT)
+	if strings.HasPrefix(basePathT, "TXERROR:") {
+		return tk.ErrStrf("failed to find base path: %v", basePathT[8:])
 	}
 
 	if len(aryT) != 5 {
@@ -902,9 +902,9 @@ func DownloadStringFromSSH(sshA string, filePathA string) string {
 }
 
 func GetCfgString(fileNameA string) string {
-	basePathT, errT := tk.EnsureBasePath("char")
+	basePathT := tk.EnsureBasePathInHome("char")
 
-	if errT == nil {
+	if !strings.HasPrefix(basePathT, "TXERROR:") {
 		cfgPathT := tk.JoinPath(basePathT, fileNameA)
 
 		cfgStrT := tk.Trim(tk.LoadStringFromFile(cfgPathT))
@@ -917,13 +917,13 @@ func GetCfgString(fileNameA string) string {
 
 	}
 
-	return tk.ErrStrF("failed to get config string: %v", errT)
+	return tk.ErrStrF("failed to get config string: %v", basePathT[8:])
 }
 
 func SetCfgString(fileNameA string, strA string) string {
-	basePathT, errT := tk.EnsureBasePath("char")
+	basePathT := tk.EnsureBasePathInHome("char")
 
-	if errT == nil {
+	if !strings.HasPrefix(basePathT, "TXERROR:") {
 		cfgPathT := tk.JoinPath(basePathT, fileNameA)
 
 		rsT := tk.SaveStringToFile(strA, cfgPathT)
@@ -936,7 +936,7 @@ func SetCfgString(fileNameA string, strA string) string {
 
 	}
 
-	return tk.ErrStrF("failed to save config string: %v", errT)
+	return tk.ErrStrf("failed to save config string: %v", basePathT[8:])
 }
 
 func NewChar(codeA string) (interface{}, error) {

@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/topxeq/charlang"
@@ -1207,11 +1208,11 @@ func runArgs(argsA ...string) interface{} {
 
 		charlang.ScriptPathG = ""
 	} else if ifCloudT {
-		basePathT, errT := tk.EnsureBasePath("char")
+		basePathT := tk.EnsureBasePathInHome("char")
 
 		gotT := false
 
-		if errT == nil {
+		if !strings.HasPrefix(basePathT, "TXERROR:") {
 			cfgPathT := tk.JoinPath(basePathT, "cloud.cfg")
 
 			cfgStrT := tk.Trim(tk.LoadStringFromFile(cfgPathT))
