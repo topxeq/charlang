@@ -43,6 +43,9 @@ const (
 	BuiltinArchiveFilesToZip
 	BuiltinGetOSName
 	BuiltinGetOSArch
+	BuiltinGetAppDir
+	BuiltinGetCurDir
+	BuiltinGetHomeDir
 	BuiltinGetClipText
 	BuiltinSetClipText
 	BuiltinRegQuote
@@ -225,13 +228,16 @@ var BuiltinsMap = map[string]BuiltinType{
 	"sleep": BuiltinSleep,
 
 	// os/system related
-	"systemCmd": BuiltinSystemCmd,
-	"getEnv":    BuiltinGetEnv,
-	"setEnv":    BuiltinSetEnv,
-	"getOsName": BuiltinGetOSName,
-	"getOSName": BuiltinGetOSName,
-	"getOSArch": BuiltinGetOSArch,
-	"getOsArch": BuiltinGetOSArch,
+	"systemCmd":  BuiltinSystemCmd,
+	"getEnv":     BuiltinGetEnv,
+	"setEnv":     BuiltinSetEnv,
+	"getOsName":  BuiltinGetOSName,
+	"getOSName":  BuiltinGetOSName,
+	"getOSArch":  BuiltinGetOSArch,
+	"getOsArch":  BuiltinGetOSArch,
+	"getAppDir":  BuiltinGetAppDir,
+	"getCurDir":  BuiltinGetCurDir,
+	"getHomeDir": BuiltinGetHomeDir,
 
 	// path related
 	"joinPath": BuiltinJoinPath, // join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
@@ -369,6 +375,21 @@ var BuiltinObjects = [...]Object{
 		Name:    "getOSArch",
 		Value:   fnARS(tk.GetOSArch),
 		ValueEx: fnARSex(tk.GetOSArch),
+	},
+	BuiltinGetHomeDir: &BuiltinFunction{
+		Name:    "getHomeDir",
+		Value:   fnARS(tk.GetHomeDir),
+		ValueEx: fnARSex(tk.GetHomeDir),
+	},
+	BuiltinGetAppDir: &BuiltinFunction{
+		Name:    "getAppDir",
+		Value:   fnARS(tk.GetApplicationPath),
+		ValueEx: fnARSex(tk.GetApplicationPath),
+	},
+	BuiltinGetCurDir: &BuiltinFunction{
+		Name:    "getCurDir",
+		Value:   fnARS(tk.GetCurrentDir),
+		ValueEx: fnARSex(tk.GetCurrentDir),
 	},
 	BuiltinTrim: &BuiltinFunction{
 		Name:    "trim",
