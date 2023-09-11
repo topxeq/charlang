@@ -1,0 +1,18 @@
+// usage: char getWeb.char -url=http://www.example.com
+
+global argsG
+
+urlT := trim(getSwitch(argsG, "-url=", ""))
+
+if urlT == "" {
+	pln("empty URL")
+	return
+}
+
+pl("trying to get %v ...", urlT)
+
+rsT := getWeb(urlT)
+
+checkErrX(rsT)
+
+pl("Result: %v", rsT)

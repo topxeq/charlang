@@ -32,6 +32,7 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinGetWeb
 	BuiltintRegFindFirstGroups
 	BuiltintWriteStr
 	BuiltintStrSplitLines
@@ -249,6 +250,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	// compress/zip related
 	"archiveFilesToZip": BuiltinArchiveFilesToZip, // Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
 
+	// network/web related
+	"getWeb": BuiltinGetWeb,
+
 	// ssh related
 	"sshUpload": BuiltinSshUpload,
 
@@ -321,6 +325,11 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
 	// char add start
+	BuiltinGetWeb: &BuiltinFunction{
+		Name:    "getWeb",
+		Value:   fnASVaRA(tk.GetWeb),
+		ValueEx: fnASVaRAex(tk.GetWeb),
+	},
 	BuiltintRegFindFirstGroups: &BuiltinFunction{
 		Name:    "regFindFirstGroups",
 		Value:   fnASSRLs(tk.RegFindFirstGroupsX),
@@ -1704,6 +1713,29 @@ func fnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 		vargs := toArgsS(1, c)
 		rs := fn(c.Get(0).String(), vargs...)
 		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.GetWeb
+func fnASVaRA(fn func(string, ...interface{}) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+		vargs := ObjectsToI(args[1:])
+		rs := fn(args[0].String(), vargs...)
+		return ConvertToObject(rs), nil
+	}
+}
+
+func fnASVaRAex(fn func(string, ...interface{}) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+		vargs := toArgsA(1, c)
+		rs := fn(c.Get(0).String(), vargs...)
+		return ConvertToObject(rs), nil
 	}
 }
 
