@@ -1,4 +1,4 @@
-## 谢语言指令参考（Xielang Instruction Reference）
+## Charlang Builtin Function Reference
 
 ### --- internal & debug related ---
 
@@ -132,6 +132,16 @@
 
 **getOSName**
 
+**getOSArch**
+
+**getOsArch**
+
+**getAppDir**
+
+**getCurDir**
+
+**getHomeDir**
+
 ### --- path related ---
 
 **joinPath**: join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
@@ -145,6 +155,10 @@
 ### --- compress/zip related ---
 
 **archiveFilesToZip**: Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
+
+### --- network/web related ---
+
+**getWeb**
 
 ### --- ssh related ---
 
@@ -251,4 +265,16 @@
 **:makeArray**
 
 **cap**
+
+## Functions in module 'ex'
+
+### --- compile/run/thread related ---
+
+**compile**: compile a piece of code
+
+**runCompiled**: run compiled code
+
+**goRunCompiled**: run compiled code in a new thread
+
+**threadRunCompiled**: run compiled code in a new thread
 

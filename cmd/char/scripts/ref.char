@@ -1,12 +1,7 @@
+// case 1: variable passed in function by value
 a := "  1.2 "
 
-plo(a)
-pl("pa=%p", a)
-
-b := a.ref
-
-plo(b)
-pl("pb=%p", b)
+plt(a)
 
 f1 := func(strA) {
 	strA = "bbb"
@@ -14,45 +9,67 @@ f1 := func(strA) {
 
 f1(a)
 
-plo(a)
+// not changed
+plt(a)
 
-f2 := func(strPtA) {
-	plo(strPtA)
-	pl("pf2=%p", strPtA)
-	strPtA.refValue = "bbb"
+// case 2: variable of mutable type passed in function
+b := mutableString("  1.2 ")
+
+plt(b)
+
+f2 := func(arg) {
+	// use predefined member 'value' to change the value of the mutable string
+	arg.value = "bbb"
 }
 
 f2(b)
 
-plo(a)
+// changed
+plt(b)
 
-plo(b)
-
+// case 3: array type is mutable(for items in it, but cannot append or remove)
 c := [1, 2, "a"]
 
-plo(c)
+plt(c)
 
 f3 := func(aryA) {
-	// plo(strPtA)
-	// pl("pf2=%p", strPtA)
 	aryA[1] = "cc"
+
+	// append will not take effect
+	append(aryA, "b")
 }
 
 f3(c)
 
-plo(c)
+plt(c)
 
+// case 4: map type is mutable(can set, add or remove)
 d := {"field1": 1, "field2": "23.8"}
 
-plo(d)
+pln(toJson(d, "-sort"))
 
 f4 := func(mapA) {
-	// plo(strPtA)
-	// pl("pf2=%p", strPtA)
 	mapA["field3"] = "dd"
 	mapA["field1"] = true
+
+	delete(mapA, "field2")
 }
 
 f4(d)
 
-plo(d)
+pln(toJson(d, "-sort"))
+
+// case 5: new any type as mutable(function 'new' will return an objectRef type object, can be used in setValueByRef function)
+e := new("float", 368.9)
+
+plt(e)
+plt(unref(e))
+
+f5 := func(arg) {
+	setValueByRef(arg, 21.7)
+}
+
+f5(e)
+
+plt(e)
+plt(unref(e))

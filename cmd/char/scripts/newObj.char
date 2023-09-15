@@ -1,13 +1,13 @@
-buf1 := newObj("bytesBuffer")
+r1 := newObj("stringRing")
 
-pl("buf1 type: %v", typeOfAny(buf1))
+pl("r1 type: %v", typeName(r1))
 
-method(buf1, "WriteString", "abc")
+pl("r1 type wrapped in any: %v", typeOfAny(r1))
 
-rs := method(buf1, "Bytes")[0]
+method(r1, "Push", "abc")
 
-plt(rs)
+method(r1, "Push", "123")
 
-rs = toStr(rs)
+r2 := method(r1, "GetList")[0]
 
-plo(rs)
+plt(r2)

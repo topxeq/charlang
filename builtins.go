@@ -3,6 +3,7 @@ package charlang
 import (
 	"bytes"
 	"compress/flate"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/topxeq/charlang/token"
+	"github.com/topxeq/sqltk"
 	"github.com/topxeq/tk"
 
 	"github.com/mholt/archiver/v3"
@@ -32,6 +34,12 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinDumpVar
+	BuiltinMake
+	BuiltinDatabase
+	BuiltinStatusResult
+	BuiltinUnref
+	BuiltinSetValueByRef
 	BuiltinGetWeb
 	BuiltintRegFindFirstGroups
 	BuiltintWriteStr
@@ -86,6 +94,7 @@ const (
 	BuiltinTypeName
 	BuiltinPl
 	BuiltinPln
+	BuiltinPlv
 	BuiltinTestByText
 	BuiltinTestByStartsWith
 	BuiltinTestByReg
@@ -105,7 +114,9 @@ const (
 	BuiltinUint
 	BuiltinFloat
 	BuiltinChar
+	BuiltinByte
 	BuiltinString
+	BuiltinMutableString
 	BuiltinBytes
 	BuiltinChars
 	BuiltinPrintf
@@ -153,21 +164,30 @@ var BuiltinsMap = map[string]BuiltinType{
 	"testByStartsWith": BuiltinTestByStartsWith,
 	"testByReg":        BuiltinTestByReg,
 
+	"dumpVar": BuiltinDumpVar,
+
 	// data type related
 	"typeCode":  BuiltinTypeCode,
 	"typeName":  BuiltinTypeName,
+	"typeOf":    BuiltinTypeName,
 	"typeOfAny": BuiltinTypeOfAny,
 
-	"new": BuiltinNew,
+	"make": BuiltinMake,
+	"new":  BuiltinNew,
 
 	"time":          BuiltinTime,
 	"stringBuilder": BuiltinStringBuilder,
+	"statusResult":  BuiltinStatusResult,
 	"any":           BuiltinAny,
 
 	"toTime": BuiltinToTime,
 
 	// new related
 	"newObj": BuiltinNewObj,
+
+	// ref/pointer related
+	"setValueByRef": BuiltinSetValueByRef,
+	"unref":         BuiltinUnref,
 
 	// convert related
 	"toStr": BuiltinToStr,
@@ -192,6 +212,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	// print related
 	"pl":  BuiltinPl,
 	"pln": BuiltinPln,
+	"plv": BuiltinPlv,
 	"plo": BuiltinPlo,
 	"plt": BuiltinPlt,
 
@@ -256,31 +277,36 @@ var BuiltinsMap = map[string]BuiltinType{
 	// ssh related
 	"sshUpload": BuiltinSshUpload,
 
+	// database related
+	"database": BuiltinDatabase,
+
 	// misc related
 	"getSeq": BuiltinGetSeq,
 	"pass":   BuiltinPass,
 
-	"append":      BuiltinAppend,
-	"delete":      BuiltinDelete,
-	"copy":        BuiltinCopy,
-	"repeat":      BuiltinRepeat,
-	"contains":    BuiltinContains,
-	"len":         BuiltinLen,
-	"sort":        BuiltinSort,
-	"sortReverse": BuiltinSortReverse,
-	"error":       BuiltinError,
-	"bool":        BuiltinBool,
-	"int":         BuiltinInt,
-	"uint":        BuiltinUint,
-	"float":       BuiltinFloat,
-	"char":        BuiltinChar,
-	"string":      BuiltinString,
-	"bytes":       BuiltinBytes,
-	"chars":       BuiltinChars,
-	"printf":      BuiltinPrintf,
-	"println":     BuiltinPrintln,
-	"sprintf":     BuiltinSprintf,
-	"globals":     BuiltinGlobals,
+	"append":        BuiltinAppend,
+	"delete":        BuiltinDelete,
+	"copy":          BuiltinCopy,
+	"repeat":        BuiltinRepeat,
+	"contains":      BuiltinContains,
+	"len":           BuiltinLen,
+	"sort":          BuiltinSort,
+	"sortReverse":   BuiltinSortReverse,
+	"error":         BuiltinError,
+	"bool":          BuiltinBool,
+	"int":           BuiltinInt,
+	"uint":          BuiltinUint,
+	"float":         BuiltinFloat,
+	"char":          BuiltinChar,
+	"byte":          BuiltinByte,
+	"string":        BuiltinString,
+	"mutableString": BuiltinMutableString,
+	"bytes":         BuiltinBytes,
+	"chars":         BuiltinChars,
+	"printf":        BuiltinPrintf,
+	"println":       BuiltinPrintln,
+	"sprintf":       BuiltinSprintf,
+	"globals":       BuiltinGlobals,
 
 	"isError":     BuiltinIsError,
 	"isInt":       BuiltinIsInt,
@@ -325,6 +351,36 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
 	// char add start
+	BuiltinDumpVar: &BuiltinFunction{
+		Name:    "make",
+		Value:   CallExAdapter(builtinDumpVarFunc),
+		ValueEx: builtinDumpVarFunc,
+	},
+	BuiltinMake: &BuiltinFunction{
+		Name:    "make",
+		Value:   CallExAdapter(builtinMakeFunc),
+		ValueEx: builtinMakeFunc,
+	},
+	BuiltinDatabase: &BuiltinFunction{
+		Name:    "database",
+		Value:   CallExAdapter(builtinDatabaseFunc),
+		ValueEx: builtinDatabaseFunc,
+	},
+	BuiltinStatusResult: &BuiltinFunction{
+		Name:    "statusResult",
+		Value:   CallExAdapter(builtinStatusResultFunc),
+		ValueEx: builtinStatusResultFunc,
+	},
+	BuiltinUnref: &BuiltinFunction{
+		Name:    "unref",
+		Value:   CallExAdapter(builtinUnrefFunc),
+		ValueEx: builtinUnrefFunc,
+	},
+	BuiltinSetValueByRef: &BuiltinFunction{
+		Name:    "setValueByRef",
+		Value:   CallExAdapter(builtinSetValueByRefFunc),
+		ValueEx: builtinSetValueByRefFunc,
+	},
 	BuiltinGetWeb: &BuiltinFunction{
 		Name:    "getWeb",
 		Value:   fnASVaRA(tk.GetWeb),
@@ -505,16 +561,19 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinRegQuoteFunc,
 	},
 	BuiltinAny: &BuiltinFunction{
-		Name:  "any",
-		Value: builtinAnyFunc,
+		Name:    "any",
+		Value:   CallExAdapter(builtinAnyFunc),
+		ValueEx: builtinAnyFunc,
 	},
 	BuiltinTime: &BuiltinFunction{
-		Name:  "time", // new a Time object
-		Value: builtinTimeFunc,
+		Name:    "time", // new a Time object
+		Value:   CallExAdapter(builtinTimeFunc),
+		ValueEx: builtinTimeFunc,
 	},
 	BuiltinToTime: &BuiltinFunction{
-		Name:  "toTime", // new a Time object
-		Value: builtinTimeFunc,
+		Name:    "toTime", // new a Time object
+		Value:   CallExAdapter(builtinTimeFunc),
+		ValueEx: builtinTimeFunc,
 	},
 	BuiltinExit: &BuiltinFunction{
 		Name:  "exit", // usage: exit() or exit(1)
@@ -570,6 +629,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "pln",
 		Value:   fnAVaR(tk.Pln),
 		ValueEx: fnAVaRex(tk.Pln),
+	},
+	BuiltinPlv: &BuiltinFunction{
+		Name:    "plv",
+		Value:   fnAVaR(tk.Plv),
+		ValueEx: fnAVaRex(tk.Plv),
 	},
 	BuiltinTypeCode: &BuiltinFunction{
 		Name:    "typeCode",
@@ -694,10 +758,20 @@ var BuiltinObjects = [...]Object{
 		Value:   funcPOROe(builtinCharFunc),
 		ValueEx: funcPOROeEx(builtinCharFunc),
 	},
+	BuiltinByte: &BuiltinFunction{
+		Name:    "byte",
+		Value:   CallExAdapter(builtinByteFunc),
+		ValueEx: builtinByteFunc,
+	},
 	BuiltinString: &BuiltinFunction{
 		Name:    "string",
-		Value:   funcPORO(builtinStringFunc),
-		ValueEx: funcPOROEx(builtinStringFunc),
+		Value:   CallExAdapter(builtinStringFunc),
+		ValueEx: builtinStringFunc,
+	},
+	BuiltinMutableString: &BuiltinFunction{
+		Name:    "mutableString",
+		Value:   CallExAdapter(builtinMutableStringFunc),
+		ValueEx: builtinMutableStringFunc,
 	},
 	BuiltinBytes: &BuiltinFunction{
 		Name:    "bytes",
@@ -956,6 +1030,8 @@ func builtinRepeatFunc(arg Object, count int) (ret Object, err error) {
 		ret = out
 	case String:
 		ret = ToStringObject(strings.Repeat(v.String(), count))
+	case *MutableString:
+		ret = ToMutableStringObject(strings.Repeat(v.String(), count))
 	case Bytes:
 		ret = Bytes(bytes.Repeat(v, count))
 	default:
@@ -984,6 +1060,8 @@ func builtinContainsFunc(arg0, arg1 Object) (Object, error) {
 		}
 	case String:
 		ok = strings.Contains(obj.String(), arg1.String())
+	case *MutableString:
+		ok = strings.Contains(obj.String(), arg1.String())
 	case Bytes:
 		switch v := arg1.(type) {
 		case Int:
@@ -993,6 +1071,8 @@ func builtinContainsFunc(arg0, arg1 Object) (Object, error) {
 		case Char:
 			ok = bytes.Contains(obj, []byte{byte(v)})
 		case String:
+			ok = bytes.Contains(obj, []byte(v.String()))
+		case *MutableString:
 			ok = bytes.Contains(obj, []byte(v.String()))
 		case Bytes:
 			ok = bytes.Contains(obj, v)
@@ -1054,6 +1134,12 @@ func builtinSortFunc(arg Object) (ret Object, err error) {
 			return s[i] < s[j]
 		})
 		ret = ToStringObject(s)
+	case *MutableString:
+		s := []rune(obj.String())
+		sort.Slice(s, func(i, j int) bool {
+			return s[i] < s[j]
+		})
+		ret = ToMutableStringObject(s)
 	case Bytes:
 		sort.Slice(obj, func(i, j int) bool {
 			return obj[i] < obj[j]
@@ -1098,6 +1184,12 @@ func builtinSortReverseFunc(arg Object) (Object, error) {
 			return s[j] < s[i]
 		})
 		return ToStringObject(s), nil
+	case *MutableString:
+		s := []rune(obj.String())
+		sort.Slice(s, func(i, j int) bool {
+			return s[j] < s[i]
+		})
+		return ToMutableStringObject(s), nil
 	case Bytes:
 		sort.Slice(obj, func(i, j int) bool {
 			return obj[j] < obj[i]
@@ -1128,6 +1220,31 @@ func builtinUintFunc(v uint64) Object { return Uint(v) }
 
 func builtinFloatFunc(v float64) Object { return Float(v) }
 
+func builtinByteFunc(c Call) (Object, error) {
+	if c.Len() < 1 {
+		return Byte(0), nil
+	}
+
+	arg1 := c.Get(0)
+
+	switch nv := arg1.(type) {
+	case Byte:
+		return nv, nil
+	case Int:
+		return Byte(nv), nil
+	case Uint:
+		return Byte(nv), nil
+	case Float:
+		return Byte(nv), nil
+	case String:
+		return Byte(tk.ToInt(nv)), nil
+	case *MutableString:
+		return Byte(tk.ToInt(nv)), nil
+	default:
+		return NewCommonError("unsupported type: %T", arg1), nil
+	}
+}
+
 func builtinCharFunc(arg Object) (Object, error) {
 	v, ok := ToChar(arg)
 	if ok && v != utf8.RuneError {
@@ -1143,7 +1260,65 @@ func builtinCharFunc(arg Object) (Object, error) {
 	)
 }
 
-func builtinStringFunc(arg Object) Object { return ToStringObject(arg.String()) }
+func builtinStringFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	lenT := len(args)
+	if lenT < 1 {
+		return String{Value: ""}, nil
+	}
+
+	if lenT < 2 {
+		return String{Value: args[0].String()}, nil
+	}
+
+	addLenT := (lenT - 1) / 2
+
+	mbT := make(map[string]Object)
+
+	for i := 0; i < addLenT; i++ {
+		mbT[args[1+i*2].String()] = args[1+i*2+1]
+	}
+
+	if (lenT - 1) > (addLenT * 2) {
+		mbT[args[1+addLenT*2].String()] = ToStringObject("")
+	}
+
+	s1 := String{Value: args[0].String(), Members: mbT}
+
+	return s1, nil
+}
+
+func builtinMutableStringFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	lenT := len(args)
+	if lenT < 1 {
+		return &MutableString{Value: ""}, nil
+	}
+
+	if lenT < 2 {
+		return &MutableString{Value: args[0].String()}, nil
+	}
+
+	addLenT := (lenT - 1) / 2
+
+	mbT := make(map[string]Object)
+
+	for i := 0; i < addLenT; i++ {
+		mbT[args[1+i*2].String()] = args[1+i*2+1]
+	}
+
+	if (lenT - 1) > (addLenT * 2) {
+		mbT[args[1+addLenT*2].String()] = ToStringObject("")
+	}
+
+	s1 := &MutableString{Value: args[0].String(), Members: mbT}
+
+	return s1, nil
+}
+
+// func builtinMutableStringFunc(arg Object) Object { return ToMutableStringObject(arg.String()) }
 
 func builtinBytesFunc(c Call) (Object, error) {
 	size := c.Len()
@@ -1182,6 +1357,20 @@ func builtinBytesFunc(c Call) (Object, error) {
 func builtinCharsFunc(arg Object) (ret Object, err error) {
 	switch obj := arg.(type) {
 	case String:
+		s := obj.Value
+		ret = make(Array, 0, utf8.RuneCountInString(s))
+		sz := len(obj.Value)
+		i := 0
+
+		for i < sz {
+			r, w := utf8.DecodeRuneInString(s[i:])
+			if r == utf8.RuneError {
+				return Undefined, nil
+			}
+			ret = append(ret.(Array), Char(r))
+			i += w
+		}
+	case *MutableString:
 		s := obj.Value
 		ret = make(Array, 0, utf8.RuneCountInString(s))
 		sz := len(obj.Value)
@@ -2098,6 +2287,10 @@ func builtinIsErrXFunc(c Call) (Object, error) {
 		if strings.HasPrefix(nv.Value, "TXERROR:") {
 			return True, nil
 		}
+	case *MutableString:
+		if strings.HasPrefix(nv.Value, "TXERROR:") {
+			return True, nil
+		}
 	case *Any:
 		_, ok := nv.Value.(error)
 
@@ -2151,7 +2344,9 @@ func builtinExitFunc(args ...Object) (Object, error) {
 	return Undefined, nil
 }
 
-func builtinTimeFunc(args ...Object) (Object, error) {
+func builtinTimeFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
 	if len(args) < 1 {
 		return &Time{Value: time.Now()}, nil
 	}
@@ -2164,6 +2359,13 @@ func builtinTimeFunc(args ...Object) (Object, error) {
 	case *Time:
 		return &Time{Value: obj.Value}, nil
 	case String:
+		rsT := tk.ToTime(obj.Value, ObjectsToI(args[1:])...)
+
+		if tk.IsError(rsT) {
+			return Undefined, NewCommonError("failed to convert time: %v", rsT)
+		}
+		return &Time{Value: rsT.(time.Time)}, nil
+	case *MutableString:
 		rsT := tk.ToTime(obj.Value, ObjectsToI(args[1:])...)
 
 		if tk.IsError(rsT) {
@@ -2297,27 +2499,44 @@ func builtinGetClipTextFunc(c Call) (Object, error) {
 	return ToStringObject(tk.GetClipText()), nil
 }
 
-func builtinAnyFunc(args ...Object) (Object, error) {
+func builtinAnyFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return &Any{Value: nil, OriginalType: fmt.Sprintf("%T", nil), OriginalCode: Undefined.TypeCode()}, nil
+	}
+
 	switch obj := args[0].(type) {
-	case Int:
-		return &Any{Value: int(obj)}, nil
-	case Float:
-		return &Any{Value: float64(obj)}, nil
-	case Char:
-		return &Any{Value: rune(obj)}, nil
-	case Uint:
-		return &Any{Value: uint64(obj)}, nil
-	case Byte:
-		return &Any{Value: byte(obj)}, nil
-	case String:
-		return &Any{Value: obj.Value}, nil
 	case Bool:
-		if obj {
-			return &Any{Value: true}, nil
-		}
-		return &Any{Value: false}, nil
+		return &Any{Value: bool(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Byte:
+		return &Any{Value: byte(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Int:
+		return &Any{Value: int(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Uint:
+		return &Any{Value: uint64(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Char:
+		return &Any{Value: rune(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Float:
+		return &Any{Value: float64(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Bytes:
+		return &Any{Value: []byte(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Chars:
+		return &Any{Value: []rune(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case String:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *MutableString:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case Array:
+		return &Any{Value: []Object(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Map:
+		return &Any{Value: map[string]Object(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case StringBuilder:
+		return &Any{Value: (*strings.Builder)(obj.Value), OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *Any:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	default:
-		return &Any{Value: obj}, nil
+		return &Any{Value: obj, OriginalType: obj.TypeName(), OriginalCode: obj.TypeCode()}, nil
 	}
 }
 
@@ -2347,6 +2566,97 @@ func builtinNewAnyFunc(args ...Object) (Object, error) {
 	}
 
 	return &Any{Value: nil}, nil
+}
+
+func builtinSetValueByRefFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	// tk.Pl("builtinSetValueByRefFunc: %#v %#v", args[0], args[1])
+
+	switch obj := args[0].(type) {
+	case *ObjectRef:
+		// tk.Pl("builtinSetValueByRefFunc *ObjectRef: %#v %#v", args[0], args[1])
+		obj.Value = &args[1]
+
+		return nil, nil
+	case *ObjectPtr:
+		// tk.Pl("builtinSetValueByRefFunc *ObjectPtr: %#v %#v", args[0], args[1])
+		obj.Value = &args[1]
+
+		return nil, nil
+	case *Bool:
+		nv1, ok := args[1].(Bool)
+
+		if ok {
+			(*obj) = nv1
+			return nil, nil
+		}
+
+		(*obj) = Bool(tk.ToBool(ConvertFromObject(args[1])))
+
+		return nil, nil
+	case Byte:
+		return &Any{Value: byte(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Int:
+		return &Any{Value: int(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Uint:
+		return &Any{Value: uint64(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Char:
+		return &Any{Value: rune(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Float:
+		return &Any{Value: float64(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Bytes:
+		return &Any{Value: []byte(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Chars:
+		return &Any{Value: []rune(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case String:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *MutableString:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case Array:
+		return &Any{Value: []Object(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case Map:
+		return &Any{Value: map[string]Object(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
+	case StringBuilder:
+		return &Any{Value: (*strings.Builder)(obj.Value), OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *Any:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	default:
+		return &Any{Value: obj, OriginalType: obj.TypeName(), OriginalCode: obj.TypeCode()}, nil
+	}
+}
+
+func builtinUnrefFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	switch obj := args[0].(type) {
+	case *ObjectRef:
+		// tk.Pl("builtinSetValueByRefFunc *ObjectRef: %#v %#v", args[0], args[1])
+
+		return *(obj.Value), nil
+	default:
+		return nil, fmt.Errorf("unsupported type: (%T) %v", args[0], args[0])
+	}
+}
+
+func builtinDumpVarFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	tk.Dump(args[0])
+
+	return nil, nil
 }
 
 func builtinMakeStringBuilderFunc(args ...Object) (Object, error) {
@@ -2397,13 +2707,13 @@ func builtinPltFunc(c Call) (Object, error) {
 	}
 
 	if lenT == 1 {
-		n, e := fmt.Printf("(%v)%#v\n", args[0].TypeName(), args[0])
+		n, e := fmt.Printf("(%v)%v\n", args[0].TypeName(), args[0])
 		return Int(n), e
 	}
 
 	countT := 0
 	for i, v := range args {
-		n, e := fmt.Printf("[%v] (%v)%#v\n", i, v.TypeCode(), v)
+		n, e := fmt.Printf("[%v] (%v)%v\n", i, v.TypeCode(), v)
 
 		countT += n
 
@@ -2662,7 +2972,114 @@ func builtinStringBuilderFunc(c Call) (Object, error) {
 	return rs, nil
 }
 
+func builtinStatusResultFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return &StatusResult{Status: "success", Value: ""}, nil
+	}
+
+	if len(args) < 2 {
+		return &StatusResult{Status: args[0].String(), Value: ""}, nil
+	}
+
+	if len(args) < 3 {
+		return &StatusResult{Status: args[0].String(), Value: args[1].String()}, nil
+	}
+
+	return &StatusResult{Status: args[0].String(), Value: args[1].String(), Objects: tk.ToJSONX(ObjectsToS(args[2:]))}, nil
+}
+
 func builtinNewFunc(c Call) (Object, error) {
+	// args := c.GetArgs()
+
+	// if len(args) < 1 {
+	// 	return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+	// }
+
+	// s1 := args[0].String()
+
+	// tk.Pln("builtinNewFunc:", s1, args)
+
+	var tmpv Object
+
+	tmpv, errT := builtinMakeFunc(c)
+
+	if errT != nil {
+		return Undefined, errT
+	}
+
+	return &ObjectRef{Value: &tmpv}, nil
+
+	// switch s1 {
+	// case "bool":
+	// 	// tk.Pln("builtinNewFunc bool:", s1, args)
+	// 	if len(args) > 1 {
+	// 		tmpv = Bool(!args[1].IsFalsy())
+	// 	} else {
+	// 		tmpv = Bool(false)
+	// 	}
+
+	// 	return &ObjectRef{Value: &tmpv}, nil
+	// case "byte":
+	// 	if len(args) > 1 {
+	// 		tmpv = Byte(tk.ToInt(args[1].String(), 0))
+	// 	} else {
+	// 		tmpv = Byte(0)
+	// 	}
+
+	// 	return &ObjectRef{Value: &tmpv}, nil
+	// case "int":
+	// 	if len(args) > 1 {
+	// 		return Int(tk.ToInt(args[1].String(), 0)), nil
+	// 	} else {
+	// 		return Int(0), nil
+	// 	}
+	// 	return &ObjectRef{Value: &tmpv}, nil
+	// case "uint":
+	// 	if len(args) > 1 {
+	// 		return Uint(tk.ToInt(args[1].String(), 0)), nil
+	// 	} else {
+	// 		return Uint(0), nil
+	// 	}
+	// case "char":
+	// 	if len(args) > 1 {
+	// 		return Char(tk.ToInt(args[1].String(), 0)), nil
+	// 	} else {
+	// 		return Char(0), nil
+	// 	}
+	// case "float":
+	// 	if len(args) > 1 {
+	// 		return Char(tk.ToFloat(args[1].String(), 0.0)), nil
+	// 	} else {
+	// 		return Char(0), nil
+	// 	}
+	// case "str", "string":
+	// 	if len(args) > 1 {
+	// 		return String{Value: args[1].String()}, nil
+	// 	} else {
+	// 		return String{Value: ""}, nil
+	// 	}
+	// case "array", "list":
+	// 	if len(args) > 1 {
+	// 		return make(Array, 0, tk.ToInt(args[1].String(), 0)), nil
+	// 	} else {
+	// 		return make(Array, 0, 0), nil
+	// 	}
+	// case "map":
+	// 	if len(args) > 1 {
+	// 		return make(Map, tk.ToInt(args[1].String(), 0)), nil
+	// 	} else {
+	// 		return make(Map, 0), nil
+	// 	}
+	// case "stringBuilder":
+	// 	return builtinStringBuilderFunc(Call{args: args[1:]})
+	// }
+
+	// return Undefined, NewCommonError("invalid data type: %v", s1)
+}
+
+func builtinMakeFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
@@ -2671,10 +3088,9 @@ func builtinNewFunc(c Call) (Object, error) {
 
 	s1 := args[0].String()
 
-	// tk.Pln(s1, args)
-
 	switch s1 {
 	case "bool":
+		// tk.Pln("builtinMakeFunc bool:", s1, args)
 		if len(args) > 1 {
 			return Bool(!args[1].IsFalsy()), nil
 		} else {
@@ -2706,15 +3122,21 @@ func builtinNewFunc(c Call) (Object, error) {
 		}
 	case "float":
 		if len(args) > 1 {
-			return Char(tk.ToFloat(args[1].String(), 0.0)), nil
+			return Float(tk.ToFloat(args[1].String(), 0.0)), nil
 		} else {
-			return Char(0), nil
+			return Float(0.0), nil
 		}
 	case "str", "string":
 		if len(args) > 1 {
 			return String{Value: args[1].String()}, nil
 		} else {
 			return String{Value: ""}, nil
+		}
+	case "mutableStr", "mutableString":
+		if len(args) > 1 {
+			return &MutableString{Value: args[1].String()}, nil
+		} else {
+			return &MutableString{Value: ""}, nil
 		}
 	case "array", "list":
 		if len(args) > 1 {
@@ -2728,8 +3150,49 @@ func builtinNewFunc(c Call) (Object, error) {
 		} else {
 			return make(Map, 0), nil
 		}
+	case "bytes":
+		if len(args) > 1 {
+			var bufT Bytes = Bytes(args[1].String())
+			buf1 := make(Bytes, len(bufT))
+
+			copy(buf1, bufT)
+			return buf1, nil
+
+		} else {
+			return make(Bytes, 0), nil
+		}
+	case "chars":
+		if len(args) > 1 {
+			var bufT Chars = Chars(args[1].String())
+			buf1 := make(Chars, len(bufT))
+
+			copy(buf1, bufT)
+			return buf1, nil
+		} else {
+			return make(Chars, 0), nil
+		}
+	case "error":
+		if len(args) > 1 {
+			return NewCommonError("%v", args[1].String()), nil
+		} else {
+			return NewCommonError(""), nil
+		}
+	case "syncMap":
+		return &SyncMap{Value: make(Map)}, nil
+	case "time":
+		return builtinTimeFunc(Call{args: args[1:]})
 	case "stringBuilder":
 		return builtinStringBuilderFunc(Call{args: args[1:]})
+	case "any":
+		return builtinAnyFunc(Call{args: args[1:]})
+	case "ref", "objectRef":
+		return &ObjectRef{Value: nil}, nil
+	case "statusResult":
+		return builtinStatusResultFunc(Call{args: args[1:]})
+	case "database":
+		return builtinStatusResultFunc(Call{args: args[1:]})
+	case "undefined":
+		return Undefined, nil
 	}
 
 	return Undefined, NewCommonError("invalid data type: %v", s1)
@@ -2787,6 +3250,33 @@ func builtinWriteStrFunc(c Call) (Object, error) {
 	}
 
 	return NewCommonError("%v", "invalid data"), nil
+}
+
+func builtinDatabaseFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return Database{Value: nil}, nil
+	}
+
+	nv0, ok := args[0].(String)
+
+	if !ok {
+		return NewCommonError("invalid paramter 1"), nil
+	}
+
+	nv1, ok := args[1].(String)
+
+	if !ok {
+		return NewCommonError("invalid paramter 2"), nil
+	}
+
+	rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
+	if tk.IsError(rsT) {
+		return NewFromError(rsT.(error)), nil
+	}
+
+	return Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
 }
 
 // char add end

@@ -2,6 +2,8 @@ dirT := getEnv("GOPATH")
 
 pathT := joinPath(dirT, `src`, `github.com`, `topxeq`, `charlang`, `builtins.go`)
 
+path2T := joinPath(dirT, `src`, `github.com`, `topxeq`, `charlang`, `stdlib`, "ex", `module.go`)
+
 mdPathT := joinPath(dirT, `src`, `github.com`, `topxeq`, `charlang`, `funcs.md`)
 
 plt(pathT)
@@ -26,8 +28,8 @@ bufT := new("stringBuilder")
 
 // plt(bufT)
 
-// bufT.writeStr("## 谢语言指令参考（Xielang Instruction Reference）\n\n")
-writeStr(bufT, "## 谢语言指令参考（Xielang Instruction Reference）\n\n")
+// bufT.writeStr("## Charlang Builtin Function Reference\n\n")
+writeStr(bufT, "## Charlang Builtin Function Reference\n\n")
 
 // plt(bufT.toStr())
 
@@ -65,6 +67,57 @@ for i, v in linesT {
 }
 
 // writeStr(bufT, "\n\n" + "```" + "\n" + docBodyT + "```" + "\n")
+
+fc2T := loadText(path2T)
+
+checkErrX(fc2T)
+
+docBody2T := regFindFirst(fc2T, `(?sm)// funcs start(.*?)// funcs end`, 1)
+
+plt(docBody2T)
+
+checkErrX(docBody2T)
+
+// pln("done")
+
+docBody2T = strReplace(docBody2T, "\r", "")
+
+lines2T := strSplitLines(docBody2T)
+
+writeStr(bufT, "## Functions in module 'ex'\n\n")
+
+for i, v in lines2T {
+	tv := strTrim(v)
+
+	if tv == "" {
+		continue
+	}
+
+	pln(i, tv)
+
+    tmp1 := regFindFirst(tv, `//\s+(.* related)`, 1)
+
+    if !isErrX(tmp1) {
+        writeStr(bufT, "### --- " + tmp1 + " ---" + "\n\n")
+        continue
+    }
+
+    tmp1 = regFindFirstGroups(tv, `^Name:\s*"(.*?)"\s*,\s*//\s*(.*?)\s*$`)
+
+    if !isErrX(tmp1) && len(tmp1) > 0 {
+        writeStr(bufT, "**" + tmp1[1] + "**" + ": " + tmp1[2] + "\n\n")
+        continue
+    }
+
+    tmp1 = regFindFirstGroups(tv, `^Name:\s*"(.*?)"\s*,\s*$`)
+
+    if !isErrX(tmp1) && len(tmp1) > 0 {
+        writeStr(bufT, "**" + tmp1[1] + "**" + "\n\n")
+        continue
+    }
+
+    // writeStr(bufT, tv + "\n")
+}
 
 pln(bufT.toStr())
 

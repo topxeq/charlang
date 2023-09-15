@@ -1,8 +1,8 @@
-sb := makeStringBuilder()
+sb := make("stringBuilder")
 
-n1 := writeString(sb, "abc")
+n1 := writeStr(sb, "abc")
 
-n2 := writeString(sb, "123")
+n2 := writeStr(sb, "123")
 
 plv(sb, n1, n2)
 pl("sb: %v", sb)

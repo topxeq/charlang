@@ -1,6 +1,7 @@
 package charlang
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"os"
@@ -80,6 +81,34 @@ var namedValueMapG = map[string]interface{}{
 	"time.DateTime": time.DateTime,
 	"time.DateOnly": time.DateOnly,
 	"time.TimeOnly": time.TimeOnly,
+}
+
+// first arg of each func is the object reference
+var setterFuncMapG = map[int]CallableExFunc{
+	999: func(c Call) (Object, error) {
+		args := c.GetArgs()
+
+		fNameT := args[1].String()
+
+		switch fNameT {
+		case "value":
+			nv := args[0].(*Any)
+
+			rs1, errT := builtinAnyFunc(Call{args: args[2:]})
+
+			if errT != nil {
+				return Undefined, errT
+			}
+
+			nv2 := rs1.(*Any)
+
+			nv.Value = nv2.Value
+			nv.OriginalCode = nv2.OriginalCode
+			nv.OriginalType = nv2.OriginalType
+		}
+
+		return Int(-1), nil // indicates method not found
+	},
 }
 
 // first arg of each func is the object reference
@@ -213,11 +242,176 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
+	308: map[string]*Function{
+		"toStr": &Function{
+			Name: "toStr",
+			Value: func(args ...Object) (Object, error) {
+				return ToStringObject(((*bytes.Buffer)(args[0].(BytesBuffer).Value)).String()), nil
+			},
+		},
+		"write": &Function{
+			Name: "write",
+			Value: func(args ...Object) (Object, error) {
+				var errT error
+
+				o := args[0].(StringBuilder)
+
+				argsT := args[1:]
+
+				countT := 0
+
+				for _, v := range argsT {
+					tmpCountT := 0
+					switch nv := v.(type) {
+					case String:
+						tmpCountT, errT = o.Value.WriteString(nv.Value)
+
+						if errT != nil {
+							tmpCountT = 0
+						}
+					case Bytes:
+						tmpCountT, errT = o.Value.Write([]byte(nv))
+
+						if errT != nil {
+							tmpCountT = 0
+						}
+					case Char:
+						tmpCountT, errT = o.Value.WriteRune(rune(nv))
+
+						if errT != nil {
+							tmpCountT = 0
+						}
+					case Byte:
+						errT = o.Value.WriteByte(byte(nv))
+
+						if errT != nil {
+							tmpCountT = 0
+						} else {
+							tmpCountT = 1
+						}
+					default:
+						tmpCountT, errT = o.Value.WriteString(nv.String())
+
+						if errT != nil {
+							tmpCountT = 0
+						}
+
+					}
+
+					countT += tmpCountT
+				}
+
+				return Int(countT), nil
+			},
+		},
+		"writeStr": &Function{
+			Name: "writeStr",
+			Value: func(args ...Object) (Object, error) {
+				var errT error
+
+				o := args[0].(StringBuilder)
+
+				argsT := args[1:]
+
+				if len(argsT) < 1 {
+					return NewCommonError("not enough parameters"), nil
+				}
+
+				rsT, errT := o.Value.WriteString(argsT[0].String())
+
+				if errT != nil {
+					return NewFromError(errT), nil
+				}
+
+				return Int(rsT), nil
+			},
+		},
+		"writeBytes": &Function{
+			Name: "writeBytes",
+			Value: func(argsA ...Object) (Object, error) {
+				var errT error
+
+				o := argsA[0].(StringBuilder)
+
+				args := argsA[1:]
+
+				if len(args) < 1 {
+					return NewCommonError("not enough parameters"), nil
+				}
+
+				nv, ok := args[0].(Bytes)
+				if !ok {
+					return NewCommonError("invalid parameter type: %v", args[0].TypeName()), nil
+				}
+
+				rsT, errT := o.Value.Write([]byte(nv))
+				if errT != nil {
+					return NewFromError(errT), nil
+				}
+
+				return Int(rsT), nil
+			},
+		},
+		"clear": &Function{
+			Name: "clear",
+			Value: func(argsA ...Object) (Object, error) {
+				o := argsA[0].(StringBuilder)
+
+				o.Value.Reset()
+				return Undefined, nil
+			},
+		},
+		"reset": &Function{
+			Name: "reset",
+			Value: func(argsA ...Object) (Object, error) {
+				o := argsA[0].(StringBuilder)
+
+				o.Value.Reset()
+				return Undefined, nil
+			},
+		},
+	},
 }
 
 // objects
 
 // common funcs
+
+func isUndeInternal(o Object) bool {
+	_, ok := o.(*UndefinedType)
+
+	return ok
+}
+
+func GetObjectMember(o Object, index string) (Object, error) {
+	nv1, ok := o.(MemberHolder)
+
+	if ok {
+		rs1 := nv1.GetMember(index)
+		if !isUndeInternal(rs1) {
+			return rs1, nil
+		}
+	}
+
+	map1, ok := methodFuncMapG[o.TypeCode()]
+
+	if !ok {
+		return Undefined, nil // ErrNotIndexable
+	}
+
+	f1, ok := map1[index]
+
+	if !ok {
+		return Undefined, nil
+	}
+
+	return &Function{
+		Name: f1.Name,
+		Value: func(args ...Object) (Object, error) {
+			return (*f1).Call(append([]Object{o}, args...)...)
+		}}, nil
+
+}
 
 func GetObjectMethodFunc(o Object, index Object) (Object, error) {
 	nv, ok := index.(String)
@@ -535,6 +729,8 @@ func ConvertToObject(vA interface{}) Object {
 		return Float(nv)
 	case []byte:
 		return Bytes(nv)
+	case []rune:
+		return Chars(nv)
 	case []uint32:
 		if nv == nil {
 			return Undefined
@@ -752,12 +948,14 @@ func ConvertFromObject(vA Object) interface{} {
 		return nv.Value
 	case StringBuilder:
 		return nv.Value
+	case BytesBuffer:
+		return nv.Value
 	case Bytes:
 		return []byte(nv)
+	case Chars:
+		return []rune(nv)
 	case *Error:
 		return nv.Unwrap()
-	case *Any:
-		return nv.Value
 	case Map:
 		if nv == nil {
 			return nil
@@ -782,6 +980,10 @@ func ConvertFromObject(vA Object) interface{} {
 		}
 
 		return rsT
+	case *Time:
+		return nv.Value
+	case *Any:
+		return nv.Value
 	}
 
 	if vA.TypeCode() == 0 {

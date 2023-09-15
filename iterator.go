@@ -201,3 +201,40 @@ func (it *StringIterator) Key() Object {
 func (it *StringIterator) Value() Object {
 	return Char(it.r)
 }
+
+// MutableStringIterator represents an iterator for the string.
+type MutableStringIterator struct {
+	V *MutableString
+	i int
+	k int
+	r rune
+}
+
+var _ Iterator = (*MutableStringIterator)(nil)
+
+// Next implements Iterator interface.
+func (it *MutableStringIterator) Next() bool {
+	if it.i > len(it.V.Value)-1 {
+		return false
+	}
+
+	r, s := utf8.DecodeRuneInString(it.V.Value[it.i:])
+	if r == utf8.RuneError || s == 0 {
+		return false
+	}
+
+	it.k = it.i
+	it.r = r
+	it.i += s
+	return true
+}
+
+// Key implements Iterator interface.
+func (it *MutableStringIterator) Key() Object {
+	return Int(it.k)
+}
+
+// Value implements Iterator interface.
+func (it *MutableStringIterator) Value() Object {
+	return Char(it.r)
+}

@@ -31,7 +31,7 @@ var (
 	Undefined Object = &UndefinedType{}
 )
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, StringBuilder: 307, Database: 309, Time: 311, Location: 313, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, StringBuilder: 307, BytesBuffer: 308, Database: 309, Time: 311, Location: 313, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -101,6 +101,11 @@ type IndexDeleter interface {
 // LengthGetter wraps the Len method to get the number of elements of an object.
 type LengthGetter interface {
 	Len() int
+}
+
+type MemberHolder interface {
+	GetMember(string) Object
+	SetMember(string, Object) error
 }
 
 // ExCallerObject is an interface for objects that can be called with CallEx
@@ -217,8 +222,8 @@ func (c *Call) GetArgs() []Object {
 // custom implementations. String and TypeName must be implemented otherwise
 // calling these methods causes panic.
 type ObjectImpl struct {
-	Members map[string]Object
-	Methods map[string]*Function
+	// Members map[string]Object
+	// Methods map[string]*Function
 }
 
 var _ Object = ObjectImpl{}
@@ -272,6 +277,37 @@ func (o ObjectImpl) IndexSet(index, value Object) error {
 // BinaryOp implements Object interface.
 func (ObjectImpl) BinaryOp(_ token.Token, _ Object) (Object, error) {
 	return nil, ErrInvalidOperator
+}
+
+func (o ObjectImpl) GetMember(idxA string) Object {
+	// if o.Members == nil {
+	// 	return Undefined
+	// }
+
+	// v1, ok := (*(o.Members))[idxA]
+
+	// if !ok {
+	// 	return Undefined
+	// }
+
+	return Undefined
+}
+
+func (o ObjectImpl) SetMember(idxA string, valueA Object) error {
+	// tk.Pln(1.2)
+	// tk.Pln(o.Members)
+
+	// if o.Members == nil {
+	// 	o.Members = &(map[string]Object{})
+	// }
+	// tk.Pln(1.3)
+	// tk.Pln(o.Members)
+
+	// (*(o.Members))[idxA] = valueA
+	// tk.Pln(o.Members)
+	// tk.Plo(o)
+
+	return fmt.Errorf("not implemented")
 }
 
 // UndefinedType represents the type of global Undefined Object. One should use
@@ -358,6 +394,15 @@ func (o Bool) String() string {
 	return "false"
 }
 
+func (o Bool) GetMember(idxA string) Object {
+	return Undefined
+	// return NewCommonError("get member action not supported")
+}
+
+func (o Bool) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("set member action not supported")
+}
+
 // Equal implements Object interface.
 func (o Bool) Equal(right Object) bool {
 	if v, ok := right.(Bool); ok {
@@ -392,7 +437,16 @@ func (Bool) CanIterate() bool { return false }
 func (Bool) Iterate() Iterator { return nil }
 
 // IndexGet implements Object interface.
-func (Bool) IndexGet(index Object) (value Object, err error) {
+func (o Bool) IndexGet(index Object) (value Object, err error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+	}
+
 	return nil, ErrNotIndexable
 }
 
@@ -513,6 +567,9 @@ func (o Bool) Format(s fmt.State, verb rune) {
 type String struct {
 	ObjectImpl
 	Value string
+
+	Members map[string]Object
+	Methods map[string]*Function
 }
 
 var _ LengthGetter = ToStringObject("")
@@ -527,7 +584,35 @@ func (String) TypeName() string {
 }
 
 func (o String) String() string {
-	return o.Value
+	return o.Value // tk.ToJSONX(o)
+}
+
+func (o String) Copy() Object {
+	return String{Value: o.Value, Members: o.Members, Methods: o.Methods}
+}
+
+func (o String) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o String) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	return nil
 }
 
 // CanIterate implements Object interface.
@@ -539,7 +624,19 @@ func (o String) Iterate() Iterator {
 }
 
 // IndexSet implements Object interface.
-func (String) IndexSet(index, value Object) error {
+func (o String) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "v" || strT == "value" {
+			o.Value = value.String()
+			return nil
+		}
+
+		return o.SetMember(idxT.Value, value)
+	}
+
 	return ErrNotIndexAssignable
 }
 
@@ -553,12 +650,22 @@ func (o String) IndexGet(index Object) (Object, error) {
 		idx = int(v)
 	case Char:
 		idx = int(v)
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return ToStringObject(o.Value), nil
+		}
+
+		return GetObjectMember(o, v.Value)
 	default:
-		return nil, NewIndexTypeError("int|uint|char", index.TypeName())
+		return nil, NewIndexTypeError("int|uint|char|string", index.TypeName())
 	}
+
 	if idx >= 0 && idx < len(o.Value) {
 		return Int(o.Value[idx]), nil
 	}
+
 	return nil, ErrIndexOutOfBounds
 }
 
@@ -772,6 +879,12 @@ func (o Bytes) IndexGet(index Object) (Object, error) {
 		idx = int(v)
 	case Uint:
 		idx = int(v)
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
 	default:
 		return nil, NewIndexTypeError("int|uint|char", index.TypeName())
 	}
@@ -936,6 +1049,12 @@ func (o Chars) IndexGet(index Object) (Object, error) {
 		idx = int(v)
 	case Uint:
 		idx = int(v)
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
 	default:
 		return nil, NewIndexTypeError("int|uint|char", index.TypeName())
 	}
@@ -1138,6 +1257,9 @@ type BuiltinFunction struct {
 	Name    string
 	Value   func(args ...Object) (Object, error)
 	ValueEx func(Call) (Object, error)
+
+	Members map[string]Object
+	Methods map[string]*Function
 }
 
 var _ ExCallerObject = (*BuiltinFunction)(nil)
@@ -1212,23 +1334,26 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 		o.Methods = map[string]*Function{}
 	}
 
+	oMethods := o.Methods
+	oMembers := o.Members
+
 	switch fNameT {
 	case "any.new":
-		fT, ok := o.Methods["any.new"]
+		fT, ok := oMethods["any.new"]
 		if !ok {
-			o.Methods["any.new"] = &Function{
+			oMethods["any.new"] = &Function{
 				Name: "any.new",
 				Value: func(args ...Object) (Object, error) {
 					return builtinNewAnyFunc(args...)
 				}}
-			fT = o.Methods["any.new"]
+			fT = oMethods["any.new"]
 		}
 
 		return fT, nil
 	case "database.connect":
-		fT, ok := o.Methods["database.connect"]
+		fT, ok := oMethods["database.connect"]
 		if !ok {
-			o.Methods["database.connect"] = &Function{
+			oMethods["database.connect"] = &Function{
 				Name: "database.connect",
 				Value: func(args ...Object) (Object, error) {
 
@@ -1251,14 +1376,14 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 
 					return Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
 				}}
-			fT = o.Methods["database.connect"]
+			fT = oMethods["database.connect"]
 		}
 
 		return fT, nil
 	case "database.formatSQLValue", "database.format":
-		fT, ok := o.Methods["database.formatSQLValue"]
+		fT, ok := oMethods["database.formatSQLValue"]
 		if !ok {
-			o.Methods["database.formatSQLValue"] = &Function{
+			oMethods["database.formatSQLValue"] = &Function{
 				Name: "database.formatSQLValue",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -1269,14 +1394,14 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 
 					return ToStringObject(sqltk.FormatSQLValue(nv0)), nil
 				}}
-			fT = o.Methods["database.formatSQLValue"]
+			fT = oMethods["database.formatSQLValue"]
 		}
 
 		return fT, nil
 	case "database.oneColumnToArray", "database.oneColToAry":
-		fT, ok := o.Methods["database.oneColumnToArray"]
+		fT, ok := oMethods["database.oneColumnToArray"]
 		if !ok {
-			o.Methods["database.oneColumnToArray"] = &Function{
+			oMethods["database.oneColumnToArray"] = &Function{
 				Name: "database.oneColumnToArray",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -1299,46 +1424,46 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 
 					return aryT, nil
 				}}
-			fT = o.Methods["database.oneColumnToArray"]
+			fT = oMethods["database.oneColumnToArray"]
 		}
 
 		return fT, nil
 	case "statusResult.success":
-		fT, ok := o.Methods["statusResult.success"]
+		fT, ok := oMethods["statusResult.success"]
 		if !ok {
-			o.Methods["statusResult.success"] = &Function{
+			oMethods["statusResult.success"] = &Function{
 				Name: "statusResult.success",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
-						return StatusResultSuccess, nil
+						return &StatusResultSuccess, nil
 					}
 
-					return StatusResult{Status: "success", Value: args[0].String()}, nil
+					return &StatusResult{Status: "success", Value: args[0].String()}, nil
 				}}
-			fT = o.Methods["statusResult.success"]
+			fT = oMethods["statusResult.success"]
 		}
 
 		return fT, nil
 	case "statusResult.fail":
-		fT, ok := o.Methods["statusResult.fail"]
+		fT, ok := oMethods["statusResult.fail"]
 		if !ok {
-			o.Methods["statusResult.fail"] = &Function{
+			oMethods["statusResult.fail"] = &Function{
 				Name: "statusResult.fail",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
-						return StatusResultFail, nil
+						return &StatusResultFail, nil
 					}
 
-					return StatusResult{Status: "fail", Value: args[0].String()}, nil
+					return &StatusResult{Status: "fail", Value: args[0].String()}, nil
 				}}
-			fT = o.Methods["statusResult.fail"]
+			fT = oMethods["statusResult.fail"]
 		}
 
 		return fT, nil
 	case "time.format":
-		fT, ok := o.Methods["time.format"]
+		fT, ok := oMethods["time.format"]
 		if !ok {
-			o.Methods["time.format"] = &Function{
+			oMethods["time.format"] = &Function{
 				Name: "time.format",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -1347,67 +1472,67 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 
 					return ToStringObject(tk.FormatTime(args[0].(*Time).Value, ObjectsToS(args[1:])...)), nil
 				}}
-			fT = o.Methods["time.format"]
+			fT = oMethods["time.format"]
 		}
 
 		return fT, nil
 	case "time.now":
-		fT, ok := o.Methods["time.now"]
+		fT, ok := oMethods["time.now"]
 		if !ok {
-			o.Methods["time.now"] = &Function{
+			oMethods["time.now"] = &Function{
 				Name: "time.now",
 				Value: func(args ...Object) (Object, error) {
 					return &Time{Value: time.Now()}, nil
 				}}
-			fT = o.Methods["time.now"]
+			fT = oMethods["time.now"]
 		}
 
 		return fT, nil
 	case "time.timeFormatRFC1123":
-		mT, ok := o.Members["time.timeFormatRFC1123"]
+		mT, ok := oMembers["time.timeFormatRFC1123"]
 		if !ok {
-			o.Members["time.timeFormatRFC1123"] = ToStringObject(time.RFC1123)
-			mT = o.Members["time.timeFormatRFC1123"]
+			oMembers["time.timeFormatRFC1123"] = ToStringObject(time.RFC1123)
+			mT = oMembers["time.timeFormatRFC1123"]
 		}
 
 		return mT, nil
 	case "time.second":
-		mT, ok := o.Members["time.second"]
+		mT, ok := oMembers["time.second"]
 		if !ok {
-			o.Members["time.second"] = Int(time.Second)
-			mT = o.Members["time.second"]
+			oMembers["time.second"] = Int(time.Second)
+			mT = oMembers["time.second"]
 		}
 
 		return mT, nil
 	case "time.timeFormatCompact":
-		mT, ok := o.Members["time.timeFormatCompact"]
+		mT, ok := oMembers["time.timeFormatCompact"]
 		if !ok {
-			o.Members["time.timeFormatCompact"] = ToStringObject(tk.TimeFormatCompact)
-			mT = o.Members["time.timeFormatCompact"]
+			oMembers["time.timeFormatCompact"] = ToStringObject(tk.TimeFormatCompact)
+			mT = oMembers["time.timeFormatCompact"]
 		}
 
 		return mT, nil
 	case "time.timeFormat":
-		mT, ok := o.Members["time.timeFormat"]
+		mT, ok := oMembers["time.timeFormat"]
 		if !ok {
-			o.Members["time.timeFormat"] = ToStringObject(tk.TimeFormat)
-			mT = o.Members["time.timeFormat"]
+			oMembers["time.timeFormat"] = ToStringObject(tk.TimeFormat)
+			mT = oMembers["time.timeFormat"]
 		}
 
 		return mT, nil
 	case "time.timeFormatMS":
-		mT, ok := o.Members["time.timeFormatMS"]
+		mT, ok := oMembers["time.timeFormatMS"]
 		if !ok {
-			o.Members["time.timeFormatMS"] = ToStringObject(tk.TimeFormatMS)
-			mT = o.Members["time.timeFormatMS"]
+			oMembers["time.timeFormatMS"] = ToStringObject(tk.TimeFormatMS)
+			mT = oMembers["time.timeFormatMS"]
 		}
 
 		return mT, nil
 	case "time.timeFormatMSCompact":
-		mT, ok := o.Members["time.timeFormatMSCompact"]
+		mT, ok := oMembers["time.timeFormatMSCompact"]
 		if !ok {
-			o.Members["time.timeFormatMSCompact"] = ToStringObject(tk.TimeFormatMSCompact)
-			mT = o.Members["time.timeFormatMSCompact"]
+			oMembers["time.timeFormatMSCompact"] = ToStringObject(tk.TimeFormatMSCompact)
+			mT = oMembers["time.timeFormatMSCompact"]
 		}
 
 		return mT, nil
@@ -1510,6 +1635,12 @@ func (o Array) IndexGet(index Object) (Object, error) {
 			return o[v], nil
 		}
 		return nil, ErrIndexOutOfBounds
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
 	}
 	return nil, NewIndexTypeError("int|uint", index.TypeName())
 }
@@ -1588,6 +1719,7 @@ func (o Array) Len() int {
 }
 
 // ObjectPtr represents a pointer variable.
+// this class is for internal use only, for common purpose, use ObjectRef instead
 type ObjectPtr struct {
 	ObjectImpl
 	Value *Object
@@ -1597,6 +1729,10 @@ var (
 	_ Object = (*ObjectPtr)(nil)
 	_ Copier = (*ObjectPtr)(nil)
 )
+
+func (o *ObjectPtr) TypeCode() int {
+	return 151
+}
 
 // TypeName implements Object interface.
 func (o *ObjectPtr) TypeName() string {
@@ -2020,6 +2156,10 @@ func (o *Error) IndexGet(index Object) (Object, error) {
 		return ToStringObject(o.Message), nil
 	}
 
+	if s == "value" {
+		return o, nil
+	}
+
 	if s == "New" {
 		return &Function{
 			Name: "New",
@@ -2432,7 +2572,7 @@ func (*Time) IndexSet(_, _ Object) error { return ErrNotIndexAssignable }
 
 // IndexGet implements Object interface.
 func (o *Time) IndexGet(index Object) (Object, error) {
-	tk.Pl("Time IndexGet: %v", index)
+	// tk.Pl("Time IndexGet: %v", index)
 
 	v, ok := index.(String)
 	if !ok {
@@ -2447,6 +2587,8 @@ func (o *Time) IndexGet(index Object) (Object, error) {
 		"Hour", "Minute", "Second", "Nanosecond", "IsZero", "Local", "Location",
 		"YearDay", "Weekday", "ISOWeek", "Zone":
 		return o.CallName(v.Value, Call{})
+	case "value":
+		return o, nil
 	}
 	return Undefined, nil
 }
@@ -2917,6 +3059,9 @@ type Database struct {
 	Value           *sql.DB
 	DBType          string
 	DBConnectString string
+
+	Members map[string]Object
+	Methods map[string]*Function
 }
 
 var _ Object = Database{}
@@ -2967,6 +3112,12 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 		return nil, ErrNotIndexable
 	}
 
+	strT := nv.Value
+
+	if strT == "v" || strT == "value" {
+		return o, nil
+	}
+
 	fNameT := nv.Value
 
 	if o.Members == nil {
@@ -2977,24 +3128,26 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 		o.Methods = map[string]*Function{}
 	}
 
+	oMethods := o.Methods
+
 	switch fNameT {
 	case "toAny":
-		fT, ok := o.Methods["toAny"]
+		fT, ok := oMethods["toAny"]
 		if !ok {
-			o.Methods["toAny"] = &Function{
+			oMethods["toAny"] = &Function{
 				Name: "toAny",
 				Value: func(args ...Object) (Object, error) {
 					return NewAny(o.Value), nil
 				},
 			}
 
-			fT = o.Methods["toAny"]
+			fT = oMethods["toAny"]
 		}
 		return fT, nil
 	case "connect":
-		fT, ok := o.Methods["connect"]
+		fT, ok := oMethods["connect"]
 		if !ok {
-			o.Methods["connect"] = &Function{
+			oMethods["connect"] = &Function{
 				Name: "connect",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 2 {
@@ -3026,13 +3179,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = o.Methods["connect"]
+			fT = oMethods["connect"]
 		}
 		return fT, nil
 	case "query":
-		fT, ok := o.Methods["query"]
+		fT, ok := oMethods["query"]
 		if !ok {
-			o.Methods["query"] = &Function{
+			oMethods["query"] = &Function{
 				Name: "query",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3050,13 +3203,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = o.Methods["query"]
+			fT = oMethods["query"]
 		}
 		return fT, nil
 	case "queryRecs":
-		fT, ok := o.Methods["queryRecs"]
+		fT, ok := oMethods["queryRecs"]
 		if !ok {
-			o.Methods["queryRecs"] = &Function{
+			oMethods["queryRecs"] = &Function{
 				Name: "queryRecs",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3074,13 +3227,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = o.Methods["queryRecs"]
+			fT = oMethods["queryRecs"]
 		}
 		return fT, nil
 	case "queryMap":
-		fT, ok := o.Methods["queryMap"]
+		fT, ok := oMethods["queryMap"]
 		if !ok {
-			o.Methods["queryMap"] = &Function{
+			oMethods["queryMap"] = &Function{
 				Name: "queryMap",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3104,13 +3257,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = o.Methods["queryMap"]
+			fT = oMethods["queryMap"]
 		}
 		return fT, nil
 	case "queryMapArray":
-		fT, ok := o.Methods["queryMapArray"]
+		fT, ok := oMethods["queryMapArray"]
 		if !ok {
-			o.Methods["queryMapArray"] = &Function{
+			oMethods["queryMapArray"] = &Function{
 				Name: "queryMapArray",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3134,13 +3287,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = o.Methods["queryMapArray"]
+			fT = oMethods["queryMapArray"]
 		}
 		return fT, nil
 	case "queryCount":
-		fT, ok := o.Methods["queryCount"]
+		fT, ok := oMethods["queryCount"]
 		if !ok {
-			o.Methods["queryCount"] = &Function{
+			oMethods["queryCount"] = &Function{
 				Name: "queryCount",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3158,13 +3311,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = o.Methods["queryCount"]
+			fT = oMethods["queryCount"]
 		}
 		return fT, nil
 	case "queryFloat":
-		fT, ok := o.Methods["queryFloat"]
+		fT, ok := oMethods["queryFloat"]
 		if !ok {
-			o.Methods["queryFloat"] = &Function{
+			oMethods["queryFloat"] = &Function{
 				Name: "queryFloat",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3182,13 +3335,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = o.Methods["queryFloat"]
+			fT = oMethods["queryFloat"]
 		}
 		return fT, nil
 	case "queryString":
-		fT, ok := o.Methods["queryString"]
+		fT, ok := oMethods["queryString"]
 		if !ok {
-			o.Methods["queryString"] = &Function{
+			oMethods["queryString"] = &Function{
 				Name: "queryString",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3206,13 +3359,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = o.Methods["queryString"]
+			fT = oMethods["queryString"]
 		}
 		return fT, nil
 	case "exec":
-		fT, ok := o.Methods["exec"]
+		fT, ok := oMethods["exec"]
 		if !ok {
-			o.Methods["exec"] = &Function{
+			oMethods["exec"] = &Function{
 				Name: "exec",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3230,13 +3383,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = o.Methods["exec"]
+			fT = oMethods["exec"]
 		}
 		return fT, nil
 	case "close":
-		fT, ok := o.Methods["close"]
+		fT, ok := oMethods["close"]
 		if !ok {
-			o.Methods["close"] = &Function{
+			oMethods["close"] = &Function{
 				Name: "close",
 				Value: func(args ...Object) (Object, error) {
 					o.Value.Close()
@@ -3244,7 +3397,7 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = o.Methods["close"]
+			fT = oMethods["close"]
 		}
 		return fT, nil
 	}
@@ -3261,32 +3414,36 @@ func (o Database) BinaryOp(tok token.Token, right Object) (Object, error) {
 
 type StatusResult struct {
 	ObjectImpl
-	Status string
-	Value  string
+	Status  string
+	Value   string
+	Objects interface{}
+
+	Members map[string]Object
+	Methods map[string]*Function
 }
 
 var StatusResultInvalid = StatusResult{Status: "", Value: ""}
 var StatusResultSuccess = StatusResult{Status: "success", Value: ""}
 var StatusResultFail = StatusResult{Status: "fail", Value: ""}
 
-func (o StatusResult) TypeCode() int {
+func (o *StatusResult) TypeCode() int {
 	return 303
 }
 
-func (o StatusResult) TypeName() string {
+func (o *StatusResult) TypeName() string {
 	return "statusResult"
 }
 
-func (o StatusResult) String() string {
+func (o *StatusResult) String() string {
 	return `{"Status": ` + tk.ObjectToJSON(o.Status) + `, "Value": ` + tk.ObjectToJSON(o.Value) + `}`
 }
 
-func (StatusResult) Call(_ ...Object) (Object, error) {
+func (*StatusResult) Call(_ ...Object) (Object, error) {
 	return nil, ErrNotCallable
 }
 
-func (o StatusResult) Equal(right Object) bool {
-	nv, ok := right.(StatusResult)
+func (o *StatusResult) Equal(right Object) bool {
+	nv, ok := right.(*StatusResult)
 	if !ok {
 		return false
 	}
@@ -3294,58 +3451,62 @@ func (o StatusResult) Equal(right Object) bool {
 	return ((nv.Status == o.Status) && (nv.Value == o.Value))
 }
 
-func (o StatusResult) BinaryOp(tok token.Token, right Object) (Object, error) {
+func (o *StatusResult) BinaryOp(tok token.Token, right Object) (Object, error) {
 	return nil, ErrInvalidOperator
 }
 
 func GenStatusResult(args ...Object) (Object, error) {
 	if len(args) < 1 {
-		return StatusResultInvalid, nil
+		return &StatusResultInvalid, nil
 	}
 
 	if len(args) == 1 {
 		nv, ok := args[0].(String)
 
 		if !ok {
-			return StatusResultInvalid, nil
+			return &StatusResultInvalid, nil
 		}
 
 		mapT := tk.JSONToMapStringString(nv.Value)
 		if mapT == nil {
-			return StatusResultInvalid, nil
+			return &StatusResultInvalid, nil
 		}
 
 		statusT, ok := mapT["Status"]
 		if !ok {
-			return StatusResultInvalid, nil
+			return &StatusResultInvalid, nil
 		}
 
-		return StatusResult{Status: statusT, Value: mapT["Value"]}, nil
+		return &StatusResult{Status: statusT, Value: mapT["Value"]}, nil
 	}
 
 	nv0, ok := args[0].(String)
 
 	if !ok {
-		return StatusResultInvalid, nil
+		return &StatusResultInvalid, nil
 	}
 
 	nv1, ok := args[1].(String)
 
 	if !ok {
-		return StatusResultInvalid, nil
+		return &StatusResultInvalid, nil
 	}
 
-	return StatusResult{Status: nv0.Value, Value: nv1.Value}, nil
+	return &StatusResult{Status: nv0.Value, Value: nv1.Value}, nil
 
 }
 
-func (o StatusResult) IndexGet(index Object) (Object, error) {
+func (o *StatusResult) IndexGet(index Object) (Object, error) {
 	nv, ok := index.(String)
 	if !ok {
 		return nil, ErrNotIndexable
 	}
 
 	fNameT := nv.Value
+
+	if fNameT == "v" || fNameT == "value" {
+		return o, nil
+	}
 
 	if o.Members == nil {
 		o.Members = map[string]Object{}
@@ -3355,11 +3516,13 @@ func (o StatusResult) IndexGet(index Object) (Object, error) {
 		o.Methods = map[string]*Function{}
 	}
 
+	oMethods := o.Methods
+
 	switch fNameT {
 	case "status":
-		fT, ok := o.Methods["status"]
+		fT, ok := oMethods["status"]
 		if !ok {
-			o.Methods["status"] = &Function{
+			oMethods["status"] = &Function{
 				Name: "status",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3369,19 +3532,19 @@ func (o StatusResult) IndexGet(index Object) (Object, error) {
 					nv, ok := args[0].(String)
 
 					if !ok {
-						return StatusResultInvalid, nil
+						return &StatusResultInvalid, nil
 					}
 
 					o.Status = nv.Value
-					return StatusResultSuccess, nil
+					return &StatusResultSuccess, nil
 				}}
-			fT = o.Methods["status"]
+			fT = oMethods["status"]
 		}
 		return fT, nil
 	case "value":
-		fT, ok := o.Methods["value"]
+		fT, ok := oMethods["value"]
 		if !ok {
-			o.Methods["value"] = &Function{
+			oMethods["value"] = &Function{
 				Name: "value",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3391,58 +3554,58 @@ func (o StatusResult) IndexGet(index Object) (Object, error) {
 					nv, ok := args[0].(String)
 
 					if !ok {
-						return StatusResultInvalid, nil
+						return &StatusResultInvalid, nil
 					}
 
 					o.Value = nv.Value
-					return StatusResultSuccess, nil
+					return &StatusResultSuccess, nil
 				}}
-			fT = o.Methods["value"]
+			fT = oMethods["value"]
 		}
 		return fT, nil
 	case "isValid":
-		fT, ok := o.Methods["isValid"]
+		fT, ok := oMethods["isValid"]
 		if !ok {
-			o.Methods["isValid"] = &Function{
+			oMethods["isValid"] = &Function{
 				Name: "isValid",
 				Value: func(args ...Object) (Object, error) {
 					return Bool(o.Status != ""), nil
 				}}
-			fT = o.Methods["isValid"]
+			fT = oMethods["isValid"]
 		}
 		return fT, nil
 	case "isSuccess":
-		fT, ok := o.Methods["isSuccess"]
+		fT, ok := oMethods["isSuccess"]
 		if !ok {
-			o.Methods["isSuccess"] = &Function{
+			oMethods["isSuccess"] = &Function{
 				Name: "isSuccess",
 				Value: func(args ...Object) (Object, error) {
 					return Bool(o.Status == "success"), nil
 				}}
-			fT = o.Methods["isSuccess"]
+			fT = oMethods["isSuccess"]
 		}
 		return fT, nil
 	case "toString", "toJSON":
-		fT, ok := o.Methods["toString"]
+		fT, ok := oMethods["toString"]
 		if !ok {
-			o.Methods["toString"] = &Function{
+			oMethods["toString"] = &Function{
 				Name: "toString",
 				Value: func(args ...Object) (Object, error) {
 					return ToStringObject(o.String()), nil
 				}}
-			fT = o.Methods["toString"]
+			fT = oMethods["toString"]
 		}
 		return fT, nil
 	case "fromString", "set":
-		fT, ok := o.Methods["fromString"]
+		fT, ok := oMethods["fromString"]
 		if !ok {
-			o.Methods["fromString"] = &Function{
+			oMethods["fromString"] = &Function{
 				Name: "fromString",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
 						o.Status = ""
 						o.Value = ""
-						return StatusResultInvalid, nil
+						return &StatusResultInvalid, nil
 					}
 
 					if len(args) == 1 {
@@ -3451,26 +3614,26 @@ func (o StatusResult) IndexGet(index Object) (Object, error) {
 						if !ok {
 							o.Status = ""
 							o.Value = ""
-							return StatusResultInvalid, nil
+							return &StatusResultInvalid, nil
 						}
 
 						mapT := tk.JSONToMapStringString(nv.Value)
 						if mapT == nil {
 							o.Status = ""
 							o.Value = ""
-							return StatusResultInvalid, nil
+							return &StatusResultInvalid, nil
 						}
 
 						statusT, ok := mapT["Status"]
 						if !ok {
 							o.Status = ""
 							o.Value = ""
-							return StatusResultInvalid, nil
+							return &StatusResultInvalid, nil
 						}
 
 						o.Status = statusT
 						o.Value = mapT["Value"]
-						return StatusResultSuccess, nil
+						return &StatusResultSuccess, nil
 					}
 
 					nv0, ok := args[0].(String)
@@ -3478,7 +3641,7 @@ func (o StatusResult) IndexGet(index Object) (Object, error) {
 					if !ok {
 						o.Status = ""
 						o.Value = ""
-						return StatusResultInvalid, nil
+						return &StatusResultInvalid, nil
 					}
 
 					nv1, ok := args[1].(String)
@@ -3486,14 +3649,14 @@ func (o StatusResult) IndexGet(index Object) (Object, error) {
 					if !ok {
 						o.Status = ""
 						o.Value = ""
-						return StatusResultInvalid, nil
+						return &StatusResultInvalid, nil
 					}
 
 					o.Status = nv0.Value
 					o.Value = nv1.Value
-					return StatusResultSuccess, nil
+					return &StatusResultSuccess, nil
 				}}
-			fT = o.Methods["fromString"]
+			fT = oMethods["fromString"]
 		}
 		return fT, nil
 	}
@@ -3501,16 +3664,20 @@ func (o StatusResult) IndexGet(index Object) (Object, error) {
 	return nil, ErrNotIndexable
 }
 
-func (StatusResult) IndexSet(key, value Object) error {
+func (*StatusResult) IndexSet(key, value Object) error {
 	return ErrNotIndexAssignable
 }
 
 // Any represents container object and implements the Object interfaces.
+// Any is used to hold some data which is not an Object in Charlang, such as structured data from Golang function call
 type Any struct {
 	ObjectImpl
 	Value        interface{}
 	OriginalType string
 	OriginalCode int
+
+	Members map[string]Object
+	Methods map[string]*Function
 }
 
 var (
@@ -3563,6 +3730,10 @@ func (o *Any) IndexGet(index Object) (Object, error) {
 		return Int(o.OriginalCode), nil
 	}
 
+	if s == "value" {
+		return o, nil
+	}
+
 	// if s == "New" {
 	// 	return &Function{
 	// 		Name: "New",
@@ -3594,8 +3765,42 @@ func (o *Any) IndexGet(index Object) (Object, error) {
 // }
 
 // IndexSet implements Object interface.
-func (*Any) IndexSet(index, value Object) error {
-	return ErrNotIndexAssignable
+func (o *Any) IndexSet(index, value Object) error {
+	fnT, ok := setterFuncMapG[o.TypeCode()]
+
+	if ok {
+		nv, ok := index.(String)
+		if !ok {
+			return ErrNotIndexAssignable
+		}
+
+		rs1, errT := fnT(Call{args: Array{o, nv, value}})
+
+		if errT != nil {
+			return errT
+		}
+
+		nv1, ok := rs1.(Int)
+
+		if ok && nv1 == Int(-1) { // not found
+
+		} else {
+			return errT
+		}
+	}
+
+	// nv2, ok := o.(ObjectImpl)
+
+	// if ok {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[index.String()] = value
+	return nil
+	// }
+
+	// return ErrNotIndexAssignable
 }
 
 // BinaryOp implements Object interface.
@@ -3687,6 +3892,15 @@ func (StringBuilder) CanIterate() bool { return false }
 func (StringBuilder) Iterate() Iterator { return nil }
 
 func (o StringBuilder) IndexGet(index Object) (value Object, err error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+	}
+
 	return GetObjectMethodFunc(o, index)
 	// 	nv, ok := index.(String)
 	// 	if !ok {
@@ -3848,4 +4062,365 @@ func (o StringBuilder) Copy() Object {
 	rsT.Value.WriteString(o.Value.String())
 
 	return rsT
+}
+
+type BytesBuffer struct {
+	ObjectImpl
+	Value *bytes.Buffer
+}
+
+var _ Object = BytesBuffer{}
+
+func (o BytesBuffer) TypeCode() int {
+	return 308
+}
+
+func (o BytesBuffer) TypeName() string {
+	return "bytesBuffer"
+}
+
+func (o BytesBuffer) String() string {
+	return fmt.Sprintf("%v", *(o.Value))
+}
+
+func (o BytesBuffer) Equal(right Object) bool {
+	if v, ok := right.(BytesBuffer); ok {
+		buf1 := o.Value.Bytes()
+		buf2 := v.Value.Bytes()
+
+		r1 := bytes.Compare(buf1, buf2)
+
+		if r1 != 0 {
+			return false
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func (o BytesBuffer) IsFalsy() bool { return false }
+
+func (BytesBuffer) CanCall() bool { return false }
+
+func (BytesBuffer) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (BytesBuffer) CanIterate() bool { return false }
+
+func (BytesBuffer) Iterate() Iterator { return nil }
+
+func (o BytesBuffer) IndexGet(index Object) (value Object, err error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+	}
+
+	return GetObjectMethodFunc(o, index)
+}
+
+func (BytesBuffer) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+func (o BytesBuffer) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, ErrInvalidOperator
+}
+
+func (o BytesBuffer) Copy() Object {
+	rsT := BytesBuffer{Value: new(bytes.Buffer)}
+
+	rsT.Value.WriteString(o.Value.String())
+
+	return rsT
+}
+
+// ObjectRef represents a reference variable.
+// always refer to an Object(i.e. *Object)
+type ObjectRef struct {
+	ObjectImpl
+	Value *Object
+}
+
+var (
+	_ Object = (*ObjectRef)(nil)
+	_ Copier = (*ObjectRef)(nil)
+)
+
+func (o *ObjectRef) TypeCode() int {
+	return 152
+}
+
+// TypeName implements Object interface.
+func (o *ObjectRef) TypeName() string {
+	return "objectRef"
+}
+
+// String implements Object interface.
+func (o *ObjectRef) String() string {
+	var v Object
+	if o.Value != nil {
+		v = *o.Value
+	}
+	return fmt.Sprintf("<objectRef:%v>", v)
+}
+
+// Copy implements Copier interface.
+func (o *ObjectRef) Copy() Object {
+	return o
+}
+
+// IsFalsy implements Object interface.
+func (o *ObjectRef) IsFalsy() bool {
+	return o.Value == nil
+}
+
+// Equal implements Object interface.
+func (o *ObjectRef) Equal(x Object) bool {
+	return o == x
+}
+
+// BinaryOp implements Object interface.
+func (o *ObjectRef) BinaryOp(tok token.Token, right Object) (Object, error) {
+	if o.Value == nil {
+		return nil, errors.New("nil pointer")
+	}
+	return (*o.Value).BinaryOp(tok, right)
+}
+
+// CanCall implements Object interface.
+func (o *ObjectRef) CanCall() bool {
+	if o.Value == nil {
+		return false
+	}
+	return (*o.Value).CanCall()
+}
+
+// Call implements Object interface.
+func (o *ObjectRef) Call(args ...Object) (Object, error) {
+	if o.Value == nil {
+		return nil, errors.New("nil pointer")
+	}
+	return (*o.Value).Call(args...)
+}
+
+// MutableString represents string values and implements Object interface.
+type MutableString struct {
+	ObjectImpl
+	Value string
+
+	Members map[string]Object
+	Methods map[string]*Function
+}
+
+var _ LengthGetter = ToMutableStringObject("")
+
+func (*MutableString) TypeCode() int {
+	return 106
+}
+
+// TypeName implements Object interface.
+func (*MutableString) TypeName() string {
+	return "mutableString"
+}
+
+func (o *MutableString) String() string {
+	return o.Value // fmt.Sprintf("%v (%#v, %#v)", o, o.Members, o.Methods) //
+}
+
+func (o *MutableString) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *MutableString) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	return nil
+}
+
+// CanIterate implements Object interface.
+func (*MutableString) CanIterate() bool { return true }
+
+// Iterate implements Object interface.
+func (o *MutableString) Iterate() Iterator {
+	return &MutableStringIterator{V: o}
+}
+
+// IndexSet implements Object interface.
+func (o *MutableString) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "v" || strT == "value" {
+			o.Value = value.String()
+			return nil
+		}
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+// IndexGet represents string values and implements Object interface.
+func (o *MutableString) IndexGet(index Object) (Object, error) {
+	var idx int
+	switch v := index.(type) {
+	case Int:
+		idx = int(v)
+	case Uint:
+		idx = int(v)
+	case Char:
+		idx = int(v)
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return ToMutableStringObject(o.Value), nil
+		}
+
+		return GetObjectMember(o, v.Value)
+	default:
+		return nil, NewIndexTypeError("int|uint|char|string", index.TypeName())
+	}
+
+	if idx >= 0 && idx < len(o.Value) {
+		return Int(o.Value[idx]), nil
+	}
+
+	return nil, ErrIndexOutOfBounds
+}
+
+// Equal implements Object interface.
+func (o *MutableString) Equal(right Object) bool {
+	if v, ok := right.(String); ok {
+		return o.Value == v.Value
+	}
+	if v, ok := right.(Bytes); ok {
+		return o.Value == string(v)
+	}
+	return false
+}
+
+// IsFalsy implements Object interface.
+func (o *MutableString) IsFalsy() bool { return len(o.Value) == 0 }
+
+// CanCall implements Object interface.
+func (o *MutableString) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (o *MutableString) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// BinaryOp implements Object interface.
+func (o *MutableString) BinaryOp(tok token.Token, right Object) (Object, error) {
+	switch v := right.(type) {
+	case String:
+		switch tok {
+		case token.Add:
+			return String{Value: o.Value + v.Value}, nil
+		case token.Less:
+			return Bool(o.Value < v.Value), nil
+		case token.LessEq:
+			return Bool(o.Value <= v.Value), nil
+		case token.Greater:
+			return Bool(o.Value > v.Value), nil
+		case token.GreaterEq:
+			return Bool(o.Value >= v.Value), nil
+		}
+	case *MutableString:
+		switch tok {
+		case token.Add:
+			return &MutableString{Value: o.Value + v.Value}, nil
+		case token.Less:
+			return Bool(o.Value < v.Value), nil
+		case token.LessEq:
+			return Bool(o.Value <= v.Value), nil
+		case token.Greater:
+			return Bool(o.Value > v.Value), nil
+		case token.GreaterEq:
+			return Bool(o.Value >= v.Value), nil
+		}
+	case Bytes:
+		switch tok {
+		case token.Add:
+			var sb strings.Builder
+			sb.WriteString(string(o.Value))
+			sb.Write(v)
+			return ToStringObject(sb.String()), nil
+		case token.Less:
+			return Bool(o.Value < string(v)), nil
+		case token.LessEq:
+			return Bool(o.Value <= string(v)), nil
+		case token.Greater:
+			return Bool(o.Value > string(v)), nil
+		case token.GreaterEq:
+			return Bool(o.Value >= string(v)), nil
+		}
+	case *UndefinedType:
+		switch tok {
+		case token.Less, token.LessEq:
+			return False, nil
+		case token.Greater, token.GreaterEq:
+			return True, nil
+		}
+	}
+
+	if tok == token.Add {
+		return String{Value: o.Value + right.String()}, nil
+	}
+
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+// Len implements LengthGetter interface.
+func (o *MutableString) Len() int {
+	return len(o.Value)
+}
+
+// Format implements fmt.Formatter interface.
+func (o *MutableString) Format(s fmt.State, verb rune) {
+	format := compat.FmtFormatString(s, verb)
+	fmt.Fprintf(s, format, o.Value)
+}
+
+func ToMutableStringObject(argA interface{}) *MutableString {
+	switch nv := argA.(type) {
+	case String:
+		return &MutableString{Value: nv.Value}
+	case Object:
+		return &MutableString{Value: nv.String()}
+	case string:
+		return &MutableString{Value: nv}
+	case nil:
+		return &MutableString{Value: ""}
+	case []byte:
+		return &MutableString{Value: string(nv)}
+	}
+	return &MutableString{Value: fmt.Sprintf("%v", argA)}
 }

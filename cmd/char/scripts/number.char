@@ -1,0 +1,35 @@
+a1 := 1
+
+plt(a1)
+
+a2 := -5
+
+plt(a2)
+
+b1 := uint(-5)
+
+plt(b1)
+
+b2 := uint(5)
+
+plt(b2)
+
+b3 := uint(-a2)
+
+plt(b3)
+
+c := 2.3
+
+plt(c)
+
+d := byte(8)
+
+plt(d)
+
+e1 := 'D' + 1
+
+plt(e1)
+
+e2 := char(69)
+
+pl("%c", e2)

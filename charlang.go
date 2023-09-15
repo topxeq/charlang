@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/topxeq/charlang/registry"
+	"github.com/topxeq/tk"
 )
 
 const (
@@ -378,12 +379,21 @@ func ToGoString(o Object) (v string, ok bool) {
 
 // ToGoByteSlice will try to convert an Object to Go byte slice.
 func ToGoByteSlice(o Object) (v []byte, ok bool) {
-	switch o := o.(type) {
+	switch nv := o.(type) {
 	case Bytes:
-		v, ok = o, true
+		v, ok = nv, true
 	case String:
-		v, ok = make([]byte, len(o.Value)), true
-		copy(v, o.Value)
+		v, ok = make([]byte, len(nv.Value)), true
+		copy(v, nv.Value)
+	case *Any:
+		rs := tk.DataToBytes(nv.Value)
+
+		if tk.IsError(rs) {
+			return nil, false
+		}
+
+		return rs.([]byte), true
+
 	}
 	return
 }

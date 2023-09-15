@@ -1,0 +1,47 @@
+b1 := new("bool", true)
+
+plt(b1)
+
+plt(unref(b1))
+
+f1 := func(arg1) {
+	setValueByRef(arg1, false)
+}
+
+f1(b1)
+
+pln("b1 after f1:")
+
+plt(b1)
+plt(unref(b1))
+
+f2 := func(arg1) {
+	setValueByRef(arg1, !unref(arg1).value)
+}
+
+f2(b1)
+
+pln("b1 after f2:")
+
+plt(b1)
+plt(unref(b1))
+
+s1 := mutableString("abc")
+
+plt(s1)
+
+s1.value = "def"
+
+plt(s1)
+
+f3 := func(arg1) {
+	arg1.value = "qwe"
+}
+
+f3(s1)
+
+pln("s1 after f3:")
+
+plt(s1)
+
+

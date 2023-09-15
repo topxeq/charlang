@@ -142,21 +142,25 @@ func goRunCompiledFunc(argsA ...charlang.Object) (charlang.Object, error) {
 
 // Module represents time module.
 var Module = map[string]charlang.Object{
+	// funcs start
+
+	// compile/run/thread related
 	"compile": &charlang.Function{
-		Name:    "compile",
+		Name:    "compile", // compile a piece of code
 		Value:   charlang.CallExAdapter(quickCompileFunc),
 		ValueEx: quickCompileFunc,
 	},
 	"runCompiled": &charlang.Function{
-		Name:  "runCompiled",
+		Name:  "runCompiled", // run compiled code
 		Value: runCompiledFunc,
 	},
 	"goRunCompiled": &charlang.Function{
-		Name:  "goRunCompiled",
+		Name:  "goRunCompiled", // run compiled code in a new thread
 		Value: goRunCompiledFunc,
 	},
 	"threadRunCompiled": &charlang.Function{
-		Name:  "threadRunCompiled",
+		Name:  "threadRunCompiled", // run compiled code in a new thread
 		Value: goRunCompiledFunc,
 	},
+	// funcs end
 }

@@ -1,0 +1,23 @@
+v1 := make("int")
+
+plt(v1)
+
+v2 := make("stringBuilder")
+
+writeStr(v2, "abc")
+
+writeStr(v2, toStr(123.6))
+
+pl("v2: %v", v2)
+
+v3 := make("any", v2)
+
+plt(v3)
+
+v3.value = true
+
+plt(v3)
+
+// plv(v3)
+
+// pl("v3: %v", v3)

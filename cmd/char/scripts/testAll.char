@@ -4,15 +4,39 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", getSeq(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "new.char")
+
+testByText(rs, "(objectRef)<objectRef:true>\n(bool)true\nb1 after f1:\n(objectRef)<objectRef:false>\n(bool)false\nb1 after f2:\n(objectRef)<objectRef:true>\n(bool)true\n(mutableString)abc\n(mutableString)def\ns1 after f3:\n(mutableString)qwe\n", getSeq(), "new.char")
+
+rs = systemCmd("char", "-gopath", "ref.char")
+
+testByText(rs, "(string)  1.2 \n(string)  1.2 \n(mutableString)  1.2 \n(mutableString)bbb\n(array)[1, 2, \"a\"]\n(array)[1, \"cc\", \"a\"]\n{\"field1\":1,\"field2\":\"23.8\"}\n{\"field1\":true,\"field3\":\"dd\"}\n(objectRef)<objectRef:368.9>\n(float)368.9\n(objectRef)<objectRef:21.7>\n(float)21.7\n", getSeq(), "ref.char")
+
+rs = systemCmd("char", "-gopath", "number.char")
+
+testByText(rs, "(int)1\n(int)-5\n(uint)18446744073709551611\n(uint)5\n(uint)5\n(float)2.3\n(byte)8\n(char)69\nE\n", getSeq(), "number.char")
+
+rs = systemCmd("char", "-gopath", "customMembers1.char")
+
+testByText(rs, "s1: abc\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(undefined)undefined\ns1 now: abc\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(string)a test info\n", getSeq(), "customMembers1.char")
+
+rs = systemCmd("char", "-gopath", "customMembers2.char")
+
+testByText(rs, "s1(mutableString): \"abc2\"\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(undefined)undefined\ns1 now: \"abc2\"\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(string)a test info\n", getSeq(), "customMembers2.char")
+
+rs = systemCmd("char", "-gopath", "make.char")
+
+testByText(rs, "(int)0\nv2: abc123.6\n(any)abc123.6\n(any)true\n", getSeq(), "make.char")
+
 rs = systemCmd("char", "-gopath", "getNamedValue.char")
 
 //testByReg(rs, `(?sm)(string)\"2023-09-08 15:51:14\"\n(string)\"20230908155114\"\n`, getSeq(), "getNamedValue.char")
 // testByReg(rs, `(?sm)\(string\)\"\d{4}\-\d{2}\"\n\(string\)\"\d{14}\"\n`, getSeq(), "getNamedValue.char")
-testByReg(rs, `(?sm)\(string\)\"\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\"\n\(string\)\"\d{14}\"\n`, getSeq(), "getNamedValue.char")
+testByReg(rs, `(?sm)\(string\)\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\n\(string\)\d{14}\n`, getSeq(), "getNamedValue.char")
 
 rs = systemCmd("char", "-gopath", "newObj.char")
 
-testByText(rs, "buf1 type: *bytes.Buffer\n(bytes)[]byte{0x61, 0x62, 0x63}\n(charlang.String)\"abc\"\n", getSeq(), "newObj.char")
+testByText(rs, "r1 type: any\nr1 type wrapped in any: *tk.StringRing\n(array)[\"abc\", \"123\"]\n", getSeq(), "newObj.char")
 
 rs = systemCmd("char", "-gopath", "var.char")
 
