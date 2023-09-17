@@ -1,0 +1,22 @@
+b1 := true
+
+plt(b1.value)
+
+b1 = false
+
+plt(b1.toStr())
+
+plt(string(!b1))
+
+plt((!!b1))
+
+plt("result: " + (!!b1))
+
+plt(2 + (!!!b1))
+
+plt(3.8 + !b1)
+
+plt(b1.toStr())
+
+
+

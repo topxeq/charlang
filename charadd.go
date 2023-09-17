@@ -112,12 +112,29 @@ var setterFuncMapG = map[int]CallableExFunc{
 }
 
 // first arg of each func is the object reference
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, *StringBuilder: 307, BytesBuffer: 308, Database: 309, Time: 311, Location: 313, Any: 999
 var methodFuncMapG = map[int]map[string]*Function{
-	307: map[string]*Function{
+	103: map[string]*Function{ // Bool
+		"toStr": &Function{
+			Name: "toStr",
+			ValueEx: func(c Call) (Object, error) {
+				// tk.Pl("bool.toStr: %#v", c)
+
+				nv, ok := c.This.(Bool)
+
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				return ToStringObject(nv.String()), nil
+			},
+		},
+	},
+	307: map[string]*Function{ // *StringBuilder
 		"toStr": &Function{
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
-				return ToStringObject(((*strings.Builder)(args[0].(StringBuilder).Value)).String()), nil
+				return ToStringObject(((*strings.Builder)(args[0].(*StringBuilder).Value)).String()), nil
 			},
 		},
 		"write": &Function{
@@ -125,7 +142,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 			Value: func(args ...Object) (Object, error) {
 				var errT error
 
-				o := args[0].(StringBuilder)
+				o := args[0].(*StringBuilder)
 
 				argsT := args[1:]
 
@@ -180,7 +197,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 			Value: func(args ...Object) (Object, error) {
 				var errT error
 
-				o := args[0].(StringBuilder)
+				o := args[0].(*StringBuilder)
 
 				argsT := args[1:]
 
@@ -202,7 +219,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 			Value: func(argsA ...Object) (Object, error) {
 				var errT error
 
-				o := argsA[0].(StringBuilder)
+				o := argsA[0].(*StringBuilder)
 
 				args := argsA[1:]
 
@@ -226,7 +243,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 		"clear": &Function{
 			Name: "clear",
 			Value: func(argsA ...Object) (Object, error) {
-				o := argsA[0].(StringBuilder)
+				o := argsA[0].(*StringBuilder)
 
 				o.Value.Reset()
 				return Undefined, nil
@@ -235,14 +252,14 @@ var methodFuncMapG = map[int]map[string]*Function{
 		"reset": &Function{
 			Name: "reset",
 			Value: func(argsA ...Object) (Object, error) {
-				o := argsA[0].(StringBuilder)
+				o := argsA[0].(*StringBuilder)
 
 				o.Value.Reset()
 				return Undefined, nil
 			},
 		},
 	},
-	308: map[string]*Function{
+	308: map[string]*Function{ // BytesBuffer
 		"toStr": &Function{
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
@@ -254,7 +271,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 			Value: func(args ...Object) (Object, error) {
 				var errT error
 
-				o := args[0].(StringBuilder)
+				o := args[0].(*StringBuilder)
 
 				argsT := args[1:]
 
@@ -309,7 +326,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 			Value: func(args ...Object) (Object, error) {
 				var errT error
 
-				o := args[0].(StringBuilder)
+				o := args[0].(*StringBuilder)
 
 				argsT := args[1:]
 
@@ -331,7 +348,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 			Value: func(argsA ...Object) (Object, error) {
 				var errT error
 
-				o := argsA[0].(StringBuilder)
+				o := argsA[0].(*StringBuilder)
 
 				args := argsA[1:]
 
@@ -355,7 +372,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 		"clear": &Function{
 			Name: "clear",
 			Value: func(argsA ...Object) (Object, error) {
-				o := argsA[0].(StringBuilder)
+				o := argsA[0].(*StringBuilder)
 
 				o.Value.Reset()
 				return Undefined, nil
@@ -364,7 +381,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 		"reset": &Function{
 			Name: "reset",
 			Value: func(argsA ...Object) (Object, error) {
-				o := argsA[0].(StringBuilder)
+				o := argsA[0].(*StringBuilder)
 
 				o.Value.Reset()
 				return Undefined, nil
@@ -377,18 +394,22 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 // common funcs
 
-func isUndeInternal(o Object) bool {
+func isUndefInternal(o Object) bool {
 	_, ok := o.(*UndefinedType)
 
 	return ok
 }
 
 func GetObjectMember(o Object, index string) (Object, error) {
-	nv1, ok := o.(MemberHolder)
+	nv1, ok0 := o.(MemberHolder)
 
-	if ok {
+	// tk.Pl("MemberHolder search: %#v %#v", o, ok0)
+
+	if ok0 {
 		rs1 := nv1.GetMember(index)
-		if !isUndeInternal(rs1) {
+		// tk.Pl("member search result: %#v", rs1)
+		if !isUndefInternal(rs1) {
+			tk.Pl("member got: %#v %#v", o, rs1)
 			return rs1, nil
 		}
 	}
@@ -405,43 +426,105 @@ func GetObjectMember(o Object, index string) (Object, error) {
 		return Undefined, nil
 	}
 
-	return &Function{
+	// tk.Pl("f1: %#v", f1)
+
+	if f1.ValueEx != nil {
+		fn1 := &Function{
+			Name: f1.Name,
+			ValueEx: func(c Call) (Object, error) {
+				c.This = o
+				return (*f1).CallEx(c)
+			}}
+
+		if ok0 {
+			// tk.Pl("set member fn1: %#v %#v", index, fn1)
+
+			nv1.SetMember(index, fn1)
+		}
+
+		return fn1, nil
+	}
+
+	if f1.Value == nil {
+		return Undefined, nil
+	}
+
+	fn2 := &Function{
 		Name: f1.Name,
 		Value: func(args ...Object) (Object, error) {
 			return (*f1).Call(append([]Object{o}, args...)...)
-		}}, nil
+		}}
+
+	if ok0 {
+		// tk.Pl("set member fn2: %#v %#v", index, fn2)
+		nv1.SetMember(index, fn2)
+	}
+
+	return fn2, nil
 
 }
 
-func GetObjectMethodFunc(o Object, index Object) (Object, error) {
-	nv, ok := index.(String)
-	if !ok {
-		return nil, ErrNotIndexable
-	}
+// func GetObjectMethodFunc(o Object, index Object) (Object, error) {
+// 	nv, ok := index.(String)
+// 	if !ok {
+// 		return nil, ErrNotIndexable
+// 	}
 
-	fNameT := nv.Value
+// 	fNameT := nv.Value
 
-	// tk.Pln("GetObjectMethodFunc:", index, o, o.TypeCode())
+// 	// tk.Pln("GetObjectMethodFunc:", index, o, o.TypeCode())
 
-	map1, ok := methodFuncMapG[o.TypeCode()]
+// 	map1, ok := methodFuncMapG[o.TypeCode()]
 
-	if !ok {
-		return nil, ErrNotIndexable
-	}
+// 	if !ok {
+// 		return nil, ErrNotIndexable
+// 	}
 
-	f1, ok := map1[fNameT]
+// 	f1, ok := map1[fNameT]
 
-	if !ok {
-		return nil, ErrNotIndexable
-	}
+// 	if !ok {
+// 		return nil, ErrNotIndexable
+// 	}
 
-	return &Function{
-		Name: f1.Name,
-		Value: func(args ...Object) (Object, error) {
-			return (*f1).Call(append([]Object{o}, args...)...)
-		}}, nil
+// 	// return &Function{
+// 	// 	Name: f1.Name,
+// 	// 	Value: func(args ...Object) (Object, error) {
+// 	// 		return (*f1).Call(append([]Object{o}, args...)...)
+// 	// 	}}, nil
 
-}
+// 	nv1, ok0 := o.(MemberHolder)
+
+// 	if f1.ValueEx != nil {
+// 		fn1 := &Function{
+// 			Name: f1.Name,
+// 			ValueEx: func(c Call) (Object, error) {
+// 				return (*f1).CallEx(c)
+// 			}}
+
+// 		if ok0 {
+// 			nv1.SetMember(fNameT, fn1)
+// 		}
+
+// 		return fn1, nil
+// 	}
+
+// 	if f1.Value == nil {
+// 		return Undefined, nil
+// 	}
+
+// 	fn2 := &Function{
+// 		Name: f1.Name,
+// 		Value: func(args ...Object) (Object, error) {
+// 			return (*f1).Call(append([]Object{o}, args...)...)
+// 		}}
+
+// 	if ok0 {
+// 		nv1.SetMember(fNameT, fn2)
+// 	}
+
+// 	return fn2, nil
+
+// }
 
 func QuickCompile(codeA string, compilerOptionsA ...*CompilerOptions) interface{} {
 	var compilerOptionsT *CompilerOptions
@@ -946,7 +1029,7 @@ func ConvertFromObject(vA Object) interface{} {
 		return nv.Value
 	case *String:
 		return nv.Value
-	case StringBuilder:
+	case *StringBuilder:
 		return nv.Value
 	case BytesBuffer:
 		return nv.Value

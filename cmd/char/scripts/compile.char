@@ -21,6 +21,8 @@ return "abc" + v0 + v1 + r1
 
 c1 := ex.compile(sourceT)
 
+// plt(c1)
+
 rs := ex.runCompiled(c1, true, "value1", 1, 2, "3a")
 
 plo(rs)

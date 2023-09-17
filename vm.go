@@ -70,6 +70,16 @@ func (vm *VM) SetBytecode(bc *Bytecode) *VM {
 	return vm
 }
 
+func (vm *VM) GetBytecode() *Bytecode {
+	vm.mu.Lock()
+	defer vm.mu.Unlock()
+	return vm.bytecode
+}
+
+func (vm *VM) GetBytecodeInfo() string {
+	return fmt.Sprintf("%v", vm.bytecode)
+}
+
 // Clear clears stack by setting nil to stack indexes and removes modules cache.
 func (vm *VM) Clear() *VM {
 	vm.mu.Lock()
@@ -104,6 +114,24 @@ func (vm *VM) GetLocals(locals []Object) []Object {
 	} else {
 		locals = make([]Object, 0, vm.bytecode.Main.NumLocals)
 	}
+
+	for i := range vm.stack[:vm.bytecode.Main.NumLocals] {
+		locals = append(locals, vm.stack[i])
+	}
+
+	return locals
+}
+
+func (vm *VM) GetCurFunc() Object {
+	return vm.curFrame.fn
+}
+
+func (vm *VM) GetCurInstr() Object {
+	return ToStringObject(fmt.Sprintf("%v %v %v", vm.ip, vm.curInsts[vm.ip], OpcodeNames[vm.curInsts[vm.ip]]))
+}
+
+func (vm *VM) GetLocalsQuick() []Object {
+	locals := make([]Object, 0, vm.bytecode.Main.NumLocals)
 
 	for i := range vm.stack[:vm.bytecode.Main.NumLocals] {
 		locals = append(locals, vm.stack[i])
@@ -1240,6 +1268,7 @@ func (vm *VM) xOpCallExCaller(callee ExCallerObject, numArgs, flags int) error {
 	}
 
 	c := Call{
+		// This:  callee,
 		vm:    vm,
 		args:  args,
 		vargs: vargs,

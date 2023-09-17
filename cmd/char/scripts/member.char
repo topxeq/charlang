@@ -1,0 +1,22 @@
+b1 := true
+
+plt(b1.value)
+
+b1 = false
+
+plt(b1.toStr())
+
+plt(b1.toStr())
+
+buf1 := stringBuilder("abc123")
+
+plt(buf1)
+
+plt(buf1.value)
+
+plt(buf1.toStr())
+
+plt(buf1.toStr())
+
+
+

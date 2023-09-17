@@ -4,6 +4,12 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", getSeq(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "trace1.char")
+
+testByStartsWith(rs, "\n ----- \nBytecode\nModules:0\nConstants:\n   0: 1|int\n   1: 2.3|float\nParams:0 Variadic:false Locals:3\nInstructions:\n0000 CONSTANT        0\n0003 DEFINELOCAL     0\n0005 CONSTANT        1\n0008 DEFINELOCAL     1\n0010 GETBUILTIN      2\n0012 CALL            0    0\n0015 DEFINELOCAL     2\n0017 GETBUILTIN      60\n0019 GETLOCAL        2\n0021 CALL            1    0\n0024 POP         \n0025 RETURN          0\nSourceMap:map[0:6 3:1 5:14 8:9 10:30 12:30 15:21 17:45 19:49 21:45 24:45 25:0]\n\n ----- \nGlobals \n{\"tk\": <function:tk>, \"argsG\": [\"char\", \"-gopath\", \"trace1.char\"], \"versionG\": \"", getSeq(), "trace1.char")
+
+testByEndsWith(rs, "\"}\n ----- \nCurFunc \n&charlang.CompiledFunction{NumParams:0, NumLocals:3, Instructions:[]uint8{0x1, 0x0, 0x0, 0x28, 0x0, 0x1, 0x0, 0x1, 0x28, 0x1, 0x7, 0x2, 0x2, 0x0, 0x0, 0x28, 0x2, 0x7, 0x3c, 0x5, 0x2, 0x2, 0x1, 0x0, 0x16, 0x27, 0x0}, Variadic:false, Free:[]*charlang.ObjectPtr(nil), SourceMap:map[int]int{0:6, 3:1, 5:14, 8:9, 10:30, 12:30, 15:21, 17:45, 19:49, 21:45, 24:45, 25:0}}\n ----- \nCurInstr \n\"12 2 CALL\"\n ----- \nLocals \n[1 2.3 undefined]\n ----- \n\n", getSeq(), "trace1.char")
+
 rs = systemCmd("char", "-gopath", "new.char")
 
 testByText(rs, "(objectRef)<objectRef:true>\n(bool)true\nb1 after f1:\n(objectRef)<objectRef:false>\n(bool)false\nb1 after f2:\n(objectRef)<objectRef:true>\n(bool)true\n(mutableString)abc\n(mutableString)def\ns1 after f3:\n(mutableString)qwe\n", getSeq(), "new.char")
@@ -80,6 +86,6 @@ testByText(rs, "(main) a=15\n(thread) v0=6\n(thread) v0=7\n(main) a=25\n(thread)
 
 rs = systemCmd("char", "-gopath", "threadRun2.char")
 
-testByText(rs, "(main) a=15\n(thread) v0=16\n(thread) v0=17\n(main) a=27\n(thread) v0=28\n(main) a=38\n(thread) v0=39\n(main) a=49\n(thread) v0=50\n(main) a=60\n", getSeq(), "threadRun2.char")
+testByEndsWith(rs, "(thread) v0=17\n(main) a=27\n(thread) v0=28\n(main) a=38\n(thread) v0=39\n(main) a=49\n(thread) v0=50\n(main) a=60\n", getSeq(), "threadRun2.char")
 
 

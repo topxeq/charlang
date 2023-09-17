@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -1522,6 +1523,7 @@ func main() {
 		err := recover()
 		if err != nil {
 			fmt.Println("Exception: ", err)
+			fmt.Printf("runtime error: %v\n%v\n", err, string(debug.Stack()))
 		}
 	}()
 

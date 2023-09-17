@@ -35,6 +35,7 @@ const (
 	BuiltinAppend BuiltinType = iota
 
 	BuiltinDumpVar
+	BuiltinDebugInfo
 	BuiltinMake
 	BuiltinDatabase
 	BuiltinStatusResult
@@ -97,6 +98,7 @@ const (
 	BuiltinPlv
 	BuiltinTestByText
 	BuiltinTestByStartsWith
+	BuiltinTestByEndsWith
 	BuiltinTestByReg
 	BuiltinGetSeq
 	BuiltinPass
@@ -162,9 +164,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	// internal & debug related
 	"testByText":       BuiltinTestByText,
 	"testByStartsWith": BuiltinTestByStartsWith,
+	"testByEndsWith":   BuiltinTestByEndsWith,
 	"testByReg":        BuiltinTestByReg,
 
-	"dumpVar": BuiltinDumpVar,
+	"dumpVar":   BuiltinDumpVar,
+	"debugInfo": BuiltinDebugInfo,
 
 	// data type related
 	"typeCode":  BuiltinTypeCode,
@@ -352,9 +356,14 @@ var BuiltinObjects = [...]Object{
 	},
 	// char add start
 	BuiltinDumpVar: &BuiltinFunction{
-		Name:    "make",
+		Name:    "dumpVar",
 		Value:   CallExAdapter(builtinDumpVarFunc),
 		ValueEx: builtinDumpVarFunc,
+	},
+	BuiltinDebugInfo: &BuiltinFunction{
+		Name:    "debugInfo",
+		Value:   CallExAdapter(builtinDebugInfoFunc),
+		ValueEx: builtinDebugInfoFunc,
 	},
 	BuiltinMake: &BuiltinFunction{
 		Name:    "make",
@@ -666,6 +675,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "testByStartsWith",
 		Value:   CallExAdapter(builtinTestByStartsWithFunc),
 		ValueEx: builtinTestByStartsWithFunc,
+	},
+	BuiltinTestByEndsWith: &BuiltinFunction{
+		Name:    "testByEndsWith",
+		Value:   CallExAdapter(builtinTestByEndsWithFunc),
+		ValueEx: builtinTestByEndsWithFunc,
 	},
 	BuiltinTestByReg: &BuiltinFunction{
 		Name:    "testByReg",
@@ -2048,6 +2062,50 @@ func builtinTestByStartsWithFunc(c Call) (Object, error) {
 	return nil, nil
 }
 
+func builtinTestByEndsWithFunc(c Call) (Object, error) {
+	argsA := c.GetArgs()
+	lenT := len(argsA)
+
+	if lenT < 2 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	v1 := argsA[0]
+	v2 := argsA[1]
+
+	var v3 string
+	var v4 string
+
+	if lenT > 3 {
+		v3 = tk.ToStr(argsA[2])
+		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+	} else if lenT > 2 {
+		v3 = tk.ToStr(argsA[2])
+	} else {
+		v3 = tk.ToStr(tk.GetSeq())
+	}
+
+	nv1, ok := v1.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v1): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	nv2, ok := v2.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	if strings.HasSuffix(nv1.Value, nv2.Value) {
+		tk.Pl("test %v%v passed", v3, v4)
+	} else {
+		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	return nil, nil
+}
+
 func builtinTestByRegFunc(c Call) (Object, error) {
 	argsA := c.GetArgs()
 	lenT := len(argsA)
@@ -2531,7 +2589,7 @@ func builtinAnyFunc(c Call) (Object, error) {
 		return &Any{Value: []Object(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
 	case Map:
 		return &Any{Value: map[string]Object(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
-	case StringBuilder:
+	case *StringBuilder:
 		return &Any{Value: (*strings.Builder)(obj.Value), OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Any:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
@@ -2540,33 +2598,33 @@ func builtinAnyFunc(c Call) (Object, error) {
 	}
 }
 
-func builtinNewAnyFunc(args ...Object) (Object, error) {
-	if len(args) < 1 {
-		return &Any{Value: nil}, nil
-	}
+// func builtinNewAnyFunc(args ...Object) (Object, error) {
+// 	if len(args) < 1 {
+// 		return &Any{Value: nil}, nil
+// 	}
 
-	var s1s string
+// 	var s1s string
 
-	s1, ok := args[0].(String)
+// 	s1, ok := args[0].(String)
 
-	if !ok {
-		s1s = args[0].String()
-	} else {
-		s1s = s1.Value
-	}
+// 	if !ok {
+// 		s1s = args[0].String()
+// 	} else {
+// 		s1s = s1.Value
+// 	}
 
-	switch s1s {
-	case "strings.Builder", "*strings.Builder", "stringBuilder":
-		return builtinMakeStringBuilderFunc(args[1:]...)
-		// case "mux":
-		// 	return Any{
-		// 		Value:        http.NewServeMux(),
-		// 		OriginalType: "*http.ServeMux",
-		// 	}, nil
-	}
+// 	switch s1s {
+// 	case "strings.Builder", "*strings.Builder", "stringBuilder":
+// 		return builtinMakeStringBuilderFunc(args[1:]...)
+// 		// case "mux":
+// 		// 	return Any{
+// 		// 		Value:        http.NewServeMux(),
+// 		// 		OriginalType: "*http.ServeMux",
+// 		// 	}, nil
+// 	}
 
-	return &Any{Value: nil}, nil
-}
+// 	return &Any{Value: nil}, nil
+// }
 
 func builtinSetValueByRefFunc(c Call) (Object, error) {
 	args := c.GetArgs()
@@ -2621,7 +2679,7 @@ func builtinSetValueByRefFunc(c Call) (Object, error) {
 		return &Any{Value: []Object(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
 	case Map:
 		return &Any{Value: map[string]Object(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
-	case StringBuilder:
+	case *StringBuilder:
 		return &Any{Value: (*strings.Builder)(obj.Value), OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Any:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
@@ -2659,12 +2717,42 @@ func builtinDumpVarFunc(c Call) (Object, error) {
 	return nil, nil
 }
 
-func builtinMakeStringBuilderFunc(args ...Object) (Object, error) {
-	return &Any{
-		Value:        new(strings.Builder),
-		OriginalType: "StringBuilder",
-	}, nil
+func builtinDebugInfoFunc(c Call) (Object, error) {
+	// args := c.GetArgs()
+
+	// if len(args) < 1 {
+	// 	return nil, fmt.Errorf("not enough parameters")
+	// }
+
+	bcInfoT := c.VM().GetBytecodeInfo()
+
+	var bufT strings.Builder
+
+	bufT.WriteString("\n ----- \n")
+	bufT.WriteString(bcInfoT)
+	bufT.WriteString("\n ----- \n")
+	bufT.WriteString("Globals \n")
+	bufT.WriteString(fmt.Sprintf("%v", c.VM().GetGlobals()))
+	bufT.WriteString("\n ----- \n")
+	bufT.WriteString("CurFunc \n")
+	bufT.WriteString(fmt.Sprintf("%#v", c.VM().GetCurFunc()))
+	bufT.WriteString("\n ----- \n")
+	bufT.WriteString("CurInstr \n")
+	bufT.WriteString(fmt.Sprintf("%#v", c.VM().GetCurInstr()))
+	bufT.WriteString("\n ----- \n")
+	bufT.WriteString("Locals \n")
+	bufT.WriteString(fmt.Sprintf("%v", c.VM().GetLocalsQuick()))
+	bufT.WriteString("\n ----- \n")
+
+	return ToStringObject(bufT), nil
 }
+
+// func builtinMakeStringBuilderFunc(args ...Object) (Object, error) {
+// 	return &Any{
+// 		Value:        new(strings.Builder),
+// 		OriginalType: "StringBuilder",
+// 	}, nil
+// }
 
 func builtinToStrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
@@ -2958,14 +3046,14 @@ func builtinStringBuilderFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		rs := StringBuilder{Value: new(strings.Builder)}
+		rs := &StringBuilder{Value: new(strings.Builder)}
 		rs.Value.WriteString("")
 		return rs, nil
 	}
 
 	s := args[0].String()
 
-	rs := StringBuilder{Value: new(strings.Builder)}
+	rs := &StringBuilder{Value: new(strings.Builder)}
 
 	rs.Value.WriteString(s)
 
@@ -3239,7 +3327,7 @@ func builtinWriteStrFunc(c Call) (Object, error) {
 
 		}
 	} else if args[0].TypeName() == "stringBuilder" {
-		vT := args[0].(StringBuilder)
+		vT := args[0].(*StringBuilder)
 		n, errT := vT.Value.WriteString(s1.Value)
 
 		if errT != nil {

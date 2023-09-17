@@ -31,7 +31,7 @@ var (
 	Undefined Object = &UndefinedType{}
 )
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, StringBuilder: 307, BytesBuffer: 308, Database: 309, Time: 311, Location: 313, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, *StringBuilder: 307, BytesBuffer: 308, Database: 309, Time: 311, Location: 313, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -135,6 +135,7 @@ type NameCallerObject interface {
 // create Call with a nil VM as long as VM is not required by the callee.
 type Call struct {
 	vm    *VM
+	This  Object
 	args  []Object
 	vargs []Object
 }
@@ -394,14 +395,14 @@ func (o Bool) String() string {
 	return "false"
 }
 
-func (o Bool) GetMember(idxA string) Object {
-	return Undefined
-	// return NewCommonError("get member action not supported")
-}
+// func (o Bool) GetMember(idxA string) Object {
+// 	return Undefined
+// 	// return NewCommonError("get member action not supported")
+// }
 
-func (o Bool) SetMember(idxA string, valueA Object) error {
-	return fmt.Errorf("set member action not supported")
-}
+// func (o Bool) SetMember(idxA string, valueA Object) error {
+// 	return fmt.Errorf("set member action not supported")
+// }
 
 // Equal implements Object interface.
 func (o Bool) Equal(right Object) bool {
@@ -445,6 +446,8 @@ func (o Bool) IndexGet(index Object) (value Object, err error) {
 		if strT == "v" || strT == "value" {
 			return o, nil
 		}
+
+		return GetObjectMember(o, v.Value)
 	}
 
 	return nil, ErrNotIndexable
@@ -569,7 +572,7 @@ type String struct {
 	Value string
 
 	Members map[string]Object
-	Methods map[string]*Function
+	// Methods map[string]*Function
 }
 
 var _ LengthGetter = ToStringObject("")
@@ -588,7 +591,7 @@ func (o String) String() string {
 }
 
 func (o String) Copy() Object {
-	return String{Value: o.Value, Members: o.Members, Methods: o.Methods}
+	return String{Value: o.Value, Members: o.Members} // , Methods: o.Methods
 }
 
 func (o String) GetMember(idxA string) Object {
@@ -761,6 +764,14 @@ func ToStringObject(argA interface{}) String {
 		return String{Value: nv.String()}
 	case string:
 		return String{Value: nv}
+	case *strings.Builder:
+		return String{Value: nv.String()}
+	case strings.Builder:
+		return String{Value: nv.String()}
+	case *bytes.Buffer:
+		return String{Value: string(nv.Bytes())}
+	case bytes.Buffer:
+		return String{Value: string(nv.Bytes())}
 	case nil:
 		return String{Value: ""}
 	case []byte:
@@ -1338,18 +1349,18 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 	oMembers := o.Members
 
 	switch fNameT {
-	case "any.new":
-		fT, ok := oMethods["any.new"]
-		if !ok {
-			oMethods["any.new"] = &Function{
-				Name: "any.new",
-				Value: func(args ...Object) (Object, error) {
-					return builtinNewAnyFunc(args...)
-				}}
-			fT = oMethods["any.new"]
-		}
+	// case "any.new":
+	// 	fT, ok := oMethods["any.new"]
+	// 	if !ok {
+	// 		oMethods["any.new"] = &Function{
+	// 			Name: "any.new",
+	// 			Value: func(args ...Object) (Object, error) {
+	// 				return builtinNewAnyFunc(args...)
+	// 			}}
+	// 		fT = oMethods["any.new"]
+	// 	}
 
-		return fT, nil
+	// 	return fT, nil
 	case "database.connect":
 		fT, ok := oMethods["database.connect"]
 		if !ok {
@@ -3847,9 +3858,11 @@ func NewAny(vA interface{}, argsA ...string) *Any {
 type StringBuilder struct {
 	ObjectImpl
 	Value *strings.Builder
+
+	Members map[string]Object
 }
 
-var _ Object = StringBuilder{}
+var _ Object = &StringBuilder{}
 
 // func NewStringBuilder() *StringBuilder {
 // 	return &StringBuilder{}
@@ -3859,49 +3872,75 @@ var _ Object = StringBuilder{}
 // 	return StringBuilder{}
 // }
 
-func (o StringBuilder) TypeCode() int {
+func (o *StringBuilder) TypeCode() int {
 	return 307
 }
 
-func (o StringBuilder) TypeName() string {
+func (o *StringBuilder) TypeName() string {
 	return "stringBuilder"
 }
 
-func (o StringBuilder) String() string {
+func (o *StringBuilder) String() string {
 	return fmt.Sprintf("%v", *(o.Value))
 }
 
-func (o StringBuilder) Equal(right Object) bool {
-	if v, ok := right.(StringBuilder); ok {
+func (o *StringBuilder) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *StringBuilder) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	return nil
+}
+
+func (o *StringBuilder) Equal(right Object) bool {
+	if v, ok := right.(*StringBuilder); ok {
 		return o.Value.String() == v.Value.String()
 	}
 
 	return false
 }
 
-func (o StringBuilder) IsFalsy() bool { return false }
+func (o *StringBuilder) IsFalsy() bool { return false }
 
-func (StringBuilder) CanCall() bool { return false }
+func (*StringBuilder) CanCall() bool { return false }
 
-func (StringBuilder) Call(_ ...Object) (Object, error) {
+func (*StringBuilder) Call(_ ...Object) (Object, error) {
 	return nil, ErrNotCallable
 }
 
-func (StringBuilder) CanIterate() bool { return false }
+func (*StringBuilder) CanIterate() bool { return false }
 
-func (StringBuilder) Iterate() Iterator { return nil }
+func (*StringBuilder) Iterate() Iterator { return nil }
 
-func (o StringBuilder) IndexGet(index Object) (value Object, err error) {
+func (o *StringBuilder) IndexGet(index Object) (value Object, err error) {
 	switch v := index.(type) {
 	case String:
 		strT := v.Value
 
 		if strT == "v" || strT == "value" {
-			return o, nil
+			return ToStringObject(o.Value.String()), nil
 		}
+
+		return GetObjectMember(o, strT)
 	}
 
-	return GetObjectMethodFunc(o, index)
+	return GetObjectMember(o, index.String()) // GetObjectMethodFunc(o, index)
 	// 	nv, ok := index.(String)
 	// 	if !ok {
 	// 		return nil, ErrNotIndexable
@@ -4048,20 +4087,20 @@ func (o StringBuilder) IndexGet(index Object) (value Object, err error) {
 	// 	return nil, ErrNotIndexable
 }
 
-func (StringBuilder) IndexSet(index, value Object) error {
+func (*StringBuilder) IndexSet(index, value Object) error {
 	return ErrNotIndexAssignable
 }
 
-func (o StringBuilder) BinaryOp(tok token.Token, right Object) (Object, error) {
+func (o *StringBuilder) BinaryOp(tok token.Token, right Object) (Object, error) {
 	return nil, ErrInvalidOperator
 }
 
-func (o StringBuilder) Copy() Object {
+func (o *StringBuilder) Copy() Object {
 	rsT := StringBuilder{Value: new(strings.Builder)}
 
 	rsT.Value.WriteString(o.Value.String())
 
-	return rsT
+	return &rsT
 }
 
 type BytesBuffer struct {
@@ -4120,9 +4159,13 @@ func (o BytesBuffer) IndexGet(index Object) (value Object, err error) {
 		if strT == "v" || strT == "value" {
 			return o, nil
 		}
+
+		return GetObjectMember(o, strT)
 	}
 
-	return GetObjectMethodFunc(o, index)
+	return GetObjectMember(o, index.String())
+
+	// return GetObjectMethodFunc(o, index)
 }
 
 func (BytesBuffer) IndexSet(index, value Object) error {
@@ -4216,7 +4259,7 @@ type MutableString struct {
 	Value string
 
 	Members map[string]Object
-	Methods map[string]*Function
+	// Methods map[string]*Function
 }
 
 var _ LengthGetter = ToMutableStringObject("")
