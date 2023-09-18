@@ -1,22 +1,40 @@
 b1 := true
 
-plt(b1.value)
+plt(callMethod(b1, "value"))
 
-b1 = false
+err1 := setMember(b1, "remark", "simple text")
 
-plt(b1.toStr())
+if !isNil(err1) {
+	pl("failed set member of b1: %v", getErrStrX(err1))
+}
 
-plt(b1.toStr())
+plt(getMember(b1, "remark"))
 
 buf1 := stringBuilder("abc123")
 
-plt(buf1)
+pln("type name of buf1:", typeName(buf1))
 
-plt(buf1.value)
+plt(getValue(buf1))
 
-plt(buf1.toStr())
+pl("stringBuilder detail: %v", callMethod(buf1, "toStr"))
 
-plt(buf1.toStr())
+plt(callMethod(buf1, "value"))
+
+err2 := setMember(buf1, "remark", "simple text")
+
+if !isNil(err2) {
+	pl("failed set member of buf1: %v", getErrStrX(err2))
+}
+
+plt(getMember(buf1, "remark"))
+
+try {
+	plt(callMethod(buf1, "invalidFunc"))
+} catch e {
+	pl("failed to call method(invalidFunc) of buf1: %v", getErrStrX(e))
+}
+
+
 
 
 

@@ -31,7 +31,7 @@ var (
 	Undefined Object = &UndefinedType{}
 )
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, *StringBuilder: 307, BytesBuffer: 308, Database: 309, Time: 311, Location: 313, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, Time: 311, Location: 313, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -86,6 +86,11 @@ type Object interface {
 	// error. Returned error stops VM execution if not handled with an error
 	// handler and VM.Run returns the same error as wrapped.
 	IndexSet(index, value Object) error
+
+	GetValue() Object
+	GetMember(string) Object
+	SetMember(string, Object) error
+	CallMethod(string, ...Object) (Object, error)
 }
 
 // Copier wraps the Copy method to create a deep copy of the object.
@@ -103,10 +108,14 @@ type LengthGetter interface {
 	Len() int
 }
 
-type MemberHolder interface {
-	GetMember(string) Object
-	SetMember(string, Object) error
+type ValueSetter interface {
+	SetValue(Object) error
 }
+
+// type MemberHolder interface {
+// 	GetMember(string) Object
+// 	SetMember(string, Object) error
+// }
 
 // ExCallerObject is an interface for objects that can be called with CallEx
 // method. It is an extended version of the Call method that can be used to
@@ -245,6 +254,29 @@ func (o ObjectImpl) String() string {
 	// panic(ErrNotImplemented)
 }
 
+func (o ObjectImpl) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o ObjectImpl) GetValue() Object {
+	return o
+}
+
+func (o ObjectImpl) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o ObjectImpl) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
+}
+
 // Equal implements Object interface.
 func (ObjectImpl) Equal(Object) bool { return false }
 
@@ -280,37 +312,6 @@ func (ObjectImpl) BinaryOp(_ token.Token, _ Object) (Object, error) {
 	return nil, ErrInvalidOperator
 }
 
-func (o ObjectImpl) GetMember(idxA string) Object {
-	// if o.Members == nil {
-	// 	return Undefined
-	// }
-
-	// v1, ok := (*(o.Members))[idxA]
-
-	// if !ok {
-	// 	return Undefined
-	// }
-
-	return Undefined
-}
-
-func (o ObjectImpl) SetMember(idxA string, valueA Object) error {
-	// tk.Pln(1.2)
-	// tk.Pln(o.Members)
-
-	// if o.Members == nil {
-	// 	o.Members = &(map[string]Object{})
-	// }
-	// tk.Pln(1.3)
-	// tk.Pln(o.Members)
-
-	// (*(o.Members))[idxA] = valueA
-	// tk.Pln(o.Members)
-	// tk.Plo(o)
-
-	return fmt.Errorf("not implemented")
-}
-
 // UndefinedType represents the type of global Undefined Object. One should use
 // the UndefinedType in type switches only.
 type UndefinedType struct {
@@ -329,6 +330,29 @@ func (o *UndefinedType) TypeName() string {
 // String implements Object interface.
 func (o *UndefinedType) String() string {
 	return "undefined"
+}
+
+func (o *UndefinedType) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *UndefinedType) GetValue() Object {
+	return o
+}
+
+func (o *UndefinedType) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o *UndefinedType) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
 }
 
 // Call implements Object interface.
@@ -395,14 +419,28 @@ func (o Bool) String() string {
 	return "false"
 }
 
-// func (o Bool) GetMember(idxA string) Object {
-// 	return Undefined
-// 	// return NewCommonError("get member action not supported")
-// }
+func (o Bool) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
 
-// func (o Bool) SetMember(idxA string, valueA Object) error {
-// 	return fmt.Errorf("set member action not supported")
-// }
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o Bool) GetValue() Object {
+	return o
+}
+
+func (o Bool) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Bool) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
+}
 
 // Equal implements Object interface.
 func (o Bool) Equal(right Object) bool {
@@ -439,16 +477,16 @@ func (Bool) Iterate() Iterator { return nil }
 
 // IndexGet implements Object interface.
 func (o Bool) IndexGet(index Object) (value Object, err error) {
-	switch v := index.(type) {
-	case String:
-		strT := v.Value
+	// switch v := index.(type) {
+	// case String:
+	// 	strT := v.Value
 
-		if strT == "v" || strT == "value" {
-			return o, nil
-		}
+	// 	if strT == "v" || strT == "value" {
+	// 		return o, nil
+	// 	}
 
-		return GetObjectMember(o, v.Value)
-	}
+	// 	return GetObjectMember(o, v.Value)
+	// }
 
 	return nil, ErrNotIndexable
 }
@@ -590,8 +628,25 @@ func (o String) String() string {
 	return o.Value // tk.ToJSONX(o)
 }
 
-func (o String) Copy() Object {
-	return String{Value: o.Value, Members: o.Members} // , Methods: o.Methods
+func (o String) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	case "contains":
+		if len(argsA) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		return Bool(strings.Contains(o.Value, argsA[0].String())), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o String) GetValue() Object {
+	return o
 }
 
 func (o String) GetMember(idxA string) Object {
@@ -615,7 +670,12 @@ func (o String) SetMember(idxA string, valueA Object) error {
 
 	o.Members[idxA] = valueA
 
+	// return fmt.Errorf("unsupported action(set member)")
 	return nil
+}
+
+func (o String) Copy() Object {
+	return String{Value: o.Value, Members: o.Members} // , Methods: o.Methods
 }
 
 // CanIterate implements Object interface.
@@ -647,6 +707,8 @@ func (o String) IndexSet(index, value Object) error {
 func (o String) IndexGet(index Object) (Object, error) {
 	var idx int
 	switch v := index.(type) {
+	case Byte:
+		idx = int(v)
 	case Int:
 		idx = int(v)
 	case Uint:
@@ -654,13 +716,14 @@ func (o String) IndexGet(index Object) (Object, error) {
 	case Char:
 		idx = int(v)
 	case String:
-		strT := v.Value
+		idx = tk.StrToInt(v.Value)
+		// strT := v.Value
 
-		if strT == "v" || strT == "value" {
-			return ToStringObject(o.Value), nil
-		}
+		// if strT == "v" || strT == "value" {
+		// 	return ToStringObject(o.Value), nil
+		// }
 
-		return GetObjectMember(o, v.Value)
+		// return GetObjectMember(Call{args: []Object{o, ToStringObject(o.Value)}})
 	default:
 		return nil, NewIndexTypeError("int|uint|char|string", index.TypeName())
 	}
@@ -841,6 +904,29 @@ func (o Bytes) String() string {
 	return string(o)
 }
 
+func (o Bytes) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o Bytes) GetValue() Object {
+	return o
+}
+
+func (o Bytes) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Bytes) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
+}
+
 // Copy implements Copier interface.
 func (o Bytes) Copy() Object {
 	cp := make(Bytes, len(o))
@@ -1005,6 +1091,29 @@ func (Chars) TypeName() string {
 
 func (o Chars) String() string {
 	return string(o)
+}
+
+func (o Chars) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o Chars) GetValue() Object {
+	return o
+}
+
+func (o Chars) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Chars) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
 }
 
 // Copy implements Copier interface.
@@ -1208,6 +1317,8 @@ type Function struct {
 	Name    string
 	Value   func(args ...Object) (Object, error)
 	ValueEx func(Call) (Object, error)
+
+	Members map[string]Object
 }
 
 var _ Object = (*Function)(nil)
@@ -1224,6 +1335,46 @@ func (*Function) TypeName() string {
 // String implements Object interface.
 func (o *Function) String() string {
 	return fmt.Sprintf("<function:%s>", o.Name)
+}
+
+func (o *Function) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *Function) GetValue() Object {
+	return o
+}
+
+func (o *Function) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Function) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
 }
 
 // Copy implements Copier interface.
@@ -1289,6 +1440,46 @@ func (o *BuiltinFunction) String() string {
 	return fmt.Sprintf("<builtinFunction:%s>", o.Name)
 }
 
+func (o *BuiltinFunction) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *BuiltinFunction) GetValue() Object {
+	return o
+}
+
+func (o *BuiltinFunction) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *BuiltinFunction) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
 // Copy implements Copier interface.
 func (o *BuiltinFunction) Copy() Object {
 	return &BuiltinFunction{
@@ -1335,36 +1526,33 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 		return Undefined, NewIndexTypeError("string", index.TypeName())
 	}
 
-	fNameT := o.Name + "." + FromStringObject(nv)
-
-	if o.Members == nil {
-		o.Members = map[string]Object{}
-	}
+	fNameT := o.Name + "." + nv.Value
 
 	if o.Methods == nil {
 		o.Methods = map[string]*Function{}
 	}
 
-	oMethods := o.Methods
-	oMembers := o.Members
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
 
 	switch fNameT {
-	// case "any.new":
-	// 	fT, ok := oMethods["any.new"]
-	// 	if !ok {
-	// 		oMethods["any.new"] = &Function{
-	// 			Name: "any.new",
-	// 			Value: func(args ...Object) (Object, error) {
-	// 				return builtinNewAnyFunc(args...)
-	// 			}}
-	// 		fT = oMethods["any.new"]
-	// 	}
-
-	// 	return fT, nil
-	case "database.connect":
-		fT, ok := oMethods["database.connect"]
+	case "any.new":
+		fT, ok := o.Methods["any.new"]
 		if !ok {
-			oMethods["database.connect"] = &Function{
+			o.Methods["any.new"] = &Function{
+				Name: "any.new",
+				ValueEx: func(c Call) (Object, error) {
+					return builtinAnyFunc(c)
+				}}
+			fT = o.Methods["any.new"]
+		}
+
+		return fT, nil
+	case "database.connect":
+		fT, ok := o.Methods["database.connect"]
+		if !ok {
+			o.Methods["database.connect"] = &Function{
 				Name: "database.connect",
 				Value: func(args ...Object) (Object, error) {
 
@@ -1385,16 +1573,16 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 						return NewFromError(rsT.(error)), nil
 					}
 
-					return Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
+					return &Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
 				}}
-			fT = oMethods["database.connect"]
+			fT = o.Methods["database.connect"]
 		}
 
 		return fT, nil
 	case "database.formatSQLValue", "database.format":
-		fT, ok := oMethods["database.formatSQLValue"]
+		fT, ok := o.Methods["database.formatSQLValue"]
 		if !ok {
-			oMethods["database.formatSQLValue"] = &Function{
+			o.Methods["database.formatSQLValue"] = &Function{
 				Name: "database.formatSQLValue",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -1405,14 +1593,14 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 
 					return ToStringObject(sqltk.FormatSQLValue(nv0)), nil
 				}}
-			fT = oMethods["database.formatSQLValue"]
+			fT = o.Methods["database.formatSQLValue"]
 		}
 
 		return fT, nil
 	case "database.oneColumnToArray", "database.oneColToAry":
-		fT, ok := oMethods["database.oneColumnToArray"]
+		fT, ok := o.Methods["database.oneColumnToArray"]
 		if !ok {
-			oMethods["database.oneColumnToArray"] = &Function{
+			o.Methods["database.oneColumnToArray"] = &Function{
 				Name: "database.oneColumnToArray",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -1435,14 +1623,14 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 
 					return aryT, nil
 				}}
-			fT = oMethods["database.oneColumnToArray"]
+			fT = o.Methods["database.oneColumnToArray"]
 		}
 
 		return fT, nil
 	case "statusResult.success":
-		fT, ok := oMethods["statusResult.success"]
+		fT, ok := o.Methods["statusResult.success"]
 		if !ok {
-			oMethods["statusResult.success"] = &Function{
+			o.Methods["statusResult.success"] = &Function{
 				Name: "statusResult.success",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -1451,14 +1639,14 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 
 					return &StatusResult{Status: "success", Value: args[0].String()}, nil
 				}}
-			fT = oMethods["statusResult.success"]
+			fT = o.Methods["statusResult.success"]
 		}
 
 		return fT, nil
 	case "statusResult.fail":
-		fT, ok := oMethods["statusResult.fail"]
+		fT, ok := o.Methods["statusResult.fail"]
 		if !ok {
-			oMethods["statusResult.fail"] = &Function{
+			o.Methods["statusResult.fail"] = &Function{
 				Name: "statusResult.fail",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -1467,14 +1655,14 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 
 					return &StatusResult{Status: "fail", Value: args[0].String()}, nil
 				}}
-			fT = oMethods["statusResult.fail"]
+			fT = o.Methods["statusResult.fail"]
 		}
 
 		return fT, nil
 	case "time.format":
-		fT, ok := oMethods["time.format"]
+		fT, ok := o.Methods["time.format"]
 		if !ok {
-			oMethods["time.format"] = &Function{
+			o.Methods["time.format"] = &Function{
 				Name: "time.format",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -1483,67 +1671,67 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 
 					return ToStringObject(tk.FormatTime(args[0].(*Time).Value, ObjectsToS(args[1:])...)), nil
 				}}
-			fT = oMethods["time.format"]
+			fT = o.Methods["time.format"]
 		}
 
 		return fT, nil
 	case "time.now":
-		fT, ok := oMethods["time.now"]
+		fT, ok := o.Methods["time.now"]
 		if !ok {
-			oMethods["time.now"] = &Function{
+			o.Methods["time.now"] = &Function{
 				Name: "time.now",
 				Value: func(args ...Object) (Object, error) {
 					return &Time{Value: time.Now()}, nil
 				}}
-			fT = oMethods["time.now"]
+			fT = o.Methods["time.now"]
 		}
 
 		return fT, nil
 	case "time.timeFormatRFC1123":
-		mT, ok := oMembers["time.timeFormatRFC1123"]
+		mT, ok := o.Members["time.timeFormatRFC1123"]
 		if !ok {
-			oMembers["time.timeFormatRFC1123"] = ToStringObject(time.RFC1123)
-			mT = oMembers["time.timeFormatRFC1123"]
+			o.Members["time.timeFormatRFC1123"] = ToStringObject(time.RFC1123)
+			mT = o.Members["time.timeFormatRFC1123"]
 		}
 
 		return mT, nil
 	case "time.second":
-		mT, ok := oMembers["time.second"]
+		mT, ok := o.Members["time.second"]
 		if !ok {
-			oMembers["time.second"] = Int(time.Second)
-			mT = oMembers["time.second"]
+			o.Members["time.second"] = Int(time.Second)
+			mT = o.Members["time.second"]
 		}
 
 		return mT, nil
 	case "time.timeFormatCompact":
-		mT, ok := oMembers["time.timeFormatCompact"]
+		mT, ok := o.Members["time.timeFormatCompact"]
 		if !ok {
-			oMembers["time.timeFormatCompact"] = ToStringObject(tk.TimeFormatCompact)
-			mT = oMembers["time.timeFormatCompact"]
+			o.Members["time.timeFormatCompact"] = ToStringObject(tk.TimeFormatCompact)
+			mT = o.Members["time.timeFormatCompact"]
 		}
 
 		return mT, nil
 	case "time.timeFormat":
-		mT, ok := oMembers["time.timeFormat"]
+		mT, ok := o.Members["time.timeFormat"]
 		if !ok {
-			oMembers["time.timeFormat"] = ToStringObject(tk.TimeFormat)
-			mT = oMembers["time.timeFormat"]
+			o.Members["time.timeFormat"] = ToStringObject(tk.TimeFormat)
+			mT = o.Members["time.timeFormat"]
 		}
 
 		return mT, nil
 	case "time.timeFormatMS":
-		mT, ok := oMembers["time.timeFormatMS"]
+		mT, ok := o.Members["time.timeFormatMS"]
 		if !ok {
-			oMembers["time.timeFormatMS"] = ToStringObject(tk.TimeFormatMS)
-			mT = oMembers["time.timeFormatMS"]
+			o.Members["time.timeFormatMS"] = ToStringObject(tk.TimeFormatMS)
+			mT = o.Members["time.timeFormatMS"]
 		}
 
 		return mT, nil
 	case "time.timeFormatMSCompact":
-		mT, ok := oMembers["time.timeFormatMSCompact"]
+		mT, ok := o.Members["time.timeFormatMSCompact"]
 		if !ok {
-			oMembers["time.timeFormatMSCompact"] = ToStringObject(tk.TimeFormatMSCompact)
-			mT = oMembers["time.timeFormatMSCompact"]
+			o.Members["time.timeFormatMSCompact"] = ToStringObject(tk.TimeFormatMSCompact)
+			mT = o.Members["time.timeFormatMSCompact"]
 		}
 
 		return mT, nil
@@ -1595,6 +1783,29 @@ func (o Array) String() string {
 
 	sb.WriteString("]")
 	return sb.String()
+}
+
+func (o Array) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o Array) GetValue() Object {
+	return o
+}
+
+func (o Array) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Array) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
 }
 
 // Copy implements Copier interface.
@@ -1734,6 +1945,8 @@ func (o Array) Len() int {
 type ObjectPtr struct {
 	ObjectImpl
 	Value *Object
+
+	Members map[string]Object
 }
 
 var (
@@ -1757,6 +1970,46 @@ func (o *ObjectPtr) String() string {
 		v = *o.Value
 	}
 	return fmt.Sprintf("<objectPtr:%v>", v)
+}
+
+func (o *ObjectPtr) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *ObjectPtr) GetValue() Object {
+	return o
+}
+
+func (o *ObjectPtr) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *ObjectPtr) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
 }
 
 // Copy implements Copier interface.
@@ -1845,6 +2098,29 @@ func (o Map) String() string {
 
 	sb.WriteString("}")
 	return sb.String()
+}
+
+func (o Map) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o Map) GetValue() Object {
+	return o
+}
+
+func (o Map) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Map) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
 }
 
 // Copy implements Copier interface.
@@ -1954,6 +2230,8 @@ func (o Map) Len() int {
 type SyncMap struct {
 	mu    sync.RWMutex
 	Value Map
+
+	Members map[string]Object
 }
 
 var (
@@ -1998,6 +2276,46 @@ func (o *SyncMap) String() string {
 	defer o.mu.RUnlock()
 
 	return o.Value.String()
+}
+
+func (o *SyncMap) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *SyncMap) GetValue() Object {
+	return o
+}
+
+func (o *SyncMap) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *SyncMap) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
 }
 
 // Copy implements Copier interface.
@@ -2102,6 +2420,8 @@ type Error struct {
 	Name    string
 	Message string
 	Cause   error
+
+	Members map[string]Object
 }
 
 var (
@@ -2125,6 +2445,46 @@ func (*Error) TypeName() string {
 // String implements Object interface.
 func (o *Error) String() string {
 	return o.Error()
+}
+
+func (o *Error) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *Error) GetValue() Object {
+	return o
+}
+
+func (o *Error) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Error) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
 }
 
 // Copy implements Copier interface.
@@ -2230,6 +2590,8 @@ type RuntimeError struct {
 	Err     *Error
 	fileSet *parser.SourceFileSet
 	Trace   []parser.Pos
+
+	Members map[string]Object
 }
 
 var (
@@ -2265,6 +2627,46 @@ func (*RuntimeError) TypeName() string {
 // String implements Object interface.
 func (o *RuntimeError) String() string {
 	return o.Error()
+}
+
+func (o *RuntimeError) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *RuntimeError) GetValue() Object {
+	return o
+}
+
+func (o *RuntimeError) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *RuntimeError) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
 }
 
 // Copy implements Copier interface.
@@ -2450,6 +2852,8 @@ func (st StackTrace) Format(s fmt.State, verb rune) {
 // Time represents time values and implements Object interface.
 type Time struct {
 	Value time.Time
+
+	Members map[string]Object
 }
 
 var _ NameCallerObject = (*Time)(nil)
@@ -2466,6 +2870,53 @@ func (*Time) TypeName() string {
 // String implements Object interface.
 func (o *Time) String() string {
 	return o.Value.String()
+}
+
+func (o *Time) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	fn, ok := methodTableForTime[strings.ToLower(nameA)]
+	if !ok {
+		return Undefined, ErrInvalidIndex.NewError(nameA)
+	}
+
+	return fn(o, &Call{args: argsA})
+
+	// return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *Time) GetValue() Object {
+	return o
+}
+
+func (o *Time) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Time) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
 }
 
 // IsFalsy implements Object interface.
@@ -3025,6 +3476,8 @@ func ToLocation(o Object) (ret *Location, ok bool) {
 type Location struct {
 	ObjectImpl
 	Value *time.Location
+
+	Members map[string]Object
 }
 
 func (*Location) TypeCode() int {
@@ -3039,6 +3492,46 @@ func (*Location) TypeName() string {
 // String implements Object interface.
 func (o *Location) String() string {
 	return o.Value.String()
+}
+
+func (o *Location) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *Location) GetValue() Object {
+	return o
+}
+
+func (o *Location) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Location) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
 }
 
 // IsFalsy implements Object interface.
@@ -3075,7 +3568,7 @@ type Database struct {
 	Methods map[string]*Function
 }
 
-var _ Object = Database{}
+var _ Object = &Database{}
 
 // func NewStringBuilder() *StringBuilder {
 // 	return &StringBuilder{}
@@ -3085,39 +3578,79 @@ var _ Object = Database{}
 // 	return StringBuilder{}
 // }
 
-func (o Database) TypeCode() int {
+func (o *Database) TypeCode() int {
 	return 309
 }
 
-func (o Database) TypeName() string {
+func (o *Database) TypeName() string {
 	return "database"
 }
 
-func (o Database) String() string {
+func (o *Database) String() string {
 	return fmt.Sprintf("%v", o)
 }
 
+func (o *Database) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *Database) GetValue() Object {
+	return o
+}
+
+func (o *Database) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Database) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
 func (o Database) Equal(right Object) bool {
-	if v, ok := right.(Database); ok {
+	if v, ok := right.(*Database); ok {
 		return o.Value == v.Value
 	}
 
 	return false
 }
 
-func (o Database) IsFalsy() bool { return false }
+func (o *Database) IsFalsy() bool { return false }
 
-func (Database) CanCall() bool { return false }
+func (*Database) CanCall() bool { return false }
 
-func (Database) Call(_ ...Object) (Object, error) {
+func (*Database) Call(_ ...Object) (Object, error) {
 	return nil, ErrNotCallable
 }
 
-func (Database) CanIterate() bool { return false }
+func (*Database) CanIterate() bool { return false }
 
-func (Database) Iterate() Iterator { return nil }
+func (*Database) Iterate() Iterator { return nil }
 
-func (o Database) IndexGet(index Object) (value Object, err error) {
+func (o *Database) IndexGet(index Object) (value Object, err error) {
 	nv, ok := index.(String)
 	if !ok {
 		return nil, ErrNotIndexable
@@ -3139,26 +3672,24 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 		o.Methods = map[string]*Function{}
 	}
 
-	oMethods := o.Methods
-
 	switch fNameT {
 	case "toAny":
-		fT, ok := oMethods["toAny"]
+		fT, ok := o.Methods["toAny"]
 		if !ok {
-			oMethods["toAny"] = &Function{
+			o.Methods["toAny"] = &Function{
 				Name: "toAny",
 				Value: func(args ...Object) (Object, error) {
 					return NewAny(o.Value), nil
 				},
 			}
 
-			fT = oMethods["toAny"]
+			fT = o.Methods["toAny"]
 		}
 		return fT, nil
 	case "connect":
-		fT, ok := oMethods["connect"]
+		fT, ok := o.Methods["connect"]
 		if !ok {
-			oMethods["connect"] = &Function{
+			o.Methods["connect"] = &Function{
 				Name: "connect",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 2 {
@@ -3190,13 +3721,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = oMethods["connect"]
+			fT = o.Methods["connect"]
 		}
 		return fT, nil
 	case "query":
-		fT, ok := oMethods["query"]
+		fT, ok := o.Methods["query"]
 		if !ok {
-			oMethods["query"] = &Function{
+			o.Methods["query"] = &Function{
 				Name: "query",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3214,13 +3745,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = oMethods["query"]
+			fT = o.Methods["query"]
 		}
 		return fT, nil
 	case "queryRecs":
-		fT, ok := oMethods["queryRecs"]
+		fT, ok := o.Methods["queryRecs"]
 		if !ok {
-			oMethods["queryRecs"] = &Function{
+			o.Methods["queryRecs"] = &Function{
 				Name: "queryRecs",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3238,13 +3769,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = oMethods["queryRecs"]
+			fT = o.Methods["queryRecs"]
 		}
 		return fT, nil
 	case "queryMap":
-		fT, ok := oMethods["queryMap"]
+		fT, ok := o.Methods["queryMap"]
 		if !ok {
-			oMethods["queryMap"] = &Function{
+			o.Methods["queryMap"] = &Function{
 				Name: "queryMap",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3268,13 +3799,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = oMethods["queryMap"]
+			fT = o.Methods["queryMap"]
 		}
 		return fT, nil
 	case "queryMapArray":
-		fT, ok := oMethods["queryMapArray"]
+		fT, ok := o.Methods["queryMapArray"]
 		if !ok {
-			oMethods["queryMapArray"] = &Function{
+			o.Methods["queryMapArray"] = &Function{
 				Name: "queryMapArray",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3298,13 +3829,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = oMethods["queryMapArray"]
+			fT = o.Methods["queryMapArray"]
 		}
 		return fT, nil
 	case "queryCount":
-		fT, ok := oMethods["queryCount"]
+		fT, ok := o.Methods["queryCount"]
 		if !ok {
-			oMethods["queryCount"] = &Function{
+			o.Methods["queryCount"] = &Function{
 				Name: "queryCount",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3322,13 +3853,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = oMethods["queryCount"]
+			fT = o.Methods["queryCount"]
 		}
 		return fT, nil
 	case "queryFloat":
-		fT, ok := oMethods["queryFloat"]
+		fT, ok := o.Methods["queryFloat"]
 		if !ok {
-			oMethods["queryFloat"] = &Function{
+			o.Methods["queryFloat"] = &Function{
 				Name: "queryFloat",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3346,13 +3877,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = oMethods["queryFloat"]
+			fT = o.Methods["queryFloat"]
 		}
 		return fT, nil
 	case "queryString":
-		fT, ok := oMethods["queryString"]
+		fT, ok := o.Methods["queryString"]
 		if !ok {
-			oMethods["queryString"] = &Function{
+			o.Methods["queryString"] = &Function{
 				Name: "queryString",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3370,13 +3901,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = oMethods["queryString"]
+			fT = o.Methods["queryString"]
 		}
 		return fT, nil
 	case "exec":
-		fT, ok := oMethods["exec"]
+		fT, ok := o.Methods["exec"]
 		if !ok {
-			oMethods["exec"] = &Function{
+			o.Methods["exec"] = &Function{
 				Name: "exec",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3394,13 +3925,13 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = oMethods["exec"]
+			fT = o.Methods["exec"]
 		}
 		return fT, nil
 	case "close":
-		fT, ok := oMethods["close"]
+		fT, ok := o.Methods["close"]
 		if !ok {
-			oMethods["close"] = &Function{
+			o.Methods["close"] = &Function{
 				Name: "close",
 				Value: func(args ...Object) (Object, error) {
 					o.Value.Close()
@@ -3408,18 +3939,18 @@ func (o Database) IndexGet(index Object) (value Object, err error) {
 				},
 			}
 
-			fT = oMethods["close"]
+			fT = o.Methods["close"]
 		}
 		return fT, nil
 	}
 	return nil, ErrNotIndexable
 }
 
-func (Database) IndexSet(index, value Object) error {
+func (*Database) IndexSet(index, value Object) error {
 	return ErrNotIndexAssignable
 }
 
-func (o Database) BinaryOp(tok token.Token, right Object) (Object, error) {
+func (o *Database) BinaryOp(tok token.Token, right Object) (Object, error) {
 	return nil, ErrInvalidOperator
 }
 
@@ -3447,6 +3978,46 @@ func (o *StatusResult) TypeName() string {
 
 func (o *StatusResult) String() string {
 	return `{"Status": ` + tk.ObjectToJSON(o.Status) + `, "Value": ` + tk.ObjectToJSON(o.Value) + `}`
+}
+
+func (o *StatusResult) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *StatusResult) GetValue() Object {
+	return o
+}
+
+func (o *StatusResult) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *StatusResult) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
 }
 
 func (*StatusResult) Call(_ ...Object) (Object, error) {
@@ -3527,13 +4098,11 @@ func (o *StatusResult) IndexGet(index Object) (Object, error) {
 		o.Methods = map[string]*Function{}
 	}
 
-	oMethods := o.Methods
-
 	switch fNameT {
 	case "status":
-		fT, ok := oMethods["status"]
+		fT, ok := o.Methods["status"]
 		if !ok {
-			oMethods["status"] = &Function{
+			o.Methods["status"] = &Function{
 				Name: "status",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3549,13 +4118,13 @@ func (o *StatusResult) IndexGet(index Object) (Object, error) {
 					o.Status = nv.Value
 					return &StatusResultSuccess, nil
 				}}
-			fT = oMethods["status"]
+			fT = o.Methods["status"]
 		}
 		return fT, nil
 	case "value":
-		fT, ok := oMethods["value"]
+		fT, ok := o.Methods["value"]
 		if !ok {
-			oMethods["value"] = &Function{
+			o.Methods["value"] = &Function{
 				Name: "value",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3571,46 +4140,46 @@ func (o *StatusResult) IndexGet(index Object) (Object, error) {
 					o.Value = nv.Value
 					return &StatusResultSuccess, nil
 				}}
-			fT = oMethods["value"]
+			fT = o.Methods["value"]
 		}
 		return fT, nil
 	case "isValid":
-		fT, ok := oMethods["isValid"]
+		fT, ok := o.Methods["isValid"]
 		if !ok {
-			oMethods["isValid"] = &Function{
+			o.Methods["isValid"] = &Function{
 				Name: "isValid",
 				Value: func(args ...Object) (Object, error) {
 					return Bool(o.Status != ""), nil
 				}}
-			fT = oMethods["isValid"]
+			fT = o.Methods["isValid"]
 		}
 		return fT, nil
 	case "isSuccess":
-		fT, ok := oMethods["isSuccess"]
+		fT, ok := o.Methods["isSuccess"]
 		if !ok {
-			oMethods["isSuccess"] = &Function{
+			o.Methods["isSuccess"] = &Function{
 				Name: "isSuccess",
 				Value: func(args ...Object) (Object, error) {
 					return Bool(o.Status == "success"), nil
 				}}
-			fT = oMethods["isSuccess"]
+			fT = o.Methods["isSuccess"]
 		}
 		return fT, nil
 	case "toString", "toJSON":
-		fT, ok := oMethods["toString"]
+		fT, ok := o.Methods["toString"]
 		if !ok {
-			oMethods["toString"] = &Function{
+			o.Methods["toString"] = &Function{
 				Name: "toString",
 				Value: func(args ...Object) (Object, error) {
 					return ToStringObject(o.String()), nil
 				}}
-			fT = oMethods["toString"]
+			fT = o.Methods["toString"]
 		}
 		return fT, nil
 	case "fromString", "set":
-		fT, ok := oMethods["fromString"]
+		fT, ok := o.Methods["fromString"]
 		if !ok {
-			oMethods["fromString"] = &Function{
+			o.Methods["fromString"] = &Function{
 				Name: "fromString",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
@@ -3667,7 +4236,7 @@ func (o *StatusResult) IndexGet(index Object) (Object, error) {
 					o.Value = nv1.Value
 					return &StatusResultSuccess, nil
 				}}
-			fT = oMethods["fromString"]
+			fT = o.Methods["fromString"]
 		}
 		return fT, nil
 	}
@@ -3688,7 +4257,6 @@ type Any struct {
 	OriginalCode int
 
 	Members map[string]Object
-	Methods map[string]*Function
 }
 
 var (
@@ -3708,6 +4276,46 @@ func (*Any) TypeName() string {
 // String implements Object interface.
 func (o *Any) String() string {
 	return tk.ToStr(o.Value)
+}
+
+func (o *Any) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *Any) GetValue() Object {
+	return o
+}
+
+func (o *Any) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Any) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
 }
 
 // Copy implements Copier interface.
@@ -3884,6 +4492,21 @@ func (o *StringBuilder) String() string {
 	return fmt.Sprintf("%v", *(o.Value))
 }
 
+func (o *StringBuilder) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return ToStringObject(o.Value.String()), nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *StringBuilder) GetValue() Object {
+	return ToStringObject(o.Value.String())
+}
+
 func (o *StringBuilder) GetMember(idxA string) Object {
 	if o.Members == nil {
 		return Undefined
@@ -3905,6 +4528,7 @@ func (o *StringBuilder) SetMember(idxA string, valueA Object) error {
 
 	o.Members[idxA] = valueA
 
+	// return fmt.Errorf("unsupported action(set member)")
 	return nil
 }
 
@@ -3937,10 +4561,10 @@ func (o *StringBuilder) IndexGet(index Object) (value Object, err error) {
 			return ToStringObject(o.Value.String()), nil
 		}
 
-		return GetObjectMember(o, strT)
+		// return GetObjectMember(Call{This: o, args: []Object{o, ToStringObject(v.Value)}})
 	}
 
-	return GetObjectMember(o, index.String()) // GetObjectMethodFunc(o, index)
+	// return GetObjectMember(Call{This: o, args: []Object{o, index}}) // GetObjectMethodFunc(o, index)
 	// 	nv, ok := index.(String)
 	// 	if !ok {
 	// 		return nil, ErrNotIndexable
@@ -4084,7 +4708,7 @@ func (o *StringBuilder) IndexGet(index Object) (value Object, err error) {
 	// 		return fT, nil
 	// 	}
 
-	// 	return nil, ErrNotIndexable
+	return nil, ErrNotIndexable
 }
 
 func (*StringBuilder) IndexSet(index, value Object) error {
@@ -4106,24 +4730,66 @@ func (o *StringBuilder) Copy() Object {
 type BytesBuffer struct {
 	ObjectImpl
 	Value *bytes.Buffer
+
+	Members map[string]Object
 }
 
-var _ Object = BytesBuffer{}
+var _ Object = &BytesBuffer{}
 
-func (o BytesBuffer) TypeCode() int {
+func (o *BytesBuffer) TypeCode() int {
 	return 308
 }
 
-func (o BytesBuffer) TypeName() string {
+func (o *BytesBuffer) TypeName() string {
 	return "bytesBuffer"
 }
 
-func (o BytesBuffer) String() string {
+func (o *BytesBuffer) String() string {
 	return fmt.Sprintf("%v", *(o.Value))
 }
 
-func (o BytesBuffer) Equal(right Object) bool {
-	if v, ok := right.(BytesBuffer); ok {
+func (o *BytesBuffer) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *BytesBuffer) GetValue() Object {
+	return Bytes(o.Value.Bytes())
+}
+
+func (o *BytesBuffer) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *BytesBuffer) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (o *BytesBuffer) Equal(right Object) bool {
+	if v, ok := right.(*BytesBuffer); ok {
 		buf1 := o.Value.Bytes()
 		buf2 := v.Value.Bytes()
 
@@ -4139,19 +4805,19 @@ func (o BytesBuffer) Equal(right Object) bool {
 	return false
 }
 
-func (o BytesBuffer) IsFalsy() bool { return false }
+func (o *BytesBuffer) IsFalsy() bool { return false }
 
-func (BytesBuffer) CanCall() bool { return false }
+func (*BytesBuffer) CanCall() bool { return false }
 
-func (BytesBuffer) Call(_ ...Object) (Object, error) {
+func (*BytesBuffer) Call(_ ...Object) (Object, error) {
 	return nil, ErrNotCallable
 }
 
-func (BytesBuffer) CanIterate() bool { return false }
+func (*BytesBuffer) CanIterate() bool { return false }
 
-func (BytesBuffer) Iterate() Iterator { return nil }
+func (*BytesBuffer) Iterate() Iterator { return nil }
 
-func (o BytesBuffer) IndexGet(index Object) (value Object, err error) {
+func (o *BytesBuffer) IndexGet(index Object) (value Object, err error) {
 	switch v := index.(type) {
 	case String:
 		strT := v.Value
@@ -4160,24 +4826,24 @@ func (o BytesBuffer) IndexGet(index Object) (value Object, err error) {
 			return o, nil
 		}
 
-		return GetObjectMember(o, strT)
+		return GetObjectMember(Call{This: o, args: []Object{o, v}})
 	}
 
-	return GetObjectMember(o, index.String())
+	return GetObjectMember(Call{This: o, args: []Object{o, index}})
 
 	// return GetObjectMethodFunc(o, index)
 }
 
-func (BytesBuffer) IndexSet(index, value Object) error {
+func (*BytesBuffer) IndexSet(index, value Object) error {
 	return ErrNotIndexAssignable
 }
 
-func (o BytesBuffer) BinaryOp(tok token.Token, right Object) (Object, error) {
+func (o *BytesBuffer) BinaryOp(tok token.Token, right Object) (Object, error) {
 	return nil, ErrInvalidOperator
 }
 
-func (o BytesBuffer) Copy() Object {
-	rsT := BytesBuffer{Value: new(bytes.Buffer)}
+func (o *BytesBuffer) Copy() Object {
+	rsT := &BytesBuffer{Value: new(bytes.Buffer)}
 
 	rsT.Value.WriteString(o.Value.String())
 
@@ -4189,6 +4855,8 @@ func (o BytesBuffer) Copy() Object {
 type ObjectRef struct {
 	ObjectImpl
 	Value *Object
+
+	Members map[string]Object
 }
 
 var (
@@ -4212,6 +4880,46 @@ func (o *ObjectRef) String() string {
 		v = *o.Value
 	}
 	return fmt.Sprintf("<objectRef:%v>", v)
+}
+
+func (o *ObjectRef) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *ObjectRef) GetValue() Object {
+	return o
+}
+
+func (o *ObjectRef) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *ObjectRef) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
 }
 
 // Copy implements Copier interface.
@@ -4263,6 +4971,7 @@ type MutableString struct {
 }
 
 var _ LengthGetter = ToMutableStringObject("")
+var _ ValueSetter = ToMutableStringObject("")
 
 func (*MutableString) TypeCode() int {
 	return 106
@@ -4275,6 +4984,34 @@ func (*MutableString) TypeName() string {
 
 func (o *MutableString) String() string {
 	return o.Value // fmt.Sprintf("%v (%#v, %#v)", o, o.Members, o.Methods) //
+}
+
+func (o *MutableString) SetValue(valueA Object) error {
+	// nv1, ok := valueA.(*MutableString)
+
+	// if ok {
+	// 	o = nv1
+	// 	return nil
+	// }
+
+	o.Value = valueA.String()
+
+	return nil
+}
+
+func (o *MutableString) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *MutableString) GetValue() Object {
+	return o
 }
 
 func (o *MutableString) GetMember(idxA string) Object {
@@ -4298,6 +5035,7 @@ func (o *MutableString) SetMember(idxA string, valueA Object) error {
 
 	o.Members[idxA] = valueA
 
+	// return fmt.Errorf("unsupported action(set member)")
 	return nil
 }
 
@@ -4320,7 +5058,7 @@ func (o *MutableString) IndexSet(index, value Object) error {
 			return nil
 		}
 
-		return o.SetMember(strT, value)
+		// return o.SetMember(strT, value)
 	}
 
 	return ErrNotIndexAssignable
@@ -4343,7 +5081,8 @@ func (o *MutableString) IndexGet(index Object) (Object, error) {
 			return ToMutableStringObject(o.Value), nil
 		}
 
-		return GetObjectMember(o, v.Value)
+		return nil, ErrIndexOutOfBounds
+		// return GetObjectMember(Call{This: o, args: []Object{o, v}})
 	default:
 		return nil, NewIndexTypeError("int|uint|char|string", index.TypeName())
 	}

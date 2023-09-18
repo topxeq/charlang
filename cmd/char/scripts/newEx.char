@@ -1,0 +1,13 @@
+r1 := newEx("stringRing")
+
+pl("r1 type: %v", typeName(r1))
+
+pl("r1 type wrapped in any: %v", typeOfAny(r1))
+
+callMethodEx(r1, "Push", "abc")
+
+callMethodEx(r1, "Push", "123")
+
+r2 := callMethodEx(r1, "GetList")[0]
+
+plt(r2)

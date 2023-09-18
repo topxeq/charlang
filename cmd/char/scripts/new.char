@@ -16,7 +16,7 @@ plt(b1)
 plt(unref(b1))
 
 f2 := func(arg1) {
-	setValueByRef(arg1, !unref(arg1).value)
+	setValueByRef(arg1, getValue(!unref(arg1)))
 }
 
 f2(b1)

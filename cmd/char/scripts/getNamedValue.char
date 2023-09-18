@@ -4,12 +4,12 @@ t1 := time()
 
 format1 := getNamedValue("time.DateTime")
 
-s1 := t1.format(format1)
+s1 := mt(t1, "format", format1)
 
 plt(s1)
 
 format2 := getNamedValue("tk.TimeFormatCompact")
 
-s2 := t1.format(format2)
+s2 := mt(t1, "format", format2)
 
 plt(s2)

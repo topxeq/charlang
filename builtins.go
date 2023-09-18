@@ -34,6 +34,12 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinIsNil
+	BuiltinGetValue
+	BuiltinSetValue
+	BuiltinGetMember
+	BuiltinSetMember
+	BuiltinCallMethod
 	BuiltinDumpVar
 	BuiltinDebugInfo
 	BuiltinMake
@@ -59,9 +65,14 @@ const (
 	BuiltinGetClipText
 	BuiltinSetClipText
 	BuiltinRegQuote
+	BuiltinRegReplace
 	BuiltinAny
 	BuiltinTrim
 	BuiltinStrTrim
+	BuiltinStrTrimStart
+	BuiltinStrTrimEnd
+	BuiltinStrTrimLeft
+	BuiltinStrTrimRight
 	BuiltinRegFindFirst
 	BuiltinRegFindAll
 	BuiltinCheckErrX
@@ -75,8 +86,8 @@ const (
 	BuiltinCallNamedFunc
 	BuiltinCallInternalFunc
 	BuiltinGetNamedValue
-	BuiltinNewObj
-	BuiltinMethod
+	BuiltinNewEx
+	BuiltinCallMethodEx
 	BuiltinToTime
 	// BuiltinNewAny
 	BuiltinTime
@@ -99,6 +110,8 @@ const (
 	BuiltinTestByText
 	BuiltinTestByStartsWith
 	BuiltinTestByEndsWith
+	BuiltinTestByContains
+	BuiltinTestByRegContains
 	BuiltinTestByReg
 	BuiltinGetSeq
 	BuiltinPass
@@ -162,10 +175,12 @@ var BuiltinsMap = map[string]BuiltinType{
 	// funcs start
 
 	// internal & debug related
-	"testByText":       BuiltinTestByText,
-	"testByStartsWith": BuiltinTestByStartsWith,
-	"testByEndsWith":   BuiltinTestByEndsWith,
-	"testByReg":        BuiltinTestByReg,
+	"testByText":        BuiltinTestByText,
+	"testByStartsWith":  BuiltinTestByStartsWith,
+	"testByEndsWith":    BuiltinTestByEndsWith,
+	"testByContains":    BuiltinTestByContains,
+	"testByReg":         BuiltinTestByReg,
+	"testByRegContains": BuiltinTestByRegContains,
 
 	"dumpVar":   BuiltinDumpVar,
 	"debugInfo": BuiltinDebugInfo,
@@ -176,9 +191,6 @@ var BuiltinsMap = map[string]BuiltinType{
 	"typeOf":    BuiltinTypeName,
 	"typeOfAny": BuiltinTypeOfAny,
 
-	"make": BuiltinMake,
-	"new":  BuiltinNew,
-
 	"time":          BuiltinTime,
 	"stringBuilder": BuiltinStringBuilder,
 	"statusResult":  BuiltinStatusResult,
@@ -186,8 +198,13 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"toTime": BuiltinToTime,
 
+	"isNil": BuiltinIsNil,
+
 	// new related
-	"newObj": BuiltinNewObj,
+	"make": BuiltinMake,
+	"new":  BuiltinNew,
+
+	"newEx": BuiltinNewEx,
 
 	// ref/pointer related
 	"setValueByRef": BuiltinSetValueByRef,
@@ -199,6 +216,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	// string related
 	"trim":          BuiltinTrim,
 	"strTrim":       BuiltinStrTrim,
+	"strTrimStart":  BuiltinStrTrimStart,
+	"strTrimEnd":    BuiltinStrTrimEnd,
+	"strTrimLeft":   BuiltinStrTrimLeft,
+	"strTrimRight":  BuiltinStrTrimRight,
 	"strReplace":    BuiltinStrReplace,
 	"strSplitLines": BuiltintStrSplitLines,
 
@@ -207,6 +228,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"regFindFirstGroups": BuiltintRegFindFirstGroups, // obtain the first match of a regular expression and return a list of all matching groups, where the first item is the complete matching result and the second item is the first matching group..., usage example: result := regFindFirstGroups(str1, regex1)
 	"regFindAll":         BuiltinRegFindAll,
 	"regQuote":           BuiltinRegQuote,
+	"regReplace":         BuiltinRegReplace,
 
 	// time related
 
@@ -227,7 +249,14 @@ var BuiltinsMap = map[string]BuiltinType{
 	"checkErrX": BuiltinCheckErrX,
 
 	// member/method related
-	"method":           BuiltinMethod,
+	"getValue":         BuiltinGetValue,
+	"setValue":         BuiltinSetValue,
+	"getMember":        BuiltinGetMember,
+	"mb":               BuiltinGetMember,
+	"setMember":        BuiltinSetMember,
+	"callMethod":       BuiltinCallMethod,
+	"mt":               BuiltinCallMethod,
+	"callMethodEx":     BuiltinCallMethodEx,
 	"callNamedFunc":    BuiltinCallNamedFunc,
 	"callInternalFunc": BuiltinCallInternalFunc,
 	"getNamedValue":    BuiltinGetNamedValue,
@@ -425,6 +454,11 @@ var BuiltinObjects = [...]Object{
 		Value:   fnASVsRS(tk.StringReplace),
 		ValueEx: fnASVsRSex(tk.StringReplace),
 	},
+	BuiltinRegReplace: &BuiltinFunction{
+		Name:    "regReplace",
+		Value:   fnASSSRS(tk.RegReplaceX),
+		ValueEx: fnASSSRSex(tk.RegReplaceX),
+	},
 	BuiltinGetErrStrX: &BuiltinFunction{
 		Name:    "getErrStrX",
 		Value:   fnAARS(tk.GetErrStrX),
@@ -474,6 +508,26 @@ var BuiltinObjects = [...]Object{
 		Name:    "strTrim",
 		Value:   CallExAdapter(builtinStrTrimFunc),
 		ValueEx: builtinStrTrimFunc,
+	},
+	BuiltinStrTrimStart: &BuiltinFunction{
+		Name:    "strTrimStart",
+		Value:   CallExAdapter(builtinStrTrimStartFunc),
+		ValueEx: builtinStrTrimStartFunc,
+	},
+	BuiltinStrTrimEnd: &BuiltinFunction{
+		Name:    "strTrimEnd",
+		Value:   CallExAdapter(builtinStrTrimEndFunc),
+		ValueEx: builtinStrTrimEndFunc,
+	},
+	BuiltinStrTrimLeft: &BuiltinFunction{
+		Name:    "strTrimLeft",
+		Value:   CallExAdapter(builtinStrTrimLeftFunc),
+		ValueEx: builtinStrTrimLeftFunc,
+	},
+	BuiltinStrTrimRight: &BuiltinFunction{
+		Name:    "strTrimRight",
+		Value:   CallExAdapter(builtinStrTrimRightFunc),
+		ValueEx: builtinStrTrimRightFunc,
 	},
 	BuiltinRegFindFirst: &BuiltinFunction{
 		Name:    "regFindFirst",
@@ -540,15 +594,40 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinGetNamedValueFunc),
 		ValueEx: builtinGetNamedValueFunc,
 	},
-	BuiltinNewObj: &BuiltinFunction{
-		Name:    "newObj",
-		Value:   CallExAdapter(builtinNewObjFunc),
-		ValueEx: builtinNewObjFunc,
+	BuiltinNewEx: &BuiltinFunction{
+		Name:    "newEx",
+		Value:   CallExAdapter(builtinNewExFunc),
+		ValueEx: builtinNewExFunc,
 	},
-	BuiltinMethod: &BuiltinFunction{
-		Name:    "method",
-		Value:   CallExAdapter(builtinMethodFunc),
-		ValueEx: builtinMethodFunc,
+	BuiltinCallMethodEx: &BuiltinFunction{
+		Name:    "callMethodEx",
+		Value:   CallExAdapter(builtinCallMethodExFunc),
+		ValueEx: builtinCallMethodExFunc,
+	},
+	BuiltinGetValue: &BuiltinFunction{
+		Name:    "getValue",
+		Value:   CallExAdapter(builtinGetValueFunc),
+		ValueEx: builtinGetValueFunc,
+	},
+	BuiltinGetMember: &BuiltinFunction{
+		Name:    "getMember",
+		Value:   CallExAdapter(builtinGetMemberFunc),
+		ValueEx: builtinGetMemberFunc,
+	},
+	BuiltinSetMember: &BuiltinFunction{
+		Name:    "setMember",
+		Value:   CallExAdapter(builtinSetMemberFunc),
+		ValueEx: builtinSetMemberFunc,
+	},
+	BuiltinSetValue: &BuiltinFunction{
+		Name:    "setValue",
+		Value:   CallExAdapter(builtinSetValueFunc),
+		ValueEx: builtinSetValueFunc,
+	},
+	BuiltinCallMethod: &BuiltinFunction{
+		Name:    "callMethod",
+		Value:   CallExAdapter(builtinCallMethodFunc),
+		ValueEx: builtinCallMethodFunc,
 	},
 	// BuiltinNewAny: &BuiltinFunction{
 	// 	Name:  "newAny",
@@ -596,6 +675,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "isErrX", // usage: isErrX(err1), check if err1 is error or error string(which starts with TXERROR:)
 		Value:   CallExAdapter(builtinIsErrXFunc),
 		ValueEx: builtinIsErrXFunc,
+	},
+	BuiltinIsNil: &BuiltinFunction{
+		Name:    "isNil", // usage: isNil(err1), check if the argument is nil
+		Value:   CallExAdapter(builtinIsNilFunc),
+		ValueEx: builtinIsNilFunc,
 	},
 	BuiltinToJSON: &BuiltinFunction{
 		Name:    "toJSON",
@@ -680,6 +764,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "testByEndsWith",
 		Value:   CallExAdapter(builtinTestByEndsWithFunc),
 		ValueEx: builtinTestByEndsWithFunc,
+	},
+	BuiltinTestByContains: &BuiltinFunction{
+		Name:    "testByContains",
+		Value:   CallExAdapter(builtinTestByContainsFunc),
+		ValueEx: builtinTestByContainsFunc,
+	},
+	BuiltinTestByRegContains: &BuiltinFunction{
+		Name:    "testByRegContains",
+		Value:   CallExAdapter(builtinTestByRegContainsFunc),
+		ValueEx: builtinTestByRegContainsFunc,
 	},
 	BuiltinTestByReg: &BuiltinFunction{
 		Name:    "testByReg",
@@ -1844,6 +1938,29 @@ func fnASSRSex(fn func(string, string) string) CallableExFunc {
 	}
 }
 
+// like tk.RegReplaceX
+func fnASSSRS(fn func(string, string, string) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 3 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String(), args[2].String())
+		return ToStringObject(rs), nil
+	}
+}
+
+func fnASSSRSex(fn func(string, string, string) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 3 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(c.Get(0).String(), c.Get(1).String(), c.Get(2).String())
+		return ToStringObject(rs), nil
+	}
+}
+
 // like os.SetEnv
 func fnASSRE(fn func(string, string) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
@@ -2098,6 +2215,94 @@ func builtinTestByEndsWithFunc(c Call) (Object, error) {
 	}
 
 	if strings.HasSuffix(nv1.Value, nv2.Value) {
+		tk.Pl("test %v%v passed", v3, v4)
+	} else {
+		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	return nil, nil
+}
+
+func builtinTestByContainsFunc(c Call) (Object, error) {
+	argsA := c.GetArgs()
+	lenT := len(argsA)
+
+	if lenT < 2 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	v1 := argsA[0]
+	v2 := argsA[1]
+
+	var v3 string
+	var v4 string
+
+	if lenT > 3 {
+		v3 = tk.ToStr(argsA[2])
+		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+	} else if lenT > 2 {
+		v3 = tk.ToStr(argsA[2])
+	} else {
+		v3 = tk.ToStr(tk.GetSeq())
+	}
+
+	nv1, ok := v1.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v1): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	nv2, ok := v2.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	if strings.Contains(nv1.Value, nv2.Value) {
+		tk.Pl("test %v%v passed", v3, v4)
+	} else {
+		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	return nil, nil
+}
+
+func builtinTestByRegContainsFunc(c Call) (Object, error) {
+	argsA := c.GetArgs()
+	lenT := len(argsA)
+
+	if lenT < 2 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	v1 := argsA[0]
+	v2 := argsA[1]
+
+	var v3 string
+	var v4 string
+
+	if lenT > 3 {
+		v3 = tk.ToStr(argsA[2])
+		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+	} else if lenT > 2 {
+		v3 = tk.ToStr(argsA[2])
+	} else {
+		v3 = tk.ToStr(tk.GetSeq())
+	}
+
+	nv1, ok := v1.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v1): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	nv2, ok := v2.(String)
+
+	if !ok {
+		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	if tk.RegContainsX(nv1.Value, nv2.Value) {
 		tk.Pl("test %v%v passed", v3, v4)
 	} else {
 		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
@@ -2372,6 +2577,22 @@ func builtinIsErrXFunc(c Call) (Object, error) {
 	return False, nil
 }
 
+func builtinIsNilFunc(c Call) (Object, error) {
+	if c.Len() < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	args1 := c.Get(0)
+
+	if args1 == nil {
+		return Bool(true), nil
+	}
+
+	nv := ConvertFromObject(args1)
+
+	return Bool(tk.IsNil(nv)), nil
+}
+
 func builtinSleepFunc(args ...Object) (Object, error) {
 	if len(args) < 1 {
 		return Undefined, NewCommonError("not enough parameters")
@@ -2485,7 +2706,7 @@ func builtinGetNamedValueFunc(c Call) (Object, error) {
 	return ConvertToObject(v1), nil
 }
 
-func builtinNewObjFunc(c Call) (Object, error) {
+func builtinNewExFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
@@ -2497,7 +2718,7 @@ func builtinNewObjFunc(c Call) (Object, error) {
 	return ConvertToObject(rsT), nil
 }
 
-func builtinMethodFunc(c Call) (Object, error) {
+func builtinCallMethodExFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
@@ -2535,6 +2756,62 @@ func builtinMethodFunc(c Call) (Object, error) {
 	rsT := tk.ReflectCallMethodQuick(objT, name1, paramsT...)
 
 	return ConvertToObject(rsT), nil
+}
+
+func builtinGetValueFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	return args[0].GetValue(), nil
+}
+
+func builtinGetMemberFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	return args[0].GetMember(args[1].String()), nil
+}
+
+func builtinSetMemberFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	return WrapError(args[0].SetMember(args[1].String(), args[2])), nil
+}
+
+func builtinSetValueFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	args0, ok := args[0].(ValueSetter)
+
+	if !ok {
+		return NewCommonError("unsupported action(set value)"), nil
+	}
+
+	return WrapError(args0.SetValue(args[1])), nil
+}
+
+func builtinCallMethodFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return Undefined, NewCommonError("not enough parameters")
+	}
+
+	return args[0].CallMethod(args[1].String(), args[2:]...)
 }
 
 func builtinRegQuoteFunc(c Call) (Object, error) {
@@ -2899,6 +3176,98 @@ func builtinStrTrimFunc(c Call) (Object, error) {
 	}
 
 	return ToStringObject(tk.Trim(arg0.String(), ObjectsToS(args[1:])...)), nil
+}
+
+func builtinStrTrimStartFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	arg0 := args[0]
+
+	s1, ok := arg0.(String)
+	if !ok {
+		return nil, fmt.Errorf("invalid type: %v", arg0.TypeName())
+	}
+
+	arg1 := args[1]
+
+	s2, ok := arg1.(String)
+	if !ok {
+		return nil, fmt.Errorf("invalid type: %v", arg0.TypeName())
+	}
+
+	return ToStringObject(strings.TrimPrefix(s1.Value, s2.Value)), nil
+}
+
+func builtinStrTrimEndFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	s1, ok := args[0].(String)
+	if !ok {
+		return nil, fmt.Errorf("invalid type of arg 1: %v", args[0].TypeName())
+	}
+
+	s2, ok := args[1].(String)
+	if !ok {
+		return nil, fmt.Errorf("invalid type of arg 2: %v", args[1].TypeName())
+	}
+
+	return ToStringObject(strings.TrimSuffix(s1.Value, s2.Value)), nil
+}
+
+func builtinStrTrimLeftFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	arg0 := args[0]
+
+	s1, ok := arg0.(String)
+	if !ok {
+		return nil, fmt.Errorf("invalid type: %v", arg0.TypeName())
+	}
+
+	arg1 := args[1]
+
+	s2, ok := arg1.(String)
+	if !ok {
+		return nil, fmt.Errorf("invalid type: %v", arg0.TypeName())
+	}
+
+	return ToStringObject(strings.TrimLeft(s1.Value, s2.Value)), nil
+}
+
+func builtinStrTrimRightFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	arg0 := args[0]
+
+	s1, ok := arg0.(String)
+	if !ok {
+		return nil, fmt.Errorf("invalid type: %v", arg0.TypeName())
+	}
+
+	arg1 := args[1]
+
+	s2, ok := arg1.(String)
+	if !ok {
+		return nil, fmt.Errorf("invalid type: %v", arg0.TypeName())
+	}
+
+	return ToStringObject(strings.TrimRight(s1.Value, s2.Value)), nil
 }
 
 func builtinArchiveFilesToZipFunc(c Call) (Object, error) {
@@ -3344,7 +3713,7 @@ func builtinDatabaseFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		return Database{Value: nil}, nil
+		return &Database{Value: nil}, nil
 	}
 
 	nv0, ok := args[0].(String)
@@ -3364,7 +3733,36 @@ func builtinDatabaseFunc(c Call) (Object, error) {
 		return NewFromError(rsT.(error)), nil
 	}
 
-	return Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
+	return &Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
 }
+
+// func builtinGetErrStrXFunc(c Call) (Object, error) {
+// 	args := c.GetArgs()
+
+// 	if len(args) < 1 {
+// 		return Undefined, NewCommonError("not enough parameters")
+// 	}
+
+// 	v1, errT := builtinIsErrorFunc(c)
+
+// 	if errT != nil {
+// 		return Undefined, errT
+// 	}
+
+// 	if v1.(Bool) {
+// 		return ToStringObject(v1.String()), nil
+// 	}
+
+// 	objT := args[0]
+
+// 	s1, ok := objT.(String)
+
+// 	if ok {
+// 		return ToStringObject(tk.GetErrStrX(s1)), nil
+// 	}
+
+// 	return tk.GetErrStrX(args[0])
+
+// }
 
 // char add end

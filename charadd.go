@@ -263,7 +263,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 		"toStr": &Function{
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
-				return ToStringObject(((*bytes.Buffer)(args[0].(BytesBuffer).Value)).String()), nil
+				return ToStringObject(((*bytes.Buffer)(args[0].(*BytesBuffer).Value)).String()), nil
 			},
 		},
 		"write": &Function{
@@ -394,73 +394,75 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 // common funcs
 
-func isUndefInternal(o Object) bool {
+func IsUndefInternal(o Object) bool {
 	_, ok := o.(*UndefinedType)
 
 	return ok
 }
 
-func GetObjectMember(o Object, index string) (Object, error) {
-	nv1, ok0 := o.(MemberHolder)
+func GetObjectMember(c Call) (Object, error) {
 
-	// tk.Pl("MemberHolder search: %#v %#v", o, ok0)
-
-	if ok0 {
-		rs1 := nv1.GetMember(index)
-		// tk.Pl("member search result: %#v", rs1)
-		if !isUndefInternal(rs1) {
-			tk.Pl("member got: %#v %#v", o, rs1)
-			return rs1, nil
-		}
+	if c.Len() < 2 {
+		return Undefined, fmt.Errorf("not enough parameters")
 	}
 
-	map1, ok := methodFuncMapG[o.TypeCode()]
+	rs1 := c.Get(0).GetMember(c.Get(1).String())
 
-	if !ok {
-		return Undefined, nil // ErrNotIndexable
-	}
+	return rs1, nil
+	// 	// tk.Pl("member search result: %#v", rs1)
+	// 	if !IsUndefInternal(rs1) {
+	// 		tk.Pl("member got: %#v %#v", o, rs1)
+	// 		return rs1, nil
+	// 	}
+	// }
 
-	f1, ok := map1[index]
+	// map1, ok := methodFuncMapG[o.TypeCode()]
 
-	if !ok {
-		return Undefined, nil
-	}
+	// if !ok {
+	// 	return Undefined, nil // ErrNotIndexable
+	// }
 
-	// tk.Pl("f1: %#v", f1)
+	// f1, ok := map1[index]
 
-	if f1.ValueEx != nil {
-		fn1 := &Function{
-			Name: f1.Name,
-			ValueEx: func(c Call) (Object, error) {
-				c.This = o
-				return (*f1).CallEx(c)
-			}}
+	// if !ok {
+	// 	return Undefined, nil
+	// }
 
-		if ok0 {
-			// tk.Pl("set member fn1: %#v %#v", index, fn1)
+	// // tk.Pl("f1: %#v", f1)
 
-			nv1.SetMember(index, fn1)
-		}
+	// if f1.ValueEx != nil {
+	// 	fn1 := &Function{
+	// 		Name: f1.Name,
+	// 		ValueEx: func(c Call) (Object, error) {
+	// 			c.This = o
+	// 			return (*f1).CallEx(c)
+	// 		}}
 
-		return fn1, nil
-	}
+	// 	if ok0 {
+	// 		// tk.Pl("set member fn1: %#v %#v", index, fn1)
 
-	if f1.Value == nil {
-		return Undefined, nil
-	}
+	// 		nv1.SetMember(index, fn1)
+	// 	}
 
-	fn2 := &Function{
-		Name: f1.Name,
-		Value: func(args ...Object) (Object, error) {
-			return (*f1).Call(append([]Object{o}, args...)...)
-		}}
+	// 	return fn1, nil
+	// }
 
-	if ok0 {
-		// tk.Pl("set member fn2: %#v %#v", index, fn2)
-		nv1.SetMember(index, fn2)
-	}
+	// if f1.Value == nil {
+	// 	return Undefined, nil
+	// }
 
-	return fn2, nil
+	// fn2 := &Function{
+	// 	Name: f1.Name,
+	// 	Value: func(args ...Object) (Object, error) {
+	// 		return (*f1).Call(append([]Object{o}, args...)...)
+	// 	}}
+
+	// if ok0 {
+	// 	// tk.Pl("set member fn2: %#v %#v", index, fn2)
+	// 	nv1.SetMember(index, fn2)
+	// }
+
+	// return fn2, nil
 
 }
 
@@ -1031,13 +1033,23 @@ func ConvertFromObject(vA Object) interface{} {
 		return nv.Value
 	case *StringBuilder:
 		return nv.Value
-	case BytesBuffer:
+	case *BytesBuffer:
 		return nv.Value
 	case Bytes:
 		return []byte(nv)
 	case Chars:
 		return []rune(nv)
 	case *Error:
+		if nv == nil {
+			return nil
+		}
+
+		return nv.Unwrap()
+	case *RuntimeError:
+		if nv == nil {
+			return nil
+		}
+
 		return nv.Unwrap()
 	case Map:
 		if nv == nil {
@@ -1259,5 +1271,9 @@ func NewFromError(errA error) *Error {
 }
 
 func WrapError(errA error) *Error {
+	if errA == nil {
+		return nil
+	}
+
 	return &Error{Name: "Error", Message: errA.Error(), Cause: errA}
 }

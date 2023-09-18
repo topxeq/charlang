@@ -4,11 +4,25 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", getSeq(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "method1.char")
+
+testByText(rs, "(bool)true\n(bool)false\n", getSeq(), "method1.char")
+
+rs = systemCmd("char", "-gopath", "member.char")
+
+rs = regReplace(rs, `detail: \{0x\w+? `, "")
+
+testByText(rs, "(bool)true\nfailed set member of b1: unsupported action(set member)\n(undefined)undefined\ntype name of buf1: stringBuilder\n(string)abc123\nstringBuilder [97 98 99 49 50 51]}\n(string)abc123\n(string)simple text\nfailed to call method(invalidFunc) of buf1: Error: unknown method: invalidFunc\n", getSeq(), "member.char")
+
 rs = systemCmd("char", "-gopath", "trace1.char")
 
-testByStartsWith(rs, "\n ----- \nBytecode\nModules:0\nConstants:\n   0: 1|int\n   1: 2.3|float\nParams:0 Variadic:false Locals:3\nInstructions:\n0000 CONSTANT        0\n0003 DEFINELOCAL     0\n0005 CONSTANT        1\n0008 DEFINELOCAL     1\n0010 GETBUILTIN      2\n0012 CALL            0    0\n0015 DEFINELOCAL     2\n0017 GETBUILTIN      60\n0019 GETLOCAL        2\n0021 CALL            1    0\n0024 POP         \n0025 RETURN          0\nSourceMap:map[0:6 3:1 5:14 8:9 10:30 12:30 15:21 17:45 19:49 21:45 24:45 25:0]\n\n ----- \nGlobals \n{\"tk\": <function:tk>, \"argsG\": [\"char\", \"-gopath\", \"trace1.char\"], \"versionG\": \"", getSeq(), "trace1.char")
+testByStartsWith(rs, "\n ----- \nBytecode\nModules:0\nConstants:\n   0: 1|int\n   1: 2.3|float\nParams:0 Variadic:false Locals:3\nInstructions:\n0000 CONSTANT        0\n0003 DEFINELOCAL     0\n0005 CONSTANT        1\n0008 DEFINELOCAL     1\n0010 GETBUILTIN", getSeq(), "trace1.char")
 
-testByEndsWith(rs, "\"}\n ----- \nCurFunc \n&charlang.CompiledFunction{NumParams:0, NumLocals:3, Instructions:[]uint8{0x1, 0x0, 0x0, 0x28, 0x0, 0x1, 0x0, 0x1, 0x28, 0x1, 0x7, 0x2, 0x2, 0x0, 0x0, 0x28, 0x2, 0x7, 0x3c, 0x5, 0x2, 0x2, 0x1, 0x0, 0x16, 0x27, 0x0}, Variadic:false, Free:[]*charlang.ObjectPtr(nil), SourceMap:map[int]int{0:6, 3:1, 5:14, 8:9, 10:30, 12:30, 15:21, 17:45, 19:49, 21:45, 24:45, 25:0}}\n ----- \nCurInstr \n\"12 2 CALL\"\n ----- \nLocals \n[1 2.3 undefined]\n ----- \n\n", getSeq(), "trace1.char")
+testByContains(rs, "\"versionG\": \"", getSeq(), "trace1.char")
+
+testByContains(rs, "CurFunc \n&charlang.CompiledFunction{NumParams:0, NumLocals:3, Instructions:[]uint8{", getSeq(), "trace1.char")
+
+testByEndsWith(rs, ", Variadic:false, Free:[]*charlang.ObjectPtr(nil), SourceMap:map[int]int{0:6, 3:1, 5:14, 8:9, 10:30, 12:30, 15:21, 17:45, 19:49, 21:45, 24:45, 25:0}, Members:map[string]charlang.Object(nil)}\n ----- \nCurInstr \n\"12 2 CALL\"\n ----- \nLocals \n[1 2.3 undefined]\n ----- \n\n", getSeq(), "trace1.char")
 
 rs = systemCmd("char", "-gopath", "new.char")
 
@@ -28,7 +42,7 @@ testByText(rs, "s1: abc\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(undefin
 
 rs = systemCmd("char", "-gopath", "customMembers2.char")
 
-testByText(rs, "s1(mutableString): \"abc2\"\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(undefined)undefined\ns1 now: \"abc2\"\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(string)a test info\n", getSeq(), "customMembers2.char")
+testByText(rs, "s1(mutableString): \"abc1\"\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(undefined)undefined\ns1 now: \"abc2\"\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(string)a test info\n", getSeq(), "customMembers2.char")
 
 rs = systemCmd("char", "-gopath", "make.char")
 
@@ -40,9 +54,9 @@ rs = systemCmd("char", "-gopath", "getNamedValue.char")
 // testByReg(rs, `(?sm)\(string\)\"\d{4}\-\d{2}\"\n\(string\)\"\d{14}\"\n`, getSeq(), "getNamedValue.char")
 testByReg(rs, `(?sm)\(string\)\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\n\(string\)\d{14}\n`, getSeq(), "getNamedValue.char")
 
-rs = systemCmd("char", "-gopath", "newObj.char")
+rs = systemCmd("char", "-gopath", "newEx.char")
 
-testByText(rs, "r1 type: any\nr1 type wrapped in any: *tk.StringRing\n(array)[\"abc\", \"123\"]\n", getSeq(), "newObj.char")
+testByText(rs, "r1 type: any\nr1 type wrapped in any: *tk.StringRing\n(array)[\"abc\", \"123\"]\n", getSeq(), "newEx.char")
 
 rs = systemCmd("char", "-gopath", "var.char")
 
@@ -86,6 +100,6 @@ testByText(rs, "(main) a=15\n(thread) v0=6\n(thread) v0=7\n(main) a=25\n(thread)
 
 rs = systemCmd("char", "-gopath", "threadRun2.char")
 
-testByEndsWith(rs, "(thread) v0=17\n(main) a=27\n(thread) v0=28\n(main) a=38\n(thread) v0=39\n(main) a=49\n(thread) v0=50\n(main) a=60\n", getSeq(), "threadRun2.char")
+testByEndsWith(rs, "(thread) v0=6\n(main) a=16\n(thread) v0=17\n(main) a=27\n(thread) v0=28\n(main) a=38\n(thread) v0=39\n(thread) v0=40\n(main) a=50\n(main) a=60\n", getSeq(), "threadRun2.char")
 
 

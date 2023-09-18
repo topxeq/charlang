@@ -70,6 +70,8 @@ type CompiledFunction struct {
 	Free         []*ObjectPtr
 	// SourceMap holds the index of instruction and token's position.
 	SourceMap map[int]int
+
+	Members map[string]Object
 }
 
 var _ Object = (*CompiledFunction)(nil)
@@ -85,6 +87,46 @@ func (*CompiledFunction) TypeName() string {
 
 func (o *CompiledFunction) String() string {
 	return "<compiledFunction>"
+}
+
+func (o *CompiledFunction) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *CompiledFunction) GetValue() Object {
+	return o
+}
+
+func (o *CompiledFunction) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *CompiledFunction) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action")
+	return nil
 }
 
 // Copy implements the Copier interface.

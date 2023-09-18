@@ -1,18 +1,22 @@
-s1 := mutableString("abc2", "f1", "v1", "f2", "v2", "f3")
+s1 := mutableString("abc1", "f1", "v1", "f2", "v2", "f3")
 
 pl("s1(%v): %#v", typeName(s1), s1)
 
-plt(s1.f1)
-plt(s1.f2)
-plo(s1.f3)
-plt(s1.remark)
-s1.remark = "a test info"
+plt(getMember(s1, "f1"))
+plt(mb(s1, "f2"))
+plo(mb(s1, "f3"))
+plt(getMember(s1, "remark"))
+
+setMember(s1, "remark", "a test info")
 
 // dumpVar(s1)
 
+setValue(s1, "abc2")
+
 pl("s1 now: %#v", s1)
 
-plt(s1.f1)
-plt(s1.f2)
-plo(s1.f3)
-plt(s1.remark)
+plt(getMember(s1, "f1"))
+plt(mb(s1, "f2"))
+plo(mb(s1, "f3"))
+plt(getMember(s1, "remark"))
+

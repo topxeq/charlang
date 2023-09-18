@@ -26,6 +26,29 @@ func (o Int) String() string {
 	return strconv.FormatInt(int64(o), 10)
 }
 
+func (o Int) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o Int) GetValue() Object {
+	return o
+}
+
+func (o Int) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Int) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
+}
+
 // Equal implements Object interface.
 func (o Int) Equal(right Object) bool {
 	switch v := right.(type) {
@@ -191,6 +214,29 @@ func (Uint) TypeName() string {
 // String implements Object interface.
 func (o Uint) String() string {
 	return strconv.FormatUint(uint64(o), 10)
+}
+
+func (o Uint) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o Uint) GetValue() Object {
+	return o
+}
+
+func (o Uint) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Uint) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
 }
 
 // Equal implements Object interface.
@@ -360,6 +406,29 @@ func (o Float) String() string {
 	return strconv.FormatFloat(float64(o), 'g', -1, 64)
 }
 
+func (o Float) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o Float) GetValue() Object {
+	return o
+}
+
+func (o Float) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Float) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
+}
+
 // Equal implements Object interface.
 func (o Float) Equal(right Object) bool {
 	switch v := right.(type) {
@@ -490,6 +559,29 @@ func (Char) TypeName() string {
 // String implements Object interface.
 func (o Char) String() string {
 	return string(o)
+}
+
+func (o Char) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o Char) GetValue() Object {
+	return o
+}
+
+func (o Char) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Char) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
 }
 
 // Equal implements Object interface.
@@ -675,6 +767,29 @@ func (Byte) TypeName() string {
 // String implements Object interface.
 func (o Byte) String() string {
 	return strconv.FormatInt(int64(o), 10)
+}
+
+func (o Byte) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o Byte) GetValue() Object {
+	return o
+}
+
+func (o Byte) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Byte) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
 }
 
 // Equal implements Object interface.
