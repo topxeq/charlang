@@ -688,17 +688,17 @@ func (o String) Iterate() Iterator {
 
 // IndexSet implements Object interface.
 func (o String) IndexSet(index, value Object) error {
-	idxT, ok := index.(String)
+	// idxT, ok := index.(String)
 
-	if ok {
-		strT := idxT.Value
-		if strT == "v" || strT == "value" {
-			o.Value = value.String()
-			return nil
-		}
+	// if ok {
+	// 	strT := idxT.Value
+	// 	if strT == "v" || strT == "value" {
+	// 		o.Value = value.String()
+	// 		return nil
+	// 	}
 
-		return o.SetMember(idxT.Value, value)
-	}
+	// 	return o.SetMember(idxT.Value, value)
+	// }
 
 	return ErrNotIndexAssignable
 }
@@ -4278,6 +4278,23 @@ func (o *Any) String() string {
 	return tk.ToStr(o.Value)
 }
 
+func (o *Any) SetValue(valueA Object) error {
+	rs, errT := builtinAnyFunc(Call{args: []Object{valueA}})
+
+	if errT != nil {
+		return errT
+	}
+
+	nv1 := rs.(*Any)
+
+	o.Value = nv1.Value
+	o.OriginalCode = nv1.OriginalCode
+	o.OriginalType = nv1.OriginalType
+
+	o.Members = nv1.Members
+
+	return nil
+}
 func (o *Any) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -4340,18 +4357,19 @@ func (o *Any) IsFalsy() bool { return false }
 
 // IndexGet implements Object interface.
 func (o *Any) IndexGet(index Object) (Object, error) {
-	s := index.String()
-	if s == "type" {
-		return ToStringObject(o.OriginalType), nil
-	}
+	return nil, ErrNotIndexable
+	// s := index.String()
+	// if s == "type" {
+	// 	return ToStringObject(o.OriginalType), nil
+	// }
 
-	if s == "code" {
-		return Int(o.OriginalCode), nil
-	}
+	// if s == "code" {
+	// 	return Int(o.OriginalCode), nil
+	// }
 
-	if s == "value" {
-		return o, nil
-	}
+	// if s == "value" {
+	// 	return o, nil
+	// }
 
 	// if s == "New" {
 	// 	return &Function{
@@ -4372,7 +4390,7 @@ func (o *Any) IndexGet(index Object) (Object, error) {
 	// 		},
 	// 	}, nil
 	// }
-	return Undefined, nil
+	// return Undefined, nil
 }
 
 // // NewError creates a new Error and sets original Error as its cause which can be unwrapped.
@@ -4385,41 +4403,41 @@ func (o *Any) IndexGet(index Object) (Object, error) {
 
 // IndexSet implements Object interface.
 func (o *Any) IndexSet(index, value Object) error {
-	fnT, ok := setterFuncMapG[o.TypeCode()]
-
-	if ok {
-		nv, ok := index.(String)
-		if !ok {
-			return ErrNotIndexAssignable
-		}
-
-		rs1, errT := fnT(Call{args: Array{o, nv, value}})
-
-		if errT != nil {
-			return errT
-		}
-
-		nv1, ok := rs1.(Int)
-
-		if ok && nv1 == Int(-1) { // not found
-
-		} else {
-			return errT
-		}
-	}
-
-	// nv2, ok := o.(ObjectImpl)
+	// fnT, ok := setterFuncMapG[o.TypeCode()]
 
 	// if ok {
-	if o.Members == nil {
-		o.Members = map[string]Object{}
-	}
+	// 	nv, ok := index.(String)
+	// 	if !ok {
+	// 		return ErrNotIndexAssignable
+	// 	}
 
-	o.Members[index.String()] = value
-	return nil
+	// 	rs1, errT := fnT(Call{args: Array{o, nv, value}})
+
+	// 	if errT != nil {
+	// 		return errT
+	// 	}
+
+	// 	nv1, ok := rs1.(Int)
+
+	// 	if ok && nv1 == Int(-1) { // not found
+
+	// 	} else {
+	// 		return errT
+	// 	}
 	// }
 
-	// return ErrNotIndexAssignable
+	// // nv2, ok := o.(ObjectImpl)
+
+	// // if ok {
+	// if o.Members == nil {
+	// 	o.Members = map[string]Object{}
+	// }
+
+	// o.Members[index.String()] = value
+	// return nil
+	// // }
+
+	return ErrNotIndexAssignable
 }
 
 // BinaryOp implements Object interface.
@@ -4553,16 +4571,16 @@ func (*StringBuilder) CanIterate() bool { return false }
 func (*StringBuilder) Iterate() Iterator { return nil }
 
 func (o *StringBuilder) IndexGet(index Object) (value Object, err error) {
-	switch v := index.(type) {
-	case String:
-		strT := v.Value
+	// switch v := index.(type) {
+	// case String:
+	// 	strT := v.Value
 
-		if strT == "v" || strT == "value" {
-			return ToStringObject(o.Value.String()), nil
-		}
+	// 	if strT == "v" || strT == "value" {
+	// 		return ToStringObject(o.Value.String()), nil
+	// 	}
 
-		// return GetObjectMember(Call{This: o, args: []Object{o, ToStringObject(v.Value)}})
-	}
+	// 	// return GetObjectMember(Call{This: o, args: []Object{o, ToStringObject(v.Value)}})
+	// }
 
 	// return GetObjectMember(Call{This: o, args: []Object{o, index}}) // GetObjectMethodFunc(o, index)
 	// 	nv, ok := index.(String)
@@ -4818,18 +4836,19 @@ func (*BytesBuffer) CanIterate() bool { return false }
 func (*BytesBuffer) Iterate() Iterator { return nil }
 
 func (o *BytesBuffer) IndexGet(index Object) (value Object, err error) {
-	switch v := index.(type) {
-	case String:
-		strT := v.Value
+	return nil, ErrNotIndexable
+	// switch v := index.(type) {
+	// case String:
+	// 	strT := v.Value
 
-		if strT == "v" || strT == "value" {
-			return o, nil
-		}
+	// 	if strT == "v" || strT == "value" {
+	// 		return o, nil
+	// 	}
 
-		return GetObjectMember(Call{This: o, args: []Object{o, v}})
-	}
+	// 	return GetObjectMember(Call{This: o, args: []Object{o, v}})
+	// }
 
-	return GetObjectMember(Call{This: o, args: []Object{o, index}})
+	// return GetObjectMember(Call{This: o, args: []Object{o, index}})
 
 	// return GetObjectMethodFunc(o, index)
 }
@@ -5049,17 +5068,17 @@ func (o *MutableString) Iterate() Iterator {
 
 // IndexSet implements Object interface.
 func (o *MutableString) IndexSet(index, value Object) error {
-	idxT, ok := index.(String)
+	// idxT, ok := index.(String)
 
-	if ok {
-		strT := idxT.Value
-		if strT == "v" || strT == "value" {
-			o.Value = value.String()
-			return nil
-		}
+	// if ok {
+	// 	strT := idxT.Value
+	// 	if strT == "v" || strT == "value" {
+	// 		o.Value = value.String()
+	// 		return nil
+	// 	}
 
-		// return o.SetMember(strT, value)
-	}
+	// 	// return o.SetMember(strT, value)
+	// }
 
 	return ErrNotIndexAssignable
 }
@@ -5075,13 +5094,14 @@ func (o *MutableString) IndexGet(index Object) (Object, error) {
 	case Char:
 		idx = int(v)
 	case String:
-		strT := v.Value
+		idx = int(tk.StrToInt(v.Value))
+		// strT := v.Value
 
-		if strT == "v" || strT == "value" {
-			return ToMutableStringObject(o.Value), nil
-		}
+		// if strT == "v" || strT == "value" {
+		// 	return ToMutableStringObject(o.Value), nil
+		// }
 
-		return nil, ErrIndexOutOfBounds
+		// return nil, ErrIndexOutOfBounds
 		// return GetObjectMember(Call{This: o, args: []Object{o, v}})
 	default:
 		return nil, NewIndexTypeError("int|uint|char|string", index.TypeName())

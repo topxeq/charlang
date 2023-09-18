@@ -19,7 +19,7 @@ plt(b)
 
 f2 := func(arg) {
 	// use predefined member 'value' to change the value of the mutable string
-	arg.value = "bbb"
+	setValue(arg, "bbb")
 }
 
 f2(b)

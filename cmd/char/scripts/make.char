@@ -14,7 +14,7 @@ v3 := make("any", v2)
 
 plt(v3)
 
-v3.value = true
+setValue(v3, true)
 
 plt(v3)
 

@@ -30,12 +30,12 @@ s1 := mutableString("abc")
 
 plt(s1)
 
-s1.value = "def"
+setValue(s1, "def")
 
 plt(s1)
 
 f3 := func(arg1) {
-	arg1.value = "qwe"
+	setValue(arg1, "qwe")
 }
 
 f3(s1)
