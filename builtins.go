@@ -257,6 +257,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"callMethod":       BuiltinCallMethod,
 	"mt":               BuiltinCallMethod,
 	"callMethodEx":     BuiltinCallMethodEx,
+	"mtEx":             BuiltinCallMethodEx,
 	"callNamedFunc":    BuiltinCallNamedFunc,
 	"callInternalFunc": BuiltinCallInternalFunc,
 	"getNamedValue":    BuiltinGetNamedValue,
@@ -2729,13 +2730,7 @@ func builtinCallMethodExFunc(c Call) (Object, error) {
 
 	var objT interface{}
 
-	objT = args[0]
-
-	nv1, ok := args[0].(Object)
-
-	if ok {
-		objT = ConvertFromObject(nv1)
-	}
+	objT = ConvertFromObject(args[0])
 
 	name1 = args[1].String()
 
