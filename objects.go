@@ -88,6 +88,7 @@ type Object interface {
 	IndexSet(index, value Object) error
 
 	GetValue() Object
+	HasMemeber() bool
 	GetMember(string) Object
 	SetMember(string, Object) error
 	CallMethod(string, ...Object) (Object, error)
@@ -254,6 +255,10 @@ func (o ObjectImpl) String() string {
 	// panic(ErrNotImplemented)
 }
 
+func (o ObjectImpl) HasMemeber() bool {
+	return false
+}
+
 func (o ObjectImpl) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -330,6 +335,10 @@ func (o *UndefinedType) TypeName() string {
 // String implements Object interface.
 func (o *UndefinedType) String() string {
 	return "undefined"
+}
+
+func (o *UndefinedType) HasMemeber() bool {
+	return false
 }
 
 func (o *UndefinedType) CallMethod(nameA string, argsA ...Object) (Object, error) {
@@ -419,6 +428,10 @@ func (o Bool) String() string {
 	return "false"
 }
 
+func (o Bool) HasMemeber() bool {
+	return false
+}
+
 func (o Bool) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -477,16 +490,23 @@ func (Bool) Iterate() Iterator { return nil }
 
 // IndexGet implements Object interface.
 func (o Bool) IndexGet(index Object) (value Object, err error) {
-	// switch v := index.(type) {
-	// case String:
-	// 	strT := v.Value
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
 
-	// 	if strT == "v" || strT == "value" {
-	// 		return o, nil
-	// 	}
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
 
-	// 	return GetObjectMember(o, v.Value)
-	// }
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
 
 	return nil, ErrNotIndexable
 }
@@ -628,6 +648,10 @@ func (o String) String() string {
 	return o.Value // tk.ToJSONX(o)
 }
 
+func (o String) HasMemeber() bool {
+	return true
+}
+
 func (o String) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -666,6 +690,11 @@ func (o String) GetMember(idxA string) Object {
 func (o String) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
 	}
 
 	o.Members[idxA] = valueA
@@ -716,14 +745,19 @@ func (o String) IndexGet(index Object) (Object, error) {
 	case Char:
 		idx = int(v)
 	case String:
-		idx = tk.StrToInt(v.Value)
-		// strT := v.Value
+		strT := v.Value
 
-		// if strT == "v" || strT == "value" {
-		// 	return ToStringObject(o.Value), nil
-		// }
+		if strT == "v" || strT == "value" {
+			return ToStringObject(o.Value), nil
+		}
 
-		// return GetObjectMember(Call{args: []Object{o, ToStringObject(o.Value)}})
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		return GetObjectMethodFunc(o, strT)
 	default:
 		return nil, NewIndexTypeError("int|uint|char|string", index.TypeName())
 	}
@@ -904,6 +938,10 @@ func (o Bytes) String() string {
 	return string(o)
 }
 
+func (o Bytes) HasMemeber() bool {
+	return false
+}
+
 func (o Bytes) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -982,6 +1020,14 @@ func (o Bytes) IndexGet(index Object) (Object, error) {
 		if strT == "v" || strT == "value" {
 			return o, nil
 		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		return GetObjectMethodFunc(o, strT)
 	default:
 		return nil, NewIndexTypeError("int|uint|char", index.TypeName())
 	}
@@ -1093,6 +1139,10 @@ func (o Chars) String() string {
 	return string(o)
 }
 
+func (o Chars) HasMemeber() bool {
+	return false
+}
+
 func (o Chars) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -1175,6 +1225,14 @@ func (o Chars) IndexGet(index Object) (Object, error) {
 		if strT == "v" || strT == "value" {
 			return o, nil
 		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		return GetObjectMethodFunc(o, strT)
 	default:
 		return nil, NewIndexTypeError("int|uint|char", index.TypeName())
 	}
@@ -1337,6 +1395,10 @@ func (o *Function) String() string {
 	return fmt.Sprintf("<function:%s>", o.Name)
 }
 
+func (o *Function) HasMemeber() bool {
+	return true
+}
+
 func (o *Function) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -1369,6 +1431,11 @@ func (o *Function) GetMember(idxA string) Object {
 func (o *Function) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
 	}
 
 	o.Members[idxA] = valueA
@@ -1440,6 +1507,10 @@ func (o *BuiltinFunction) String() string {
 	return fmt.Sprintf("<builtinFunction:%s>", o.Name)
 }
 
+func (o *BuiltinFunction) HasMemeber() bool {
+	return true
+}
+
 func (o *BuiltinFunction) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -1472,6 +1543,11 @@ func (o *BuiltinFunction) GetMember(idxA string) Object {
 func (o *BuiltinFunction) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
 	}
 
 	o.Members[idxA] = valueA
@@ -1737,7 +1813,21 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 		return mT, nil
 	}
 
-	return nil, ErrNotIndexable
+	strT := nv.Value
+
+	if strT == "v" || strT == "value" {
+		return o, nil
+	}
+
+	rs := o.GetMember(strT)
+
+	if !IsUndefInternal(rs) {
+		return rs, nil
+	}
+
+	return GetObjectMethodFunc(o, strT)
+
+	// return nil, ErrNotIndexable
 
 	// return Undefined, nil
 }
@@ -1783,6 +1873,10 @@ func (o Array) String() string {
 
 	sb.WriteString("]")
 	return sb.String()
+}
+
+func (o Array) HasMemeber() bool {
+	return false
 }
 
 func (o Array) CallMethod(nameA string, argsA ...Object) (Object, error) {
@@ -1863,8 +1957,17 @@ func (o Array) IndexGet(index Object) (Object, error) {
 		if strT == "v" || strT == "value" {
 			return o, nil
 		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		return GetObjectMethodFunc(o, strT)
 	}
-	return nil, NewIndexTypeError("int|uint", index.TypeName())
+
+	return nil, NewIndexTypeError("int|uint|string", index.TypeName())
 }
 
 // Equal implements Object interface.
@@ -1972,6 +2075,10 @@ func (o *ObjectPtr) String() string {
 	return fmt.Sprintf("<objectPtr:%v>", v)
 }
 
+func (o *ObjectPtr) HasMemeber() bool {
+	return true
+}
+
 func (o *ObjectPtr) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -2004,6 +2111,11 @@ func (o *ObjectPtr) GetMember(idxA string) Object {
 func (o *ObjectPtr) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
 	}
 
 	o.Members[idxA] = valueA
@@ -2100,6 +2212,10 @@ func (o Map) String() string {
 	return sb.String()
 }
 
+func (o Map) HasMemeber() bool {
+	return false
+}
+
 func (o Map) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -2148,6 +2264,7 @@ func (o Map) IndexGet(index Object) (Object, error) {
 	if ok {
 		return v, nil
 	}
+
 	return Undefined, nil
 }
 
@@ -2278,6 +2395,10 @@ func (o *SyncMap) String() string {
 	return o.Value.String()
 }
 
+func (o *SyncMap) HasMemeber() bool {
+	return true
+}
+
 func (o *SyncMap) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -2310,6 +2431,11 @@ func (o *SyncMap) GetMember(idxA string) Object {
 func (o *SyncMap) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
 	}
 
 	o.Members[idxA] = valueA
@@ -2447,6 +2573,10 @@ func (o *Error) String() string {
 	return o.Error()
 }
 
+func (o *Error) HasMemeber() bool {
+	return true
+}
+
 func (o *Error) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -2479,6 +2609,11 @@ func (o *Error) GetMember(idxA string) Object {
 func (o *Error) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
 	}
 
 	o.Members[idxA] = valueA
@@ -2550,7 +2685,22 @@ func (o *Error) IndexGet(index Object) (Object, error) {
 			},
 		}, nil
 	}
-	return Undefined, nil
+
+	strT := s
+
+	if strT == "v" || strT == "value" {
+		return o, nil
+	}
+
+	rs := o.GetMember(strT)
+
+	if !IsUndefInternal(rs) {
+		return rs, nil
+	}
+
+	return GetObjectMethodFunc(o, strT)
+
+	// return Undefined, nil
 }
 
 // NewError creates a new Error and sets original Error as its cause which can be unwrapped.
@@ -2562,7 +2712,25 @@ func (o *Error) NewError(messages ...string) *Error {
 }
 
 // IndexSet implements Object interface.
-func (*Error) IndexSet(index, value Object) error {
+func (o *Error) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "v" || strT == "value" {
+			if nv, ok := value.(*Error); ok {
+				o.Name = nv.Name
+				o.Message = nv.Message
+				o.Cause = nv.Cause
+				return nil
+			}
+
+			return ErrNotIndexAssignable
+		}
+
+		return o.SetMember(strT, value)
+	}
+
 	return ErrNotIndexAssignable
 }
 
@@ -2629,6 +2797,10 @@ func (o *RuntimeError) String() string {
 	return o.Error()
 }
 
+func (o *RuntimeError) HasMemeber() bool {
+	return true
+}
+
 func (o *RuntimeError) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -2661,6 +2833,11 @@ func (o *RuntimeError) GetMember(idxA string) Object {
 func (o *RuntimeError) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
 	}
 
 	o.Members[idxA] = valueA
@@ -2728,7 +2905,21 @@ func (o *RuntimeError) IndexGet(index Object) (Object, error) {
 		return o.Err.IndexGet(index)
 	}
 
-	return Undefined, nil
+	strT := index.String()
+
+	if strT == "v" || strT == "value" {
+		return o, nil
+	}
+
+	rs := o.GetMember(strT)
+
+	if !IsUndefInternal(rs) {
+		return rs, nil
+	}
+
+	return GetObjectMethodFunc(o, strT)
+
+	// return Undefined, nil
 }
 
 // NewError creates a new Error and sets original Error as its cause which can be unwrapped.
@@ -2740,7 +2931,18 @@ func (o *RuntimeError) NewError(messages ...string) *RuntimeError {
 }
 
 // IndexSet implements Object interface.
-func (*RuntimeError) IndexSet(index, value Object) error {
+func (o *RuntimeError) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "v" || strT == "value" {
+			return ErrNotIndexAssignable
+		}
+
+		return o.SetMember(strT, value)
+	}
+
 	return ErrNotIndexAssignable
 }
 
@@ -2872,6 +3074,10 @@ func (o *Time) String() string {
 	return o.Value.String()
 }
 
+func (o *Time) HasMemeber() bool {
+	return true
+}
+
 func (o *Time) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -2911,6 +3117,11 @@ func (o *Time) GetMember(idxA string) Object {
 func (o *Time) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
 	}
 
 	o.Members[idxA] = valueA
@@ -3000,7 +3211,25 @@ func (o *Time) BinaryOp(tok token.Token,
 }
 
 // IndexSet implements Object interface.
-func (*Time) IndexSet(_, _ Object) error { return ErrNotIndexAssignable }
+func (o *Time) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "v" || strT == "value" {
+			if nv, ok := value.(*Time); ok {
+				o.Value = nv.Value
+				return nil
+			}
+
+			return ErrNotIndexAssignable
+		}
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
 
 // char:doc
 // #### time Getters
@@ -3052,7 +3281,22 @@ func (o *Time) IndexGet(index Object) (Object, error) {
 	case "value":
 		return o, nil
 	}
-	return Undefined, nil
+
+	strT := v.Value
+
+	if strT == "v" || strT == "value" {
+		return ToStringObject(o.Value), nil
+	}
+
+	rs := o.GetMember(strT)
+
+	if !IsUndefInternal(rs) {
+		return rs, nil
+	}
+
+	return GetObjectMethodFunc(o, strT)
+
+	// return Undefined, nil
 }
 
 // char:doc
@@ -3494,6 +3738,10 @@ func (o *Location) String() string {
 	return o.Value.String()
 }
 
+func (o *Location) HasMemeber() bool {
+	return true
+}
+
 func (o *Location) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -3526,6 +3774,11 @@ func (o *Location) GetMember(idxA string) Object {
 func (o *Location) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
 	}
 
 	o.Members[idxA] = valueA
@@ -3590,6 +3843,10 @@ func (o *Database) String() string {
 	return fmt.Sprintf("%v", o)
 }
 
+func (o *Database) HasMemeber() bool {
+	return true
+}
+
 func (o *Database) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -3622,6 +3879,11 @@ func (o *Database) GetMember(idxA string) Object {
 func (o *Database) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
 	}
 
 	o.Members[idxA] = valueA
@@ -3943,10 +4205,39 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 		}
 		return fT, nil
 	}
-	return nil, ErrNotIndexable
+
+	// if strT == "v" || strT == "value" {
+	// 	return o, nil
+	// }
+
+	rs := o.GetMember(strT)
+
+	if !IsUndefInternal(rs) {
+		return rs, nil
+	}
+
+	return GetObjectMethodFunc(o, strT)
+
+	// return nil, ErrNotIndexable
 }
 
-func (*Database) IndexSet(index, value Object) error {
+func (o *Database) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "v" || strT == "value" {
+			if nv, ok := value.(*Database); ok {
+				o.Value = nv.Value
+				return nil
+			}
+
+			return ErrNotIndexAssignable
+		}
+
+		return o.SetMember(strT, value)
+	}
+
 	return ErrNotIndexAssignable
 }
 
@@ -3978,6 +4269,10 @@ func (o *StatusResult) TypeName() string {
 
 func (o *StatusResult) String() string {
 	return `{"Status": ` + tk.ObjectToJSON(o.Status) + `, "Value": ` + tk.ObjectToJSON(o.Value) + `}`
+}
+
+func (o *StatusResult) HasMemeber() bool {
+	return true
 }
 
 func (o *StatusResult) CallMethod(nameA string, argsA ...Object) (Object, error) {
@@ -4012,6 +4307,11 @@ func (o *StatusResult) GetMember(idxA string) Object {
 func (o *StatusResult) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
 	}
 
 	o.Members[idxA] = valueA
@@ -4241,10 +4541,43 @@ func (o *StatusResult) IndexGet(index Object) (Object, error) {
 		return fT, nil
 	}
 
-	return nil, ErrNotIndexable
+	strT := nv.Value
+
+	// if strT == "v" || strT == "value" {
+	// 	return o, nil
+	// }
+
+	rs := o.GetMember(strT)
+
+	if !IsUndefInternal(rs) {
+		return rs, nil
+	}
+
+	return GetObjectMethodFunc(o, strT)
+
+	// return nil, ErrNotIndexable
 }
 
-func (*StatusResult) IndexSet(key, value Object) error {
+func (o *StatusResult) IndexSet(key, value Object) error {
+	idxT, ok := key.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "v" || strT == "value" {
+			if nv, ok := value.(*StatusResult); ok {
+				o.Status = nv.Status
+				o.Value = nv.Value
+				o.Objects = nv.Objects
+
+				return nil
+			}
+
+			return ErrNotIndexAssignable
+		}
+
+		return o.SetMember(strT, value)
+	}
+
 	return ErrNotIndexAssignable
 }
 
@@ -4291,10 +4624,15 @@ func (o *Any) SetValue(valueA Object) error {
 	o.OriginalCode = nv1.OriginalCode
 	o.OriginalType = nv1.OriginalType
 
-	o.Members = nv1.Members
+	// o.Members = nv1.Members
 
 	return nil
 }
+
+func (o *Any) HasMemeber() bool {
+	return true
+}
+
 func (o *Any) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -4329,6 +4667,11 @@ func (o *Any) SetMember(idxA string, valueA Object) error {
 		o.Members = map[string]Object{}
 	}
 
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
 	o.Members[idxA] = valueA
 
 	// return fmt.Errorf("unsupported action(set member)")
@@ -4357,6 +4700,23 @@ func (o *Any) IsFalsy() bool { return false }
 
 // IndexGet implements Object interface.
 func (o *Any) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		return GetObjectMethodFunc(o, strT)
+	}
+
 	return nil, ErrNotIndexable
 	// s := index.String()
 	// if s == "type" {
@@ -4403,6 +4763,17 @@ func (o *Any) IndexGet(index Object) (Object, error) {
 
 // IndexSet implements Object interface.
 func (o *Any) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "v" || strT == "value" {
+			return o.SetValue(value)
+		}
+
+		return o.SetMember(strT, value)
+	}
+
 	// fnT, ok := setterFuncMapG[o.TypeCode()]
 
 	// if ok {
@@ -4510,6 +4881,10 @@ func (o *StringBuilder) String() string {
 	return fmt.Sprintf("%v", *(o.Value))
 }
 
+func (o *StringBuilder) HasMemeber() bool {
+	return true
+}
+
 func (o *StringBuilder) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -4544,6 +4919,11 @@ func (o *StringBuilder) SetMember(idxA string, valueA Object) error {
 		o.Members = map[string]Object{}
 	}
 
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
 	o.Members[idxA] = valueA
 
 	// return fmt.Errorf("unsupported action(set member)")
@@ -4571,6 +4951,23 @@ func (*StringBuilder) CanIterate() bool { return false }
 func (*StringBuilder) Iterate() Iterator { return nil }
 
 func (o *StringBuilder) IndexGet(index Object) (value Object, err error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return ToStringObject(o.Value.String()), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		return GetObjectMethodFunc(o, strT)
+	}
+
 	// switch v := index.(type) {
 	// case String:
 	// 	strT := v.Value
@@ -4729,7 +5126,30 @@ func (o *StringBuilder) IndexGet(index Object) (value Object, err error) {
 	return nil, ErrNotIndexable
 }
 
-func (*StringBuilder) IndexSet(index, value Object) error {
+func (o *StringBuilder) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "v" || strT == "value" {
+			if nv, ok := value.(String); ok {
+				o.Value.Reset()
+				o.Value.WriteString(nv.Value)
+				return nil
+			}
+
+			if nv, ok := value.(*MutableString); ok {
+				o.Value.Reset()
+				o.Value.WriteString(nv.Value)
+				return nil
+			}
+
+			return ErrNotIndexAssignable
+		}
+
+		return o.SetMember(strT, value)
+	}
+
 	return ErrNotIndexAssignable
 }
 
@@ -4766,6 +5186,10 @@ func (o *BytesBuffer) String() string {
 	return fmt.Sprintf("%v", *(o.Value))
 }
 
+func (o *BytesBuffer) HasMemeber() bool {
+	return true
+}
+
 func (o *BytesBuffer) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -4798,6 +5222,11 @@ func (o *BytesBuffer) GetMember(idxA string) Object {
 func (o *BytesBuffer) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
 	}
 
 	o.Members[idxA] = valueA
@@ -4836,6 +5265,22 @@ func (*BytesBuffer) CanIterate() bool { return false }
 func (*BytesBuffer) Iterate() Iterator { return nil }
 
 func (o *BytesBuffer) IndexGet(index Object) (value Object, err error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return Bytes(o.Value.Bytes()), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		return GetObjectMethodFunc(o, strT)
+	}
 	return nil, ErrNotIndexable
 	// switch v := index.(type) {
 	// case String:
@@ -4853,7 +5298,24 @@ func (o *BytesBuffer) IndexGet(index Object) (value Object, err error) {
 	// return GetObjectMethodFunc(o, index)
 }
 
-func (*BytesBuffer) IndexSet(index, value Object) error {
+func (o *BytesBuffer) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "v" || strT == "value" {
+			if nv, ok := value.(Bytes); ok {
+				o.Value.Reset()
+				o.Value.Write(nv)
+				return nil
+			}
+
+			return ErrNotIndexAssignable
+		}
+
+		return o.SetMember(strT, value)
+	}
+
 	return ErrNotIndexAssignable
 }
 
@@ -4901,6 +5363,10 @@ func (o *ObjectRef) String() string {
 	return fmt.Sprintf("<objectRef:%v>", v)
 }
 
+func (o *ObjectRef) HasMemeber() bool {
+	return true
+}
+
 func (o *ObjectRef) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -4933,6 +5399,11 @@ func (o *ObjectRef) GetMember(idxA string) Object {
 func (o *ObjectRef) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
 	}
 
 	o.Members[idxA] = valueA
@@ -5018,6 +5489,10 @@ func (o *MutableString) SetValue(valueA Object) error {
 	return nil
 }
 
+func (o *MutableString) HasMemeber() bool {
+	return true
+}
+
 func (o *MutableString) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -5052,6 +5527,11 @@ func (o *MutableString) SetMember(idxA string, valueA Object) error {
 		o.Members = map[string]Object{}
 	}
 
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
 	o.Members[idxA] = valueA
 
 	// return fmt.Errorf("unsupported action(set member)")
@@ -5068,17 +5548,17 @@ func (o *MutableString) Iterate() Iterator {
 
 // IndexSet implements Object interface.
 func (o *MutableString) IndexSet(index, value Object) error {
-	// idxT, ok := index.(String)
+	idxT, ok := index.(String)
 
-	// if ok {
-	// 	strT := idxT.Value
-	// 	if strT == "v" || strT == "value" {
-	// 		o.Value = value.String()
-	// 		return nil
-	// 	}
+	if ok {
+		strT := idxT.Value
+		if strT == "v" || strT == "value" {
+			o.Value = value.String()
+			return nil
+		}
 
-	// 	// return o.SetMember(strT, value)
-	// }
+		return o.SetMember(strT, value)
+	}
 
 	return ErrNotIndexAssignable
 }
@@ -5094,15 +5574,20 @@ func (o *MutableString) IndexGet(index Object) (Object, error) {
 	case Char:
 		idx = int(v)
 	case String:
-		idx = int(tk.StrToInt(v.Value))
-		// strT := v.Value
+		strT := v.Value
 
-		// if strT == "v" || strT == "value" {
-		// 	return ToMutableStringObject(o.Value), nil
-		// }
+		if strT == "v" || strT == "value" {
+			return ToStringObject(o.Value), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
 
 		// return nil, ErrIndexOutOfBounds
-		// return GetObjectMember(Call{This: o, args: []Object{o, v}})
+		return GetObjectMethodFunc(o, strT) // Call{This: o, args: []Object{o, v}}
 	default:
 		return nil, NewIndexTypeError("int|uint|char|string", index.TypeName())
 	}

@@ -130,6 +130,63 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
+	105: map[string]*Function{ // *MutableString
+		"toStr": &Function{
+			Name: "toStr",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(String)
+
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				return ToStringObject(nv.Value), nil
+			},
+		},
+		"trim": &Function{
+			Name: "trim",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(String)
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				args := toArgsS(0, c)
+
+				return ToStringObject(tk.Trim(nv.Value, args...)), nil
+			},
+		},
+	},
+	106: map[string]*Function{ // *MutableString
+		"toStr": &Function{
+			Name: "toStr",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*MutableString)
+
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				return ToStringObject(nv.String()), nil
+			},
+		},
+		"trim": &Function{
+			Name: "trim",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*MutableString)
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				args := toArgsS(0, c)
+
+				nv.Value = tk.Trim(nv.Value, args...)
+				// tk.Pl("h1: %#v %#v %#v", c, args, nv.Value)
+
+				return ToStringObject(nv.Value), nil
+			},
+		},
+	},
 	307: map[string]*Function{ // *StringBuilder
 		"toStr": &Function{
 			Name: "toStr",
@@ -400,133 +457,127 @@ func IsUndefInternal(o Object) bool {
 	return ok
 }
 
-func GetObjectMember(c Call) (Object, error) {
+// func GetObjectMember(c Call) (Object, error) {
 
-	if c.Len() < 2 {
-		return Undefined, fmt.Errorf("not enough parameters")
-	}
-
-	rs1 := c.Get(0).GetMember(c.Get(1).String())
-
-	return rs1, nil
-	// 	// tk.Pl("member search result: %#v", rs1)
-	// 	if !IsUndefInternal(rs1) {
-	// 		tk.Pl("member got: %#v %#v", o, rs1)
-	// 		return rs1, nil
-	// 	}
-	// }
-
-	// map1, ok := methodFuncMapG[o.TypeCode()]
-
-	// if !ok {
-	// 	return Undefined, nil // ErrNotIndexable
-	// }
-
-	// f1, ok := map1[index]
-
-	// if !ok {
-	// 	return Undefined, nil
-	// }
-
-	// // tk.Pl("f1: %#v", f1)
-
-	// if f1.ValueEx != nil {
-	// 	fn1 := &Function{
-	// 		Name: f1.Name,
-	// 		ValueEx: func(c Call) (Object, error) {
-	// 			c.This = o
-	// 			return (*f1).CallEx(c)
-	// 		}}
-
-	// 	if ok0 {
-	// 		// tk.Pl("set member fn1: %#v %#v", index, fn1)
-
-	// 		nv1.SetMember(index, fn1)
-	// 	}
-
-	// 	return fn1, nil
-	// }
-
-	// if f1.Value == nil {
-	// 	return Undefined, nil
-	// }
-
-	// fn2 := &Function{
-	// 	Name: f1.Name,
-	// 	Value: func(args ...Object) (Object, error) {
-	// 		return (*f1).Call(append([]Object{o}, args...)...)
-	// 	}}
-
-	// if ok0 {
-	// 	// tk.Pl("set member fn2: %#v %#v", index, fn2)
-	// 	nv1.SetMember(index, fn2)
-	// }
-
-	// return fn2, nil
-
-}
-
-// func GetObjectMethodFunc(o Object, index Object) (Object, error) {
-// 	nv, ok := index.(String)
-// 	if !ok {
-// 		return nil, ErrNotIndexable
+// 	if c.Len() < 2 {
+// 		return Undefined, fmt.Errorf("not enough parameters")
 // 	}
 
-// 	fNameT := nv.Value
+// 	rs1 := c.Get(0).GetMember(c.Get(1).String())
 
-// 	// tk.Pln("GetObjectMethodFunc:", index, o, o.TypeCode())
+// 	return rs1, nil
+// 	// 	// tk.Pl("member search result: %#v", rs1)
+// 	// 	if !IsUndefInternal(rs1) {
+// 	// 		tk.Pl("member got: %#v %#v", o, rs1)
+// 	// 		return rs1, nil
+// 	// 	}
+// 	// }
 
-// 	map1, ok := methodFuncMapG[o.TypeCode()]
+// 	// map1, ok := methodFuncMapG[o.TypeCode()]
 
-// 	if !ok {
-// 		return nil, ErrNotIndexable
-// 	}
+// 	// if !ok {
+// 	// 	return Undefined, nil // ErrNotIndexable
+// 	// }
 
-// 	f1, ok := map1[fNameT]
+// 	// f1, ok := map1[index]
 
-// 	if !ok {
-// 		return nil, ErrNotIndexable
-// 	}
+// 	// if !ok {
+// 	// 	return Undefined, nil
+// 	// }
 
-// 	// return &Function{
+// 	// // tk.Pl("f1: %#v", f1)
+
+// 	// if f1.ValueEx != nil {
+// 	// 	fn1 := &Function{
+// 	// 		Name: f1.Name,
+// 	// 		ValueEx: func(c Call) (Object, error) {
+// 	// 			c.This = o
+// 	// 			return (*f1).CallEx(c)
+// 	// 		}}
+
+// 	// 	if ok0 {
+// 	// 		// tk.Pl("set member fn1: %#v %#v", index, fn1)
+
+// 	// 		nv1.SetMember(index, fn1)
+// 	// 	}
+
+// 	// 	return fn1, nil
+// 	// }
+
+// 	// if f1.Value == nil {
+// 	// 	return Undefined, nil
+// 	// }
+
+// 	// fn2 := &Function{
 // 	// 	Name: f1.Name,
 // 	// 	Value: func(args ...Object) (Object, error) {
 // 	// 		return (*f1).Call(append([]Object{o}, args...)...)
-// 	// 	}}, nil
+// 	// 	}}
 
-// 	nv1, ok0 := o.(MemberHolder)
+// 	// if ok0 {
+// 	// 	// tk.Pl("set member fn2: %#v %#v", index, fn2)
+// 	// 	nv1.SetMember(index, fn2)
+// 	// }
 
-// 	if f1.ValueEx != nil {
-// 		fn1 := &Function{
-// 			Name: f1.Name,
-// 			ValueEx: func(c Call) (Object, error) {
-// 				return (*f1).CallEx(c)
-// 			}}
-
-// 		if ok0 {
-// 			nv1.SetMember(fNameT, fn1)
-// 		}
-
-// 		return fn1, nil
-// 	}
-
-// 	if f1.Value == nil {
-// 		return Undefined, nil
-// 	}
-
-// 	fn2 := &Function{
-// 		Name: f1.Name,
-// 		Value: func(args ...Object) (Object, error) {
-// 			return (*f1).Call(append([]Object{o}, args...)...)
-// 		}}
-
-// 	if ok0 {
-// 		nv1.SetMember(fNameT, fn2)
-// 	}
-
-// 	return fn2, nil
+// 	// return fn2, nil
 
 // }
+
+func GetObjectMethodFunc(o Object, idxA string) (Object, error) {
+	// tk.Pln("GetObjectMethodFunc:", index, o, o.TypeCode())
+
+	map1, ok := methodFuncMapG[o.TypeCode()]
+
+	if !ok {
+		return nil, ErrNotIndexable
+	}
+
+	f1, ok := map1[idxA]
+
+	if !ok {
+		return nil, ErrNotIndexable
+	}
+
+	// return &Function{
+	// 	Name: f1.Name,
+	// 	Value: func(args ...Object) (Object, error) {
+	// 		return (*f1).Call(append([]Object{o}, args...)...)
+	// 	}}, nil
+
+	ok0 := o.HasMemeber()
+
+	if f1.ValueEx != nil {
+		fn1 := &Function{
+			Name: f1.Name,
+			ValueEx: func(c Call) (Object, error) {
+				c.This = o
+				return (*f1).CallEx(c)
+			}}
+
+		if ok0 {
+			o.SetMember(idxA, fn1)
+		}
+
+		return fn1, nil
+	}
+
+	if f1.Value == nil {
+		return Undefined, nil
+	}
+
+	fn2 := &Function{
+		Name: f1.Name,
+		Value: func(args ...Object) (Object, error) {
+			return (*f1).Call(append([]Object{o}, args...)...)
+		}}
+
+	if ok0 {
+		o.SetMember(idxA, fn2)
+	}
+
+	return fn2, nil
+
+}
 
 func QuickCompile(codeA string, compilerOptionsA ...*CompilerOptions) interface{} {
 	var compilerOptionsT *CompilerOptions

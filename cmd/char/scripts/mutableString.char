@@ -1,0 +1,66 @@
+s1 := mutableString("abc")
+
+plt(s1)
+
+setValue(s1, "def")
+
+plt(s1)
+
+s2 := mutableString()
+
+plt(s2)
+
+s2.value = "ghj"
+
+plt(s2.value)
+
+s2.remark = "klm"
+
+plt(s2.remark)
+
+f1 := func(arg1) {
+	setValue(arg1, "qwe")
+}
+
+f1(s2)
+
+pln("s2 after f1:")
+
+plt(s2)
+
+f2 := func(arg1) {
+	arg1.value = "  rty"
+}
+
+f2(s2)
+
+pln("s2 after f2:")
+
+plt(s2)
+
+s2.tag = 123
+
+plt(s2.tag)
+
+s2.appendStr = func(strA) {
+	s2.value = s2.value + strA
+}
+
+s2.appendStr(" -- example  ")
+
+plv(s2)
+
+s2.trim()
+
+plv(s2)
+
+f3 := func(arg1) {
+	arg1.trim("rt")
+	return true
+}
+
+pln("f3 returns:", f3(s2))
+
+pl("s2 after f3: %#v", s2)
+
+

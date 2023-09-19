@@ -26,6 +26,10 @@ func (o Int) String() string {
 	return strconv.FormatInt(int64(o), 10)
 }
 
+func (o Int) HasMemeber() bool {
+	return false
+}
+
 func (o Int) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -94,7 +98,25 @@ func (Int) IndexSet(index, value Object) error {
 }
 
 // IndexGet implements Object interface.
-func (Int) IndexGet(index Object) (Object, error) {
+func (o Int) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
 	return nil, ErrNotIndexable
 }
 
@@ -216,6 +238,10 @@ func (o Uint) String() string {
 	return strconv.FormatUint(uint64(o), 10)
 }
 
+func (o Uint) HasMemeber() bool {
+	return false
+}
+
 func (o Uint) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -284,7 +310,25 @@ func (Uint) IndexSet(index, value Object) error {
 }
 
 // IndexGet implements Object interface.
-func (Uint) IndexGet(index Object) (Object, error) {
+func (o Uint) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
 	return nil, ErrNotIndexable
 }
 
@@ -406,6 +450,10 @@ func (o Float) String() string {
 	return strconv.FormatFloat(float64(o), 'g', -1, 64)
 }
 
+func (o Float) HasMemeber() bool {
+	return false
+}
+
 func (o Float) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -479,7 +527,25 @@ func (Float) IndexSet(index, value Object) error {
 }
 
 // IndexGet implements Object interface.
-func (Float) IndexGet(index Object) (Object, error) {
+func (o Float) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
 	return nil, ErrNotIndexable
 }
 
@@ -561,6 +627,10 @@ func (o Char) String() string {
 	return string(o)
 }
 
+func (o Char) HasMemeber() bool {
+	return false
+}
+
 func (o Char) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -629,7 +699,25 @@ func (Char) IndexSet(index, value Object) error {
 }
 
 // IndexGet implements Object interface.
-func (Char) IndexGet(index Object) (Object, error) {
+func (o Char) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
 	return nil, ErrNotIndexable
 }
 
@@ -769,6 +857,10 @@ func (o Byte) String() string {
 	return strconv.FormatInt(int64(o), 10)
 }
 
+func (o Byte) HasMemeber() bool {
+	return false
+}
+
 func (o Byte) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -837,7 +929,25 @@ func (Byte) IndexSet(index, value Object) error {
 }
 
 // IndexGet implements Object interface.
-func (Byte) IndexGet(index Object) (Object, error) {
+func (o Byte) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
 	return nil, ErrNotIndexable
 }
 

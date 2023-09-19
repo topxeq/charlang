@@ -89,6 +89,10 @@ func (o *CompiledFunction) String() string {
 	return "<compiledFunction>"
 }
 
+func (o *CompiledFunction) HasMemeber() bool {
+	return true
+}
+
 func (o *CompiledFunction) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
