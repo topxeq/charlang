@@ -1490,7 +1490,7 @@ func runArgs(argsA ...string) interface{} {
 
 	envT := charlang.Map{}
 
-	envT["tk"] = charlang.TkFunction
+	// envT["tk"] = charlang.TkFunction
 	envT["argsG"] = charlang.ConvertToObject(os.Args)
 	envT["versionG"] = charlang.ToStringObject(charlang.VersionG)
 

@@ -63,4 +63,8 @@ pln("f3 returns:", f3(s2))
 
 pl("s2 after f3: %#v", s2)
 
+pln("trim ple:", callMethod(s2, "trim", "ple"))
+
+pl("s2 now: %#v", s2)
+
 

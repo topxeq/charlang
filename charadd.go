@@ -22,7 +22,7 @@ import (
 )
 
 // global vars
-var VersionG = "0.6.1"
+var VersionG = "0.6.2"
 
 var CodeTextG = ""
 
@@ -34,35 +34,35 @@ var ServerModeG = false
 
 var ErrCommon = &Error{Name: "Error"}
 
-var TkFunction = &Function{
-	Name: "tk",
-	Value: func(args ...Object) (Object, error) {
+// var TkFunction = &Function{
+// 	Name: "tk",
+// 	Value: func(args ...Object) (Object, error) {
 
-		if len(args) < 1 {
-			return Undefined, NewCommonError("not enough paramters")
-		}
+// 		if len(args) < 1 {
+// 			return Undefined, NewCommonError("not enough paramters")
+// 		}
 
-		if args[0].TypeName() != "string" {
-			return Undefined, NewCommonError("invalid type for command")
-		}
+// 		if args[0].TypeName() != "string" {
+// 			return Undefined, NewCommonError("invalid type for command")
+// 		}
 
-		cmdT := args[0].String()
+// 		cmdT := args[0].String()
 
-		switch cmdT {
-		case "test":
-			fmt.Printf("args: %v\n", args[1:])
-			return ConvertToObject("Response!"), nil
+// 		switch cmdT {
+// 		case "test":
+// 			fmt.Printf("args: %v\n", args[1:])
+// 			return ConvertToObject("Response!"), nil
 
-		case "getNowTime":
-			return ConvertToObject(time.Now()), nil
+// 		case "getNowTime":
+// 			return ConvertToObject(time.Now()), nil
 
-		default:
-			return Undefined, NewCommonError("unknown comman")
-		}
+// 		default:
+// 			return Undefined, NewCommonError("unknown comman")
+// 		}
 
-		return Undefined, nil
-	},
-}
+// 		return Undefined, nil
+// 	},
+// }
 
 var namedFuncMapG = map[string]interface{}{
 	"fmt.Fprintf": fmt.Fprintf,
@@ -83,36 +83,35 @@ var namedValueMapG = map[string]interface{}{
 	"time.TimeOnly": time.TimeOnly,
 }
 
+// // first arg of each func is the object reference
+// var setterFuncMapG = map[int]CallableExFunc{
+// 	999: func(c Call) (Object, error) {
+// 		args := c.GetArgs()
+
+// 		fNameT := args[1].String()
+
+// 		switch fNameT {
+// 		case "value":
+// 			nv := args[0].(*Any)
+
+// 			rs1, errT := builtinAnyFunc(Call{args: args[2:]})
+
+// 			if errT != nil {
+// 				return Undefined, errT
+// 			}
+
+// 			nv2 := rs1.(*Any)
+
+// 			nv.Value = nv2.Value
+// 			nv.OriginalCode = nv2.OriginalCode
+// 			nv.OriginalType = nv2.OriginalType
+// 		}
+
+// 		return Int(-1), nil // indicates method not found
+// 	},
+// }
+
 // first arg of each func is the object reference
-var setterFuncMapG = map[int]CallableExFunc{
-	999: func(c Call) (Object, error) {
-		args := c.GetArgs()
-
-		fNameT := args[1].String()
-
-		switch fNameT {
-		case "value":
-			nv := args[0].(*Any)
-
-			rs1, errT := builtinAnyFunc(Call{args: args[2:]})
-
-			if errT != nil {
-				return Undefined, errT
-			}
-
-			nv2 := rs1.(*Any)
-
-			nv.Value = nv2.Value
-			nv.OriginalCode = nv2.OriginalCode
-			nv.OriginalType = nv2.OriginalType
-		}
-
-		return Int(-1), nil // indicates method not found
-	},
-}
-
-// first arg of each func is the object reference
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, *StringBuilder: 307, BytesBuffer: 308, Database: 309, Time: 311, Location: 313, Any: 999
 var methodFuncMapG = map[int]map[string]*Function{
 	103: map[string]*Function{ // Bool
 		"toStr": &Function{
@@ -316,7 +315,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	308: map[string]*Function{ // BytesBuffer
+	308: map[string]*Function{ // *BytesBuffer
 		"toStr": &Function{
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
@@ -441,6 +440,33 @@ var methodFuncMapG = map[int]map[string]*Function{
 				o := argsA[0].(*StringBuilder)
 
 				o.Value.Reset()
+				return Undefined, nil
+			},
+		},
+	},
+	315: map[string]*Function{ // *Seq
+		"toStr": &Function{
+			Name: "toStr",
+			Value: func(args ...Object) (Object, error) {
+				return ToStringObject(((*tk.Seq)(args[0].(*Seq).Value)).String()), nil
+			},
+		},
+		"get": &Function{
+			Name: "get",
+			Value: func(args ...Object) (Object, error) {
+				return ToIntObject(((*tk.Seq)(args[0].(*Seq).Value)).Get()), nil
+			},
+		},
+		"reset": &Function{
+			Name: "reset",
+			Value: func(argsA ...Object) (Object, error) {
+				o := argsA[0].(*Seq)
+
+				if len(argsA) > 1 {
+					o.Value.Reset(int(ToIntObject(argsA[1])))
+				} else {
+					o.Value.Reset()
+				}
 				return Undefined, nil
 			},
 		},
@@ -579,6 +605,32 @@ func GetObjectMethodFunc(o Object, idxA string) (Object, error) {
 
 }
 
+func CallObjectMethodFunc(o Object, idxA string, argsA ...Object) (Object, error) {
+	// tk.Pln("CallObjectMethodFunc:", index, o, o.TypeCode())
+
+	map1, ok := methodFuncMapG[o.TypeCode()]
+
+	if !ok {
+		return nil, NewCommonError("unknown method: %v", idxA)
+	}
+
+	f1, ok := map1[idxA]
+
+	if !ok {
+		return nil, NewCommonError("unknown method: %v", idxA)
+	}
+
+	if f1.ValueEx != nil {
+		return (*f1).CallEx(Call{This: o, args: argsA})
+	}
+
+	if f1.Value == nil {
+		return nil, NewCommonError("unknown method: %v", idxA)
+	}
+
+	return (*f1).Call(append([]Object{o}, argsA...)...)
+}
+
 func QuickCompile(codeA string, compilerOptionsA ...*CompilerOptions) interface{} {
 	var compilerOptionsT *CompilerOptions
 	if len(compilerOptionsA) > 0 {
@@ -598,7 +650,7 @@ func QuickCompile(codeA string, compilerOptionsA ...*CompilerOptions) interface{
 func NewBaseEnv(varsA map[string]interface{}, additionsA ...Object) *Map {
 	envT := Map{}
 
-	envT["tk"] = TkFunction
+	// envT["tk"] = TkFunction
 	envT["argsG"] = Array{}
 	envT["versionG"] = ToStringObject(VersionG)
 

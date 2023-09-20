@@ -31,7 +31,7 @@ var (
 	Undefined Object = &UndefinedType{}
 )
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, Time: 311, Location: 313, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -267,7 +267,7 @@ func (o ObjectImpl) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o ObjectImpl) GetValue() Object {
@@ -349,7 +349,7 @@ func (o *UndefinedType) CallMethod(nameA string, argsA ...Object) (Object, error
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *UndefinedType) GetValue() Object {
@@ -440,7 +440,7 @@ func (o Bool) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o Bool) GetValue() Object {
@@ -624,6 +624,1036 @@ func (o Bool) Format(s fmt.State, verb rune) {
 	fmt.Fprintf(s, format, bool(o))
 }
 
+// Int represents signed integer values and implements Object interface.
+type Int int64
+
+func (Int) TypeCode() int {
+	return 107
+}
+
+// TypeName implements Object interface.
+func (Int) TypeName() string {
+	return "int"
+}
+
+// String implements Object interface.
+func (o Int) String() string {
+	return strconv.FormatInt(int64(o), 10)
+}
+
+func (o Int) HasMemeber() bool {
+	return false
+}
+
+func (o Int) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o Int) GetValue() Object {
+	return o
+}
+
+func (o Int) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Int) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
+}
+
+// Equal implements Object interface.
+func (o Int) Equal(right Object) bool {
+	switch v := right.(type) {
+	case Int:
+		return o == v
+	case Byte:
+		return o == Int(v)
+	case Uint:
+		return Uint(o) == v
+	case Float:
+		return Float(o) == v
+	case Char:
+		return o == Int(v)
+	case Bool:
+		if v {
+			return o == 1
+		}
+		return o == 0
+	}
+	return false
+}
+
+// IsFalsy implements Object interface.
+func (o Int) IsFalsy() bool { return o == 0 }
+
+// CanCall implements Object interface.
+func (o Int) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (o Int) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// CanIterate implements Object interface.
+func (Int) CanIterate() bool { return false }
+
+// Iterate implements Object interface.
+func (Int) Iterate() Iterator { return nil }
+
+// IndexSet implements Object interface.
+func (Int) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+// IndexGet implements Object interface.
+func (o Int) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, ErrNotIndexable
+}
+
+// BinaryOp implements Object interface.
+func (o Int) BinaryOp(tok token.Token, right Object) (Object, error) {
+	switch v := right.(type) {
+	case Int:
+		switch tok {
+		case token.Add:
+			return o + v, nil
+		case token.Sub:
+			return o - v, nil
+		case token.Mul:
+			return o * v, nil
+		case token.Quo:
+			if v == 0 {
+				return nil, ErrZeroDivision
+			}
+			return o / v, nil
+		case token.Rem:
+			return o % v, nil
+		case token.And:
+			return o & v, nil
+		case token.Or:
+			return o | v, nil
+		case token.Xor:
+			return o ^ v, nil
+		case token.AndNot:
+			return o &^ v, nil
+		case token.Shl:
+			return o << v, nil
+		case token.Shr:
+			return o >> v, nil
+		case token.Less:
+			return Bool(o < v), nil
+		case token.LessEq:
+			return Bool(o <= v), nil
+		case token.Greater:
+			return Bool(o > v), nil
+		case token.GreaterEq:
+			return Bool(o >= v), nil
+		}
+	case Uint:
+		return Uint(o).BinaryOp(tok, right)
+	case Float:
+		return Float(o).BinaryOp(tok, right)
+	case Char:
+		switch tok {
+		case token.Add:
+			return Char(o) + v, nil
+		case token.Sub:
+			return Char(o) - v, nil
+		case token.Less:
+			return Bool(o < Int(v)), nil
+		case token.LessEq:
+			return Bool(o <= Int(v)), nil
+		case token.Greater:
+			return Bool(o > Int(v)), nil
+		case token.GreaterEq:
+			return Bool(o >= Int(v)), nil
+		}
+	case Byte:
+		switch tok {
+		case token.Add:
+			return Byte(o) + v, nil
+		case token.Sub:
+			return Byte(o) - v, nil
+		case token.Less:
+			return Bool(o < Int(v)), nil
+		case token.LessEq:
+			return Bool(o <= Int(v)), nil
+		case token.Greater:
+			return Bool(o > Int(v)), nil
+		case token.GreaterEq:
+			return Bool(o >= Int(v)), nil
+		}
+	case Bool:
+		if v {
+			right = Int(1)
+		} else {
+			right = Int(0)
+		}
+		return o.BinaryOp(tok, right)
+	case *UndefinedType:
+		switch tok {
+		case token.Less, token.LessEq:
+			return False, nil
+		case token.Greater, token.GreaterEq:
+			return True, nil
+		}
+	}
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName(),
+	)
+}
+
+// Format implements fmt.Formatter interface.
+func (o Int) Format(s fmt.State, verb rune) {
+	format := compat.FmtFormatString(s, verb)
+	fmt.Fprintf(s, format, int64(o))
+}
+
+// Uint represents unsigned integer values and implements Object interface.
+type Uint uint64
+
+func (Uint) TypeCode() int {
+	return 111
+}
+
+// TypeName implements Object interface.
+func (Uint) TypeName() string {
+	return "uint"
+}
+
+// String implements Object interface.
+func (o Uint) String() string {
+	return strconv.FormatUint(uint64(o), 10)
+}
+
+func (o Uint) HasMemeber() bool {
+	return false
+}
+
+func (o Uint) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o Uint) GetValue() Object {
+	return o
+}
+
+func (o Uint) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Uint) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
+}
+
+// Equal implements Object interface.
+func (o Uint) Equal(right Object) bool {
+	switch v := right.(type) {
+	case Uint:
+		return o == v
+	case Int:
+		return o == Uint(v)
+	case Byte:
+		return o == Uint(v)
+	case Float:
+		return Float(o) == v
+	case Char:
+		return o == Uint(v)
+	case Bool:
+		if v {
+			return o == 1
+		}
+		return o == 0
+	}
+	return false
+}
+
+// IsFalsy implements Object interface.
+func (o Uint) IsFalsy() bool { return o == 0 }
+
+// CanCall implements Object interface.
+func (o Uint) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (o Uint) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// CanIterate implements Object interface.
+func (Uint) CanIterate() bool { return false }
+
+// Iterate implements Object interface.
+func (Uint) Iterate() Iterator { return nil }
+
+// IndexSet implements Object interface.
+func (Uint) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+// IndexGet implements Object interface.
+func (o Uint) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, ErrNotIndexable
+}
+
+// BinaryOp implements Object interface.
+func (o Uint) BinaryOp(tok token.Token, right Object) (Object, error) {
+	switch v := right.(type) {
+	case Uint:
+		switch tok {
+		case token.Add:
+			return o + v, nil
+		case token.Sub:
+			return o - v, nil
+		case token.Mul:
+			return o * v, nil
+		case token.Quo:
+			if v == 0 {
+				return nil, ErrZeroDivision
+			}
+			return o / v, nil
+		case token.Rem:
+			return o % v, nil
+		case token.And:
+			return o & v, nil
+		case token.Or:
+			return o | v, nil
+		case token.Xor:
+			return o ^ v, nil
+		case token.AndNot:
+			return o &^ v, nil
+		case token.Shl:
+			return o << v, nil
+		case token.Shr:
+			return o >> v, nil
+		case token.Less:
+			return Bool(o < v), nil
+		case token.LessEq:
+			return Bool(o <= v), nil
+		case token.Greater:
+			return Bool(o > v), nil
+		case token.GreaterEq:
+			return Bool(o >= v), nil
+		}
+	case Int:
+		return o.BinaryOp(tok, Uint(v))
+	case Float:
+		return Float(o).BinaryOp(tok, right)
+	case Char:
+		switch tok {
+		case token.Add:
+			return Char(o) + v, nil
+		case token.Sub:
+			return Char(o) - v, nil
+		case token.Less:
+			return Bool(o < Uint(v)), nil
+		case token.LessEq:
+			return Bool(o <= Uint(v)), nil
+		case token.Greater:
+			return Bool(o > Uint(v)), nil
+		case token.GreaterEq:
+			return Bool(o >= Uint(v)), nil
+		}
+	case Byte:
+		switch tok {
+		case token.Add:
+			return Byte(o) + v, nil
+		case token.Sub:
+			return Byte(o) - v, nil
+		case token.Less:
+			return Bool(o < Uint(v)), nil
+		case token.LessEq:
+			return Bool(o <= Uint(v)), nil
+		case token.Greater:
+			return Bool(o > Uint(v)), nil
+		case token.GreaterEq:
+			return Bool(o >= Uint(v)), nil
+		}
+	case Bool:
+		if v {
+			right = Uint(1)
+		} else {
+			right = Uint(0)
+		}
+		return o.BinaryOp(tok, right)
+	case *UndefinedType:
+		switch tok {
+		case token.Less, token.LessEq:
+			return False, nil
+		case token.Greater, token.GreaterEq:
+			return True, nil
+		}
+	}
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName(),
+	)
+}
+
+// Format implements fmt.Formatter interface.
+func (o Uint) Format(s fmt.State, verb rune) {
+	format := compat.FmtFormatString(s, verb)
+	fmt.Fprintf(s, format, uint64(o))
+}
+
+// Float represents float values and implements Object interface.
+type Float float64
+
+func (Float) TypeCode() int {
+	return 115
+}
+
+// TypeName implements Object interface.
+func (Float) TypeName() string {
+	return "float"
+}
+
+// String implements Object interface.
+func (o Float) String() string {
+	return strconv.FormatFloat(float64(o), 'g', -1, 64)
+}
+
+func (o Float) HasMemeber() bool {
+	return false
+}
+
+func (o Float) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o Float) GetValue() Object {
+	return o
+}
+
+func (o Float) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Float) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
+}
+
+// Equal implements Object interface.
+func (o Float) Equal(right Object) bool {
+	switch v := right.(type) {
+	case Float:
+		return o == v
+	case Int:
+		return o == Float(v)
+	case Uint:
+		return o == Float(v)
+	case Char:
+		return o == Float(v)
+	case Byte:
+		return o == Float(v)
+	case Bool:
+		if v {
+			return o == 1
+		}
+		return o == 0
+	}
+	return false
+}
+
+// IsFalsy implements Object interface.
+func (o Float) IsFalsy() bool {
+	// IEEE 754 says that only NaNs satisfy f != f.
+	// See math.IsNan
+	f := float64(o)
+	return f != f
+}
+
+// CanCall implements Object interface.
+func (o Float) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (o Float) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// CanIterate implements Object interface.
+func (Float) CanIterate() bool { return false }
+
+// Iterate implements Object interface.
+func (Float) Iterate() Iterator { return nil }
+
+// IndexSet implements Object interface.
+func (Float) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+// IndexGet implements Object interface.
+func (o Float) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, ErrNotIndexable
+}
+
+// BinaryOp implements Object interface.
+func (o Float) BinaryOp(tok token.Token, right Object) (Object, error) {
+	switch v := right.(type) {
+	case Float:
+		switch tok {
+		case token.Add:
+			return o + v, nil
+		case token.Sub:
+			return o - v, nil
+		case token.Mul:
+			return o * v, nil
+		case token.Quo:
+			if v == 0 {
+				return nil, ErrZeroDivision
+			}
+			return o / v, nil
+		case token.Less:
+			return Bool(o < v), nil
+		case token.LessEq:
+			return Bool(o <= v), nil
+		case token.Greater:
+			return Bool(o > v), nil
+		case token.GreaterEq:
+			return Bool(o >= v), nil
+		}
+	case Int:
+		return o.BinaryOp(tok, Float(v))
+	case Uint:
+		return o.BinaryOp(tok, Float(v))
+	case Char:
+		return o.BinaryOp(tok, Float(v))
+	case Byte:
+		return o.BinaryOp(tok, Float(v))
+	case Bool:
+		if v {
+			right = Float(1)
+		} else {
+			right = Float(0)
+		}
+		return o.BinaryOp(tok, right)
+	case *UndefinedType:
+		switch tok {
+		case token.Less, token.LessEq:
+			return False, nil
+		case token.Greater, token.GreaterEq:
+			return True, nil
+		}
+	}
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName(),
+	)
+}
+
+// Format implements fmt.Formatter interface.
+func (o Float) Format(s fmt.State, verb rune) {
+	format := compat.FmtFormatString(s, verb)
+	fmt.Fprintf(s, format, float64(o))
+}
+
+// Char represents a rune and implements Object interface.
+type Char rune
+
+func (Char) TypeCode() int {
+	return 113
+}
+
+// TypeName implements Object interface.
+func (Char) TypeName() string {
+	return "char"
+}
+
+// String implements Object interface.
+func (o Char) String() string {
+	return string(o)
+}
+
+func (o Char) HasMemeber() bool {
+	return false
+}
+
+func (o Char) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o Char) GetValue() Object {
+	return o
+}
+
+func (o Char) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Char) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
+}
+
+// Equal implements Object interface.
+func (o Char) Equal(right Object) bool {
+	switch v := right.(type) {
+	case Char:
+		return o == v
+	case Int:
+		return Int(o) == v
+	case Uint:
+		return Uint(o) == v
+	case Byte:
+		return o == Char(v)
+	case Float:
+		return Float(o) == v
+	case Bool:
+		if v {
+			return o == 1
+		}
+		return o == 0
+	}
+	return false
+}
+
+// IsFalsy implements Object interface.
+func (o Char) IsFalsy() bool { return o == 0 }
+
+// CanCall implements Object interface.
+func (o Char) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (o Char) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// CanIterate implements Object interface.
+func (Char) CanIterate() bool { return false }
+
+// Iterate implements Object interface.
+func (Char) Iterate() Iterator { return nil }
+
+// IndexSet implements Object interface.
+func (Char) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+// IndexGet implements Object interface.
+func (o Char) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, ErrNotIndexable
+}
+
+// BinaryOp implements Object interface.
+func (o Char) BinaryOp(tok token.Token, right Object) (Object, error) {
+	switch v := right.(type) {
+	case Char:
+		switch tok {
+		case token.Add:
+			return o + v, nil
+		case token.Sub:
+			return o - v, nil
+		case token.Mul:
+			return o * v, nil
+		case token.Quo:
+			if v == 0 {
+				return nil, ErrZeroDivision
+			}
+			return o / v, nil
+		case token.Rem:
+			return o % v, nil
+		case token.And:
+			return o & v, nil
+		case token.Or:
+			return o | v, nil
+		case token.Xor:
+			return o ^ v, nil
+		case token.AndNot:
+			return o &^ v, nil
+		case token.Shl:
+			return o << v, nil
+		case token.Shr:
+			return o >> v, nil
+		case token.Less:
+			return Bool(o < v), nil
+		case token.LessEq:
+			return Bool(o <= v), nil
+		case token.Greater:
+			return Bool(o > v), nil
+		case token.GreaterEq:
+			return Bool(o >= v), nil
+		}
+	case Int:
+		switch tok {
+		case token.Add:
+			return o + Char(v), nil
+		case token.Sub:
+			return o - Char(v), nil
+		case token.Less:
+			return Bool(Int(o) < v), nil
+		case token.LessEq:
+			return Bool(Int(o) <= v), nil
+		case token.Greater:
+			return Bool(Int(o) > v), nil
+		case token.GreaterEq:
+			return Bool(Int(o) >= v), nil
+		}
+	case Byte:
+		switch tok {
+		case token.Add:
+			return Byte(o) + v, nil
+		case token.Sub:
+			return Byte(o) - v, nil
+		case token.Less:
+			return Bool(o < Char(v)), nil
+		case token.LessEq:
+			return Bool(o <= Char(v)), nil
+		case token.Greater:
+			return Bool(o > Char(v)), nil
+		case token.GreaterEq:
+			return Bool(o >= Char(v)), nil
+		}
+	case Uint:
+		switch tok {
+		case token.Add:
+			return o + Char(v), nil
+		case token.Sub:
+			return o - Char(v), nil
+		case token.Less:
+			return Bool(Uint(o) < v), nil
+		case token.LessEq:
+			return Bool(Uint(o) <= v), nil
+		case token.Greater:
+			return Bool(Uint(o) > v), nil
+		case token.GreaterEq:
+			return Bool(Uint(o) >= v), nil
+		}
+	case Bool:
+		if v {
+			right = Char(1)
+		} else {
+			right = Char(0)
+		}
+		return o.BinaryOp(tok, right)
+	case String:
+		if tok == token.Add {
+			var sb strings.Builder
+			sb.Grow(len(v.Value) + 4)
+			sb.WriteRune(rune(o))
+			sb.WriteString(v.Value)
+			return ToStringObject(sb.String()), nil
+		}
+	case *UndefinedType:
+		switch tok {
+		case token.Less, token.LessEq:
+			return False, nil
+		case token.Greater, token.GreaterEq:
+			return True, nil
+		}
+	}
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName(),
+	)
+}
+
+// Format implements fmt.Formatter interface.
+func (o Char) Format(s fmt.State, verb rune) {
+	format := compat.FmtFormatString(s, verb)
+	fmt.Fprintf(s, format, rune(o))
+}
+
+type Byte byte
+
+func (Byte) TypeCode() int {
+	return 109
+}
+
+// TypeName implements Object interface.
+func (Byte) TypeName() string {
+	return "byte"
+}
+
+// String implements Object interface.
+func (o Byte) String() string {
+	return strconv.FormatInt(int64(o), 10)
+}
+
+func (o Byte) HasMemeber() bool {
+	return false
+}
+
+func (o Byte) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o Byte) GetValue() Object {
+	return o
+}
+
+func (o Byte) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o Byte) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
+}
+
+// Equal implements Object interface.
+func (o Byte) Equal(right Object) bool {
+	switch v := right.(type) {
+	case Byte:
+		return o == v
+	case Int:
+		return Int(o) == v
+	case Uint:
+		return Uint(o) == v
+	case Float:
+		return Float(o) == v
+	case Char:
+		return Char(o) == v
+	case Bool:
+		if v {
+			return o == 1
+		}
+		return o == 0
+	}
+	return false
+}
+
+// IsFalsy implements Object interface.
+func (o Byte) IsFalsy() bool { return o == 0 }
+
+// CanCall implements Object interface.
+func (o Byte) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (o Byte) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// CanIterate implements Object interface.
+func (Byte) CanIterate() bool { return false }
+
+// Iterate implements Object interface.
+func (Byte) Iterate() Iterator { return nil }
+
+// IndexSet implements Object interface.
+func (Byte) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+// IndexGet implements Object interface.
+func (o Byte) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, ErrNotIndexable
+}
+
+// BinaryOp implements Object interface.
+func (o Byte) BinaryOp(tok token.Token, right Object) (Object, error) {
+	switch v := right.(type) {
+	case Byte:
+		switch tok {
+		case token.Add:
+			return o + v, nil
+		case token.Sub:
+			return o - v, nil
+		case token.Mul:
+			return o * v, nil
+		case token.Quo:
+			if v == 0 {
+				return nil, ErrZeroDivision
+			}
+			return o / v, nil
+		case token.Rem:
+			return o % v, nil
+		case token.And:
+			return o & v, nil
+		case token.Or:
+			return o | v, nil
+		case token.Xor:
+			return o ^ v, nil
+		case token.AndNot:
+			return o &^ v, nil
+		case token.Shl:
+			return o << v, nil
+		case token.Shr:
+			return o >> v, nil
+		case token.Less:
+			return Bool(o < v), nil
+		case token.LessEq:
+			return Bool(o <= v), nil
+		case token.Greater:
+			return Bool(o > v), nil
+		case token.GreaterEq:
+			return Bool(o >= v), nil
+		}
+	case Int:
+		return Int(o).BinaryOp(tok, right)
+	case Uint:
+		return Uint(o).BinaryOp(tok, right)
+	case Float:
+		return Float(o).BinaryOp(tok, right)
+	case Char:
+		switch tok {
+		case token.Add:
+			return Char(o) + v, nil
+		case token.Sub:
+			return Char(o) - v, nil
+		case token.Less:
+			return Bool(Char(o) < v), nil
+		case token.LessEq:
+			return Bool(Char(o) <= v), nil
+		case token.Greater:
+			return Bool(Char(o) > v), nil
+		case token.GreaterEq:
+			return Bool(Char(o) >= v), nil
+		}
+	case Bool:
+		if v {
+			right = Int(1)
+		} else {
+			right = Int(0)
+		}
+		return o.BinaryOp(tok, right)
+	case *UndefinedType:
+		switch tok {
+		case token.Less, token.LessEq:
+			return False, nil
+		case token.Greater, token.GreaterEq:
+			return True, nil
+		}
+	}
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName(),
+	)
+}
+
+// Format implements fmt.Formatter interface.
+func (o Byte) Format(s fmt.State, verb rune) {
+	format := compat.FmtFormatString(s, verb)
+	fmt.Fprintf(s, format, byte(o))
+}
+
 // String represents string values and implements Object interface.
 type String struct {
 	ObjectImpl
@@ -666,7 +1696,9 @@ func (o String) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return Bool(strings.Contains(o.Value, argsA[0].String())), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
+
+	// return Undefined, NewCommonError("unknown method: %v", nameA)
 }
 
 func (o String) GetValue() Object {
@@ -950,7 +1982,8 @@ func (o Bytes) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
+	// return Undefined, NewCommonError("unknown method: %v", nameA)
 }
 
 func (o Bytes) GetValue() Object {
@@ -1151,7 +2184,8 @@ func (o Chars) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
+	// return Undefined, NewCommonError("unknown method: %v", nameA)
 }
 
 func (o Chars) GetValue() Object {
@@ -1407,7 +2441,8 @@ func (o *Function) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
+	// return Undefined, NewCommonError("unknown method: %v", nameA)
 }
 
 func (o *Function) GetValue() Object {
@@ -1519,7 +2554,8 @@ func (o *BuiltinFunction) CallMethod(nameA string, argsA ...Object) (Object, err
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
+	// return Undefined, NewCommonError("unknown method: %v", nameA)
 }
 
 func (o *BuiltinFunction) GetValue() Object {
@@ -1887,7 +2923,8 @@ func (o Array) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
+	// return Undefined, NewCommonError("unknown method: %v", nameA)
 }
 
 func (o Array) GetValue() Object {
@@ -2087,7 +3124,7 @@ func (o *ObjectPtr) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *ObjectPtr) GetValue() Object {
@@ -2224,7 +3261,7 @@ func (o Map) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o Map) GetValue() Object {
@@ -2407,7 +3444,7 @@ func (o *SyncMap) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *SyncMap) GetValue() Object {
@@ -2585,7 +3622,7 @@ func (o *Error) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *Error) GetValue() Object {
@@ -2809,7 +3846,7 @@ func (o *RuntimeError) CallMethod(nameA string, argsA ...Object) (Object, error)
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *RuntimeError) GetValue() Object {
@@ -3088,7 +4125,8 @@ func (o *Time) CallMethod(nameA string, argsA ...Object) (Object, error) {
 
 	fn, ok := methodTableForTime[strings.ToLower(nameA)]
 	if !ok {
-		return Undefined, ErrInvalidIndex.NewError(nameA)
+		return CallObjectMethodFunc(o, nameA, argsA...)
+		// return Undefined, ErrInvalidIndex.NewError(nameA)
 	}
 
 	return fn(o, &Call{args: argsA})
@@ -3750,7 +4788,7 @@ func (o *Location) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *Location) GetValue() Object {
@@ -3855,7 +4893,7 @@ func (o *Database) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *Database) GetValue() Object {
@@ -4283,7 +5321,7 @@ func (o *StatusResult) CallMethod(nameA string, argsA ...Object) (Object, error)
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *StatusResult) GetValue() Object {
@@ -4641,7 +5679,7 @@ func (o *Any) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *Any) GetValue() Object {
@@ -4893,7 +5931,7 @@ func (o *StringBuilder) CallMethod(nameA string, argsA ...Object) (Object, error
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *StringBuilder) GetValue() Object {
@@ -5198,7 +6236,7 @@ func (o *BytesBuffer) CallMethod(nameA string, argsA ...Object) (Object, error) 
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *BytesBuffer) GetValue() Object {
@@ -5375,7 +6413,7 @@ func (o *ObjectRef) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *ObjectRef) GetValue() Object {
@@ -5451,7 +6489,7 @@ func (o *ObjectRef) Call(args ...Object) (Object, error) {
 	return (*o.Value).Call(args...)
 }
 
-// MutableString represents string values and implements Object interface.
+// MutableString represents string values and implements Object interface, compare to String, it supports setValue method.
 type MutableString struct {
 	ObjectImpl
 	Value string
@@ -5501,7 +6539,7 @@ func (o *MutableString) CallMethod(nameA string, argsA ...Object) (Object, error
 		return ToStringObject(o), nil
 	}
 
-	return Undefined, NewCommonError("unknown method: %v", nameA)
+	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *MutableString) GetValue() Object {
@@ -5710,4 +6748,163 @@ func ToMutableStringObject(argA interface{}) *MutableString {
 		return &MutableString{Value: string(nv)}
 	}
 	return &MutableString{Value: fmt.Sprintf("%v", argA)}
+}
+
+// MutableString represents string values and implements Object interface, compare to String, it supports setValue method.
+type Seq struct {
+	ObjectImpl
+	Value *(tk.Seq)
+
+	Members map[string]Object
+	// Methods map[string]*Function
+}
+
+var _ Object = NewSeq()
+var _ ValueSetter = NewSeq()
+
+func (*Seq) TypeCode() int {
+	return 315
+}
+
+// TypeName implements Object interface.
+func (*Seq) TypeName() string {
+	return "seq"
+}
+
+func (o *Seq) String() string {
+	return fmt.Sprintf("(Seq)%v", o)
+}
+
+func (o *Seq) SetValue(valueA Object) error {
+	o.Value.Reset(int(ToIntObject(valueA)))
+
+	return nil
+}
+
+func (o *Seq) HasMemeber() bool {
+	return true
+}
+
+func (o *Seq) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *Seq) GetValue() Object {
+	return ToIntObject(o.Value.Get())
+}
+
+func (o *Seq) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Seq) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (*Seq) CanIterate() bool { return false }
+
+func (o *Seq) Iterate() Iterator {
+	return nil
+}
+
+func (o *Seq) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "v" || strT == "value" {
+			o.Value.Reset(int(ToIntObject(value)))
+			return nil
+		}
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *Seq) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return ToStringObject(o.Value), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, ErrNotIndexable
+}
+
+func (o *Seq) Equal(right Object) bool {
+	if v, ok := right.(*Seq); ok {
+		return v == o
+	}
+
+	return false
+}
+
+func (o *Seq) IsFalsy() bool { return o.Value == nil }
+
+func (o *Seq) CanCall() bool { return false }
+
+func (o *Seq) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o *Seq) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+func NewSeq(argsA ...Object) *Seq {
+	if len(argsA) > 0 {
+		arg1 := argsA[0].String()
+
+		if arg1 == "-global" {
+			return &Seq{Value: tk.AutoSeq}
+		}
+	}
+
+	return &Seq{Value: tk.NewSeq()}
 }

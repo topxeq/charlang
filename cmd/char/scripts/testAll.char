@@ -6,7 +6,7 @@ testByText(rs, "3.4000000000000004\n", getSeq(), "basic.char")
 
 rs = systemCmd("char", "-gopath", "mutableString.char")
 
-testByText(rs, "(mutableString)abc\n(mutableString)def\n(mutableString)\n(string)ghj\n(string)klm\ns2 after f1:\n(mutableString)qwe\ns2 after f2:\n(mutableString)  rty\n(int)123\n\"  rty -- example  \"\n\"rty -- example\"\nf3 returns: true\ns2 after f3: \"y -- example\"\n", getSeq(), "mutableString.char")
+testByText(rs, "(mutableString)abc\n(mutableString)def\n(mutableString)\n(string)ghj\n(string)klm\ns2 after f1:\n(mutableString)qwe\ns2 after f2:\n(mutableString)  rty\n(int)123\n\"  rty -- example  \"\n\"rty -- example\"\nf3 returns: true\ns2 after f3: \"y -- example\"\ntrim ple: y -- exam\ns2 now: \"y -- exam\"\n", getSeq(), "mutableString.char")
 
 rs = systemCmd("char", "-gopath", "method1.char")
 

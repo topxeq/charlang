@@ -1,0 +1,31 @@
+// case 1: new a synchronized sequence generator(int)
+seq1 := newEx("seq")
+
+plt(seq1)
+
+// call the Get method of the seq object
+rs := mtEx(seq1, "Get")[0]
+
+plt(rs)
+
+// get another seq value
+rs = mtEx(seq1, "Get")[0]
+
+plt(rs)
+
+// case 2: get seq value from global sequence generator
+seq2 := newEx("seq", "-global")
+
+plt(seq2)
+
+// call the Get method of the seq object
+rs = mtEx(seq2, "Get")[0]
+
+plt(rs)
+
+// get another seq value
+rs = mtEx(seq2, "Get")[0]
+
+plt(rs)
+
+
