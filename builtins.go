@@ -34,6 +34,9 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinMutex
+	BuiltinFatalf
+	BuiltinSeq
 	BuiltinIsNil
 	BuiltinGetValue
 	BuiltinSetValue
@@ -194,6 +197,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"time":          BuiltinTime,
 	"stringBuilder": BuiltinStringBuilder,
 	"statusResult":  BuiltinStatusResult,
+	"seq":           BuiltinSeq,
+	"mutex":         BuiltinMutex,
 	"any":           BuiltinAny,
 
 	"toTime": BuiltinToTime,
@@ -236,11 +241,14 @@ var BuiltinsMap = map[string]BuiltinType{
 	"exit": BuiltinExit,
 
 	// print related
-	"pl":  BuiltinPl,
-	"pln": BuiltinPln,
-	"plv": BuiltinPlv,
-	"plo": BuiltinPlo,
-	"plt": BuiltinPlt,
+	"pl":     BuiltinPl,
+	"pln":    BuiltinPln,
+	"plv":    BuiltinPlv,
+	"plo":    BuiltinPlo,
+	"plt":    BuiltinPlt,
+	"fatalf": BuiltinFatalf,
+
+	// control related
 
 	// error related
 	"isErrX":     BuiltinIsErrX,
@@ -385,6 +393,16 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
 	// char add start
+	BuiltinMutex: &BuiltinFunction{
+		Name:    "mutex",
+		Value:   CallExAdapter(builtinMutexFunc),
+		ValueEx: builtinMutexFunc,
+	},
+	BuiltinFatalf: &BuiltinFunction{
+		Name:    "fatalf",
+		Value:   CallExAdapter(builtinFatalfFunc),
+		ValueEx: builtinFatalfFunc,
+	},
 	BuiltinDumpVar: &BuiltinFunction{
 		Name:    "dumpVar",
 		Value:   CallExAdapter(builtinDumpVarFunc),
@@ -404,6 +422,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "database",
 		Value:   CallExAdapter(builtinDatabaseFunc),
 		ValueEx: builtinDatabaseFunc,
+	},
+	BuiltinSeq: &BuiltinFunction{
+		Name:    "seq",
+		Value:   CallExAdapter(builtinSeqFunc),
+		ValueEx: builtinSeqFunc,
 	},
 	BuiltinStatusResult: &BuiltinFunction{
 		Name:    "statusResult",
@@ -2863,6 +2886,10 @@ func builtinAnyFunc(c Call) (Object, error) {
 		return &Any{Value: map[string]Object(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
 	case *StringBuilder:
 		return &Any{Value: (*strings.Builder)(obj.Value), OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *Seq:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *Mutex:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Any:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	default:
@@ -3442,6 +3469,18 @@ func builtinStatusResultFunc(c Call) (Object, error) {
 	return &StatusResult{Status: args[0].String(), Value: args[1].String(), Objects: tk.ToJSONX(ObjectsToS(args[2:]))}, nil
 }
 
+func builtinSeqFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	return NewSeq(args...), nil
+}
+
+func builtinMutexFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	return NewMutex(args...), nil
+}
+
 func builtinNewFunc(c Call) (Object, error) {
 	// args := c.GetArgs()
 
@@ -3643,6 +3682,10 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return builtinStatusResultFunc(Call{args: args[1:]})
 	case "database":
 		return builtinStatusResultFunc(Call{args: args[1:]})
+	case "seq":
+		return builtinSeqFunc(Call{args: args[1:]})
+	case "mutex":
+		return builtinMutexFunc(Call{args: args[1:]})
 	case "undefined":
 		return Undefined, nil
 	}
@@ -3759,5 +3802,24 @@ func builtinDatabaseFunc(c Call) (Object, error) {
 // 	return tk.GetErrStrX(args[0])
 
 // }
+
+func builtinFatalfFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, nil
+	}
+
+	v, ok := args[0].(String)
+	if !ok {
+		return Undefined, NewCommonError("required format string")
+	}
+
+	tk.Pl(v.String(), ObjectsToI(args[1:])...)
+
+	tk.Exit(1)
+
+	return Undefined, nil
+}
 
 // char add end

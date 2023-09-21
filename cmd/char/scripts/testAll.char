@@ -4,6 +4,14 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", getSeq(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "mutex.char")
+
+testByText(rs, "(objectRef)<objectRef:5>\n(int)5\nresult: 15005\n", getSeq(), "mutex.char")
+
+rs = systemCmd("char", "-gopath", "seq.char")
+
+testByText(rs, "(seq)0\n(int)1\n(int)2\n(seq)0\n(int)1\n(int)2\n(seq)0\n(int)1\n(int)2\n(int)3\n(int)3\n(seq)1\n(int)2\n(int)2\n", getSeq(), "seq.char")
+
 rs = systemCmd("char", "-gopath", "mutableString.char")
 
 testByText(rs, "(mutableString)abc\n(mutableString)def\n(mutableString)\n(string)ghj\n(string)klm\ns2 after f1:\n(mutableString)qwe\ns2 after f2:\n(mutableString)  rty\n(int)123\n\"  rty -- example  \"\n\"rty -- example\"\nf3 returns: true\ns2 after f3: \"y -- example\"\ntrim ple: y -- exam\ns2 now: \"y -- exam\"\n", getSeq(), "mutableString.char")
@@ -11,6 +19,10 @@ testByText(rs, "(mutableString)abc\n(mutableString)def\n(mutableString)\n(string
 rs = systemCmd("char", "-gopath", "method1.char")
 
 testByText(rs, "(bool)true\n(bool)false\n", getSeq(), "method1.char")
+
+rs = systemCmd("char", "-gopath", "method2.char")
+
+testByText(rs, "(bool)true\n(bool)false\n", getSeq(), "method2.char")
 
 rs = systemCmd("char", "-gopath", "member.char")
 
@@ -100,7 +112,7 @@ testByReg(rs, `(?sm)jsonStrT: {\"name\": \"Peter\", \"age\": 19, \"身高\": 175
 
 rs = systemCmd("char", "-gopath", "threadRun1.char")
 
-testByText(rs, "(main) a=15\n(thread) v0=6\n(thread) v0=7\n(main) a=25\n(thread) v0=8\n(main) a=35\n(thread) v0=9\n(main) a=45\n(thread) v0=10\n(main) a=55\n", getSeq(), "threadRun1.char")
+testByText(rs, "(thread) v0=6\n(main) a=15\n(thread) v0=7\n(main) a=25\n(thread) v0=8\n(main) a=35\n(thread) v0=9\n(thread) v0=10\n(main) a=45\n(main) a=55\n", getSeq(), "threadRun1.char")
 
 rs = systemCmd("char", "-gopath", "threadRun2.char")
 

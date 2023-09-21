@@ -28,4 +28,33 @@ rs = mtEx(seq2, "Get")[0]
 
 plt(rs)
 
+// case 3: new a builtin Seq object
+seq3 := seq()
+
+plt(seq3)
+
+rs = seq3.get()
+
+plt(rs)
+
+rs = mt(seq3, "get")
+
+plt(rs)
+
+rs = mtEx(any(seq3), "Get")[0]
+
+plt(rs)
+
+plt(seq3.value)
+
+seq3.value = 1
+
+plt(seq3)
+
+plt(getValue(seq3))
+
+plt(seq3.getCurrent())
+
+
+
 

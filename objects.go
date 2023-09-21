@@ -31,7 +31,18 @@ var (
 	Undefined Object = &UndefinedType{}
 )
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, Any: 999
+// when create a new object(class)
+// choose a unique type code
+// a builtin function to create/new the object
+// builtinMakeFunc
+// getValue/setValue, getMember/setMember, IndexGet/IndexSet
+// ConvertToObject
+// ConvertFromObject
+// BuiltinAny
+// ToIntObject
+// ToStringObject
+
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -1905,7 +1916,12 @@ func ToStringObject(argA interface{}) String {
 		return String{Value: ""}
 	case []byte:
 		return String{Value: string(nv)}
+	case *tk.Seq:
+		return String{Value: nv.String()}
+	case *sync.RWMutex:
+		return String{Value: fmt.Sprintf("%v", nv)}
 	}
+
 	return String{Value: fmt.Sprintf("%v", argA)}
 }
 
@@ -1943,6 +1959,8 @@ func ToIntObject(argA interface{}, defaultA ...int) Int {
 		return Int(tk.StrToInt(string(nv), defaultT))
 	case time.Duration:
 		return Int(nv)
+	case *tk.Seq:
+		return Int(nv.GetCurrent())
 	}
 
 	return Int(defaultT)
@@ -6750,7 +6768,7 @@ func ToMutableStringObject(argA interface{}) *MutableString {
 	return &MutableString{Value: fmt.Sprintf("%v", argA)}
 }
 
-// MutableString represents string values and implements Object interface, compare to String, it supports setValue method.
+// Seq object is used for generate unique sequence number(integer)
 type Seq struct {
 	ObjectImpl
 	Value *(tk.Seq)
@@ -6772,7 +6790,7 @@ func (*Seq) TypeName() string {
 }
 
 func (o *Seq) String() string {
-	return fmt.Sprintf("(Seq)%v", o)
+	return fmt.Sprintf("%v", o.Value)
 }
 
 func (o *Seq) SetValue(valueA Object) error {
@@ -6788,7 +6806,7 @@ func (o *Seq) HasMemeber() bool {
 func (o *Seq) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return o, nil
+		return builtinAnyFunc(Call{args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
 	}
@@ -6858,7 +6876,8 @@ func (o *Seq) IndexGet(index Object) (Object, error) {
 		strT := v.Value
 
 		if strT == "v" || strT == "value" {
-			return ToStringObject(o.Value), nil
+			// return builtinAnyFunc(Call{args: []Object{o}})
+			return ToIntObject(o.Value), nil
 		}
 
 		rs := o.GetMember(strT)
@@ -6907,4 +6926,157 @@ func NewSeq(argsA ...Object) *Seq {
 	}
 
 	return &Seq{Value: tk.NewSeq()}
+}
+
+// Mutex object is used for thread-safe actions
+type Mutex struct {
+	ObjectImpl
+	Value *(sync.RWMutex)
+
+	Members map[string]Object
+	// Methods map[string]*Function
+}
+
+var _ Object = NewMutex()
+
+// var _ ValueSetter = NewMutex()
+
+func (*Mutex) TypeCode() int {
+	return 317
+}
+
+// TypeName implements Object interface.
+func (*Mutex) TypeName() string {
+	return "mutex"
+}
+
+func (o *Mutex) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+// func (o *Mutex) SetValue(valueA Object) error {
+// 	// o.Value.Reset(int(ToIntObject(valueA)))
+
+// 	return NewCommonError("unsupported action(set value)")
+// }
+
+func (o *Mutex) HasMemeber() bool {
+	return true
+}
+
+func (o *Mutex) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return builtinAnyFunc(Call{args: []Object{o}})
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *Mutex) GetValue() Object {
+	return Undefined
+}
+
+func (o *Mutex) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Mutex) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (*Mutex) CanIterate() bool { return false }
+
+func (o *Mutex) Iterate() Iterator {
+	return nil
+}
+
+func (o *Mutex) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		// if strT == "v" || strT == "value" {
+		// 	o.Value.Reset(int(ToIntObject(value)))
+		// 	return nil
+		// }
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *Mutex) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return builtinAnyFunc(Call{args: []Object{o}})
+			// return ToIntObject(o.Value), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, ErrNotIndexable
+}
+
+func (o *Mutex) Equal(right Object) bool {
+	if v, ok := right.(*Mutex); ok {
+		return v == o
+	}
+
+	return false
+}
+
+func (o *Mutex) IsFalsy() bool { return o.Value == nil }
+
+func (o *Mutex) CanCall() bool { return false }
+
+func (o *Mutex) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o *Mutex) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+func NewMutex(argsA ...Object) *Mutex {
+	return &Mutex{Value: &sync.RWMutex{}}
 }

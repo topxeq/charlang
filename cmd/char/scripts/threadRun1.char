@@ -21,6 +21,8 @@ a := 5
 
 ex.goRunCompiled(c1, a)
 
+sleep(0.15)
+
 for i := 0; i < 5; i++ {
 	a += 10
 

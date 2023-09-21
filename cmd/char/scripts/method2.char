@@ -1,5 +1,7 @@
-a := "  1.2 "
+a := "  1.23 "
 
 b := a.contains("3")
 
-plv(b)
+plt(b)
+
+plt(a.contains("5"))

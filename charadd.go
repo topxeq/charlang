@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/topxeq/tk"
@@ -129,7 +130,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	105: map[string]*Function{ // *MutableString
+	105: map[string]*Function{ // String
 		"toStr": &Function{
 			Name: "toStr",
 			ValueEx: func(c Call) (Object, error) {
@@ -153,6 +154,21 @@ var methodFuncMapG = map[int]map[string]*Function{
 				args := toArgsS(0, c)
 
 				return ToStringObject(tk.Trim(nv.Value, args...)), nil
+			},
+		},
+		"contains": &Function{
+			Name: "contains",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(String)
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				if c.Len() < 1 {
+					return Undefined, fmt.Errorf("not enough parameters")
+				}
+
+				return Bool(strings.Contains(nv.Value, c.Get(0).String())), nil
 			},
 		},
 	},
@@ -455,6 +471,97 @@ var methodFuncMapG = map[int]map[string]*Function{
 			Name: "get",
 			Value: func(args ...Object) (Object, error) {
 				return ToIntObject(((*tk.Seq)(args[0].(*Seq).Value)).Get()), nil
+			},
+		},
+		"getCurrent": &Function{
+			Name: "getCurrent",
+			Value: func(args ...Object) (Object, error) {
+				return ToIntObject(((*tk.Seq)(args[0].(*Seq).Value)).GetCurrent()), nil
+			},
+		},
+		"reset": &Function{
+			Name: "reset",
+			Value: func(argsA ...Object) (Object, error) {
+				o := argsA[0].(*Seq)
+
+				if len(argsA) > 1 {
+					o.Value.Reset(int(ToIntObject(argsA[1])))
+				} else {
+					o.Value.Reset()
+				}
+				return Undefined, nil
+			},
+		},
+	},
+	317: map[string]*Function{ // *Seq
+		"toStr": &Function{
+			Name: "toStr",
+			Value: func(args ...Object) (Object, error) {
+				return ToStringObject(fmt.Sprintf("%v", ((*sync.RWMutex)(args[0].(*Mutex).Value)))), nil
+			},
+		},
+		"lock": &Function{
+			Name: "lock",
+			Value: func(args ...Object) (Object, error) {
+				objT := (*sync.RWMutex)(args[0].(*Mutex).Value)
+
+				objT.Lock()
+
+				return Undefined, nil
+			},
+		},
+		"unlock": &Function{
+			Name: "unlock",
+			Value: func(args ...Object) (Object, error) {
+				objT := (*sync.RWMutex)(args[0].(*Mutex).Value)
+
+				objT.Unlock()
+
+				return Undefined, nil
+			},
+		},
+		"rLock": &Function{
+			Name: "rLock",
+			Value: func(args ...Object) (Object, error) {
+				objT := (*sync.RWMutex)(args[0].(*Mutex).Value)
+
+				objT.RLock()
+
+				return Undefined, nil
+			},
+		},
+		"rUnlock": &Function{
+			Name: "rUnlock",
+			Value: func(args ...Object) (Object, error) {
+				objT := (*sync.RWMutex)(args[0].(*Mutex).Value)
+
+				objT.RUnlock()
+
+				return Undefined, nil
+			},
+		},
+		"tryLock": &Function{
+			Name: "tryLock",
+			Value: func(args ...Object) (Object, error) {
+				objT := (*sync.RWMutex)(args[0].(*Mutex).Value)
+
+				return Bool(objT.TryLock()), nil
+
+			},
+		},
+		"tryRLock": &Function{
+			Name: "tryRLock",
+			Value: func(args ...Object) (Object, error) {
+				objT := (*sync.RWMutex)(args[0].(*Mutex).Value)
+
+				return Bool(objT.TryRLock()), nil
+
+			},
+		},
+		"getCurrent": &Function{
+			Name: "getCurrent",
+			Value: func(args ...Object) (Object, error) {
+				return ToIntObject(((*tk.Seq)(args[0].(*Seq).Value)).GetCurrent()), nil
 			},
 		},
 		"reset": &Function{
@@ -1094,6 +1201,10 @@ func ConvertToObject(vA interface{}) Object {
 		// 	return Any{Value: nv, OriginalType: "time.Time"}
 	case time.Time:
 		return &Time{Value: nv}
+	case *tk.Seq:
+		return &Seq{Value: nv}
+	case *sync.RWMutex:
+		return &Mutex{Value: nv}
 	case Function:
 		return &nv
 	case String:
@@ -1133,6 +1244,8 @@ func ConvertFromObject(vA Object) interface{} {
 	case String:
 		return nv.Value
 	case *String:
+		return nv.Value
+	case *MutableString:
 		return nv.Value
 	case *StringBuilder:
 		return nv.Value
@@ -1179,6 +1292,10 @@ func ConvertFromObject(vA Object) interface{} {
 
 		return rsT
 	case *Time:
+		return nv.Value
+	case *Seq:
+		return nv.Value
+	case *Mutex:
 		return nv.Value
 	case *Any:
 		return nv.Value

@@ -1,0 +1,46 @@
+ex := import("ex")
+
+n1 := new("int", 5)
+
+flag1 := new("bool", false)
+
+flag2 := new("bool", false)
+
+plt(n1)
+
+plt(unref(n1))
+
+sourceT := `
+param (v0, v1)
+
+for i := 0; i < 5000; i++ {
+	setValueByRef(v0, unref(v0) + 1)
+	// sleep(0.001)
+}
+
+setValueByRef(v1, true)
+
+return
+
+`
+
+c1 := ex.compile(sourceT)
+
+ex.goRunCompiled(c1, n1, flag1)
+
+ex.goRunCompiled(c1, n1, flag2)
+
+for i := 0; i < 5000; i++ {
+	setValueByRef(n1, unref(n1)+1)
+	// sleep(0.001)
+}
+
+for true {
+	if unref(flag1) == true && unref(flag2) == true {
+		break
+	}
+
+	sleep(0.001)
+}
+
+pln("result:", unref(n1))
