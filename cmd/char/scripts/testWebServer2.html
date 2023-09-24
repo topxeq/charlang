@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title></title>
+<script>
+    function startClick() {
+        fetch("http://127.0.0.1/test",
+        {
+            method: "POST",
+            // mode: "cors",
+            // credentials: 'include',
+            headers: {
+                'Accept': 'text/plain',
+                'Content-Type': 'application/json'
+            },
+            body: {input: {"field1": "value1", "field2": 12.3}}
+        })
+        .then(function(res){
+            return res.text(); 
+        })
+        .then(function(data){
+            console.log(data); 
+        })
+
+    }
+
+    // window.onload = function() {};
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("document loaded");
+    });
+</script>
+</head>
+<body>
+<div id="div1">
+    <button onclick="startClick()">Start</button>
+</div>
+</body>
+</html>

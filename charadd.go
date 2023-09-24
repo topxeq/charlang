@@ -3,6 +3,7 @@ package charlang
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -33,7 +34,7 @@ var ScriptPathG string
 
 var ServerModeG = false
 
-var ErrCommon = &Error{Name: "Error"}
+var ErrCommon = &Error{Name: "error"}
 
 // var TkFunction = &Function{
 // 	Name: "tk",
@@ -199,6 +200,130 @@ var methodFuncMapG = map[int]map[string]*Function{
 				// tk.Pl("h1: %#v %#v %#v", c, args, nv.Value)
 
 				return ToStringObject(nv.Value), nil
+			},
+		},
+	},
+	191: map[string]*Function{ // Bool
+		"toStr": &Function{
+			Name: "toStr",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*CharCode)
+
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				return ToStringObject(nv.String()), nil
+			},
+		},
+		"compile": &Function{
+			Name: "compile",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*CharCode)
+
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				byteCodeT := QuickCompile(nv.Source, nv.CompilerOptions) // quickCompile(tk.ToStr(argsA[0])) //
+
+				if tk.IsError(byteCodeT) {
+					return NewCommonError("%v", byteCodeT), nil
+				}
+
+				nv.Value = byteCodeT.(*Bytecode)
+
+				return Undefined, nil
+			},
+		},
+		"run": &Function{
+			Name: "run",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*CharCode)
+
+				if !ok {
+					return NewCommonError("invalid type: %#v", c.This), nil
+				}
+
+				if nv.Value == nil {
+					return NewCommonError("code not compiled"), nil
+					// _, errT := nv.CallMethod("compile")
+
+					// if errT != nil {
+					// 	return NewCommonError("failed to compile code: %v", errT), nil
+					// }
+				}
+
+				argsT := c.GetArgs()
+
+				// lenT := len(argsT)
+
+				// if lenT < 1 {
+				// 	return NewCommonError("not enough parameters"), nil
+				// }
+
+				var globalsA map[string]interface{} = nil
+				// var additionsA []Object = nil
+
+				envT := NewBaseEnv(globalsA) // Map{}
+
+				// if lenT > 1 {
+				// 	additionsA = argsT
+				// }
+				// for i:=1; i< lenT; i ++ {
+				// 	envT["v"]
+				// }
+
+				retT, errT := NewVM(nv.Value).Run(envT, argsT...)
+
+				if errT != nil {
+					return NewCommonError("%v", errT), nil
+				}
+
+				return retT, nil
+			},
+		},
+		"goRun": &Function{
+			Name: "goRun",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*CharCode)
+
+				if !ok {
+					return NewCommonError("invalid type: %#v", c.This), nil
+				}
+
+				if nv.Value == nil {
+					return NewCommonError("code not compiled"), nil
+					// 	_, errT := nv.CallMethod("compile")
+
+					// 	if errT != nil {
+					// 		return NewCommonError("failed to compile code: %v", errT), nil
+					// 	}
+				}
+
+				argsT := c.GetArgs()
+
+				// lenT := len(argsT)
+
+				// if lenT < 1 {
+				// 	return NewCommonError("not enough parameters"), nil
+				// }
+
+				var globalsA map[string]interface{} = nil
+				// var additionsA []Object = nil
+
+				envT := NewBaseEnv(globalsA) // Map{}
+
+				// if lenT > 1 {
+				// 	additionsA = argsT
+				// }
+				// for i:=1; i< lenT; i ++ {
+				// 	envT["v"]
+				// }
+
+				go NewVM(nv.Value).Run(envT, argsT...)
+
+				return Undefined, nil
 			},
 		},
 	},
@@ -578,6 +703,81 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
+	319: map[string]*Function{ // *Mux
+		"toStr": &Function{
+			Name: "toStr",
+			Value: func(args ...Object) (Object, error) {
+				return ToStringObject(fmt.Sprintf("%v", ((*sync.RWMutex)(args[0].(*Mutex).Value)))), nil
+			},
+		},
+		"setHandler": &Function{
+			Name: "setHandler",
+			ValueEx: func(c Call) (Object, error) {
+				if c.Len() < 2 {
+					return NewCommonError("not enough paramters"), nil
+				}
+
+				objT := (*http.ServeMux)(c.This.(*Mux).Value)
+
+				pathT := c.Get(0).String()
+
+				fnObjT := c.Get(1)
+
+				fnT, ok := fnObjT.(*CompiledFunction)
+
+				if !ok {
+					return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+				}
+
+				objT.HandleFunc(pathT, func(w http.ResponseWriter, req *http.Request) {
+					retT, errT := NewInvoker(c.VM(), fnT).Invoke(ConvertToObject(req), ConvertToObject(w))
+
+					if errT != nil {
+						tk.Pl("failed to invode handler: %v", errT)
+						return
+					}
+
+					rs := retT.String()
+
+					if rs != "TX_END_RESPONSE_XT" {
+						w.Write([]byte(rs))
+					}
+
+				})
+
+				return Undefined, nil
+			},
+		},
+		"startHttpServer": &Function{
+			Name: "startHttpServer",
+			ValueEx: func(c Call) (Object, error) {
+				portT := ":80"
+
+				muxT := (*http.ServeMux)(c.This.(*Mux).Value)
+
+				errT := http.ListenAndServe(portT, muxT)
+
+				if errT != nil {
+					return NewCommonError("failed to start server: %v", errT), nil
+				}
+
+				return Undefined, nil
+			},
+		},
+		"reset": &Function{
+			Name: "reset",
+			Value: func(argsA ...Object) (Object, error) {
+				o := argsA[0].(*Seq)
+
+				if len(argsA) > 1 {
+					o.Value.Reset(int(ToIntObject(argsA[1])))
+				} else {
+					o.Value.Reset()
+				}
+				return Undefined, nil
+			},
+		},
+	},
 }
 
 // objects
@@ -662,13 +862,13 @@ func GetObjectMethodFunc(o Object, idxA string) (Object, error) {
 	map1, ok := methodFuncMapG[o.TypeCode()]
 
 	if !ok {
-		return nil, ErrNotIndexable
+		return nil, NewCommonError("not indexable: %v", o.TypeName())
 	}
 
 	f1, ok := map1[idxA]
 
 	if !ok {
-		return nil, ErrNotIndexable
+		return nil, NewCommonError("method(%v) not found for type: %v", idxA, o.TypeName())
 	}
 
 	// return &Function{
@@ -997,7 +1197,7 @@ func ConvertToObject(vA interface{}) Object {
 
 	switch nv := vA.(type) {
 	case error:
-		return WrapError(nv)
+		return NewCommonError(nv.Error())
 	case string:
 		return ToStringObject(nv)
 	case bool:
@@ -1205,6 +1405,14 @@ func ConvertToObject(vA interface{}) Object {
 		return &Seq{Value: nv}
 	case *sync.RWMutex:
 		return &Mutex{Value: nv}
+	case *http.ServeMux:
+		return &Mux{Value: nv}
+	case *http.Request:
+		return &HttpReq{Value: nv}
+	case http.ResponseWriter:
+		return &HttpResp{Value: nv}
+	case *io.Reader:
+		return &Reader{Value: nv}
 	case Function:
 		return &nv
 	case String:
@@ -1260,7 +1468,7 @@ func ConvertFromObject(vA Object) interface{} {
 			return nil
 		}
 
-		return nv.Unwrap()
+		return nv.Unwrap() // fmt.Errorf("%v", nv.Message)
 	case *RuntimeError:
 		if nv == nil {
 			return nil
@@ -1296,6 +1504,14 @@ func ConvertFromObject(vA Object) interface{} {
 	case *Seq:
 		return nv.Value
 	case *Mutex:
+		return nv.Value
+	case *Mux:
+		return nv.Value
+	case *HttpReq:
+		return nv.Value
+	case *HttpResp:
+		return nv.Value
+	case *Reader:
 		return nv.Value
 	case *Any:
 		return nv.Value
@@ -1466,8 +1682,11 @@ func NewChar(codeA string) (interface{}, error) {
 }
 
 func NewCommonError(formatA string, argsA ...interface{}) *Error {
-	return ErrCommon.NewError(
-		fmt.Sprintf(formatA, argsA...))
+	return &Error{Name: "error", Message: fmt.Sprintf(formatA, argsA...)}
+}
+
+func NewCommonErrorWithPos(c Call, formatA string, argsA ...interface{}) *Error {
+	return &Error{Name: "error", Message: fmt.Sprintf(fmt.Sprintf("[pos: %v]", c.VM().GetSrcPos())+formatA, argsA...)}
 }
 
 func NewError(nameA string, formatA string, argsA ...interface{}) *Error {

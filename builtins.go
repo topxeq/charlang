@@ -34,6 +34,13 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinCharCode
+	BuiltinGetReqBody
+	BuiltinGetReqHeader
+	BuiltinSetRespHeader
+	BuiltinParseReqFormEx
+	BuiltinWriteResp
+	BuiltinMux
 	BuiltinMutex
 	BuiltinFatalf
 	BuiltinSeq
@@ -199,6 +206,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"statusResult":  BuiltinStatusResult,
 	"seq":           BuiltinSeq,
 	"mutex":         BuiltinMutex,
+	"charCode":      BuiltinCharCode,
 	"any":           BuiltinAny,
 
 	"toTime": BuiltinToTime,
@@ -316,6 +324,14 @@ var BuiltinsMap = map[string]BuiltinType{
 	// network/web related
 	"getWeb": BuiltinGetWeb,
 
+	// server/service related
+	"mux":            BuiltinMux,
+	"getReqHeader":   BuiltinGetReqHeader,
+	"getReqBody":     BuiltinGetReqBody,
+	"parseReqFormEx": BuiltinParseReqFormEx,
+	"setRespHeader":  BuiltinSetRespHeader,
+	"writeResp":      BuiltinWriteResp,
+
 	// ssh related
 	"sshUpload": BuiltinSshUpload,
 
@@ -393,10 +409,45 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
 	// char add start
+	BuiltinGetReqBody: &BuiltinFunction{
+		Name:    "getReqBody",
+		Value:   CallExAdapter(builtinGetReqBodyFunc),
+		ValueEx: builtinGetReqBodyFunc,
+	},
+	BuiltinGetReqHeader: &BuiltinFunction{
+		Name:    "getReqHeader",
+		Value:   CallExAdapter(builtinGetReqHeaderFunc),
+		ValueEx: builtinGetReqHeaderFunc,
+	},
+	BuiltinSetRespHeader: &BuiltinFunction{
+		Name:    "setRespHeader",
+		Value:   CallExAdapter(builtinSetRespHeaderFunc),
+		ValueEx: builtinSetRespHeaderFunc,
+	},
+	BuiltinParseReqFormEx: &BuiltinFunction{
+		Name:    "parseReqFormEx",
+		Value:   CallExAdapter(builtinParseReqFormExFunc),
+		ValueEx: builtinParseReqFormExFunc,
+	},
+	BuiltinWriteResp: &BuiltinFunction{
+		Name:    "writeResp",
+		Value:   CallExAdapter(builtinWriteRespFunc),
+		ValueEx: builtinWriteRespFunc,
+	},
+	BuiltinMux: &BuiltinFunction{
+		Name:    "mux",
+		Value:   CallExAdapter(builtinMuxFunc),
+		ValueEx: builtinMuxFunc,
+	},
 	BuiltinMutex: &BuiltinFunction{
 		Name:    "mutex",
 		Value:   CallExAdapter(builtinMutexFunc),
 		ValueEx: builtinMutexFunc,
+	},
+	BuiltinCharCode: &BuiltinFunction{
+		Name:    "charCode",
+		Value:   CallExAdapter(builtinCharCodeFunc),
+		ValueEx: builtinCharCodeFunc,
 	},
 	BuiltinFatalf: &BuiltinFunction{
 		Name:    "fatalf",
@@ -2039,9 +2090,11 @@ func fnARIex(fn func() int) CallableExFunc {
 func fnASVsRS(fn func(string, ...string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return Undefined, ErrWrongNumArguments.NewError(
-				"want>=1 got=" + strconv.Itoa(len(args)))
+			return NewCommonError("not enough parameters"), nil
+			// return Undefined, ErrWrongNumArguments.NewError(
+			// 	"want>=1 got=" + strconv.Itoa(len(args)))
 		}
+
 		vargs := ObjectsToS(args[1:])
 		rs := fn(args[0].String(), vargs...)
 		return ToStringObject(rs), nil
@@ -2051,8 +2104,9 @@ func fnASVsRS(fn func(string, ...string) string) CallableFunc {
 func fnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
-			return Undefined, ErrWrongNumArguments.NewError(
-				"want>=1 got=" + strconv.Itoa(c.Len()))
+			return NewCommonError("not enough parameters"), nil
+			// return Undefined, ErrWrongNumArguments.NewError(
+			// 	"want>=1 got=" + strconv.Itoa(c.Len()))
 		}
 		vargs := toArgsS(1, c)
 		rs := fn(c.Get(0).String(), vargs...)
@@ -2564,7 +2618,7 @@ func builtinIsErrXFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	switch nv := args[0].(type) {
@@ -2889,6 +2943,14 @@ func builtinAnyFunc(c Call) (Object, error) {
 	case *Seq:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Mutex:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *Mux:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *Reader:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *HttpReq:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *HttpResp:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Any:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
@@ -3481,6 +3543,150 @@ func builtinMutexFunc(c Call) (Object, error) {
 	return NewMutex(args...), nil
 }
 
+func builtinCharCodeFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	var compilerOptionsT *CompilerOptions
+
+	vmT := c.VM()
+
+	if vmT != nil {
+		compilerOptionsT = vmT.bytecode.CompilerOptionsM
+	} else {
+		compilerOptionsT = &DefaultCompilerOptions
+	}
+
+	return NewCharCode(args[0].String(), compilerOptionsT), nil
+}
+
+func builtinMuxFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	return NewMux(args...), nil
+}
+
+func builtinWriteRespFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v, ok := args[0].(*HttpResp)
+	if !ok {
+		return NewCommonError("invalid object type: (%T)%v", args[0], args[0]), nil
+	}
+
+	var contentT Bytes = nil
+
+	v1, ok := args[1].(String)
+
+	if ok {
+		contentT = Bytes(v1.Value)
+	}
+
+	if contentT == nil {
+		v2, ok := args[1].(Bytes)
+		if !ok {
+			return NewCommonError("invalid content type: (%T)%v", args[1], args[1]), nil
+		}
+
+		contentT = v2
+	}
+
+	r, errT := v.Value.Write(contentT)
+
+	if errT != nil {
+		return NewCommonError("failed to write response: %v", errT), nil
+	}
+
+	return Int(r), errT
+}
+
+func builtinParseReqFormExFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	nv, ok := args[0].(*HttpReq)
+	if !ok {
+		return NewCommonError("invalid object type: (%T)%v", args[0], args[0]), nil
+	}
+
+	reqT := nv.Value
+
+	reqT.ParseForm()
+
+	paraMapT := tk.FormToMap(reqT.Form)
+
+	return ConvertToObject(paraMapT), nil
+}
+
+func builtinSetRespHeaderFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	nv1, ok := args[0].(*HttpResp)
+	if !ok {
+		return NewCommonError("invalid object type: (%T)%v", args[0], args[0]), nil
+	}
+
+	reqT := nv1.Value
+
+	reqT.Header().Set(args[1].String(), args[2].String())
+
+	return Undefined, nil
+}
+
+func builtinGetReqHeaderFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		rs := NewCommonError("not enough parameters")
+		return rs, nil
+	}
+
+	nv1, ok := args[0].(*HttpReq)
+	if !ok {
+		return NewCommonError("invalid object type: (%T)%v", args[0], args[0]), nil
+	}
+
+	reqT := nv1.Value
+
+	return ToStringObject(reqT.Header.Get(args[1].String())), nil
+}
+
+func builtinGetReqBodyFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		rs := NewCommonError("not enough parameters")
+		return rs, nil
+	}
+
+	nv1, ok := args[0].(*HttpReq)
+	if !ok {
+		return NewCommonError("invalid object type: (%T)%v", args[0], args[0]), nil
+	}
+
+	rsT, errT := io.ReadAll(nv1.Value.Body)
+
+	if errT != nil {
+		return NewCommonError("failed to read body content: %v", errT), nil
+	}
+
+	return Bytes(rsT), nil
+}
+
 func builtinNewFunc(c Call) (Object, error) {
 	// args := c.GetArgs()
 
@@ -3686,6 +3892,8 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return builtinSeqFunc(Call{args: args[1:]})
 	case "mutex":
 		return builtinMutexFunc(Call{args: args[1:]})
+	case "mux":
+		return builtinMuxFunc(Call{args: args[1:]})
 	case "undefined":
 		return Undefined, nil
 	}

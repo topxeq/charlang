@@ -1039,6 +1039,8 @@ func (vm *VM) xOpCallName() error {
 
 	var err error
 
+	// tk.Pl("1 nameCaller: %#v", obj)
+
 	if nameCaller, ok := obj.(NameCallerObject); ok {
 		var vargs []Object
 		if flags > 0 {
@@ -1053,6 +1055,7 @@ func (vm *VM) xOpCallName() error {
 			vargs: vargs,
 		}
 		ret, err := nameCaller.CallName(name.String(), c)
+		// tk.Pl("--------------hrere ret: %v", ret)
 
 		for i := 0; i < numArgs; i++ {
 			vm.sp--
@@ -1217,11 +1220,13 @@ func (vm *VM) xOpCallCompiled(cfunc *CompiledFunction, numArgs, flags int) error
 }
 
 func (vm *VM) xOpCallObject(callee Object, numArgs, flags int) error {
+	// tk.Pl("3--------------hrere ret: %v", callee)
 	if !callee.CanCall() {
 		return ErrNotCallable.NewError(callee.TypeName())
 	}
 
 	if c, ok := callee.(ExCallerObject); ok {
+		// tk.Pl("5: %v", callee)
 		return vm.xOpCallExCaller(c, numArgs, flags)
 	}
 
@@ -1275,6 +1280,7 @@ func (vm *VM) xOpCallExCaller(callee ExCallerObject, numArgs, flags int) error {
 	}
 
 	result, err := callee.CallEx(c)
+	// tk.Pl("6--------------hrere result: %v", result)
 
 	for i := 0; i < numArgs; i++ {
 		vm.sp--
@@ -1475,6 +1481,13 @@ func (vm *VM) newErrorFromError(err error) *RuntimeError {
 }
 
 func (vm *VM) getSourcePos() parser.Pos {
+	if vm.curFrame == nil || vm.curFrame.fn == nil {
+		return parser.NoPos
+	}
+	return vm.curFrame.fn.SourcePos(vm.ip)
+}
+
+func (vm *VM) GetSrcPos() parser.Pos {
 	if vm.curFrame == nil || vm.curFrame.fn == nil {
 		return parser.NoPos
 	}

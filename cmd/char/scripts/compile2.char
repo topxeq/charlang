@@ -1,0 +1,37 @@
+sourceT := `
+param (v0, v1, ...vargs)
+
+a := 1
+
+r1 := a + 2.3
+
+pl("r1=%v", r1)
+
+pl("v0=%v", v0)
+
+pl("v1=%v", v1)
+
+pl("vargs=%v", vargs)
+
+return "abc" + v0 + v1 + r1
+
+`
+
+c1 := charCode(sourceT)
+
+if isErrX(c1) {
+	pl("failed to create charCode: %v", c1)
+	exit()
+}
+
+crs := c1.compile()
+
+if isErrX(crs) {
+	pl("failed to compile code: %v", crs)
+	exit()
+}
+
+rs := c1.run(true, "value1", 1, 2, "3a")
+
+plo(rs)
+

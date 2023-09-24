@@ -28,7 +28,7 @@ rs = systemCmd("char", "-gopath", "member.char")
 
 rs = regReplace(rs, `detail: \{0x\w+? `, "")
 
-testByText(rs, "(bool)true\nfailed set member of b1: unsupported action(set member)\n(undefined)undefined\ntype name of buf1: stringBuilder\n(string)abc123\nstringBuilder [97 98 99 49 50 51]}\n(string)abc123\n(string)simple text\nfailed to call method(invalidFunc) of buf1: Error: unknown method: invalidFunc\n", getSeq(), "member.char")
+testByText(rs, "(bool)true\nfailed to set member of b1: unsupported action(set member)\n(undefined)undefined\ntype name of buf1: stringBuilder\n(string)abc123\nstringBuilder [97 98 99 49 50 51]}\n(string)abc123\n(string)simple text\nfailed to call method(invalidFunc) of buf1: error: unknown method: invalidFunc\n", getSeq(), "member.char")
 
 rs = systemCmd("char", "-gopath", "trace1.char")
 
@@ -98,9 +98,13 @@ rs = systemCmd("char", "-gopath", "char.char")
 
 testByText(rs, "type of c1: char\ninternal type of c1: int32\nvalue of c1: 97\ncharacter of c1: a\n\ntype of c2: char\ninternal type of c2: int32\nvalue of c2: 22825\ncharacter of c2: 天\n", getSeq(), "char.char")
 
-rs = systemCmd("char", "-gopath", "compile.char")
+rs = systemCmd("char", "-gopath", "compile1.char")
 
-testByText(rs, "r1=3.3\nv0=true\nv1=value1\nvargs=[1 2 3a]\n(charlang.String)\"abctruevalue13.3\"\n", getSeq(), "compile.char")
+testByText(rs, "r1=3.3\nv0=true\nv1=value1\nvargs=[1 2 3a]\n(charlang.String)\"abctruevalue13.3\"\n", getSeq(), "compile1.char")
+
+rs = systemCmd("char", "-gopath", "compile2.char")
+
+testByText(rs, "r1=3.3\nv0=true\nv1=value1\nvargs=[1 2 3a]\n(charlang.String)\"abctruevalue13.3\"\n", getSeq(), "compile2.char")
 
 rs = systemCmd("char", "-gopath", "funcParam.char")
 
@@ -110,12 +114,20 @@ rs = systemCmd("char", "-gopath", "json.char")
 
 testByReg(rs, `(?sm)jsonStrT: {\"name\": \"Peter\", \"age\": 19, \"身高\": 175, \"father\": .*?}\n\n---\n\nresult: .*?\nname: Peter\nage: 19\nfather: .*?\n\n---\n\nappleT: map\[.*?\]\n\n---\n\nJSON: {\n  \"Color\": \"Red红的\",\n  \"Ingredients\": \[\n  {\n    \"Amount\": 0.3,\n    \"Name\": \"Protein\"\n  },\n  {\n    \"Amount\": 10.4,\n    \"Name\": \"Sugar糖分\"\n  }\n\],\n  \"Type\": \"apple\",\n  \"Weight重量\": 10,\n  \"canEat\": true\n}\n`, getSeq(), "json.char")
 
-rs = systemCmd("char", "-gopath", "threadRun1.char")
+rs = systemCmd("char", "-gopath", "threadRun1a.char")
 
-testByText(rs, "(thread) v0=6\n(main) a=15\n(thread) v0=7\n(main) a=25\n(thread) v0=8\n(main) a=35\n(thread) v0=9\n(thread) v0=10\n(main) a=45\n(main) a=55\n", getSeq(), "threadRun1.char")
+testByText(rs, "(thread) v0=6\n(main) a=15\n(thread) v0=7\n(main) a=25\n(thread) v0=8\n(main) a=35\n(thread) v0=9\n(thread) v0=10\n(main) a=45\n(main) a=55\n", getSeq(), "threadRun1a.char")
 
-rs = systemCmd("char", "-gopath", "threadRun2.char")
+rs = systemCmd("char", "-gopath", "threadRun1b.char")
 
-testByEndsWith(rs, "(thread) v0=6\n(main) a=16\n(thread) v0=17\n(main) a=27\n(thread) v0=28\n(main) a=38\n(thread) v0=39\n(thread) v0=40\n(main) a=50\n(main) a=60\n", getSeq(), "threadRun2.char")
+testByText(rs, "(thread) v0=6\n(main) a=15\n(thread) v0=7\n(main) a=25\n(thread) v0=8\n(main) a=35\n(thread) v0=9\n(thread) v0=10\n(main) a=45\n(main) a=55\n", getSeq(), "threadRun1b.char")
+
+rs = systemCmd("char", "-gopath", "threadRun2a.char")
+
+testByEndsWith(rs, "(thread) v0=6\n(main) a=16\n(thread) v0=17\n(main) a=27\n(thread) v0=28\n(main) a=38\n(thread) v0=39\n(thread) v0=40\n(main) a=50\n(main) a=60\n", getSeq(), "threadRun2a.char")
+
+rs = systemCmd("char", "-gopath", "threadRun2a.char")
+
+testByEndsWith(rs, "(thread) v0=6\n(main) a=16\n(thread) v0=17\n(main) a=27\n(thread) v0=28\n(main) a=38\n(thread) v0=39\n(thread) v0=40\n(main) a=50\n(main) a=60\n", getSeq(), "threadRun2b.char")
 
 

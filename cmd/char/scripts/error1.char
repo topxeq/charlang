@@ -1,0 +1,9 @@
+rs := strReplace()
+
+plt(rs)
+
+reqTypeT := getReqHeader("Content-Type")
+
+plo(reqTypeT)
+
+pl("reqTypeT: %v", reqTypeT)

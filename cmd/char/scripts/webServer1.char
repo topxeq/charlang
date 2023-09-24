@@ -1,0 +1,20 @@
+// a very simple web server
+// to test the server, open your browser, and browse to the URL address: http://127.0.0.1
+
+muxT := mux()
+
+handlerT := func(requestA, responseA) {
+	pl("req: %#v, res: %#v", requestA, responseA)
+
+	writeResp(responseA, "This is a test!")
+
+	return "TX_END_RESPONSE_XT"
+}
+
+muxT.setHandler("/", handlerT)
+
+rs := muxT.startHttpServer()
+
+pl("result: %v", rs)
+
+

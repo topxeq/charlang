@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -42,7 +43,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, StatusResult: 303, DateTime: 305, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, StatusResult: 303, DateTime: 305, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *Reader: 331, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -3611,6 +3612,10 @@ var (
 )
 
 func (o *Error) Unwrap() error {
+	if o.Cause == nil {
+		return fmt.Errorf("%v", o.Message)
+	}
+
 	return o.Cause
 }
 
@@ -3679,6 +3684,7 @@ func (o *Error) SetMember(idxA string, valueA Object) error {
 
 // Copy implements Copier interface.
 func (o *Error) Copy() Object {
+	tk.Pl("*Error copy")
 	return &Error{
 		Name:    o.Name,
 		Message: o.Message,
@@ -3692,6 +3698,7 @@ func (o *Error) Error() string {
 	if name == "" {
 		name = "error"
 	}
+
 	return fmt.Sprintf("%s: %s", name, o.Message)
 }
 
@@ -3762,7 +3769,7 @@ func (o *Error) IndexGet(index Object) (Object, error) {
 func (o *Error) NewError(messages ...string) *Error {
 	cp := o.Copy().(*Error)
 	cp.Message = strings.Join(messages, " ")
-	cp.Cause = o
+	cp.Cause = nil
 	return cp
 }
 
@@ -7079,4 +7086,778 @@ func (o *Mutex) BinaryOp(tok token.Token, right Object) (Object, error) {
 
 func NewMutex(argsA ...Object) *Mutex {
 	return &Mutex{Value: &sync.RWMutex{}}
+}
+
+// Mux object is used for http handlers
+type Mux struct {
+	ObjectImpl
+	Value *http.ServeMux
+
+	Members map[string]Object
+}
+
+var _ Object = NewMux()
+
+func (*Mux) TypeCode() int {
+	return 319
+}
+
+// TypeName implements Object interface.
+func (*Mux) TypeName() string {
+	return "mux"
+}
+
+func (o *Mux) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+// func (o *Mux) SetValue(valueA Object) error {
+// 	// o.Value.Reset(int(ToIntObject(valueA)))
+
+// 	return NewCommonError("unsupported action(set value)")
+// }
+
+func (o *Mux) HasMemeber() bool {
+	return true
+}
+
+func (o *Mux) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return builtinAnyFunc(Call{args: []Object{o}})
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *Mux) GetValue() Object {
+	return Undefined
+}
+
+func (o *Mux) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Mux) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (*Mux) CanIterate() bool { return false }
+
+func (o *Mux) Iterate() Iterator {
+	return nil
+}
+
+func (o *Mux) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		// if strT == "v" || strT == "value" {
+		// 	o.Value.Reset(int(ToIntObject(value)))
+		// 	return nil
+		// }
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *Mux) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return builtinAnyFunc(Call{args: []Object{o}})
+			// return ToIntObject(o.Value), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, NewCommonError("not indexable: %v", o.TypeName())
+}
+
+func (o *Mux) Equal(right Object) bool {
+	if v, ok := right.(*Mux); ok {
+		return v == o
+	}
+
+	return false
+}
+
+func (o *Mux) IsFalsy() bool { return o.Value == nil }
+
+func (o *Mux) CanCall() bool { return false }
+
+func (o *Mux) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o *Mux) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+func NewMux(argsA ...Object) *Mux {
+	return &Mux{Value: http.NewServeMux()}
+}
+
+// HttpReq object is used to represent the http request
+type HttpReq struct {
+	ObjectImpl
+	Value *http.Request
+
+	Members map[string]Object
+}
+
+// var _ Object = NewHttpReq()
+
+func (*HttpReq) TypeCode() int {
+	return 321
+}
+
+// TypeName implements Object interface.
+func (*HttpReq) TypeName() string {
+	return "httpReq"
+}
+
+func (o *HttpReq) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+// func (o *Mux) SetValue(valueA Object) error {
+// 	// o.Value.Reset(int(ToIntObject(valueA)))
+
+// 	return NewCommonError("unsupported action(set value)")
+// }
+
+func (o *HttpReq) HasMemeber() bool {
+	return true
+}
+
+func (o *HttpReq) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return builtinAnyFunc(Call{args: []Object{o}})
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *HttpReq) GetValue() Object {
+	return Undefined
+}
+
+func (o *HttpReq) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *HttpReq) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (*HttpReq) CanIterate() bool { return false }
+
+func (o *HttpReq) Iterate() Iterator {
+	return nil
+}
+
+func (o *HttpReq) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		// if strT == "v" || strT == "value" {
+		// 	o.Value.Reset(int(ToIntObject(value)))
+		// 	return nil
+		// }
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *HttpReq) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return builtinAnyFunc(Call{args: []Object{o}})
+			// return ToIntObject(o.Value), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, NewCommonError("not indexable: %v", o.TypeName())
+}
+
+func (o *HttpReq) Equal(right Object) bool {
+	if v, ok := right.(*HttpReq); ok {
+		return v == o
+	}
+
+	return false
+}
+
+func (o *HttpReq) IsFalsy() bool { return o.Value == nil }
+
+func (o *HttpReq) CanCall() bool { return false }
+
+func (o *HttpReq) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o *HttpReq) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+// HttpResp object is used to represent the http response
+type HttpResp struct {
+	ObjectImpl
+	Value http.ResponseWriter
+
+	Members map[string]Object
+}
+
+// var _ Object = NewHttpReq()
+
+func (*HttpResp) TypeCode() int {
+	return 323
+}
+
+// TypeName implements Object interface.
+func (*HttpResp) TypeName() string {
+	return "httpResp"
+}
+
+func (o *HttpResp) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+// func (o *HttpResp) SetValue(valueA Object) error {
+// 	// o.Value.Reset(int(ToIntObject(valueA)))
+
+// 	return NewCommonError("unsupported action(set value)")
+// }
+
+func (o *HttpResp) HasMemeber() bool {
+	return true
+}
+
+func (o *HttpResp) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return builtinAnyFunc(Call{args: []Object{o}})
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *HttpResp) GetValue() Object {
+	return Undefined
+}
+
+func (o *HttpResp) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *HttpResp) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (*HttpResp) CanIterate() bool { return false }
+
+func (o *HttpResp) Iterate() Iterator {
+	return nil
+}
+
+func (o *HttpResp) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		// if strT == "v" || strT == "value" {
+		// 	o.Value.Reset(int(ToIntObject(value)))
+		// 	return nil
+		// }
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *HttpResp) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return builtinAnyFunc(Call{args: []Object{o}})
+			// return ToIntObject(o.Value), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, NewCommonError("not indexable: %v", o.TypeName())
+}
+
+func (o *HttpResp) Equal(right Object) bool {
+	if v, ok := right.(*HttpResp); ok {
+		return v == o
+	}
+
+	return false
+}
+
+func (o *HttpResp) IsFalsy() bool { return o.Value == nil }
+
+func (o *HttpResp) CanCall() bool { return false }
+
+func (o *HttpResp) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o *HttpResp) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+// Reader object is used for represent io.Reader type value
+type Reader struct {
+	ObjectImpl
+	Value *io.Reader
+
+	Members map[string]Object
+}
+
+var _ Object = NewReader()
+
+func (*Reader) TypeCode() int {
+	return 331
+}
+
+// TypeName implements Object interface.
+func (*Reader) TypeName() string {
+	return "reader"
+}
+
+func (o *Reader) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+// func (o *Reader) SetValue(valueA Object) error {
+// 	// o.Value.Reset(int(ToIntObject(valueA)))
+
+// 	return NewCommonError("unsupported action(set value)")
+// }
+
+func (o *Reader) HasMemeber() bool {
+	return true
+}
+
+func (o *Reader) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return builtinAnyFunc(Call{args: []Object{o}})
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *Reader) GetValue() Object {
+	return Undefined
+}
+
+func (o *Reader) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Reader) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (*Reader) CanIterate() bool { return false }
+
+func (o *Reader) Iterate() Iterator {
+	return nil
+}
+
+func (o *Reader) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		// if strT == "v" || strT == "value" {
+		// 	o.Value.Reset(int(ToIntObject(value)))
+		// 	return nil
+		// }
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *Reader) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return builtinAnyFunc(Call{args: []Object{o}})
+			// return ToIntObject(o.Value), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, NewCommonError("not indexable: %v", o.TypeName())
+}
+
+func (o *Reader) Equal(right Object) bool {
+	if v, ok := right.(*Reader); ok {
+		return v == o
+	}
+
+	return false
+}
+
+func (o *Reader) IsFalsy() bool { return o.Value == nil }
+
+func (o *Reader) CanCall() bool { return false }
+
+func (o *Reader) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o *Reader) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+func NewReader(argsA ...Object) *Reader {
+	if len(argsA) < 1 {
+		return nil
+	}
+
+	return &Reader{Value: argsA[0].(*Reader).Value}
+}
+
+// CharCode object is used for represent thent io.Reader type value
+type CharCode struct {
+	ObjectImpl
+	Source string
+	Value  *Bytecode
+
+	CompilerOptions *CompilerOptions
+
+	Members map[string]Object
+}
+
+var _ Object = NewCharCode("")
+
+func (*CharCode) TypeCode() int {
+	return 191
+}
+
+// TypeName implements Object interface.
+func (*CharCode) TypeName() string {
+	return "charCode"
+}
+
+func (o *CharCode) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+// func (o *Reader) SetValue(valueA Object) error {
+// 	// o.Value.Reset(int(ToIntObject(valueA)))
+
+// 	return NewCommonError("unsupported action(set value)")
+// }
+
+func (o *CharCode) HasMemeber() bool {
+	return true
+}
+
+func (o *CharCode) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return builtinAnyFunc(Call{args: []Object{o}})
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *CharCode) GetValue() Object {
+	return Undefined
+}
+
+func (o *CharCode) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *CharCode) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (*CharCode) CanIterate() bool { return false }
+
+func (o *CharCode) Iterate() Iterator {
+	return nil
+}
+
+func (o *CharCode) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		// if strT == "v" || strT == "value" {
+		// 	o.Value.Reset(int(ToIntObject(value)))
+		// 	return nil
+		// }
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *CharCode) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return builtinAnyFunc(Call{args: []Object{o}})
+			// return ToIntObject(o.Value), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, NewCommonError("not indexable: %v", o.TypeName())
+}
+
+func (o *CharCode) Equal(right Object) bool {
+	if v, ok := right.(*CharCode); ok {
+		return v == o
+	}
+
+	return false
+}
+
+func (o *CharCode) IsFalsy() bool { return o.Value == nil }
+
+func (o *CharCode) CanCall() bool { return false }
+
+func (o *CharCode) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o *CharCode) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+func NewCharCode(srcA string, optsA ...*CompilerOptions) *CharCode {
+	// byteCodeT := QuickCompile(srcA, optsA...) // quickCompile(tk.ToStr(argsA[0])) //
+
+	// if tk.IsError(byteCodeT) {
+	// 	return nil
+	// }
+
+	var compilerOptionsT *CompilerOptions
+	if len(optsA) > 0 {
+		compilerOptionsT = optsA[0]
+	} else {
+		compilerOptionsT = &DefaultCompilerOptions
+	}
+
+	return &CharCode{Source: srcA, Value: nil, CompilerOptions: compilerOptionsT}
+
+	// objT := &CharCode{Source: srcA, Value: nil, CompilerOptions: compilerOptionsT}
+
+	// _, errT := objT.CallMethod("compile")
+
+	// if errT != nil {
+	// 	return nil
+	// }
+
+	// return objT
+
+	// return &CharCode{Source: srcA, Value: byteCodeT.(*Bytecode)}
 }

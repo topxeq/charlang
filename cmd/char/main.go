@@ -1461,11 +1461,12 @@ func runArgs(argsA ...string) interface{} {
 		ModuleMap: moduleMap,
 		// SymbolTable:       charlang.NewSymbolTable(),
 		// OptimizerMaxCycle: charlang.TraceCompilerOptions.OptimizerMaxCycle,
-		// TraceParser:    true,
-		// TraceOptimizer: true,
-		// TraceCompiler:  true,
+		// TraceParser:       true,
+		// TraceOptimizer:    true,
+		// TraceCompiler:     true,
 		// OptimizeConst:     !noOptimizer,
 		// OptimizeExpr:      !noOptimizer,
+
 		// Trace:             os.Stdout,
 		// TraceParser:       true,
 		// TraceCompiler:     true,
@@ -1494,7 +1495,9 @@ func runArgs(argsA ...string) interface{} {
 	envT["argsG"] = charlang.ConvertToObject(os.Args)
 	envT["versionG"] = charlang.ToStringObject(charlang.VersionG)
 
-	retT, errT := charlang.NewVM(bytecodeT).Run(
+	vmT := charlang.NewVM(bytecodeT)
+
+	retT, errT := vmT.Run(
 		envT,
 		// inParasT,
 	)

@@ -5,7 +5,7 @@ plt(callMethod(b1, "value"))
 err1 := setMember(b1, "remark", "simple text")
 
 if !isNil(err1) {
-	pl("failed set member of b1: %v", getErrStrX(err1))
+	pl("failed to set member of b1: %v", getErrStrX(err1))
 }
 
 plt(getMember(b1, "remark"))
@@ -23,7 +23,7 @@ plt(callMethod(buf1, "value"))
 err2 := setMember(buf1, "remark", "simple text")
 
 if !isNil(err2) {
-	pl("failed set member of buf1: %v", getErrStrX(err2))
+	pl("failed to set member of buf1: %v", getErrStrX(err2))
 }
 
 plt(getMember(buf1, "remark"))
