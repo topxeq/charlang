@@ -4,7 +4,7 @@
 muxT := mux()
 
 handlerT := func(requestA, responseA) {
-	pl("req: %#v, res: %#v", requestA, responseA)
+	// pl("req: %#v, res: %#v", requestA, responseA)
 
 	writeResp(responseA, "This is a test!")
 

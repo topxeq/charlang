@@ -44,37 +44,84 @@ func quickCompileFunc(c charlang.Call) (charlang.Object, error) {
 	lenT := len(argsA)
 
 	if lenT < 1 {
-		return nil, fmt.Errorf("not enough parameters")
+		return charlang.NewCommonError("not enough parameters"), nil
+		// return nil, fmt.Errorf("not enough parameters")
 	}
 
-	byteCodeT := charlang.QuickCompile(tk.ToStr(argsA[0]), c.VM().GetCompilerOptions()) // quickCompile(tk.ToStr(argsA[0])) //
+	codeT := charlang.NewCharCode(argsA[0].String(), c.VM().GetCompilerOptions())
+
+	byteCodeT := charlang.QuickCompile(codeT.Source, codeT.CompilerOptions)
 
 	if tk.IsError(byteCodeT) {
-		return nil, byteCodeT.(error)
+		codeT.LastError = fmt.Sprintf("%v", byteCodeT)
+		return charlang.NewCommonError("%v", byteCodeT), nil
+		// return nil, byteCodeT.(error)
 	}
 
-	return charlang.NewAny(byteCodeT), nil
+	codeT.Value = byteCodeT.(*charlang.Bytecode)
+
+	return codeT, nil
+
+	// byteCodeT := charlang.QuickCompile(tk.ToStr(argsA[0]), c.VM().GetCompilerOptions()) // quickCompile(tk.ToStr(argsA[0])) //
+
+	// if tk.IsError(byteCodeT) {
+	// 	return charlang.NewCommonError("%v", byteCodeT), nil
+	// 	// return nil, byteCodeT.(error)
+	// }
+
+	// return charlang.NewAny(byteCodeT), nil
+}
+
+func quickCompileGelFunc(c charlang.Call) (charlang.Object, error) {
+	argsA := c.GetArgs()
+
+	lenT := len(argsA)
+
+	if lenT < 1 {
+		return charlang.NewCommonError("not enough parameters"), nil
+		// return nil, fmt.Errorf("not enough parameters")
+	}
+
+	codeT := charlang.NewCharCode(argsA[0].String(), c.VM().GetCompilerOptions())
+
+	byteCodeT := charlang.QuickCompile(codeT.Source, codeT.CompilerOptions)
+
+	if tk.IsError(byteCodeT) {
+		codeT.LastError = fmt.Sprintf("%v", byteCodeT)
+		return charlang.NewCommonError("%v", byteCodeT), nil
+		// return nil, byteCodeT.(error)
+	}
+
+	codeT.Value = byteCodeT.(*charlang.Bytecode)
+
+	return &charlang.Gel{Value: codeT}, nil
+
+	// byteCodeT := charlang.QuickCompile(tk.ToStr(argsA[0]), c.VM().GetCompilerOptions()) // quickCompile(tk.ToStr(argsA[0])) //
+
+	// if tk.IsError(byteCodeT) {
+	// 	return charlang.NewCommonError("%v", byteCodeT), nil
+	// 	// return nil, byteCodeT.(error)
+	// }
+
+	// return charlang.NewAny(byteCodeT), nil
 }
 
 func runCompiledFunc(argsA ...charlang.Object) (charlang.Object, error) {
 	lenT := len(argsA)
 
 	if lenT < 1 {
-		return nil, fmt.Errorf("not enough parameters")
+		return charlang.NewCommonError("not enough parameters"), nil
 	}
 
-	anyT, ok := argsA[0].(*charlang.Any)
+	codeT, ok := argsA[0].(*charlang.CharCode)
 
 	if !ok {
-		return nil, fmt.Errorf("invalid code type: (%T)%v", argsA[0], argsA[0])
+		return charlang.NewCommonError("invalid code type: (%T)%v", argsA[0], argsA[0]), nil
+		// return nil, fmt.Errorf("invalid code type: (%T)%v", argsA[0], argsA[0])
 	}
 
-	valueT := anyT.Value
-
-	byteCodeT, ok := valueT.(*charlang.Bytecode)
-
-	if !ok {
-		return nil, fmt.Errorf("invalid code type in Any: (%T)%v", valueT, valueT)
+	if codeT.Value == nil {
+		return charlang.NewCommonError("not compiled"), nil
 	}
 
 	var globalsA map[string]interface{} = nil
@@ -89,10 +136,10 @@ func runCompiledFunc(argsA ...charlang.Object) (charlang.Object, error) {
 	// 	envT["v"]
 	// }
 
-	retT, errT := charlang.NewVM(byteCodeT).Run(envT, additionsA...)
+	retT, errT := charlang.NewVM(codeT.Value).Run(envT, additionsA...)
 
 	if errT != nil {
-		return nil, errT
+		return charlang.NewCommonError("%v", errT), nil
 	}
 
 	return retT, nil
@@ -102,21 +149,25 @@ func goRunCompiledFunc(argsA ...charlang.Object) (charlang.Object, error) {
 	lenT := len(argsA)
 
 	if lenT < 1 {
-		return nil, fmt.Errorf("not enough parameters")
+		return charlang.NewCommonError("not enough parameters"), nil
 	}
 
-	anyT, ok := argsA[0].(*charlang.Any)
+	codeT, ok := argsA[0].(*charlang.CharCode)
 
 	if !ok {
-		return nil, fmt.Errorf("invalid code type: (%T)%v", argsA[0], argsA[0])
+		return charlang.NewCommonError("invalid code type: (%T)%v", argsA[0], argsA[0]), nil
 	}
 
-	valueT := anyT.Value
+	// valueT := anyT.Value
 
-	byteCodeT, ok := valueT.(*charlang.Bytecode)
+	// byteCodeT, ok := valueT.(*charlang.Bytecode)
 
-	if !ok {
-		return nil, fmt.Errorf("invalid code type in Any: (%T)%v", valueT, valueT)
+	// if !ok {
+	// 	return charlang.NewCommonError("invalid code type: (%T)%v", argsA[0], argsA[0]), nil
+	// }
+
+	if codeT.Value == nil {
+		return charlang.NewCommonError("not compiled"), nil
 	}
 
 	var globalsA map[string]interface{} = nil
@@ -131,7 +182,7 @@ func goRunCompiledFunc(argsA ...charlang.Object) (charlang.Object, error) {
 	// 	envT["v"]
 	// }
 
-	go charlang.NewVM(byteCodeT).Run(envT, additionsA...)
+	go charlang.NewVM(codeT.Value).Run(envT, additionsA...)
 
 	// if errT != nil {
 	// 	return nil, errT
@@ -161,6 +212,11 @@ var Module = map[string]charlang.Object{
 	"threadRunCompiled": &charlang.Function{
 		Name:  "threadRunCompiled", // run compiled code in a new thread
 		Value: goRunCompiledFunc,
+	},
+	"loadGel": &charlang.Function{
+		Name:    "loadGel", // compile a piece of code and turn it to Gel
+		Value:   charlang.CallExAdapter(quickCompileGelFunc),
+		ValueEx: quickCompileGelFunc,
 	},
 	// funcs end
 }

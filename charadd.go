@@ -228,6 +228,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				byteCodeT := QuickCompile(nv.Source, nv.CompilerOptions) // quickCompile(tk.ToStr(argsA[0])) //
 
 				if tk.IsError(byteCodeT) {
+					nv.LastError = fmt.Sprintf("%v", byteCodeT)
 					return NewCommonError("%v", byteCodeT), nil
 				}
 
@@ -1413,6 +1414,10 @@ func ConvertToObject(vA interface{}) Object {
 		return &HttpResp{Value: nv}
 	case *io.Reader:
 		return &Reader{Value: nv}
+	case *Bytecode:
+		return &CharCode{Value: nv}
+	case *CharCode:
+		return nv
 	case Function:
 		return &nv
 	case String:
@@ -1512,6 +1517,10 @@ func ConvertFromObject(vA Object) interface{} {
 	case *HttpResp:
 		return nv.Value
 	case *Reader:
+		return nv.Value
+	case *CharCode:
+		return nv.Value
+	case *Gel:
 		return nv.Value
 	case *Any:
 		return nv.Value

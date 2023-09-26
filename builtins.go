@@ -34,7 +34,11 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinGenJSONResp
+	BuiltinUrlExists
+	BuiltinErrStrf
 	BuiltinCharCode
+	BuiltinGel
 	BuiltinGetReqBody
 	BuiltinGetReqHeader
 	BuiltinSetRespHeader
@@ -207,6 +211,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"seq":           BuiltinSeq,
 	"mutex":         BuiltinMutex,
 	"charCode":      BuiltinCharCode,
+	"gel":           BuiltinGel,
 	"any":           BuiltinAny,
 
 	"toTime": BuiltinToTime,
@@ -263,6 +268,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getErrStrX": BuiltinGetErrStrX,
 
 	"checkErrX": BuiltinCheckErrX,
+
+	"errStrf": BuiltinErrStrf,
 
 	// member/method related
 	"getValue":         BuiltinGetValue,
@@ -322,7 +329,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"archiveFilesToZip": BuiltinArchiveFilesToZip, // Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
 
 	// network/web related
-	"getWeb": BuiltinGetWeb,
+	"getWeb":    BuiltinGetWeb,
+	"urlExists": BuiltinUrlExists,
 
 	// server/service related
 	"mux":            BuiltinMux,
@@ -331,6 +339,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"parseReqFormEx": BuiltinParseReqFormEx,
 	"setRespHeader":  BuiltinSetRespHeader,
 	"writeResp":      BuiltinWriteResp,
+	"genJSONResp":    BuiltinGenJSONResp,
+	"genJsonResp":    BuiltinGenJSONResp,
 
 	// ssh related
 	"sshUpload": BuiltinSshUpload,
@@ -409,6 +419,11 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
 	// char add start
+	BuiltinGenJSONResp: &BuiltinFunction{
+		Name:    "genJsonResp",
+		Value:   CallExAdapter(builtinGenJSONRespFunc),
+		ValueEx: builtinGenJSONRespFunc,
+	},
 	BuiltinGetReqBody: &BuiltinFunction{
 		Name:    "getReqBody",
 		Value:   CallExAdapter(builtinGetReqBodyFunc),
@@ -444,10 +459,20 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinMutexFunc),
 		ValueEx: builtinMutexFunc,
 	},
+	BuiltinErrStrf: &BuiltinFunction{
+		Name:    "errStrf",
+		Value:   fnASVaRS(tk.ErrStrf),
+		ValueEx: fnASVaRSex(tk.ErrStrf),
+	},
 	BuiltinCharCode: &BuiltinFunction{
 		Name:    "charCode",
 		Value:   CallExAdapter(builtinCharCodeFunc),
 		ValueEx: builtinCharCodeFunc,
+	},
+	BuiltinGel: &BuiltinFunction{
+		Name:    "gel",
+		Value:   CallExAdapter(builtinGelFunc),
+		ValueEx: builtinGelFunc,
 	},
 	BuiltinFatalf: &BuiltinFunction{
 		Name:    "fatalf",
@@ -498,6 +523,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getWeb",
 		Value:   fnASVaRA(tk.GetWeb),
 		ValueEx: fnASVaRAex(tk.GetWeb),
+	},
+	BuiltinUrlExists: &BuiltinFunction{
+		Name:    "urlExists",
+		Value:   fnASVaRA(tk.UrlExists),
+		ValueEx: fnASVaRAex(tk.UrlExists),
 	},
 	BuiltintRegFindFirstGroups: &BuiltinFunction{
 		Name:    "regFindFirstGroups",
@@ -2114,6 +2144,34 @@ func fnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 	}
 }
 
+// like tk.ErrStrf
+func fnASVaRS(fn func(string, ...interface{}) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+			// return Undefined, ErrWrongNumArguments.NewError(
+			// 	"want>=1 got=" + strconv.Itoa(len(args)))
+		}
+
+		vargs := ObjectsToI(args[1:])
+		rs := fn(args[0].String(), vargs...)
+		return ToStringObject(rs), nil
+	}
+}
+
+func fnASVaRSex(fn func(string, ...interface{}) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 1 {
+			return NewCommonError("not enough parameters"), nil
+			// return Undefined, ErrWrongNumArguments.NewError(
+			// 	"want>=1 got=" + strconv.Itoa(c.Len()))
+		}
+		vargs := toArgsA(1, c)
+		rs := fn(c.Get(0).String(), vargs...)
+		return ToStringObject(rs), nil
+	}
+}
+
 // like tk.GetWeb
 func fnASVaRA(fn func(string, ...interface{}) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
@@ -2952,6 +3010,10 @@ func builtinAnyFunc(c Call) (Object, error) {
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *HttpResp:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *CharCode:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *Gel:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Any:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	default:
@@ -3563,6 +3625,16 @@ func builtinCharCodeFunc(c Call) (Object, error) {
 	return NewCharCode(args[0].String(), compilerOptionsT), nil
 }
 
+func builtinGelFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	return NewGel(args[0])
+}
+
 func builtinMuxFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -3894,6 +3966,10 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return builtinMutexFunc(Call{args: args[1:]})
 	case "mux":
 		return builtinMuxFunc(Call{args: args[1:]})
+	case "charCode":
+		return builtinCharCodeFunc(Call{args: args[1:]})
+	case "gel":
+		return builtinGelFunc(Call{args: args[1:]})
 	case "undefined":
 		return Undefined, nil
 	}
@@ -4028,6 +4104,23 @@ func builtinFatalfFunc(c Call) (Object, error) {
 	tk.Exit(1)
 
 	return Undefined, nil
+}
+
+func builtinGenJSONRespFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v0, ok := args[0].(*HttpReq)
+	if !ok {
+		return NewCommonError("invalid param type: %T(%v)", args[0], args[0]), nil
+	}
+
+	rsT := tk.GenerateJSONPResponseWithMore(args[1].String(), args[2].String(), v0.Value, ObjectsToS(args[3:])...)
+
+	return ToStringObject(rsT), nil
 }
 
 // char add end

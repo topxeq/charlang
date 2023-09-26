@@ -43,7 +43,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, StatusResult: 303, DateTime: 305, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *Reader: 331, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, StatusResult: 303, DateTime: 305, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *Reader: 331, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -3684,7 +3684,7 @@ func (o *Error) SetMember(idxA string, valueA Object) error {
 
 // Copy implements Copier interface.
 func (o *Error) Copy() Object {
-	tk.Pl("*Error copy")
+	// tk.Pl("*Error copy")
 	return &Error{
 		Name:    o.Name,
 		Message: o.Message,
@@ -7692,6 +7692,8 @@ type CharCode struct {
 
 	CompilerOptions *CompilerOptions
 
+	LastError string
+
 	Members map[string]Object
 }
 
@@ -7797,6 +7799,11 @@ func (o *CharCode) IndexGet(index Object) (Object, error) {
 			// return ToIntObject(o.Value), nil
 		}
 
+		if strT == "lastError" {
+			return ToStringObject(o.LastError), nil
+			// return ToIntObject(o.Value), nil
+		}
+
 		rs := o.GetMember(strT)
 
 		if !IsUndefInternal(rs) {
@@ -7860,4 +7867,222 @@ func NewCharCode(srcA string, optsA ...*CompilerOptions) *CharCode {
 	// return objT
 
 	// return &CharCode{Source: srcA, Value: byteCodeT.(*Bytecode)}
+}
+
+// Gel object is like modules based on CharCode object
+type Gel struct {
+	ObjectImpl
+	Source string
+	Value  *CharCode
+
+	Members map[string]Object
+}
+
+// var _ Object = NewGel()[0]
+
+func (*Gel) TypeCode() int {
+	return 193
+}
+
+// TypeName implements Object interface.
+func (*Gel) TypeName() string {
+	return "gel"
+}
+
+func (o *Gel) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+// func (o *Reader) SetValue(valueA Object) error {
+// 	// o.Value.Reset(int(ToIntObject(valueA)))
+
+// 	return NewCommonError("unsupported action(set value)")
+// }
+
+func (o *Gel) HasMemeber() bool {
+	return true
+}
+
+func (o *Gel) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return builtinAnyFunc(Call{args: []Object{o}})
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *Gel) GetValue() Object {
+	return Undefined
+}
+
+func (o *Gel) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Gel) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (*Gel) CanIterate() bool { return false }
+
+func (o *Gel) Iterate() Iterator {
+	return nil
+}
+
+func (o *Gel) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		// if strT == "v" || strT == "value" {
+		// 	o.Value.Reset(int(ToIntObject(value)))
+		// 	return nil
+		// }
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *Gel) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "v" || strT == "value" {
+			return builtinAnyFunc(Call{args: []Object{o}})
+			// return ToIntObject(o.Value), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		rs1, errT := GetObjectMethodFunc(o, strT)
+
+		if errT != nil || IsUndefInternal(rs1) {
+
+			var globalsA map[string]interface{} = nil
+			// var additionsA []Object = make([]Object, 0, len(argsT)+1)
+
+			envT := NewBaseEnv(globalsA) // Map{}
+
+			// additionsA = append(additionsA, ToStringObject(strT))
+			// additionsA = append(additionsA, argsT...)
+
+			retT, errT := NewVM(o.Value.Value).Run(envT, ToStringObject(strT)) // , additionsA...)
+
+			if errT != nil {
+				o.SetMember(strT, NewCommonError("%v", errT))
+
+				return NewCommonError("%v", errT), nil
+			}
+
+			o.SetMember(strT, retT)
+
+			return retT, nil
+
+			// fnT := &Function{
+			// 	Name: strT,
+			// 	ValueEx: func(c Call) (Object, error) {
+			// 		argsT := c.GetArgs()
+
+			// 		var globalsA map[string]interface{} = nil
+			// 		var additionsA []Object = make([]Object, 0, len(argsT)+1)
+
+			// 		envT := NewBaseEnv(globalsA) // Map{}
+
+			// 		additionsA = append(additionsA, ToStringObject(strT))
+			// 		additionsA = append(additionsA, argsT...)
+
+			// 		retT, errT := NewVM(o.Value.Value).Run(envT, additionsA...)
+
+			// 		if errT != nil {
+			// 			return NewCommonError("%v", errT), nil
+			// 		}
+
+			// 		return retT, nil
+
+			// 	},
+			// }
+
+			// o.SetMember(strT, fnT)
+
+			// return fnT, nil
+
+		}
+	}
+
+	return nil, NewCommonError("not indexable: %v", o.TypeName())
+}
+
+func (o *Gel) Equal(right Object) bool {
+	if v, ok := right.(*Gel); ok {
+		return v == o
+	}
+
+	return false
+}
+
+func (o *Gel) IsFalsy() bool { return o.Value == nil }
+
+func (o *Gel) CanCall() bool { return false }
+
+func (o *Gel) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o *Gel) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+func NewGel(argsA ...Object) (Object, error) {
+
+	if len(argsA) < 1 {
+		return Undefined, fmt.Errorf("not enough parameters")
+	}
+
+	nv, ok := argsA[0].(*CharCode)
+
+	if !ok {
+		return Undefined, fmt.Errorf("invalid input type")
+	}
+
+	if nv == nil {
+		return Undefined, fmt.Errorf("not compiled")
+	}
+
+	return &Gel{Value: nv}, nil
 }

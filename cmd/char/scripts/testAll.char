@@ -4,6 +4,18 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", getSeq(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "urlExists.char")
+
+testByText(rs, "(error)error: Head \"http://abc.abc.abc/abc.html\": dial tcp: lookup abc.abc.abc: no such host\n(bool)true\n(bool)false\nrs1 is error: true\nrs2 is error: false\nrs1 != true: true\nrs1 != false: true\nrs1 == true: false\nrs1 == false: false\nrs3 != true: true\nrs3 != true: false\n", getSeq(), "urlExists.char")
+
+rs = systemCmd("char", "-gopath", "gel1.char")
+
+testByText(rs, "add []\n(charlang.Int)3\nPi []\ng1.Pi: 3.1415926\nvar1 []\nunknown member: TXERROR:member/method not found\ntrue\nmember/method not found\nfunc1 []\nunknown func(TXERROR:member/method not found): NotCallableError: string\nmul []\n(charlang.Float)28.8\n", getSeq(), "gel1.char")
+
+rs = systemCmd("char", "-gopath", "gel2.char")
+
+testByText(rs, "add []\n(charlang.Int)3\nPi []\ng1.Pi: 3.1415926\nvar1 []\nunknown member: TXERROR:member/method not found\ntrue\nmember/method not found\nfunc1 []\nunknown func(TXERROR:member/method not found): NotCallableError: string\nmul []\n(charlang.Float)28.8\n", getSeq(), "gel2.char")
+
 rs = systemCmd("char", "-gopath", "mutex.char")
 
 testByText(rs, "(objectRef)<objectRef:5>\n(int)5\nresult: 15005\n", getSeq(), "mutex.char")

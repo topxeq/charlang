@@ -7,31 +7,22 @@
 <title></title>
 <script>
     function startClick() {
-        var textT = document.getElementById('numberInputId').value.trim();
-
         fetch("http://127.0.0.1/test",
         {
             method: "POST",
             // mode: "cors",
             // credentials: 'include',
             headers: {
-                'Accept': 'text/json',
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Accept': 'text/plain',
+                'Content-Type': 'application/json'
             },
-            body: "auth=abc123&input=" + encodeURIComponent(textT)
+            body: {input: {"field1": "value1", "field2": 12.3}}
         })
         .then(function(res){
-            return res.json(); 
+            return res.text(); 
         })
         .then(function(data){
             console.log(data); 
-
-            if (data.Status == "success") {
-                document.getElementById('resultDiv1').innerHTML = 'result: ' + data.Value;
-            } else {
-                document.getElementById('resultDiv1').innerHTML = '<span style="color: #EE0000;>error: ' + data.Value + "</span>";
-            }
-
         })
 
     }
@@ -44,12 +35,6 @@
 </head>
 <body>
 <div id="div1">
-    <input id="numberInputId" value="1">
-</div>
-<div style="margin-top: 1.0rem; text-align: center;">
-	<span id="resultDiv1" style="font-size: 1.0rem; color: #333333;"></span>
-</div>
-<div id="div2">
     <button onclick="startClick()">Start</button>
 </div>
 </body>

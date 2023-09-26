@@ -1,28 +1,46 @@
 n1 := new("int", 0)
 
+mutex1 := mutex()
+
 muxT := mux()
 
 handlerT := func(requestA, responseA) {
 	pl("req: %#v, res: %#v", requestA, responseA)
 
-	reqTypeT := getReqHeader(requestA, "Content-Type")
+	params1 := parseReqFormEx(requestA)
 
-	pl("reqTypeT: %v", reqTypeT)
-
-	if reqTypeT == "application/json" {
-		pl("receive json")
-	}
+	plo(params1)
 
 	setRespHeader(responseA, "Access-Control-Allow-Origin", "*")
 	setRespHeader(responseA, "Access-Control-Allow-Headers", "*")
-	setRespHeader(responseA, "Content-Type", "text/plain;charset=utf-8")
+	setRespHeader(responseA, "Content-Type", "application/json;charset=utf-8")
 
-	writeResp(responseA, "This is a thread server test!")
+	authT := trim(params1["auth"])
+
+	if authT != "abc123" {
+		writeResp(responseA, genJsonResp(requestA, "fail", "auth failed"))
+		return "TX_END_RESPONSE_XT"
+	}
+
+	inputT := params1["input"]
+
+	if inputT == undefined {
+		writeResp(responseA, genJsonResp(requestA, "fail", "input could not be empty"))
+		return "TX_END_RESPONSE_XT"
+	}
+
+	c1 := int(inputT)
+
+	mutex1.lock()
+	setValueByRef(n1, unref(n1)+c1)
+	mutex1.unlock()
+
+	writeResp(responseA, genJsonResp(requestA, "success", toStr(unref(n1))))
 
 	return "TX_END_RESPONSE_XT"
 }
 
-muxT.setHandler("/", handlerT)
+muxT.setHandler("/test", handlerT)
 
 rs := muxT.startHttpServer()
 

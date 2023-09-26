@@ -1,0 +1,27 @@
+rs1 := urlExists("http://abc.abc.abc/abc.html")
+
+plt(rs1)
+
+rs2 := urlExists("http://xie.topget.org/js/tkc.js")
+
+plt(rs2)
+
+rs3 := urlExists("http://xie.topget.org/js/notexists.js")
+
+plt(rs3)
+
+pl("rs1 is error: %v", isErrX(rs1))
+
+pl("rs2 is error: %v", isErrX(rs2))
+
+pl("rs1 != true: %v", rs1 != true)
+
+pl("rs1 != false: %v", rs1 != false)
+
+pl("rs1 == true: %v", rs1 == true)
+
+pl("rs1 == false: %v", rs1 == false)
+
+pl("rs3 != true: %v", rs3 != true)
+
+pl("rs3 != true: %v", rs3 != false)

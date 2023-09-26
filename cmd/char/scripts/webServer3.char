@@ -1,0 +1,31 @@
+n1 := new("int", 0)
+
+muxT := mux()
+
+handlerT := func(requestA, responseA) {
+	pl("req: %#v, res: %#v", requestA, responseA)
+
+	reqTypeT := getReqHeader(requestA, "Content-Type")
+
+	pl("reqTypeT: %v", reqTypeT)
+
+	if reqTypeT == "application/json" {
+		pl("receive json")
+	}
+
+	setRespHeader(responseA, "Access-Control-Allow-Origin", "*")
+	setRespHeader(responseA, "Access-Control-Allow-Headers", "*")
+	setRespHeader(responseA, "Content-Type", "text/plain;charset=utf-8")
+
+	writeResp(responseA, "This is a thread server test!")
+
+	return "TX_END_RESPONSE_XT"
+}
+
+muxT.setHandler("/", handlerT)
+
+rs := muxT.startHttpServer()
+
+pl("result: %v", rs)
+
+

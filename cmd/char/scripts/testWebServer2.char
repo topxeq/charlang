@@ -7,9 +7,13 @@ plo(v0)
 plo(v1)
 
 for i := 0; i < 1000; i ++ {
-	rs := getWeb("http://127.0.0.1")
+	rs := getWeb("http://127.0.0.1/test?auth=abc123&input=" + string(i))
 
-	pl("[%v.%v] %v", v0, i, rs)
+	jsonObjT := fromJson(rs)
+
+	currentInt := int(jsonObjT["Value"])
+
+	pl("[%v.%v] %v", v0, i, currentInt)
 
 	sleep(0.001)
 }
@@ -27,9 +31,13 @@ for i := 0; i < 3; i++ {
 }
 
 for i := 0; i < 1000; i++ {
-	rs := getWeb("http://127.0.0.1")
+	rs := getWeb("http://127.0.0.1/test?auth=abc123&input=" + string(i))
 
-	pl("[%v.%v] %v", "main", i, rs)
+	jsonObjT := fromJson(rs)
+
+	currentInt := int(jsonObjT["Value"])
+
+	pl("[%v.%v] %v", "main", i, currentInt)
 
 	sleep(0.001)
 }

@@ -1,0 +1,57 @@
+sourceT := `
+param (v0, ...vargs)
+
+pln(v0, vargs)
+
+add := func(a1, a2) {
+	return a1 + a2
+}
+
+mul := func(a1, a2) {
+	return a1 * a2
+}
+
+if v0 == "add" {
+	return add
+} else if v0 == "mul" {
+	return mul
+} else if v0 == "Pi" {
+	return 3.1415926
+}
+
+return errStrf("member/method not found")
+`
+
+c1 := charCode(sourceT)
+
+if isErrX(c1.compile()) {
+	pl("failed to compile: %v", c1.lastError)
+	exit()
+}
+
+// plo(c1)
+
+g1 := gel(c1)
+
+rs := g1.add(1, 2)
+
+plo(rs)
+
+pl("g1.Pi: %v", g1.Pi)
+
+pl("unknown member: %v", g1.var1)
+
+pln(isErrX(g1.var1))
+
+pln(getErrStrX(g1.var1))
+
+try {
+	pl("unknown func: %v", g1.func1())
+} catch e {
+	pl("unknown func(%v): %v", g1.func1, e)
+}
+
+rs2 := g1.mul(3.6, 8)
+
+plo(rs2)
+
