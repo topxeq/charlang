@@ -5675,7 +5675,7 @@ func (*Any) TypeName() string {
 
 // String implements Object interface.
 func (o *Any) String() string {
-	return tk.ToStr(o.Value)
+	return fmt.Sprintf("(any:%T)%v", o.Value, o.Value)
 }
 
 func (o *Any) SetValue(valueA Object) error {
@@ -5781,7 +5781,38 @@ func (o *Any) IndexGet(index Object) (Object, error) {
 			return rs, nil
 		}
 
-		return GetObjectMethodFunc(o, strT)
+		rs1, errT := GetObjectMethodFunc(o, strT)
+
+		if errT == nil && !tk.IsError(rs1) {
+			return rs1, nil
+		}
+
+		rs5 := tk.ReflectGetMember(o.Value, strT)
+
+		if !tk.IsError(rs5) {
+			rs6 := ConvertToObject(rs5)
+			o.SetMember(strT, rs6)
+			return rs6, nil
+		}
+
+		if errT != nil {
+			if tk.ReflectHasMethod(o.Value, strT) {
+				rs2 := &Function{
+					Name: strT,
+					ValueEx: func(c Call) (Object, error) {
+						rs3 := tk.ReflectCallMethodCompact(o.Value, strT, ObjectsToI(c.GetArgs())...)
+
+						return ConvertToObject(rs3), nil
+					},
+				}
+
+				o.SetMember(strT, rs2)
+
+				return rs2, nil
+			}
+		}
+
+		return rs1, errT
 	}
 
 	return nil, ErrNotIndexable
@@ -5945,7 +5976,7 @@ func (o *StringBuilder) TypeName() string {
 }
 
 func (o *StringBuilder) String() string {
-	return fmt.Sprintf("%v", *(o.Value))
+	return fmt.Sprintf("(stringBuilder)%v", o.Value.String())
 }
 
 func (o *StringBuilder) HasMemeber() bool {

@@ -4,6 +4,8 @@ plt(v1)
 
 v2 := make("stringBuilder")
 
+plt(v2)
+
 writeStr(v2, "abc")
 
 writeStr(v2, toStr(123.6))

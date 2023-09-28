@@ -135,6 +135,7 @@ const (
 	BuiltinTypeCode
 	BuiltinTypeName
 	BuiltinPl
+	BuiltinPrf
 	BuiltinPln
 	BuiltinPlv
 	BuiltinTestByText
@@ -275,6 +276,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"plv":    BuiltinPlv,
 	"plo":    BuiltinPlo,
 	"plt":    BuiltinPlt,
+	"prf":    BuiltinPrf,
 	"fatalf": BuiltinFatalf,
 
 	// control related
@@ -968,6 +970,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "pl", // usage: the same as printf, but with a line-end(\n) at the end
 		Value:   CallExAdapter(builtinPlFunc),
 		ValueEx: builtinPlFunc,
+	},
+	BuiltinPrf: &BuiltinFunction{
+		Name:    "prf", // usage: the same as printf
+		Value:   fnASVaR(tk.Printf),
+		ValueEx: fnASVaRex(tk.Printf),
 	},
 	BuiltinPass: &BuiltinFunction{
 		Name:    "pass",
@@ -2447,6 +2454,37 @@ func fnAVaRex(fn func(...interface{})) CallableExFunc {
 	}
 }
 
+// like tk.Pln
+func fnASVaR(fn func(string, ...interface{})) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToI(args[1:])
+
+		fn(args[0].String(), vargs...)
+
+		return nil, nil
+	}
+}
+
+func fnASVaRex(fn func(string, ...interface{})) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+
+		vargs := toArgsA(1, c)
+
+		fn(args[0].String(), vargs...)
+
+		return nil, nil
+	}
+}
+
 // like fmt.printf
 func fnASVaRIEex(fn func(string, ...interface{}) (int, error)) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
@@ -2733,6 +2771,7 @@ func builtinPassFunc(c Call) (Object, error) {
 func builtinPlFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 	if len(args) < 1 {
+		tk.Pln()
 		return Undefined, nil
 	}
 
@@ -3235,6 +3274,8 @@ func builtinAnyFunc(c Call) (Object, error) {
 		return &Any{Value: map[string]Object(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
 	case *StringBuilder:
 		return &Any{Value: (*strings.Builder)(obj.Value), OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *BytesBuffer:
+		return &Any{Value: (*bytes.Buffer)(obj.Value), OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Seq:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Mutex:
