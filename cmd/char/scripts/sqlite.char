@@ -1,0 +1,114 @@
+// 本例演示Char语言对SQLite 3库的创建与增删改查
+//This example demonstrates the creation, addition, deletion, and modification of SQLite 3 library by Charlang
+
+dbFilePath := joinPath(getHomeDir(), `test.db`)
+
+// 判断是否已存在该库（SQLite库是放在单一的文件中的）
+// 注意请确保c:\tmp文件夹已存在
+// 结果放入变量b中
+// Determine if the library already exists (SQLite library is placed in a single file)
+// Please ensure that the c:\tmp folder already exists
+// Place the results in variable b
+b := fileExists(dbFilePath)
+
+// 如果否则跳到下一步继续执行
+// 如果存在则删除该文件
+// removeFile指令的运行结果将被丢弃（因为使用了内置全局变量drop）
+// If not, skip to the next step to continue execution
+// If present, delete the file
+// The result of the removeFile instruction will be discarded (due to the use of the built-in global variable drop)
+if b {
+	removeFile(dbFilePath)
+}
+
+// 创建新库
+// dbConnect用于连接数据库
+// 除结果参数外第一个参数是数据库驱动名称，支持sqlite3、mysql、godror（即Oracle）、mssql（即MS SQLServer）等
+// 第二个参数是连接字符串，类似 server=129.0.3.99;port=1433;portNumber=1433;user id=sa;password=pass123;database=hr 或 user/pass@129.0.9.11:1521/testdb 等
+// SQLite3的驱动将基于文件创建或连接数据库
+// 所以第二个参数直接给出数据库文件路径即可
+// Create a new library
+// dbConnect is used to connect to a database
+// The first parameter besides the result parameter is the database driver name, which supports sqlite3, mysql, godror (i.e. Oracle), msql (i.e. MS SQLServer), etc
+// The second parameter is the connection string, similar to server=129.0.3.99; port=1433; portNumber=1433; user id=sa; password=pass123; Database=hr or user/ pass@129.0.9.11 : 1521/testdb et al
+// The driver of SQLite3 will create or connect databases based on files
+// So the second parameter directly provides the database file path
+db := dbConnect("sqlite3", dbFilePath)
+
+// 判断创建（或连接）数据库是否失败
+// rs中是布尔类型表示变量db是否是错误对象
+// 如果是错误对象，errMsg中将是错误原因描述字符串
+// Determine if the creation (or connection) of the database has failed
+// Is the Boolean type in rs indicating whether the variable db is the wrong object
+// If it is an error object, errMsg will contain the error reason description string
+// 如果为否则继续执行，否则输出错误信息并退出
+// If not, continue executing, otherwise output an error message and exit
+if isErr(db) {
+	pl("创建数据库文件时发生错误：%v", getErrStr(db))
+	exit()
+}
+
+// 将变量sqlStmt中放入要执行的建表SQL语句
+// Place the variable sqlStmt into the table building SQL statement to be executed
+sqlStmt := `create table TEST (ID integer not null primary key, CODE text);`
+
+// 执行SQL语句，dbExec用于执行insert、delete、update等SQL语句
+// Execute SQL statements, dbExec is used to execute SQL statements such as insert, delete, update, etc
+rs := dbExec(db, sqlStmt)
+
+// 判断是否SQL执行出错，方式与前面连接数据库时类似
+// Determine if there was an SQL execution error, similar to when connecting to the database earlier
+if isErr(rs) {
+	pl("执行SQL语句建表时发生错误：%v", getErrStr(rs))
+
+	// 出现错误时，因为数据库连接已打开，因此需要关闭
+	// When an error occurs, it needs to be closed because the database connection is already open
+	dbClose(db)
+
+	exit()
+}
+
+// 进行循环，在库中插入5条记录
+// i是循环变量
+// Loop and insert 5 records into the library
+// I is a cyclic variable
+sql := `insert into TEST(ID, CODE) values(?, ?)`
+
+for i := 0; i < 5; i++ {
+	// genRandomStr指令用于产生随机字符串
+	// The genRandomStr instruction is used to generate random strings
+	str1 := genRandomStr()
+
+	rs = dbExec(db, sql, i, str1)
+
+	if isErr(rs) {
+		pl("执行SQL语句新增记录时发生错误：%v", getErrStr(rs))
+		dbClose(db)
+		exit()
+	}
+}
+
+// 进行数据库查询，验证查看刚刚新增的记录
+// Perform database queries, verify and view the newly added records
+sql = `select ID, CODE from TEST`
+
+// dbQuery指令用于执行一条查询（select）语句
+// 结果将是一个数组，数组中每一项代表查询结果集中的一条记录
+// 每条记录是一个映射，键名对应于数据库中的字段名，键值是相应的字段值，但均转换成字符串类型
+// The dbQuery instruction is used to execute a select statement
+// The result will be an array, where each item represents a record in the query result set
+// Each record is a mapping, and the key name corresponds to the field name in the database. The key value is the corresponding field value, but it is converted to a string type
+rs = dbQuery(db, sql)
+
+// dbClose指令用于关闭数据库连接
+// The dbClose directive is used to close a database connection
+dbClose(db)
+
+plt(rs)
+
+// 用toJson指令将结果集转换为JSON格式以便输出查看
+// Convert the result set to JSON format using the toJson directive for output viewing
+jsonStr := toJson(rs, "-indent", "-sort")
+
+pln(jsonStr)
+

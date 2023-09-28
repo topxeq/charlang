@@ -1,0 +1,65 @@
+// handler runs in a seperate VM, more safe but with a little more system resource(and time) cost/overhead
+n1 := new("int", 0)
+
+mutex1 := mutex()
+
+muxT := mux()
+
+handlerT := charCode(`
+param(n1, mutex1)
+
+global requestG
+global responseG
+
+pl("req: %#v, res: %#v", requestG, responseG)
+
+pl("n1: %#v, mutex1: %#v", n1, mutex1)
+
+params1 := parseReqForm(requestG)
+
+plo(params1)
+
+setRespHeader(responseG, "Access-Control-Allow-Origin", "*")
+setRespHeader(responseG, "Access-Control-Allow-Headers", "*")
+setRespHeader(responseG, "Content-Type", "application/json;charset=utf-8")
+
+authT := trim(params1["auth"])
+
+if authT != "abc123" {
+	writeResp(responseG, genJsonResp(requestG, "fail", "auth failed"))
+	return "TX_END_RESPONSE_XT"
+}
+
+inputT := params1["input"]
+
+if inputT == undefined {
+	writeResp(responseG, genJsonResp(requestG, "fail", "input could not be empty"))
+	return "TX_END_RESPONSE_XT"
+}
+
+c1 := int(inputT)
+
+pln("c1:", c1)
+
+mutex1.lock()
+
+setValueByRef(n1, unref(n1)+c1)
+mutex1.unlock()
+
+writeResp(responseG, genJsonResp(requestG, "success", toStr(unref(n1))))
+
+return "TX_END_RESPONSE_XT"
+
+`).compile()
+
+if isErr(handlerT) {
+	fatalf("failed to compile handler code: %v", getErrStr(handlerT))
+}
+
+muxT.setHandler("/test", handlerT, n1, mutex1)
+
+rs := muxT.startHttpServer()
+
+pl("result: %v", rs)
+
+

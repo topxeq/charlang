@@ -43,8 +43,8 @@ for i := 0; i < 1000; i++ {
 }
 
 for true {
-	if unref(flag1) < 2 {
-		pln(unref(flag1))
+	if unref(flag1) < 3 {
+		// pln(unref(flag1))
 		sleep(1.0)
 		continue
 	}

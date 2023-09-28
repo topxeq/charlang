@@ -2,6 +2,7 @@ package charlang
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"io"
 	"net/http"
@@ -33,6 +34,8 @@ var VerboseG = false
 var ScriptPathG string
 
 var ServerModeG = false
+
+var RandomGeneratorG *tk.RandomX = nil
 
 var ErrCommon = &Error{Name: "error"}
 
@@ -203,7 +206,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	191: map[string]*Function{ // Bool
+	191: map[string]*Function{ // *CharCode
 		"toStr": &Function{
 			Name: "toStr",
 			ValueEx: func(c Call) (Object, error) {
@@ -222,7 +225,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				nv, ok := c.This.(*CharCode)
 
 				if !ok {
-					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+					return NewCommonError("invalid type: %#v", c.This), nil
 				}
 
 				byteCodeT := QuickCompile(nv.Source, nv.CompilerOptions) // quickCompile(tk.ToStr(argsA[0])) //
@@ -234,7 +237,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 				nv.Value = byteCodeT.(*Bytecode)
 
-				return Undefined, nil
+				return nv, nil
 			},
 		},
 		"run": &Function{
@@ -714,9 +717,11 @@ var methodFuncMapG = map[int]map[string]*Function{
 		"setHandler": &Function{
 			Name: "setHandler",
 			ValueEx: func(c Call) (Object, error) {
-				if c.Len() < 2 {
+				lenT := c.Len()
+				if lenT < 2 {
 					return NewCommonError("not enough paramters"), nil
 				}
+				// tk.Plv("%#v", c.GetArgs())
 
 				objT := (*http.ServeMux)(c.This.(*Mux).Value)
 
@@ -726,27 +731,66 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 				fnT, ok := fnObjT.(*CompiledFunction)
 
-				if !ok {
-					return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+				if ok {
+					objT.HandleFunc(pathT, func(w http.ResponseWriter, req *http.Request) {
+						retT, errT := NewInvoker(c.VM(), fnT).Invoke(ConvertToObject(req), ConvertToObject(w))
+
+						if errT != nil {
+							tk.Pl("failed to invoke handler: %v", errT)
+							return
+						}
+
+						rs := retT.String()
+
+						if rs != "TX_END_RESPONSE_XT" {
+							w.Write([]byte(rs))
+						}
+
+					})
+
+					return Undefined, nil
 				}
 
-				objT.HandleFunc(pathT, func(w http.ResponseWriter, req *http.Request) {
-					retT, errT := NewInvoker(c.VM(), fnT).Invoke(ConvertToObject(req), ConvertToObject(w))
+				fn2T, ok := fnObjT.(*CharCode)
 
-					if errT != nil {
-						tk.Pl("failed to invode handler: %v", errT)
-						return
+				if ok {
+					var additionsA []Object = make([]Object, 0, lenT-2)
+
+					for i := 2; i < lenT; i++ {
+						additionsA = append(additionsA, c.Get(i))
 					}
 
-					rs := retT.String()
+					// tk.Plv("additionsA", additionsA)
 
-					if rs != "TX_END_RESPONSE_XT" {
-						w.Write([]byte(rs))
-					}
+					objT.HandleFunc(pathT, func(w http.ResponseWriter, req *http.Request) {
+						var globalsA map[string]interface{} = map[string]interface{}{
+							"requestG":  req,
+							"responseG": w,
+						}
 
-				})
+						envT := NewBaseEnv(globalsA) // Map{}
 
-				return Undefined, nil
+						// if lenT > 1 {
+						// 	additionsA = argsA[1:]
+						// }
+						retT, errT := NewVM(fn2T.Value).Run(envT, additionsA...)
+
+						if errT != nil {
+							tk.Pl("failed to run handler: %v", errT)
+							return
+						}
+
+						rs := retT.String()
+
+						if rs != "TX_END_RESPONSE_XT" {
+							w.Write([]byte(rs))
+						}
+
+					})
+				}
+
+				return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+
 			},
 		},
 		"startHttpServer": &Function{
@@ -1414,9 +1458,15 @@ func ConvertToObject(vA interface{}) Object {
 		return &HttpResp{Value: nv}
 	case *io.Reader:
 		return &Reader{Value: nv}
+	case *sql.DB:
+		return &Database{Value: nv}
 	case *Bytecode:
 		return &CharCode{Value: nv}
 	case *CharCode:
+		return nv
+	case *HttpReq:
+		return nv
+	case *HttpResp:
 		return nv
 	case Function:
 		return &nv
@@ -1438,6 +1488,7 @@ func ConvertToObject(vA interface{}) Object {
 }
 
 func ConvertFromObject(vA Object) interface{} {
+	// tk.Plo("ConvertFromObject:", vA)
 	// if vA.TypeName() == "int" {
 	// 	return int(vA)
 	// }
@@ -1521,6 +1572,8 @@ func ConvertFromObject(vA Object) interface{} {
 	case *CharCode:
 		return nv.Value
 	case *Gel:
+		return nv.Value
+	case *Database:
 		return nv.Value
 	case *Any:
 		return nv.Value

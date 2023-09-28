@@ -1,3 +1,4 @@
+// use an internal handler, more fast
 n1 := new("int", 0)
 
 mutex1 := mutex()

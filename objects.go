@@ -1942,6 +1942,10 @@ func ToIntObject(argA interface{}, defaultA ...int) Int {
 		return nv
 	case Float:
 		return Int(nv)
+	case Byte:
+		return Int(nv)
+	case Char:
+		return Int(nv)
 	case Object:
 		return Int(tk.StrToInt(nv.String(), defaultT))
 	case string:

@@ -34,6 +34,21 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinGetRandomInt
+	BuiltinGetRandomFloat
+	BuiltinGetRandomStr
+	BuiltinFormatSQLValue
+	BuiltinDbClose
+	BuiltinDbQuery
+	BuiltinDbQueryRecs
+	BuiltinDbQueryMap
+	BuiltinDbQueryMapArray
+	BuiltinDbQueryCount
+	BuiltinDbQueryFloat
+	BuiltinDbQueryString
+	BuiltinDbExec
+	BuiltinRemoveFile
+	BuiltinFileExists
 	BuiltinGenJSONResp
 	BuiltinUrlExists
 	BuiltinErrStrf
@@ -42,6 +57,7 @@ const (
 	BuiltinGetReqBody
 	BuiltinGetReqHeader
 	BuiltinSetRespHeader
+	BuiltinParseReqForm
 	BuiltinParseReqFormEx
 	BuiltinWriteResp
 	BuiltinMux
@@ -265,11 +281,20 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// error related
 	"isErrX":     BuiltinIsErrX,
+	"isErr":      BuiltinIsErrX,
 	"getErrStrX": BuiltinGetErrStrX,
+	"getErrStr":  BuiltinGetErrStrX,
 
 	"checkErrX": BuiltinCheckErrX,
+	"checkErr":  BuiltinCheckErrX,
 
 	"errStrf": BuiltinErrStrf,
+
+	// random related
+	"getRandomInt":   BuiltinGetRandomInt,
+	"getRandomFloat": BuiltinGetRandomFloat,
+	"getRandomStr":   BuiltinGetRandomStr,
+	"genRandomStr":   BuiltinGetRandomStr,
 
 	// member/method related
 	"getValue":         BuiltinGetValue,
@@ -322,6 +347,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	"joinPath": BuiltinJoinPath, // join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
 
 	// file related
+	"fileExists":   BuiltinFileExists,
+	"ifFileExists": BuiltinFileExists,
+
+	"removeFile": BuiltinRemoveFile,
+
 	"loadText": BuiltinLoadText,
 	"saveText": BuiltinSaveText,
 
@@ -336,6 +366,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mux":            BuiltinMux,
 	"getReqHeader":   BuiltinGetReqHeader,
 	"getReqBody":     BuiltinGetReqBody,
+	"parseReqForm":   BuiltinParseReqForm,
 	"parseReqFormEx": BuiltinParseReqFormEx,
 	"setRespHeader":  BuiltinSetRespHeader,
 	"writeResp":      BuiltinWriteResp,
@@ -346,12 +377,27 @@ var BuiltinsMap = map[string]BuiltinType{
 	"sshUpload": BuiltinSshUpload,
 
 	// database related
-	"database": BuiltinDatabase,
+	"database":  BuiltinDatabase,
+	"dbConnect": BuiltinDatabase,
+	"dbClose":   BuiltinDbClose,
+
+	"dbQuery":         BuiltinDbQuery,
+	"dbQueryRecs":     BuiltinDbQueryRecs,
+	"dbQueryMap":      BuiltinDbQueryMap,
+	"dbQueryMapArray": BuiltinDbQueryMapArray,
+	"dbQueryCount":    BuiltinDbQueryCount,
+	"dbQueryFloat":    BuiltinDbQueryFloat,
+	"dbQueryString":   BuiltinDbQueryString,
+
+	"dbExec": BuiltinDbExec,
+
+	"formatSQLValue": BuiltinFormatSQLValue,
 
 	// misc related
 	"getSeq": BuiltinGetSeq,
 	"pass":   BuiltinPass,
 
+	// original internal related
 	"append":        BuiltinAppend,
 	"delete":        BuiltinDelete,
 	"copy":          BuiltinCopy,
@@ -419,6 +465,76 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
 	// char add start
+	BuiltinGetRandomInt: &BuiltinFunction{
+		Name:    "getRandomInt",
+		Value:   CallExAdapter(builtinGetRandomIntFunc),
+		ValueEx: builtinGetRandomIntFunc,
+	},
+	BuiltinGetRandomFloat: &BuiltinFunction{
+		Name:    "getRandomFloat",
+		Value:   CallExAdapter(builtinGetRandomFloatFunc),
+		ValueEx: builtinGetRandomFloatFunc,
+	},
+	BuiltinGetRandomStr: &BuiltinFunction{
+		Name:    "getRandomStr",
+		Value:   CallExAdapter(builtinGetRandomStrFunc),
+		ValueEx: builtinGetRandomStrFunc,
+	},
+	BuiltinDbClose: &BuiltinFunction{
+		Name:    "dbClose",
+		Value:   CallExAdapter(BuiltinDbCloseFunc),
+		ValueEx: BuiltinDbCloseFunc,
+	},
+	BuiltinDbQuery: &BuiltinFunction{
+		Name:    "dbQuery",
+		Value:   fnADSVaRA(sqltk.QueryDBX),
+		ValueEx: fnADSVaRAex(sqltk.QueryDBX),
+	},
+	BuiltinDbQueryCount: &BuiltinFunction{
+		Name:    "dbQueryCount",
+		Value:   fnADSVaRA(sqltk.QueryCountX),
+		ValueEx: fnADSVaRAex(sqltk.QueryCountX),
+	},
+	BuiltinDbQueryFloat: &BuiltinFunction{
+		Name:    "dbQueryFloat",
+		Value:   fnADSVaRA(sqltk.QueryFloatX),
+		ValueEx: fnADSVaRAex(sqltk.QueryFloatX),
+	},
+	BuiltinDbQueryString: &BuiltinFunction{
+		Name:    "dbQueryString",
+		Value:   fnADSVaRA(sqltk.QueryStringX),
+		ValueEx: fnADSVaRAex(sqltk.QueryStringX),
+	},
+	BuiltinDbQueryRecs: &BuiltinFunction{
+		Name:    "dbQueryRecs",
+		Value:   fnADSVaRA(sqltk.QueryDBRecsX),
+		ValueEx: fnADSVaRAex(sqltk.QueryDBRecsX),
+	},
+	BuiltinDbQueryMap: &BuiltinFunction{
+		Name:    "dbQueryMap",
+		Value:   fnADSSVaRA(sqltk.QueryDBMapX),
+		ValueEx: fnADSSVaRAex(sqltk.QueryDBMapX),
+	},
+	BuiltinDbQueryMapArray: &BuiltinFunction{
+		Name:    "dbQueryMapArray",
+		Value:   fnADSSVaRA(sqltk.QueryDBMapArrayX),
+		ValueEx: fnADSSVaRAex(sqltk.QueryDBMapArrayX),
+	},
+	BuiltinDbExec: &BuiltinFunction{
+		Name:    "dbExec",
+		Value:   fnADSVaRA(sqltk.ExecDBX),
+		ValueEx: fnADSVaRAex(sqltk.ExecDBX),
+	},
+	BuiltinFormatSQLValue: &BuiltinFunction{
+		Name:    "formatSQLValue",
+		Value:   fnASRS(sqltk.FormatSQLValue),
+		ValueEx: fnASRSex(sqltk.FormatSQLValue),
+	},
+	BuiltinRemoveFile: &BuiltinFunction{
+		Name:    "removeFile",
+		Value:   fnASRE(tk.RemoveFile),
+		ValueEx: fnASREex(tk.RemoveFile),
+	},
 	BuiltinGenJSONResp: &BuiltinFunction{
 		Name:    "genJsonResp",
 		Value:   CallExAdapter(builtinGenJSONRespFunc),
@@ -438,6 +554,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "setRespHeader",
 		Value:   CallExAdapter(builtinSetRespHeaderFunc),
 		ValueEx: builtinSetRespHeaderFunc,
+	},
+	BuiltinParseReqForm: &BuiltinFunction{
+		Name:    "parseReqForm",
+		Value:   CallExAdapter(builtinParseReqFormFunc),
+		ValueEx: builtinParseReqFormFunc,
 	},
 	BuiltinParseReqFormEx: &BuiltinFunction{
 		Name:    "parseReqFormEx",
@@ -649,6 +770,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinCheckErrXFunc),
 		ValueEx: builtinCheckErrXFunc,
 	},
+	BuiltinFileExists: &BuiltinFunction{
+		Name:    "fileExists",
+		Value:   fnASRB(tk.IfFileExists),
+		ValueEx: fnASRBex(tk.IfFileExists),
+	},
 	BuiltinLoadText: &BuiltinFunction{
 		Name:    "loadText",
 		Value:   fnASRS(tk.LoadStringFromFile),
@@ -773,8 +899,8 @@ var BuiltinObjects = [...]Object{
 		Value: builtinExitFunc,
 	},
 	BuiltinSleep: &BuiltinFunction{
-		Name:  "sleep", // usage: sleep(1.2) sleep for 1.2 seconds
-		Value: builtinSleepFunc,
+		Name:    "sleep", // usage: sleep(1.2) sleep for 1.2 seconds
+		ValueEx: builtinSleepFunc,
 	},
 	BuiltinIsErrX: &BuiltinFunction{
 		Name:    "isErrX", // usage: isErrX(err1), check if err1 is error or error string(which starts with TXERROR:)
@@ -1454,7 +1580,7 @@ func builtinByteFunc(c Call) (Object, error) {
 	case *MutableString:
 		return Byte(tk.ToInt(nv)), nil
 	default:
-		return NewCommonError("unsupported type: %T", arg1), nil
+		return NewCommonErrorWithPos(c, "unsupported type: %T", arg1), nil
 	}
 }
 
@@ -1882,6 +2008,29 @@ func fnASRSex(fn func(string) string) CallableExFunc {
 	}
 }
 
+// / like tk.IfFileExists
+func fnASRB(fn func(string) bool) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String())
+		return Bool(rs), nil
+	}
+}
+
+func fnASRBex(fn func(string) bool) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(c.Get(0).String())
+		return Bool(rs), nil
+	}
+}
+
 // like tk.SetClipText
 func fnASRE(fn func(string) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
@@ -2134,7 +2283,7 @@ func fnASVsRS(fn func(string, ...string) string) CallableFunc {
 func fnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 			// return Undefined, ErrWrongNumArguments.NewError(
 			// 	"want>=1 got=" + strconv.Itoa(c.Len()))
 		}
@@ -2162,13 +2311,99 @@ func fnASVaRS(fn func(string, ...interface{}) string) CallableFunc {
 func fnASVaRSex(fn func(string, ...interface{}) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 			// return Undefined, ErrWrongNumArguments.NewError(
 			// 	"want>=1 got=" + strconv.Itoa(c.Len()))
 		}
 		vargs := toArgsA(1, c)
 		rs := fn(c.Get(0).String(), vargs...)
 		return ToStringObject(rs), nil
+	}
+}
+
+// like sqltk.ExecDBX
+func fnADSVaRA(fn func(*sql.DB, string, ...interface{}) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+			// return Undefined, ErrWrongNumArguments.NewError(
+			// 	"want>=1 got=" + strconv.Itoa(len(args)))
+		}
+
+		nv1, ok := args[0].(*Database)
+
+		if !ok {
+			return NewCommonError("invalid parameter type: (%T)%v", args[0], args[0]), nil
+		}
+
+		vargs := ObjectsToI(args[2:])
+		rs := fn(nv1.Value, args[1].String(), vargs...)
+		return ConvertToObject(rs), nil
+	}
+}
+
+func fnADSVaRAex(fn func(*sql.DB, string, ...interface{}) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			// return Undefined, ErrWrongNumArguments.NewError(
+			// 	"want>=1 got=" + strconv.Itoa(c.Len()))
+		}
+
+		nv1, ok := args[0].(*Database)
+
+		if !ok {
+			return NewCommonError("invalid parameter type: (%T)%v", args[0], args[0]), nil
+		}
+
+		vargs := ObjectsToI(args[2:])
+		rs := fn(nv1.Value, args[1].String(), vargs...)
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like sqltk.QueryDBMapX
+func fnADSSVaRA(fn func(*sql.DB, string, string, ...interface{}) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 3 {
+			return NewCommonError("not enough parameters"), nil
+			// return Undefined, ErrWrongNumArguments.NewError(
+			// 	"want>=1 got=" + strconv.Itoa(len(args)))
+		}
+
+		nv1, ok := args[0].(*Database)
+
+		if !ok {
+			return NewCommonError("invalid parameter type: (%T)%v", args[0], args[0]), nil
+		}
+
+		vargs := ObjectsToI(args[3:])
+		rs := fn(nv1.Value, args[1].String(), args[2].String(), vargs...)
+		return ConvertToObject(rs), nil
+	}
+}
+
+func fnADSSVaRAex(fn func(*sql.DB, string, string, ...interface{}) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 3 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			// return Undefined, ErrWrongNumArguments.NewError(
+			// 	"want>=1 got=" + strconv.Itoa(c.Len()))
+		}
+
+		nv1, ok := args[0].(*Database)
+
+		if !ok {
+			return NewCommonError("invalid parameter type: (%T)%v", args[0], args[0]), nil
+		}
+
+		vargs := ObjectsToI(args[3:])
+		rs := fn(nv1.Value, args[1].String(), args[2].String(), vargs...)
+		return ConvertToObject(rs), nil
 	}
 }
 
@@ -2187,7 +2422,7 @@ func fnASVaRA(fn func(string, ...interface{}) interface{}) CallableFunc {
 func fnASVaRAex(fn func(string, ...interface{}) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
 		vargs := toArgsA(1, c)
 		rs := fn(c.Get(0).String(), vargs...)
@@ -2503,7 +2738,7 @@ func builtinPlFunc(c Call) (Object, error) {
 
 	v, ok := args[0].(String)
 	if !ok {
-		return Undefined, NewCommonError("required format string")
+		return Undefined, NewCommonErrorWithPos(c, "required format string")
 	}
 
 	tk.Pl(v.String(), ObjectsToI(args[1:])...)
@@ -2646,7 +2881,7 @@ func builtinToJSONFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	cObjT := ConvertFromObject(args[0])
@@ -2660,7 +2895,7 @@ func builtinFromJSONFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	jsonTextT := args[0].String()
@@ -2715,7 +2950,7 @@ func builtinIsErrXFunc(c Call) (Object, error) {
 
 func builtinIsNilFunc(c Call) (Object, error) {
 	if c.Len() < 1 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	args1 := c.Get(0)
@@ -2729,9 +2964,11 @@ func builtinIsNilFunc(c Call) (Object, error) {
 	return Bool(tk.IsNil(nv)), nil
 }
 
-func builtinSleepFunc(args ...Object) (Object, error) {
+func builtinSleepFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
 	if len(args) < 1 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	v := args[0].String()
@@ -2739,7 +2976,7 @@ func builtinSleepFunc(args ...Object) (Object, error) {
 	f := tk.StrToFloat64WithDefaultValue(v, 0)
 
 	if f <= 0 {
-		return Undefined, NewCommonError("invalid time")
+		return Undefined, NewCommonErrorWithPos(c, "invalid time")
 	}
 
 	tk.Sleep(f)
@@ -2777,18 +3014,18 @@ func builtinTimeFunc(c Call) (Object, error) {
 		rsT := tk.ToTime(obj.Value, ObjectsToI(args[1:])...)
 
 		if tk.IsError(rsT) {
-			return Undefined, NewCommonError("failed to convert time: %v", rsT)
+			return Undefined, NewCommonErrorWithPos(c, "failed to convert time: %v", rsT)
 		}
 		return &Time{Value: rsT.(time.Time)}, nil
 	case *MutableString:
 		rsT := tk.ToTime(obj.Value, ObjectsToI(args[1:])...)
 
 		if tk.IsError(rsT) {
-			return Undefined, NewCommonError("failed to convert time: %v", rsT)
+			return Undefined, NewCommonErrorWithPos(c, "failed to convert time: %v", rsT)
 		}
 		return &Time{Value: rsT.(time.Time)}, nil
 	default:
-		return Undefined, NewCommonError("failed to convert time")
+		return Undefined, NewCommonErrorWithPos(c, "failed to convert time")
 	}
 }
 
@@ -2796,7 +3033,7 @@ func builtinCallNamedFuncFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	str1 := args[0].String()
@@ -2804,7 +3041,7 @@ func builtinCallNamedFuncFunc(c Call) (Object, error) {
 	fn1, ok := namedFuncMapG[str1]
 
 	if !ok {
-		return Undefined, NewCommonError("named func not found")
+		return Undefined, NewCommonErrorWithPos(c, "named func not found")
 	}
 
 	rsT := tk.ReflectCallFuncQuick(fn1, ObjectsToI(args[1:]))
@@ -2816,7 +3053,7 @@ func builtinCallInternalFuncFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	rsT := tk.ReflectCallFuncQuick(ConvertFromObject(args[0]), ObjectsToI(args[1:]))
@@ -2828,7 +3065,7 @@ func builtinGetNamedValueFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	str1 := args[0].String()
@@ -2836,7 +3073,7 @@ func builtinGetNamedValueFunc(c Call) (Object, error) {
 	v1, ok := namedValueMapG[str1]
 
 	if !ok {
-		return Undefined, NewCommonError("named value not found")
+		return Undefined, NewCommonErrorWithPos(c, "named value not found")
 	}
 
 	return ConvertToObject(v1), nil
@@ -2846,7 +3083,7 @@ func builtinNewExFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	rsT := tk.NewObject(ObjectsToI(args)...)
@@ -2858,7 +3095,7 @@ func builtinCallMethodExFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	var name1 string = ""
@@ -2872,13 +3109,13 @@ func builtinCallMethodExFunc(c Call) (Object, error) {
 	// map1, ok := methodMapG[str1]
 
 	// if !ok {
-	// 	return Undefined, NewCommonError("method not found 1")
+	// 	return Undefined, NewCommonErrorWithPos(c, "method not found 1")
 	// }
 
 	// map2, ok := map1[name1]
 
 	// if !ok {
-	// 	return Undefined, NewCommonError("method not found 2")
+	// 	return Undefined, NewCommonErrorWithPos(c, "method not found 2")
 	// }
 
 	paramsT := ObjectsToI(args[2:])
@@ -2892,7 +3129,7 @@ func builtinGetValueFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	return args[0].GetValue(), nil
@@ -2902,7 +3139,7 @@ func builtinGetMemberFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	return args[0].GetMember(args[1].String()), nil
@@ -2912,7 +3149,7 @@ func builtinSetMemberFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 3 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	return WrapError(args[0].SetMember(args[1].String(), args[2])), nil
@@ -2922,13 +3159,13 @@ func builtinSetValueFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	args0, ok := args[0].(ValueSetter)
 
 	if !ok {
-		return NewCommonError("unsupported action(set value)"), nil
+		return NewCommonErrorWithPos(c, "unsupported action(set value)"), nil
 	}
 
 	return WrapError(args0.SetValue(args[1])), nil
@@ -2938,7 +3175,7 @@ func builtinCallMethodFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	return args[0].CallMethod(args[1].String(), args[2:]...)
@@ -2948,7 +3185,7 @@ func builtinRegQuoteFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	return ToStringObject(tk.RegQuote(args[0].String())), nil
@@ -2958,7 +3195,7 @@ func builtinGetClipTextFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		return Undefined, NewCommonError("not enough parameters")
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
 	return ToStringObject(tk.GetClipText()), nil
@@ -3053,7 +3290,7 @@ func builtinSetValueByRefFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		return NewCommonError("not enough parameters"), nil
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
 	// tk.Pl("builtinSetValueByRefFunc: %#v %#v", args[0], args[1])
@@ -3253,11 +3490,11 @@ func builtinPltFunc(c Call) (Object, error) {
 // 		rsT := tk.ToTime(obj)
 
 // 		if tk.IsError(rsT) {
-// 			return Undefined, NewCommonError("failed to convert time")
+// 			return Undefined, NewCommonErrorWithPos(c, "failed to convert time")
 // 		}
 // 		return &Time{Value: rsT.(time.Time)}, nil
 // 	default:
-// 		return Undefined, NewCommonError("failed to convert time")
+// 		return Undefined, NewCommonErrorWithPos(c, "failed to convert time")
 // 	}
 // }
 
@@ -3645,12 +3882,12 @@ func builtinWriteRespFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		return NewCommonError("not enough parameters"), nil
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
 	v, ok := args[0].(*HttpResp)
 	if !ok {
-		return NewCommonError("invalid object type: (%T)%v", args[0], args[0]), nil
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
 	}
 
 	var contentT Bytes = nil
@@ -3664,7 +3901,7 @@ func builtinWriteRespFunc(c Call) (Object, error) {
 	if contentT == nil {
 		v2, ok := args[1].(Bytes)
 		if !ok {
-			return NewCommonError("invalid content type: (%T)%v", args[1], args[1]), nil
+			return NewCommonErrorWithPos(c, "invalid content type: (%T)%v", args[1], args[1]), nil
 		}
 
 		contentT = v2
@@ -3673,22 +3910,43 @@ func builtinWriteRespFunc(c Call) (Object, error) {
 	r, errT := v.Value.Write(contentT)
 
 	if errT != nil {
-		return NewCommonError("failed to write response: %v", errT), nil
+		return NewCommonErrorWithPos(c, "failed to write response: %v", errT), nil
 	}
 
 	return Int(r), errT
+}
+
+func builtinParseReqFormFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	nv, ok := args[0].(*HttpReq)
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
+	}
+
+	reqT := nv.Value
+
+	reqT.ParseForm()
+
+	paraMapT := tk.FormToMap(reqT.Form)
+
+	return ConvertToObject(paraMapT), nil
 }
 
 func builtinParseReqFormExFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		return NewCommonError("not enough parameters"), nil
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
 	nv, ok := args[0].(*HttpReq)
 	if !ok {
-		return NewCommonError("invalid object type: (%T)%v", args[0], args[0]), nil
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
 	}
 
 	reqT := nv.Value
@@ -3704,12 +3962,12 @@ func builtinSetRespHeaderFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 3 {
-		return NewCommonError("not enough parameters"), nil
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
 	nv1, ok := args[0].(*HttpResp)
 	if !ok {
-		return NewCommonError("invalid object type: (%T)%v", args[0], args[0]), nil
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
 	}
 
 	reqT := nv1.Value
@@ -3723,13 +3981,13 @@ func builtinGetReqHeaderFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		rs := NewCommonError("not enough parameters")
+		rs := NewCommonErrorWithPos(c, "not enough parameters")
 		return rs, nil
 	}
 
 	nv1, ok := args[0].(*HttpReq)
 	if !ok {
-		return NewCommonError("invalid object type: (%T)%v", args[0], args[0]), nil
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
 	}
 
 	reqT := nv1.Value
@@ -3741,19 +3999,19 @@ func builtinGetReqBodyFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		rs := NewCommonError("not enough parameters")
+		rs := NewCommonErrorWithPos(c, "not enough parameters")
 		return rs, nil
 	}
 
 	nv1, ok := args[0].(*HttpReq)
 	if !ok {
-		return NewCommonError("invalid object type: (%T)%v", args[0], args[0]), nil
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
 	}
 
 	rsT, errT := io.ReadAll(nv1.Value.Body)
 
 	if errT != nil {
-		return NewCommonError("failed to read body content: %v", errT), nil
+		return NewCommonErrorWithPos(c, "failed to read body content: %v", errT), nil
 	}
 
 	return Bytes(rsT), nil
@@ -3845,7 +4103,7 @@ func builtinNewFunc(c Call) (Object, error) {
 	// 	return builtinStringBuilderFunc(Call{args: args[1:]})
 	// }
 
-	// return Undefined, NewCommonError("invalid data type: %v", s1)
+	// return Undefined, NewCommonErrorWithPos(c, "invalid data type: %v", s1)
 }
 
 func builtinMakeFunc(c Call) (Object, error) {
@@ -3942,9 +4200,9 @@ func builtinMakeFunc(c Call) (Object, error) {
 		}
 	case "error":
 		if len(args) > 1 {
-			return NewCommonError("%v", args[1].String()), nil
+			return NewCommonErrorWithPos(c, "%v", args[1].String()), nil
 		} else {
-			return NewCommonError(""), nil
+			return NewCommonErrorWithPos(c, ""), nil
 		}
 	case "syncMap":
 		return &SyncMap{Value: make(Map)}, nil
@@ -3974,14 +4232,14 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return Undefined, nil
 	}
 
-	return Undefined, NewCommonError("invalid data type: %v", s1)
+	return Undefined, NewCommonErrorWithPos(c, "invalid data type: %v", s1)
 }
 
 func builtinWriteStrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		return NewCommonError("not enough parameters"), nil
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
 	s1, ok := args[1].(String)
@@ -3997,7 +4255,7 @@ func builtinWriteStrFunc(c Call) (Object, error) {
 			n, errT := nv.WriteString(s1.Value)
 
 			if errT != nil {
-				return NewCommonError("%v", errT), nil
+				return NewCommonErrorWithPos(c, "%v", errT), nil
 			}
 
 			return Int(n), nil
@@ -4012,9 +4270,9 @@ func builtinWriteStrFunc(c Call) (Object, error) {
 				return Int(n), nil
 			}
 
-			return NewCommonError("%v", errT), nil
+			return NewCommonErrorWithPos(c, "%v", errT), nil
 		default:
-			return NewCommonError("invalid type: %T", vT.Value), nil
+			return NewCommonErrorWithPos(c, "invalid type: %T", vT.Value), nil
 
 		}
 	} else if args[0].TypeName() == "stringBuilder" {
@@ -4022,32 +4280,32 @@ func builtinWriteStrFunc(c Call) (Object, error) {
 		n, errT := vT.Value.WriteString(s1.Value)
 
 		if errT != nil {
-			return NewCommonError("%v", errT), nil
+			return NewCommonErrorWithPos(c, "%v", errT), nil
 		}
 
 		return Int(n), nil
 	}
 
-	return NewCommonError("%v", "invalid data"), nil
+	return NewCommonErrorWithPos(c, "%v", "invalid data"), nil
 }
 
 func builtinDatabaseFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		return &Database{Value: nil}, nil
+		return NewCommonErrorWithPos(c, "not enough paramters"), nil
 	}
 
 	nv0, ok := args[0].(String)
 
 	if !ok {
-		return NewCommonError("invalid paramter 1"), nil
+		return NewCommonErrorWithPos(c, "invalid paramter 1"), nil
 	}
 
 	nv1, ok := args[1].(String)
 
 	if !ok {
-		return NewCommonError("invalid paramter 2"), nil
+		return NewCommonErrorWithPos(c, "invalid paramter 2"), nil
 	}
 
 	rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
@@ -4062,7 +4320,7 @@ func builtinDatabaseFunc(c Call) (Object, error) {
 // 	args := c.GetArgs()
 
 // 	if len(args) < 1 {
-// 		return Undefined, NewCommonError("not enough parameters")
+// 		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 // 	}
 
 // 	v1, errT := builtinIsErrorFunc(c)
@@ -4096,7 +4354,7 @@ func builtinFatalfFunc(c Call) (Object, error) {
 
 	v, ok := args[0].(String)
 	if !ok {
-		return Undefined, NewCommonError("required format string")
+		return Undefined, NewCommonErrorWithPos(c, "required format string")
 	}
 
 	tk.Pl(v.String(), ObjectsToI(args[1:])...)
@@ -4110,17 +4368,74 @@ func builtinGenJSONRespFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 3 {
-		return NewCommonError("not enough parameters"), nil
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
 	v0, ok := args[0].(*HttpReq)
 	if !ok {
-		return NewCommonError("invalid param type: %T(%v)", args[0], args[0]), nil
+		return NewCommonErrorWithPos(c, "invalid param type: %T(%v)", args[0], args[0]), nil
 	}
 
 	rsT := tk.GenerateJSONPResponseWithMore(args[1].String(), args[2].String(), v0.Value, ObjectsToS(args[3:])...)
 
 	return ToStringObject(rsT), nil
+}
+
+func BuiltinDbCloseFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	nv, ok := args[0].(*Database)
+
+	if !ok {
+		return NewCommonError("invalid parameter type: (%T)%v", args[0], args[0]), nil
+	}
+
+	errT := nv.Value.Close()
+
+	if errT != nil {
+		return NewCommonError("failed to close DB: %v", errT), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinGetRandomIntFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Int(tk.MAX_INT), nil
+	}
+
+	// ToIntObject()
+
+	// v, ok := args[0].(Int)
+	// if !ok {
+	// 	return NewCommonErrorWithPos(c, "invalid parameter type: (%T)%v", args[0], args[0]), nil
+	// }
+
+	return Int(tk.GetRandomIntLessThan(int(ToIntObject(args[0])))), nil
+}
+
+func builtinGetRandomFloatFunc(c Call) (Object, error) {
+	if RandomGeneratorG == nil {
+		RandomGeneratorG = tk.NewRandomGenerator()
+
+		RandomGeneratorG.Randomize()
+	}
+
+	return Float(RandomGeneratorG.Float64()), nil
+}
+
+func builtinGetRandomStrFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	rs := tk.GenerateRandomStringX(ObjectsToS(args)...)
+
+	return &String{Value: rs}, nil
 }
 
 // char add end
