@@ -3,6 +3,7 @@ package ex
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/topxeq/charlang"
 	"github.com/topxeq/tk"
@@ -191,6 +192,106 @@ func goRunCompiledFunc(argsA ...charlang.Object) (charlang.Object, error) {
 	return nil, nil
 }
 
+func builtinSortByFuncFunc(c charlang.Call) (ret charlang.Object, err error) {
+	args := c.GetArgs()
+
+	arg0 := args[0]
+
+	arg1, ok := args[1].(*charlang.CompiledFunction)
+
+	if !ok {
+		return charlang.NewCommonErrorWithPos(c, "invalid type: (%T)%v", args[0], args[0]), nil
+	}
+
+	switch obj := arg0.(type) {
+	case charlang.Array:
+		sort.Slice(obj, func(i, j int) bool {
+			retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(obj[i], obj[j])
+
+			if errT != nil {
+				return false
+			}
+
+			nv1, ok := retT.(charlang.Bool)
+
+			if !ok {
+				return false
+			}
+
+			return bool(nv1)
+		})
+
+		ret = arg0
+	case charlang.String:
+		s := []rune(obj.String())
+		sort.Slice(s, func(i, j int) bool {
+			retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(charlang.ToStringObject(obj.Value[i]), charlang.ToStringObject(obj.Value[j]))
+
+			if errT != nil {
+				return false
+			}
+
+			nv1, ok := retT.(charlang.Bool)
+
+			if !ok {
+				return false
+			}
+
+			return bool(nv1)
+		})
+
+		ret = charlang.ToStringObject(s)
+	case *charlang.MutableString:
+		s := []rune(obj.String())
+		sort.Slice(s, func(i, j int) bool {
+			retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(charlang.ToStringObject(obj.Value[i]), charlang.ToStringObject(obj.Value[j]))
+
+			if errT != nil {
+				return false
+			}
+
+			nv1, ok := retT.(charlang.Bool)
+
+			if !ok {
+				return false
+			}
+
+			return bool(nv1)
+		})
+
+		ret = charlang.ToMutableStringObject(s)
+	case charlang.Bytes:
+		sort.Slice(obj, func(i, j int) bool {
+			retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(charlang.ToStringObject(obj[i]), charlang.ToStringObject(obj[j]))
+
+			if errT != nil {
+				return false
+			}
+
+			nv1, ok := retT.(charlang.Bool)
+
+			if !ok {
+				return false
+			}
+
+			return bool(nv1)
+		})
+
+		ret = arg0
+	case *charlang.UndefinedType:
+		ret = charlang.Undefined
+	default:
+		ret = charlang.Undefined
+		err = charlang.NewArgumentTypeError(
+			"1st",
+			"array|string|bytes",
+			arg0.TypeName(),
+		)
+	}
+
+	return
+}
+
 // Module represents time module.
 var Module = map[string]charlang.Object{
 	// funcs start
@@ -217,6 +318,11 @@ var Module = map[string]charlang.Object{
 		Name:    "loadGel", // compile a piece of code and turn it to Gel
 		Value:   charlang.CallExAdapter(quickCompileGelFunc),
 		ValueEx: quickCompileGelFunc,
+	},
+	"sortByFunc": &charlang.Function{
+		Name:    "sortByFunc", // sort by compiled function
+		Value:   charlang.CallExAdapter(builtinSortByFuncFunc),
+		ValueEx: builtinSortByFuncFunc,
 	},
 	// funcs end
 }

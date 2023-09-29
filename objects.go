@@ -2915,16 +2915,21 @@ func (o Array) String() string {
 	last := len(o) - 1
 
 	for i := range o {
-		switch v := o[i].(type) {
-		case String:
-			sb.WriteString(strconv.Quote(v.String()))
-		case Char:
-			sb.WriteString(strconv.QuoteRune(rune(v)))
-		case Bytes:
-			sb.WriteString(fmt.Sprint([]byte(v)))
-		default:
-			sb.WriteString(v.String())
+		if o[i] == nil {
+			sb.WriteString("nil")
+		} else {
+			switch v := o[i].(type) {
+			case String:
+				sb.WriteString(strconv.Quote(v.String()))
+			case Char:
+				sb.WriteString(strconv.QuoteRune(rune(v)))
+			case Bytes:
+				sb.WriteString(fmt.Sprint([]byte(v)))
+			default:
+				sb.WriteString(v.String())
+			}
 		}
+
 		if i != last {
 			sb.WriteString(", ")
 		}

@@ -1,0 +1,147 @@
+// declare an array
+a := [1, 2, 3, "abc", 12.3]
+
+println("a:", a)
+
+println("a[2]:", a[2])
+
+println("length of a:", len(a))
+
+// reassign the array variable
+a = [1, 2]
+
+// append values
+a = append(a, "abc")
+
+b := ["xyz", 16]
+
+// append the items in another array
+a = appendArray(a, b)
+
+a = append(a, [true, bytes(30, 31)])
+
+plt(a)
+
+a[0]++
+
+a[1] = [3.2, 16]
+
+// handle exceptions
+try {
+	a[6] = "5th"  // will index out of range
+} catch e {
+	pl("exception: %v", e)
+}
+
+a[4] = 1000
+
+// the last item
+a[len(a) - 1] = "last"
+
+plt(a)
+
+pl("a[1][1] = %v", a[1][1])
+
+b1 := [19, 19]
+
+pl("a + b = %v", appendArray(a, b1))
+
+// appendList, appendArray, appendSlice are same
+c := appendList(appendList([a], [b]), b)
+
+plt(c)
+
+// slice
+d := a[3:5]
+
+plt(d)
+
+// remove items
+e := removeItems(a, 1, 3)
+
+plt(e)
+
+f := make("array", 2, 5)
+
+plo(f)
+
+f[0] = make("array", 2, 2)
+f[0][0] = false
+f[0][1] = true
+
+plt(f)
+
+g := [1.2, 3, 56]
+
+plt(g)
+
+// iterate
+for i, v in c {
+	pl("i: %v, v: %v", i, v)
+}
+
+for i := 0; i < len(c); i ++ {
+	pl("i: %v, v: %v", i, c[i])
+}
+
+// sorting
+
+h := [3, 17, 2, 5, 0.6, 22.8]
+
+plt(h)
+
+h1 := sort(h)
+
+plt(h, h1)
+
+var c1
+try {
+	c1 = sort(c)
+} catch e {
+	pl("exception while sorting: %v", e)
+}
+
+plt(c, c1)
+
+// sort by function
+ex := import("ex")
+
+func1 := func(a, b) {
+	return toStr(a) < toStr(b)
+}
+
+c2 := ex.sortByFunc(c, func1)
+
+plt(c, c2)
+
+m := ["abc", "", "123", "qwer", "fghj"]
+
+plt(m)
+
+m1 := sort(m)
+
+plt(m, m1)
+
+// use custom sort method(empty string is the largest)
+func2 := func(a, b) {
+	if a == "" {
+		return false
+	}
+
+	if b == "" {
+		return true
+	}
+
+	return toStr(a) < toStr(b)
+}
+
+n := ["abc", "", "123", "qwer", "fghj"]
+
+plt(n)
+
+n1 := ex.sortByFunc(n, func2)
+
+plt(n, n1)
+
+
+

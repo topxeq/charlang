@@ -34,6 +34,9 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	// BuiltinSortByFunc
+	BuiltinRemoveItems
+	BuiltinAppendList
 	BuiltinGetRandomInt
 	BuiltinGetRandomFloat
 	BuiltinGetRandomStr
@@ -241,6 +244,13 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"newEx": BuiltinNewEx,
 
+	// array/map related
+	"appendList":  BuiltinAppendList,
+	"appendArray": BuiltinAppendList,
+	"appendSlice": BuiltinAppendList,
+
+	"removeItems": BuiltinRemoveItems, // inclusive
+
 	// ref/pointer related
 	"setValueByRef": BuiltinSetValueByRef,
 	"unref":         BuiltinUnref,
@@ -398,6 +408,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	// misc related
 	"getSeq": BuiltinGetSeq,
 	"pass":   BuiltinPass,
+
+	// "sortByFunc": BuiltinSortByFunc,
 
 	// original internal related
 	"append":        BuiltinAppend,
@@ -1023,6 +1035,21 @@ var BuiltinObjects = [...]Object{
 		Value:   fnASVsRS(tk.SystemCmd),
 		ValueEx: fnASVsRSex(tk.SystemCmd),
 	},
+	BuiltinAppendList: &BuiltinFunction{
+		Name:    "appendList",
+		Value:   CallExAdapter(builtinAppendListFunc),
+		ValueEx: builtinAppendListFunc,
+	},
+	BuiltinRemoveItems: &BuiltinFunction{
+		Name:    "removeItems",
+		Value:   CallExAdapter(builtinRemoveItemsFunc),
+		ValueEx: builtinRemoveItemsFunc,
+	},
+	// BuiltinSortByFunc: &BuiltinFunction{
+	// 	Name:    "sortByFunc",
+	// 	Value:   CallExAdapter(builtinSortByFuncFunc),
+	// 	ValueEx: builtinSortByFuncFunc,
+	// },
 	// char add end
 	BuiltinAppend: &BuiltinFunction{
 		Name:    "append",
@@ -1338,6 +1365,107 @@ func builtinAppendFunc(c Call) (Object, error) {
 	}
 }
 
+func builtinRemoveItemsFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	target := args[0]
+
+	start, ok := args[1].(Int)
+
+	if !ok {
+		return Undefined, NewCommonErrorWithPos(c, "invalid type for arg 2: (%T)%v", args[1], args[1])
+	}
+
+	end, ok := args[2].(Int)
+
+	if !ok {
+		return Undefined, NewCommonErrorWithPos(c, "invalid type for arg 3: (%T)%v", args[1], args[1])
+	}
+
+	switch obj := target.(type) {
+	case Array:
+		startT := int(start)
+		endT := int(end)
+		lenT := len(obj)
+		if startT < 0 || startT >= lenT {
+			return Undefined, NewCommonErrorWithPos(c, "start index out of range: %v -> %v", startT, lenT)
+		}
+
+		if endT < 0 || endT >= lenT {
+			return Undefined, NewCommonErrorWithPos(c, "end index out of range: %v -> %v", endT, lenT)
+		}
+
+		rs := make(Array, 0, lenT-(endT+1-startT))
+
+		rs = append(rs, obj[:startT]...)
+		rs = append(rs, obj[endT+1:]...)
+
+		return rs, nil
+	}
+
+	return Undefined, NewCommonErrorWithPos(c, "unsupported type: (%T)%v", target, target)
+}
+
+func builtinAppendListFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	target := args[0]
+	src := args[1]
+
+	switch obj := target.(type) {
+	case Array:
+		nv1, ok := src.(Array)
+
+		if ok {
+			obj = append(obj, nv1...)
+		}
+
+		return obj, nil
+	case Bytes:
+		nv1, ok := src.(Bytes)
+
+		if ok {
+			obj = append(obj, nv1...)
+		}
+
+		return obj, nil
+	case Chars:
+		nv1, ok := src.(Chars)
+
+		if ok {
+			obj = append(obj, nv1...)
+		}
+
+		return obj, nil
+	case *UndefinedType:
+		nv1, ok := src.(Array)
+
+		if ok {
+			ret := make(Array, 0, len(nv1))
+
+			ret = append(ret, nv1...)
+
+			return ret, nil
+		}
+
+		return Undefined, NewCommonErrorWithPos(c, "unsupported type: (%T)%v", src, src)
+	default:
+		return Undefined, NewArgumentTypeError(
+			"1st",
+			"array",
+			obj.TypeName(),
+		)
+	}
+}
+
 func builtinDeleteFunc(arg Object, key string) (err error) {
 	if v, ok := arg.(IndexDeleter); ok {
 		err = v.IndexDelete(ToStringObject(key))
@@ -1468,6 +1596,7 @@ func builtinSortFunc(arg Object) (ret Object, err error) {
 				err = e
 				return false
 			}
+
 			if v != nil {
 				return !v.IsFalsy()
 			}
@@ -1551,6 +1680,106 @@ func builtinSortReverseFunc(arg Object) (Object, error) {
 		arg.TypeName(),
 	)
 }
+
+// func builtinSortByFuncFunc(c Call) (ret Object, err error) {
+// 	args := c.GetArgs()
+
+// 	arg0 := args[0]
+
+// 	arg1, ok := args[0].(*CompiledFunction)
+
+// 	if !ok {
+// 		return NewCommonErrorWithPos(c, "invalid type: (%T)%v", args[0], args[0]), nil
+// 	}
+
+// 	switch obj := arg0.(type) {
+// 	case Array:
+// 		sort.Slice(obj, func(i, j int) bool {
+// 			retT, errT := NewInvoker(c.VM(), arg1).Invoke(obj[i], obj[j])
+
+// 			if errT != nil {
+// 				return false
+// 			}
+
+// 			nv1, ok := retT.(Bool)
+
+// 			if !ok {
+// 				return false
+// 			}
+
+// 			return bool(nv1)
+// 		})
+
+// 		ret = arg0
+// 	case String:
+// 		s := []rune(obj.String())
+// 		sort.Slice(s, func(i, j int) bool {
+// 			retT, errT := NewInvoker(c.VM(), arg1).Invoke(ToStringObject(obj.Value[i]), ToStringObject(obj.Value[j]))
+
+// 			if errT != nil {
+// 				return false
+// 			}
+
+// 			nv1, ok := retT.(Bool)
+
+// 			if !ok {
+// 				return false
+// 			}
+
+// 			return bool(nv1)
+// 		})
+
+// 		ret = ToStringObject(s)
+// 	case *MutableString:
+// 		s := []rune(obj.String())
+// 		sort.Slice(s, func(i, j int) bool {
+// 			retT, errT := NewInvoker(c.VM(), arg1).Invoke(ToStringObject(obj.Value[i]), ToStringObject(obj.Value[j]))
+
+// 			if errT != nil {
+// 				return false
+// 			}
+
+// 			nv1, ok := retT.(Bool)
+
+// 			if !ok {
+// 				return false
+// 			}
+
+// 			return bool(nv1)
+// 		})
+
+// 		ret = ToMutableStringObject(s)
+// 	case Bytes:
+// 		sort.Slice(obj, func(i, j int) bool {
+// 			retT, errT := NewInvoker(c.VM(), arg1).Invoke(ToStringObject(obj[i]), ToStringObject(obj[j]))
+
+// 			if errT != nil {
+// 				return false
+// 			}
+
+// 			nv1, ok := retT.(Bool)
+
+// 			if !ok {
+// 				return false
+// 			}
+
+// 			return bool(nv1)
+// 		})
+
+// 		ret = arg0
+// 	case *UndefinedType:
+// 		ret = Undefined
+// 	default:
+// 		ret = Undefined
+// 		err = NewArgumentTypeError(
+// 			"1st",
+// 			"array|string|bytes",
+// 			arg0.TypeName(),
+// 		)
+// 	}
+
+// 	return
+// }
 
 func builtinErrorFunc(arg Object) Object {
 	return &Error{Name: "error", Message: arg.String()}
@@ -4207,7 +4436,9 @@ func builtinMakeFunc(c Call) (Object, error) {
 			return &MutableString{Value: ""}, nil
 		}
 	case "array", "list":
-		if len(args) > 1 {
+		if len(args) > 2 {
+			return make(Array, tk.ToInt(args[1].String(), 0), tk.ToInt(args[2].String(), 0)), nil
+		} else if len(args) > 1 {
 			return make(Array, 0, tk.ToInt(args[1].String(), 0)), nil
 		} else {
 			return make(Array, 0, 0), nil
