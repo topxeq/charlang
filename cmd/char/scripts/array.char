@@ -106,11 +106,12 @@ plt(c, c1)
 // sort by function
 ex := import("ex")
 
-func1 := func(a, b) {
-	return toStr(a) < toStr(b)
+func1 := func(idx1, idx2) {
+	// plo(c, idx1, idx2)
+	return toStr(c[idx1]) < toStr(c[idx2])
 }
 
-c2 := ex.sortByFunc(c, func1)
+c2 := ex.sortByFuncQuick(c, func1)
 
 plt(c, c2)
 
@@ -123,16 +124,17 @@ m1 := sort(m)
 plt(m, m1)
 
 // use custom sort method(empty string is the largest)
-func2 := func(a, b) {
-	if a == "" {
+func2 := func(data, idx1, idx2) {
+	// pln(data, idx1, idx2)
+	if data[idx1] == "" {
 		return false
 	}
 
-	if b == "" {
+	if data[idx2] == "" {
 		return true
 	}
 
-	return toStr(a) < toStr(b)
+	return toStr(data[idx1]) < toStr(data[idx2])
 }
 
 n := ["abc", "", "123", "qwer", "fghj"]

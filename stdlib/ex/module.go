@@ -3,6 +3,7 @@ package ex
 
 import (
 	"fmt"
+	"runtime/debug"
 	"sort"
 
 	"github.com/topxeq/charlang"
@@ -192,7 +193,15 @@ func goRunCompiledFunc(argsA ...charlang.Object) (charlang.Object, error) {
 	return nil, nil
 }
 
-func builtinSortByFuncFunc(c charlang.Call) (ret charlang.Object, err error) {
+func builtinSortByFuncQuickFunc(c charlang.Call) (ret charlang.Object, err error) {
+	defer func() {
+		if r1 := recover(); r1 != nil {
+			ret = charlang.Undefined
+			err = fmt.Errorf("runtime exception while sorting: %v\n%v", r1, string(debug.Stack()))
+			return
+		}
+	}()
+
 	args := c.GetArgs()
 
 	arg0 := args[0]
@@ -203,91 +212,176 @@ func builtinSortByFuncFunc(c charlang.Call) (ret charlang.Object, err error) {
 		return charlang.NewCommonErrorWithPos(c, "invalid type: (%T)%v", args[0], args[0]), nil
 	}
 
-	switch obj := arg0.(type) {
-	case charlang.Array:
-		sort.Slice(obj, func(i, j int) bool {
-			retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(obj[i], obj[j])
+	sort.SliceStable(arg0, func(i, j int) bool {
+		retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(charlang.Int(i), charlang.Int(j))
 
-			if errT != nil {
-				return false
-			}
+		if errT != nil {
+			return false
+		}
 
-			nv1, ok := retT.(charlang.Bool)
+		nv1, ok := retT.(charlang.Bool)
 
-			if !ok {
-				return false
-			}
+		if !ok {
+			return false
+		}
 
-			return bool(nv1)
-		})
+		return bool(nv1)
+	})
 
-		ret = arg0
-	case charlang.String:
-		s := []rune(obj.String())
-		sort.Slice(s, func(i, j int) bool {
-			retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(charlang.ToStringObject(obj.Value[i]), charlang.ToStringObject(obj.Value[j]))
+	ret = arg0
+	err = nil
+	return
+}
 
-			if errT != nil {
-				return false
-			}
+func builtinSortByFuncFunc(c charlang.Call) (ret charlang.Object, err error) {
+	defer func() {
+		if r1 := recover(); r1 != nil {
+			ret = charlang.Undefined
+			err = fmt.Errorf("runtime exception while sorting: %v\n%v", r1, string(debug.Stack()))
+			return
+		}
+	}()
 
-			nv1, ok := retT.(charlang.Bool)
+	args := c.GetArgs()
 
-			if !ok {
-				return false
-			}
+	arg0 := args[0]
 
-			return bool(nv1)
-		})
+	arg1, ok := args[1].(*charlang.CompiledFunction)
 
-		ret = charlang.ToStringObject(s)
-	case *charlang.MutableString:
-		s := []rune(obj.String())
-		sort.Slice(s, func(i, j int) bool {
-			retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(charlang.ToStringObject(obj.Value[i]), charlang.ToStringObject(obj.Value[j]))
-
-			if errT != nil {
-				return false
-			}
-
-			nv1, ok := retT.(charlang.Bool)
-
-			if !ok {
-				return false
-			}
-
-			return bool(nv1)
-		})
-
-		ret = charlang.ToMutableStringObject(s)
-	case charlang.Bytes:
-		sort.Slice(obj, func(i, j int) bool {
-			retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(charlang.ToStringObject(obj[i]), charlang.ToStringObject(obj[j]))
-
-			if errT != nil {
-				return false
-			}
-
-			nv1, ok := retT.(charlang.Bool)
-
-			if !ok {
-				return false
-			}
-
-			return bool(nv1)
-		})
-
-		ret = arg0
-	case *charlang.UndefinedType:
-		ret = charlang.Undefined
-	default:
-		ret = charlang.Undefined
-		err = charlang.NewArgumentTypeError(
-			"1st",
-			"array|string|bytes",
-			arg0.TypeName(),
-		)
+	if !ok {
+		return charlang.NewCommonErrorWithPos(c, "invalid type: (%T)%v", args[0], args[0]), nil
 	}
+
+	sort.SliceStable(arg0, func(i, j int) bool {
+		retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(arg0, charlang.Int(i), charlang.Int(j))
+
+		if errT != nil {
+			return false
+		}
+
+		nv1, ok := retT.(charlang.Bool)
+
+		if !ok {
+			return false
+		}
+
+		return bool(nv1)
+	})
+
+	ret = arg0
+	err = nil
+
+	// switch obj := arg0.(type) {
+	// case charlang.Array:
+	// 	sort.SliceStable(obj, func(i, j int) bool {
+	// 		retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(obj, charlang.Int(i), charlang.Int(j))
+
+	// 		if errT != nil {
+	// 			return false
+	// 		}
+
+	// 		nv1, ok := retT.(charlang.Bool)
+
+	// 		if !ok {
+	// 			return false
+	// 		}
+
+	// 		return bool(nv1)
+	// 	})
+
+	// 	ret = arg0
+	// case charlang.String:
+	// 	s := []rune(obj.String())
+	// 	sort.SliceStable(s, func(i, j int) bool {
+	// 		retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(obj, charlang.ToStringObject(obj.Value[i]), charlang.ToStringObject(obj.Value[j]))
+
+	// 		if errT != nil {
+	// 			return false
+	// 		}
+
+	// 		nv1, ok := retT.(charlang.Bool)
+
+	// 		if !ok {
+	// 			return false
+	// 		}
+
+	// 		return bool(nv1)
+	// 	})
+
+	// 	ret = charlang.ToStringObject(s)
+	// case *charlang.MutableString:
+	// 	s := []rune(obj.String())
+	// 	sort.SliceStable(s, func(i, j int) bool {
+	// 		retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(obj, charlang.ToStringObject(obj.Value[i]), charlang.ToStringObject(obj.Value[j]))
+
+	// 		if errT != nil {
+	// 			return false
+	// 		}
+
+	// 		nv1, ok := retT.(charlang.Bool)
+
+	// 		if !ok {
+	// 			return false
+	// 		}
+
+	// 		return bool(nv1)
+	// 	})
+
+	// 	ret = charlang.ToMutableStringObject(s)
+	// case charlang.Bytes:
+	// 	sort.SliceStable(obj, func(i, j int) bool {
+	// 		retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(obj, charlang.ToStringObject(obj[i]), charlang.ToStringObject(obj[j]))
+
+	// 		if errT != nil {
+	// 			return false
+	// 		}
+
+	// 		nv1, ok := retT.(charlang.Bool)
+
+	// 		if !ok {
+	// 			return false
+	// 		}
+
+	// 		return bool(nv1)
+	// 	})
+
+	// 	ret = arg0
+	// case *charlang.UndefinedType:
+	// 	ret = charlang.Undefined
+	// default:
+	// 	sort.SliceStable(obj, func(i, j int) bool {
+	// 		nv1, errT := obj.IndexGet(i)
+	// 		if errT != nil {
+	// 			nv1 = charlang.NewCommonError("%v", errT)
+	// 		}
+
+	// 		nv2, errT := obj.IndexGet(j)
+	// 		if errT != nil {
+	// 			nv2 = charlang.NewCommonError("%v", errT)
+	// 		}
+
+	// 		retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(nv1, nv2)
+
+	// 		if errT != nil {
+	// 			return false
+	// 		}
+
+	// 		nv1, ok := retT.(charlang.Bool)
+
+	// 		if !ok {
+	// 			return false
+	// 		}
+
+	// 		return bool(nv1)
+	// 	})
+
+	// 	ret = charlang.Undefined
+	// 	err = charlang.NewArgumentTypeError(
+	// 		"1st",
+	// 		"array|string|bytes",
+	// 		arg0.TypeName(),
+	// 	)
+	// }
 
 	return
 }
@@ -323,6 +417,11 @@ var Module = map[string]charlang.Object{
 		Name:    "sortByFunc", // sort by compiled function
 		Value:   charlang.CallExAdapter(builtinSortByFuncFunc),
 		ValueEx: builtinSortByFuncFunc,
+	},
+	"sortByFuncQuick": &charlang.Function{
+		Name:    "sortByFuncQuick", // sort by compiled function
+		Value:   charlang.CallExAdapter(builtinSortByFuncQuickFunc),
+		ValueEx: builtinSortByFuncQuickFunc,
 	},
 	// funcs end
 }

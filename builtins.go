@@ -35,6 +35,7 @@ const (
 	BuiltinAppend BuiltinType = iota
 
 	// BuiltinSortByFunc
+	BuiltintStrFindDiffPos
 	BuiltinRemoveItems
 	BuiltinAppendList
 	BuiltinGetRandomInt
@@ -268,6 +269,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strReplace":    BuiltinStrReplace,
 	"strSplitLines": BuiltintStrSplitLines,
 
+	"strFindDiffPos": BuiltintStrFindDiffPos, // return -1 if 2 strings are identical
+
 	// regex related
 	"regFindFirst":       BuiltinRegFindFirst,
 	"regFindFirstGroups": BuiltintRegFindFirstGroups, // obtain the first match of a regular expression and return a list of all matching groups, where the first item is the complete matching result and the second item is the first matching group..., usage example: result := regFindFirstGroups(str1, regex1)
@@ -498,6 +501,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "dbClose",
 		Value:   CallExAdapter(BuiltinDbCloseFunc),
 		ValueEx: BuiltinDbCloseFunc,
+	},
+	BuiltintStrFindDiffPos: &BuiltinFunction{
+		Name:    "strFindDiffPos",
+		Value:   fnASSRI(tk.FindFirstDiffIndex),
+		ValueEx: fnASSRIex(tk.FindFirstDiffIndex),
 	},
 	BuiltinDbQuery: &BuiltinFunction{
 		Name:    "dbQuery",
@@ -2451,6 +2459,29 @@ func fnASSSRSex(fn func(string, string, string) string) CallableExFunc {
 	}
 }
 
+// like tk.FindFirstDiffPosInStrs
+func fnASSRI(fn func(string, string) int) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ToIntObject(rs), nil
+	}
+}
+
+func fnASSRIex(fn func(string, string) int) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(c.Get(0).String(), c.Get(1).String())
+		return ToIntObject(rs), nil
+	}
+}
+
 // like os.SetEnv
 func fnASSRE(fn func(string, string) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
@@ -2767,7 +2798,7 @@ func builtinTestByTextFunc(c Call) (ret Object, err error) {
 	if nv1.Value == nv2.Value {
 		tk.Pl("test %v%v passed", v3, v4)
 	} else {
-		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+		return nil, fmt.Errorf("test %v%v failed: (pos: %v) %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, tk.FindFirstDiffIndex(nv1.Value, nv2.Value), v1, v2, v1, v2)
 	}
 
 	return nil, nil
