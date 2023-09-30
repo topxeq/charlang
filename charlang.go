@@ -409,6 +409,8 @@ func ToGoInt(o Object) (v int, ok bool) {
 		v, ok = int(o), true
 	case Char:
 		v, ok = int(o), true
+	case Byte:
+		v, ok = int(o), true
 	case Bool:
 		ok = true
 		if o {
@@ -423,6 +425,33 @@ func ToGoInt(o Object) (v int, ok bool) {
 	return
 }
 
+func ToGoIntQuick(o Object) int {
+	switch o := o.(type) {
+	case Int:
+		return int(o)
+	case Uint:
+		return int(o)
+	case Float:
+		return int(o)
+	case Char:
+		return int(o)
+	case Byte:
+		return int(o)
+	case Bool:
+		if o {
+			return 1
+		} else {
+			return 0
+		}
+	case String:
+		if vv, err := strconv.ParseInt(o.Value, 0, 0); err == nil {
+			return int(vv)
+		}
+	}
+
+	return 0
+}
+
 // ToGoInt64 will try to convert a numeric, bool or string Object to Go int64
 // value.
 func ToGoInt64(o Object) (v int64, ok bool) {
@@ -434,6 +463,8 @@ func ToGoInt64(o Object) (v int64, ok bool) {
 	case Float:
 		v, ok = int64(o), true
 	case Char:
+		v, ok = int64(o), true
+	case Byte:
 		v, ok = int64(o), true
 	case Bool:
 		ok = true
@@ -461,6 +492,8 @@ func ToGoUint64(o Object) (v uint64, ok bool) {
 		v, ok = uint64(o), true
 	case Char:
 		v, ok = uint64(o), true
+	case Byte:
+		v, ok = uint64(o), true
 	case Bool:
 		ok = true
 		if o {
@@ -487,6 +520,8 @@ func ToGoFloat64(o Object) (v float64, ok bool) {
 		v, ok = float64(o), true
 	case Char:
 		v, ok = float64(o), true
+	case Byte:
+		v, ok = float64(o), true
 	case Bool:
 		ok = true
 		if o {
@@ -511,6 +546,8 @@ func ToGoRune(o Object) (v rune, ok bool) {
 	case Char:
 		v, ok = rune(o), true
 	case Float:
+		v, ok = rune(o), true
+	case Byte:
 		v, ok = rune(o), true
 	case String:
 		ok = true

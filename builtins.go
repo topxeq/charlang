@@ -35,6 +35,7 @@ const (
 	BuiltinAppend BuiltinType = iota
 
 	// BuiltinSortByFunc
+	BuiltintLimitStr
 	BuiltintStrFindDiffPos
 	BuiltinRemoveItems
 	BuiltinAppendList
@@ -271,6 +272,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"strFindDiffPos": BuiltintStrFindDiffPos, // return -1 if 2 strings are identical
 
+	"limitStr": BuiltintLimitStr,
+
 	// regex related
 	"regFindFirst":       BuiltinRegFindFirst,
 	"regFindFirstGroups": BuiltintRegFindFirstGroups, // obtain the first match of a regular expression and return a list of all matching groups, where the first item is the complete matching result and the second item is the first matching group..., usage example: result := regFindFirstGroups(str1, regex1)
@@ -482,6 +485,11 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPiOROeEx(builtinMakeArrayFunc),
 	},
 	// char add start
+	BuiltintLimitStr: &BuiltinFunction{
+		Name:    "limitStr",
+		Value:   fnASIVsRS(tk.LimitString),
+		ValueEx: fnASIVsRSex(tk.LimitString),
+	},
 	BuiltinGetRandomInt: &BuiltinFunction{
 		Name:    "getRandomInt",
 		Value:   CallExAdapter(builtinGetRandomIntFunc),
@@ -2584,6 +2592,43 @@ func fnASVaRSex(fn func(string, ...interface{}) string) CallableExFunc {
 		}
 		vargs := toArgsA(1, c)
 		rs := fn(c.Get(0).String(), vargs...)
+		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.LimitString
+func fnASIVsRS(fn func(string, int, ...string) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		v2, ok := ToGoInt(args[1])
+
+		if !ok {
+			return NewCommonError("invalid type for arg 2: (%T)%v"), nil
+		}
+
+		vargs := ObjectsToS(args[2:])
+		rs := fn(args[0].String(), v2, vargs...)
+		return ToStringObject(rs), nil
+	}
+}
+
+func fnASIVsRSex(fn func(string, int, ...string) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 2 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+
+		v2, ok := ToGoInt(c.Get(1))
+
+		if !ok {
+			return NewCommonError("invalid type for arg 2: (%T)%v"), nil
+		}
+
+		vargs := toArgsS(2, c)
+		rs := fn(c.Get(0).String(), v2, vargs...)
 		return ToStringObject(rs), nil
 	}
 }

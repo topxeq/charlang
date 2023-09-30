@@ -4,6 +4,10 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", getSeq(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "limitStr.char")
+
+testByText(rs, "abcde...\n34567...\nabcde!!!\n", getSeq(), "limitStr.char")
+
 rs = systemCmd("char", "-gopath", "findStringDiffPos.char")
 
 testByText(rs, "4\n", getSeq(), "findStringDiffPos.char")
