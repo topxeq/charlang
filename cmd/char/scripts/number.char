@@ -33,3 +33,31 @@ plt(e1)
 e2 := char(69)
 
 pl("%c", e2)
+
+r1 := 12.3 / 4.1
+
+pl("%v", r1)
+
+r1n := adjustFloat(r1)
+
+pl("%v", r1n)
+
+pl("%v", r1 == 3)
+
+pl("%v", r1n == 3)
+
+r2b := bigFloat(12.3) / bigFloat(4.1)
+
+pl("%v", r2b)
+
+plo(r2b)
+
+pl("%v", r2b == 3)
+
+r2bn := adjustFloat(r2b)
+
+pl("%v", r2bn)
+
+pl("%v", r2bn == 3)
+
+

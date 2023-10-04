@@ -1,0 +1,72 @@
+map1 := orderedMap()
+
+v2 := 1
+v3 := fromJson(`["s1", "s2"]`)
+plo(v3)
+
+// v4 := {"key1": "value1", "key2": 19, "key3": v3}
+
+map1["SSS"] = "v11"
+
+map1["k1"] = "v1"
+map1["a2"] = v2
+map1["3"] = v3
+
+plt(map1)
+
+json1 := toJson(map1)
+
+pln(json1)
+
+map1a := callMethod(map1, "toMap")
+
+plt(map1a)
+
+map2 := orderedMap(map1a)
+
+plt(map2)
+
+callMethod(map2, "moveToFront", "a2")
+
+pln(map2)
+
+callMethod(map2, "moveBefore", "3", "SSS")
+
+pln(map2)
+
+callMethod(map2, "sortKeys")
+
+// pln(callMethod(map2, "dump"))
+pln(map2)
+
+callMethod(map2, "sortKeys", "-desc")
+
+pln(map2)
+
+callMethod(map2, "moveToFront", "3")
+callMethod(map2, "moveToFront", "SSS")
+
+errT := callMethod(map2, "moveToFront", "kkk")
+
+if isErr(errT) {
+	pl("failed to move: %v", errT)
+}
+
+for k, v in map2 {
+	pln(k, v)
+}
+
+lenT := len(map2)
+
+for i:=0; i<lenT; i ++ {
+	itemT := callMethod(map2, "getItemByIndex", i)
+	pl("[%v] %v: %v", i, itemT[0], itemT[1])
+}
+
+callMethod(map2, "moveToBack", "k1")
+
+callMethod(map2, "moveAfter", "a2", "SSS")
+
+pln(map2)
+
+

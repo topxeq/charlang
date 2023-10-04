@@ -19,12 +19,12 @@ if v0 == "add" {
 	return 3.1415926
 }
 
-return errStrf("member/method not found")
+return errStrf("member/method not found: %v", v0)
 `
 
 c1 := charCode(sourceT)
 
-if isErrX(c1.compile()) {
+if isErr(c1.compile()) {
 	pl("failed to compile: %v", c1.lastError)
 	exit()
 }
@@ -41,9 +41,9 @@ pl("g1.Pi: %v", g1.Pi)
 
 pl("unknown member: %v", g1.var1)
 
-pln(isErrX(g1.var1))
+pln(isErr(g1.var1))
 
-pln(getErrStrX(g1.var1))
+pln(getErrStr(g1.var1))
 
 try {
 	pl("unknown func: %v", g1.func1())

@@ -452,6 +452,60 @@ func ToGoIntQuick(o Object) int {
 	return 0
 }
 
+func ToIntQuick(o Object) int {
+	switch o := o.(type) {
+	case Int:
+		return int(o)
+	case Uint:
+		return int(o)
+	case Float:
+		return int(o)
+	case Char:
+		return int(o)
+	case Byte:
+		return int(o)
+	case Bool:
+		if o {
+			return 1
+		} else {
+			return 0
+		}
+	case String:
+		if vv, err := strconv.ParseInt(o.Value, 0, 0); err == nil {
+			return int(vv)
+		}
+	}
+
+	return 0
+}
+
+func ToFloatQuick(o Object) float64 {
+	switch o := o.(type) {
+	case Int:
+		return float64(o)
+	case Uint:
+		return float64(o)
+	case Float:
+		return float64(o)
+	case Char:
+		return float64(o)
+	case Byte:
+		return float64(o)
+	case Bool:
+		if o {
+			return 1.0
+		} else {
+			return 0.0
+		}
+	case String:
+		if vv, err := strconv.ParseFloat(o.Value, 64); err == nil {
+			return float64(vv)
+		}
+	}
+
+	return 0.0
+}
+
 // ToGoInt64 will try to convert a numeric, bool or string Object to Go int64
 // value.
 func ToGoInt64(o Object) (v int64, ok bool) {

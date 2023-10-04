@@ -543,6 +543,7 @@ func (c *Compiler) compileModule(
 	if err = c.checkCyclicImports(node, modulePath); err != nil {
 		return 0, err
 	}
+	// fmt.Printf("compileModule: %#v\n", modulePath)
 
 	modFile := c.file.Set().AddFile(modulePath, -1, len(src))
 	var trace io.Writer

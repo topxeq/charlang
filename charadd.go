@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"math"
+	"math/big"
 	"net/http"
 	"os"
 	"strings"
@@ -35,9 +37,16 @@ var ScriptPathG string
 
 var ServerModeG = false
 
+var DebugModeG = false
+
 var RandomGeneratorG *tk.RandomX = nil
 
 var ErrCommon = &Error{Name: "error"}
+
+var MainCompilerOptions *CompilerOptions = nil
+
+var BigIntZero = big.NewInt(0)
+var BigFloatZero = big.NewFloat(0)
 
 // var TkFunction = &Function{
 // 	Name: "tk",
@@ -86,6 +95,11 @@ var namedValueMapG = map[string]interface{}{
 	"time.DateTime": time.DateTime,
 	"time.DateOnly": time.DateOnly,
 	"time.TimeOnly": time.TimeOnly,
+
+	"maxInt":   math.MaxInt,
+	"minInt":   math.MinInt,
+	"maxFloat": math.MaxFloat64,
+	"minFloat": math.SmallestNonzeroFloat64,
 }
 
 // // first arg of each func is the object reference
@@ -203,6 +217,243 @@ var methodFuncMapG = map[int]map[string]*Function{
 				// tk.Pl("h1: %#v %#v %#v", c, args, nv.Value)
 
 				return ToStringObject(nv.Value), nil
+			},
+		},
+	},
+	135: map[string]*Function{ // *OrderedMap
+		"toStr": &Function{
+			Name: "toStr",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*OrderedMap)
+
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				return ToStringObject(nv.String()), nil
+			},
+		},
+		"toMap": &Function{
+			Name: "toMap",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*OrderedMap)
+				if !ok {
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
+				}
+
+				rs := make(Map)
+
+				for _, k := range nv.Value.GetStringKeys() {
+					rs[k] = nv.Value.GetCompact(k).(Object)
+				}
+
+				return rs, nil
+			},
+		},
+		"sortKeys": &Function{
+			Name: "sortKeys",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*OrderedMap)
+				if !ok {
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
+				}
+
+				errT := nv.Value.SortStringKeys(ObjectsToS(c.GetArgs())...)
+
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "failed to sort: %v", errT), nil
+				}
+
+				return nv, nil
+			},
+		},
+		"sortKeysByFunc": &Function{
+			Name: "sortKeysByFunc",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*OrderedMap)
+				if !ok {
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
+				}
+
+				if c.Len() < 1 {
+					return Undefined, fmt.Errorf("not enough parameters")
+				}
+
+				nv1, ok := c.Get(0).(*Any)
+
+				if !ok {
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.Get(0)), nil
+				}
+
+				errT := nv.Value.SortStringKeysByFunc(nv1.Value.(func(i int, j int) bool))
+
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "failed to sort: %v", errT), nil
+				}
+
+				return nv, nil
+			},
+		},
+		"moveToFront": &Function{
+			Name: "moveToFront",
+			ValueEx: func(c Call) (Object, error) {
+				// tk.Plv("c", c)
+				nv, ok := c.This.(*OrderedMap)
+				if !ok {
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
+				}
+
+				if c.Len() < 1 {
+					return Undefined, fmt.Errorf("not enough parameters")
+				}
+
+				errT := nv.Value.MoveToFront(c.Get(0).String())
+
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "failed to move: %v", errT), nil
+				}
+
+				return Undefined, nil
+			},
+		},
+		"moveToBack": &Function{
+			Name: "moveToBack",
+			ValueEx: func(c Call) (Object, error) {
+				// tk.Plv("c", c)
+				nv, ok := c.This.(*OrderedMap)
+				if !ok {
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
+				}
+
+				if c.Len() < 1 {
+					return Undefined, fmt.Errorf("not enough parameters")
+				}
+
+				errT := nv.Value.MoveToBack(c.Get(0).String())
+
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "failed to move: %v", errT), nil
+				}
+
+				return Undefined, nil
+			},
+		},
+		"moveBefore": &Function{
+			Name: "moveBefore",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*OrderedMap)
+				if !ok {
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
+				}
+
+				if c.Len() < 2 {
+					return Undefined, fmt.Errorf("not enough parameters")
+				}
+
+				errT := nv.Value.MoveBefore(c.Get(0).String(), c.Get(1).String())
+
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "failed to move: %v", errT), nil
+				}
+
+				return Undefined, nil
+			},
+		},
+		"moveAfter": &Function{
+			Name: "moveAfter",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*OrderedMap)
+				if !ok {
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
+				}
+
+				if c.Len() < 2 {
+					return Undefined, fmt.Errorf("not enough parameters")
+				}
+
+				errT := nv.Value.MoveAfter(c.Get(0).String(), c.Get(1).String())
+
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "failed to move: %v", errT), nil
+				}
+
+				return Undefined, nil
+			},
+		},
+		"oldest": &Function{
+			Name: "oldest",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*OrderedMap)
+				if !ok {
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
+				}
+
+				// if c.Len() < 2 {
+				// 	return Undefined, fmt.Errorf("not enough parameters")
+				// }
+
+				rs1 := nv.Value.Oldest()
+
+				if rs1 == nil {
+					return Undefined, nil
+				}
+
+				return Array{ToStringObject(rs1.Key), ConvertToObject(rs1.Value)}, nil
+			},
+		},
+		"newest": &Function{
+			Name: "newest",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*OrderedMap)
+				if !ok {
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
+				}
+
+				// if c.Len() < 2 {
+				// 	return Undefined, fmt.Errorf("not enough parameters")
+				// }
+
+				rs1 := nv.Value.Newest()
+
+				if rs1 == nil {
+					return Undefined, nil
+				}
+
+				return Array{ToStringObject(rs1.Key), ConvertToObject(rs1.Value)}, nil
+			},
+		},
+		"getItemByIndex": &Function{
+			Name: "getItemByIndex",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*OrderedMap)
+				if !ok {
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
+				}
+
+				if c.Len() < 1 {
+					return Undefined, fmt.Errorf("not enough parameters")
+				}
+
+				// tk.Pln("toInt:", ToIntQuick(c.Get(1)))
+
+				rs1 := nv.Value.GetPairByIndex(ToIntQuick(c.Get(0)))
+
+				if rs1 == nil {
+					return Undefined, nil
+				}
+
+				return Array{ToStringObject(rs1.Key), ConvertToObject(rs1.Value)}, nil
+			},
+		},
+		"dump": &Function{
+			Name: "dump",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*OrderedMap)
+				if !ok {
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
+				}
+
+				return String{Value: nv.Value.Dump()}, nil
 			},
 		},
 	},
@@ -328,6 +579,84 @@ var methodFuncMapG = map[int]map[string]*Function{
 				go NewVM(nv.Value).Run(envT, argsT...)
 
 				return Undefined, nil
+			},
+		},
+	},
+	193: map[string]*Function{ // *Gel
+		"toStr": &Function{
+			Name: "toStr",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*Gel)
+
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				return ToStringObject(nv.String()), nil
+			},
+		},
+		"compile": &Function{
+			Name: "compile",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*Gel)
+
+				if !ok {
+					return NewCommonError("invalid type: %#v", c.This), nil
+				}
+
+				if nv.Value == nil {
+					return NewCommonError("charCode not loaded in gel"), nil
+				}
+
+				byteCodeT := QuickCompile(nv.Value.Source, nv.Value.CompilerOptions) // quickCompile(tk.ToStr(argsA[0])) //
+
+				if tk.IsError(byteCodeT) {
+					nv.Value.LastError = fmt.Sprintf("%v", byteCodeT)
+					return NewCommonError("%v", byteCodeT), nil
+				}
+
+				nv.Value.Value = byteCodeT.(*Bytecode)
+
+				return nv, nil
+			},
+		},
+		"load": &Function{
+			Name: "load",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*Gel)
+
+				if !ok {
+					return NewCommonError("invalid type: %#v", c.This), nil
+				}
+
+				if nv.Value == nil {
+					return NewCommonError("charCode not loaded in gel"), nil
+				}
+
+				if nv.Value.Value == nil {
+					byteCodeT := QuickCompile(nv.Value.Source, nv.Value.CompilerOptions) // quickCompile(tk.ToStr(argsA[0])) //
+
+					if tk.IsError(byteCodeT) {
+						nv.Value.LastError = fmt.Sprintf("%v", byteCodeT)
+						return NewCommonError("%v", byteCodeT), nil
+					}
+
+					nv.Value.Value = byteCodeT.(*Bytecode)
+				}
+
+				argsT := c.GetArgs()
+
+				var globalsA map[string]interface{} = nil
+
+				envT := NewBaseEnv(globalsA) // Map{}
+
+				retT, errT := NewVM(nv.Value.Value).Run(envT, argsT...)
+
+				if errT != nil {
+					return NewCommonError("failed to load gel: %v", errT), nil
+				}
+
+				return retT, nil
 			},
 		},
 	},
@@ -1236,12 +1565,17 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 }
 
 func ConvertToObject(vA interface{}) Object {
+	// tk.Pl("ConvertToObject: (%T)%v", vA, vA)
 	if vA == nil {
 		return Undefined
 	}
 
 	switch nv := vA.(type) {
 	case error:
+		if nv == nil {
+			return Undefined
+		}
+
 		return NewCommonError(nv.Error())
 	case string:
 		return ToStringObject(nv)
@@ -1468,19 +1802,60 @@ func ConvertToObject(vA interface{}) Object {
 		return nv
 	case *HttpResp:
 		return nv
+	case *OrderedMap:
+		return nv
+	case *tk.OrderedMap:
+		rs1, _ := NewOrderedMap()
+
+		rs1n := rs1.(*OrderedMap)
+
+		for e := nv.Oldest(); e != nil; e = e.Next() {
+			rs1n.Value.Set(e.Key, ConvertToObject(e.Value))
+		}
+
+		return rs1n
+	case []*tk.OrderedMap:
+		aryT := make(Array, 0, len(nv))
+
+		for _, v := range nv {
+			rs1, _ := NewOrderedMap()
+
+			rs1n := rs1.(*OrderedMap)
+
+			for e := v.Oldest(); e != nil; e = e.Next() {
+				rs1n.Value.Set(e.Key, ConvertToObject(e.Value))
+			}
+
+			aryT = append(aryT, rs1n)
+		}
+
+		return aryT
+	case *big.Int:
+		return &BigInt{Value: nv}
+	case *BigInt:
+		return nv
+	case *big.Float:
+		return &BigFloat{Value: nv}
+	case *BigFloat:
+		return nv
+	case tk.UndefinedStruct:
+		return Undefined
+	case *tk.UndefinedStruct:
+		return Undefined
 	case Function:
 		return &nv
 	case String:
 		return nv
 
 	default:
-		originalCodeT := -1
 		nv1, ok := vA.(Object)
 
 		if ok {
-			originalCodeT = nv1.TypeCode()
+			return nv1
+			// originalCodeT = nv1.TypeCode()
 		}
 
+		originalCodeT := -1
 		return &Any{Value: nv, OriginalType: fmt.Sprintf("%T", nv), OriginalCode: originalCodeT}
 		// tk.Pl("Unknown type: %T, %#v, %v", vA, vA, vA)
 		// return Undefined
@@ -1573,7 +1948,25 @@ func ConvertFromObject(vA Object) interface{} {
 		return nv.Value
 	case *Gel:
 		return nv.Value
+	case *OrderedMap:
+		rs1 := tk.NewOrderedMap()
+
+		for e := nv.Value.Oldest(); e != nil; e = e.Next() {
+			nv, ok := e.Value.(Object)
+
+			if !ok {
+				rs1.Set(e.Key, e.Value)
+			} else {
+				rs1.Set(e.Key, ConvertFromObject(nv))
+			}
+		}
+
+		return rs1
 	case *Database:
+		return nv.Value
+	case *BigInt:
+		return nv.Value
+	case *BigFloat:
 		return nv.Value
 	case *Any:
 		return nv.Value
@@ -1600,6 +1993,20 @@ func ObjectsToI(aryA []Object) []interface{} {
 	return rs
 }
 
+func ObjectsToO(aryA []Object) []interface{} {
+	if aryA == nil {
+		return nil
+	}
+
+	rs := make([]interface{}, 0, len(aryA))
+
+	for _, v := range aryA {
+		rs = append(rs, v)
+	}
+
+	return rs
+}
+
 func ObjectsToN(aryA []Object) []int {
 	if aryA == nil {
 		return nil
@@ -1611,7 +2018,11 @@ func ObjectsToN(aryA []Object) []int {
 		vT := ConvertFromObject(v)
 		if nv, ok := vT.(int); ok {
 			rs = append(rs, nv)
+			continue
 		}
+
+		nv2 := tk.ToInt(vT, 0)
+		rs = append(rs, nv2)
 	}
 
 	return rs
@@ -1626,6 +2037,26 @@ func ObjectsToS(aryA []Object) []string {
 
 	for _, v := range aryA {
 		rs = append(rs, v.String())
+	}
+
+	return rs
+}
+
+func AnysToOriginal(aryA []Object) []interface{} {
+	if aryA == nil {
+		return nil
+	}
+
+	rs := make([]interface{}, 0, len(aryA))
+
+	for _, v := range aryA {
+		nv, ok := v.(*Any)
+
+		if !ok {
+			continue
+		}
+
+		rs = append(rs, nv.Value)
 	}
 
 	return rs
@@ -1748,7 +2179,14 @@ func NewCommonError(formatA string, argsA ...interface{}) *Error {
 }
 
 func NewCommonErrorWithPos(c Call, formatA string, argsA ...interface{}) *Error {
-	return &Error{Name: "error", Message: fmt.Sprintf(fmt.Sprintf("[pos: %v]", c.VM().GetSrcPos())+formatA, argsA...)}
+	vmT := c.VM()
+
+	if vmT != nil {
+		return &Error{Name: "error", Message: fmt.Sprintf(fmt.Sprintf("[pos: %v]", c.VM().GetSrcPos())+formatA, argsA...)}
+	}
+
+	return &Error{Name: "error", Message: fmt.Sprintf(fmt.Sprintf("[pos: ]")+formatA, argsA...)}
+
 }
 
 func NewError(nameA string, formatA string, argsA ...interface{}) *Error {

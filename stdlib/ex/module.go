@@ -3,6 +3,7 @@ package ex
 
 import (
 	"fmt"
+	"math"
 	"runtime/debug"
 	"sort"
 
@@ -386,8 +387,106 @@ func builtinSortByFuncFunc(c charlang.Call) (ret charlang.Object, err error) {
 	return
 }
 
-// Module represents time module.
+func builtinNewFuncFunc(c charlang.Call) (ret charlang.Object, err error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return charlang.NewCommonError("not enough parameters"), nil
+	}
+
+	arg0 := args[0].String()
+
+	switch arg0 {
+	case "lessFunc":
+		arg1, ok := args[1].(*charlang.CompiledFunction)
+
+		if !ok {
+			return charlang.NewCommonErrorWithPos(c, "invalid type: (%T)%v", args[1], args[1]), nil
+		}
+
+		rs := func(i, j int) bool {
+
+			var retT charlang.Object
+			var errT error
+
+			if len(args) > 2 {
+				retT, errT = charlang.NewInvoker(c.VM(), arg1).Invoke(args[2], charlang.Int(i), charlang.Int(j))
+			} else {
+				retT, errT = charlang.NewInvoker(c.VM(), arg1).Invoke(charlang.Int(i), charlang.Int(j))
+			}
+
+			if errT != nil {
+				return false
+			}
+
+			nv1, ok := retT.(charlang.Bool)
+
+			if !ok {
+				return false
+			}
+
+			return bool(nv1)
+		}
+
+		return &charlang.Any{Value: rs, OriginalType: fmt.Sprintf("%T", rs), OriginalCode: -1}, nil
+	}
+
+	return charlang.NewCommonErrorWithPos(c, "unsupported type: %v", args[0]), nil
+
+	// arg1, ok := args[1].(*charlang.CompiledFunction)
+
+	// if !ok {
+	// 	return charlang.NewCommonErrorWithPos(c, "invalid type: (%T)%v", args[0], args[0]), nil
+	// }
+
+	// sort.SliceStable(arg0, func(i, j int) bool {
+	// 	retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(charlang.Int(i), charlang.Int(j))
+
+	// 	if errT != nil {
+	// 		return false
+	// 	}
+
+	// 	nv1, ok := retT.(charlang.Bool)
+
+	// 	if !ok {
+	// 		return false
+	// 	}
+
+	// 	return bool(nv1)
+	// })
+
+	// ret = arg0
+	// err = nil
+	// return
+}
+
+// Module represents ex module.
 var Module = map[string]charlang.Object{
+	// modules
+	"math": charlang.Map{
+		// constants
+		"Pi": charlang.Float(math.Pi),
+		"pi": charlang.Float(math.Pi),
+
+		// funcs
+		"sqrt": &charlang.Function{
+			Name:    "compile", // compile a piece of code
+			Value:   charlang.FnAFRF(math.Sqrt),
+			ValueEx: charlang.FnAFRFex(math.Sqrt),
+		},
+	},
+	// "big": charlang.Map{
+	// 	// constants
+	// 	"Pi": charlang.Float(math.Pi),
+	// 	"pi": charlang.Float(math.Pi),
+
+	// 	// funcs
+	// 	"sqrt": &charlang.Function{
+	// 		Name:    "compile", // compile a piece of code
+	// 		Value:   charlang.FnAFRF(math.Sqrt),
+	// 		ValueEx: charlang.FnAFRFex(math.Sqrt),
+	// 	},
+	// },
 	// funcs start
 
 	// compile/run/thread related
@@ -422,6 +521,11 @@ var Module = map[string]charlang.Object{
 		Name:    "sortByFuncQuick", // sort by compiled function
 		Value:   charlang.CallExAdapter(builtinSortByFuncQuickFunc),
 		ValueEx: builtinSortByFuncQuickFunc,
+	},
+	"newFunc": &charlang.Function{
+		Name:    "newFunc", // new a go function
+		Value:   charlang.CallExAdapter(builtinNewFuncFunc),
+		ValueEx: builtinNewFuncFunc,
 	},
 	// funcs end
 }

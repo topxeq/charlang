@@ -3,9 +3,11 @@ package charlang
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"strconv"
 	"strings"
@@ -43,7 +45,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Time: 159, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, StatusResult: 303, DateTime: 305, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *Reader: 331, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *Reader: 331, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -477,9 +479,26 @@ func (o Bool) Equal(right Object) bool {
 		return bool((o && v == 1) || (!o && v == 0))
 	}
 
+	if v, ok := right.(Byte); ok {
+		return bool((o && v == 1) || (!o && v == 0))
+	}
+
+	if v, ok := right.(Char); ok {
+		return bool((o && v == 1) || (!o && v == 0))
+	}
+
 	if v, ok := right.(Uint); ok {
 		return bool((o && v == 1) || (!o && v == 0))
 	}
+
+	if v, ok := right.(Float); ok {
+		return bool((o && v == 1) || (!o && v == 0))
+	}
+
+	if v, ok := right.(*BigInt); ok {
+		return bool((o && v.Value.Int64() == 1) || (!o && v.Value.Int64() == 0))
+	}
+
 	return false
 }
 
@@ -506,7 +525,7 @@ func (o Bool) IndexGet(index Object) (value Object, err error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return o, nil
 		}
 
@@ -615,6 +634,7 @@ switchpos:
 		} else {
 			right = Int(0)
 		}
+
 		goto switchpos
 	case *UndefinedType:
 		switch tok {
@@ -624,6 +644,7 @@ switchpos:
 			return True, nil
 		}
 	}
+
 	return nil, NewOperandTypeError(
 		tok.String(),
 		o.TypeName(),
@@ -687,12 +708,14 @@ func (o Int) Equal(right Object) bool {
 		return o == v
 	case Byte:
 		return o == Int(v)
+	case Char:
+		return o == Int(v)
 	case Uint:
 		return Uint(o) == v
 	case Float:
 		return Float(o) == v
-	case Char:
-		return o == Int(v)
+	case *BigInt:
+		return big.NewInt(int64(o)).Cmp(v.Value) == 0
 	case Bool:
 		if v {
 			return o == 1
@@ -730,7 +753,7 @@ func (o Int) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return o, nil
 		}
 
@@ -749,6 +772,7 @@ func (o Int) IndexGet(index Object) (Object, error) {
 
 // BinaryOp implements Object interface.
 func (o Int) BinaryOp(tok token.Token, right Object) (Object, error) {
+	// tk.Plo("Int) BinaryOp", right)
 	switch v := right.(type) {
 	case Int:
 		switch tok {
@@ -786,47 +810,39 @@ func (o Int) BinaryOp(tok token.Token, right Object) (Object, error) {
 		case token.GreaterEq:
 			return Bool(o >= v), nil
 		}
-	case Uint:
-		return Uint(o).BinaryOp(tok, right)
-	case Float:
-		return Float(o).BinaryOp(tok, right)
-	case Char:
-		switch tok {
-		case token.Add:
-			return Char(o) + v, nil
-		case token.Sub:
-			return Char(o) - v, nil
-		case token.Less:
-			return Bool(o < Int(v)), nil
-		case token.LessEq:
-			return Bool(o <= Int(v)), nil
-		case token.Greater:
-			return Bool(o > Int(v)), nil
-		case token.GreaterEq:
-			return Bool(o >= Int(v)), nil
-		}
 	case Byte:
-		switch tok {
-		case token.Add:
-			return Byte(o) + v, nil
-		case token.Sub:
-			return Byte(o) - v, nil
-		case token.Less:
-			return Bool(o < Int(v)), nil
-		case token.LessEq:
-			return Bool(o <= Int(v)), nil
-		case token.Greater:
-			return Bool(o > Int(v)), nil
-		case token.GreaterEq:
-			return Bool(o >= Int(v)), nil
-		}
+		return o.BinaryOp(tok, Int(v))
+		// switch tok {
+		// case token.Add:
+		// 	return o + Int(v), nil
+		// case token.Sub:
+		// 	return o - Int(v), nil
+		// case token.Less:
+		// 	return Bool(o < Int(v)), nil
+		// case token.LessEq:
+		// 	return Bool(o <= Int(v)), nil
+		// case token.Greater:
+		// 	return Bool(o > Int(v)), nil
+		// case token.GreaterEq:
+		// 	return Bool(o >= Int(v)), nil
+		// }
+	case Char:
+		return o.BinaryOp(tok, Int(v))
+	case Uint:
+		return Uint(o).BinaryOp(tok, v)
+	case Float:
+		return Float(o).BinaryOp(tok, v)
 	case Bool:
 		if v {
 			right = Int(1)
 		} else {
 			right = Int(0)
 		}
+
 		return o.BinaryOp(tok, right)
+	case *BigInt:
+		rs := &BigInt{Value: big.NewInt(int64(o))}
+		return rs.BinaryOp(tok, v)
 	case *UndefinedType:
 		switch tok {
 		case token.Less, token.LessEq:
@@ -835,6 +851,7 @@ func (o Int) BinaryOp(tok token.Token, right Object) (Object, error) {
 			return True, nil
 		}
 	}
+
 	return nil, NewOperandTypeError(
 		tok.String(),
 		o.TypeName(),
@@ -901,10 +918,12 @@ func (o Uint) Equal(right Object) bool {
 		return o == Uint(v)
 	case Byte:
 		return o == Uint(v)
-	case Float:
-		return Float(o) == v
 	case Char:
 		return o == Uint(v)
+	case Float:
+		return Float(o) == v
+	case *BigInt:
+		return big.NewInt(int64(o)).Cmp(v.Value) == 0
 	case Bool:
 		if v {
 			return o == 1
@@ -942,7 +961,7 @@ func (o Uint) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return o, nil
 		}
 
@@ -1000,45 +1019,23 @@ func (o Uint) BinaryOp(tok token.Token, right Object) (Object, error) {
 		}
 	case Int:
 		return o.BinaryOp(tok, Uint(v))
-	case Float:
-		return Float(o).BinaryOp(tok, right)
-	case Char:
-		switch tok {
-		case token.Add:
-			return Char(o) + v, nil
-		case token.Sub:
-			return Char(o) - v, nil
-		case token.Less:
-			return Bool(o < Uint(v)), nil
-		case token.LessEq:
-			return Bool(o <= Uint(v)), nil
-		case token.Greater:
-			return Bool(o > Uint(v)), nil
-		case token.GreaterEq:
-			return Bool(o >= Uint(v)), nil
-		}
 	case Byte:
-		switch tok {
-		case token.Add:
-			return Byte(o) + v, nil
-		case token.Sub:
-			return Byte(o) - v, nil
-		case token.Less:
-			return Bool(o < Uint(v)), nil
-		case token.LessEq:
-			return Bool(o <= Uint(v)), nil
-		case token.Greater:
-			return Bool(o > Uint(v)), nil
-		case token.GreaterEq:
-			return Bool(o >= Uint(v)), nil
-		}
+		return o.BinaryOp(tok, Uint(v))
+	case Char:
+		return o.BinaryOp(tok, Uint(v))
+	case Float:
+		return Float(o).BinaryOp(tok, v)
 	case Bool:
 		if v {
 			right = Uint(1)
 		} else {
 			right = Uint(0)
 		}
-		return o.BinaryOp(tok, right)
+
+		return o.BinaryOp(tok, v)
+	case *BigInt:
+		rs := &BigInt{Value: big.NewInt(int64(o))}
+		return rs.BinaryOp(tok, v)
 	case *UndefinedType:
 		switch tok {
 		case token.Less, token.LessEq:
@@ -1117,6 +1114,10 @@ func (o Float) Equal(right Object) bool {
 		return o == Float(v)
 	case Byte:
 		return o == Float(v)
+	case *BigInt:
+		newNumT, _ := big.NewFloat(0).SetInt(v.Value).Float64()
+
+		return o == Float(newNumT)
 	case Bool:
 		if v {
 			return o == 1
@@ -1159,7 +1160,7 @@ func (o Float) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return o, nil
 		}
 
@@ -1188,7 +1189,7 @@ func (o Float) BinaryOp(tok token.Token, right Object) (Object, error) {
 		case token.Mul:
 			return o * v, nil
 		case token.Quo:
-			if v == 0 {
+			if v == 0.0 {
 				return nil, ErrZeroDivision
 			}
 			return o / v, nil
@@ -1203,11 +1204,11 @@ func (o Float) BinaryOp(tok token.Token, right Object) (Object, error) {
 		}
 	case Int:
 		return o.BinaryOp(tok, Float(v))
-	case Uint:
+	case Byte:
 		return o.BinaryOp(tok, Float(v))
 	case Char:
 		return o.BinaryOp(tok, Float(v))
-	case Byte:
+	case Uint:
 		return o.BinaryOp(tok, Float(v))
 	case Bool:
 		if v {
@@ -1215,7 +1216,11 @@ func (o Float) BinaryOp(tok token.Token, right Object) (Object, error) {
 		} else {
 			right = Float(0)
 		}
+
 		return o.BinaryOp(tok, right)
+	case *BigInt:
+		rs := &BigInt{Value: big.NewInt(int64(o))}
+		return rs.BinaryOp(tok, right)
 	case *UndefinedType:
 		switch tok {
 		case token.Less, token.LessEq:
@@ -1294,6 +1299,8 @@ func (o Char) Equal(right Object) bool {
 		return o == Char(v)
 	case Float:
 		return Float(o) == v
+	case *BigInt:
+		return big.NewInt(int64(o)).Cmp(v.Value) == 0
 	case Bool:
 		if v {
 			return o == 1
@@ -1331,7 +1338,7 @@ func (o Char) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return o, nil
 		}
 
@@ -1350,6 +1357,7 @@ func (o Char) IndexGet(index Object) (Object, error) {
 
 // BinaryOp implements Object interface.
 func (o Char) BinaryOp(tok token.Token, right Object) (Object, error) {
+	// tk.Plo("Char) BinaryOp", right)
 	switch v := right.(type) {
 	case Char:
 		switch tok {
@@ -1388,57 +1396,22 @@ func (o Char) BinaryOp(tok token.Token, right Object) (Object, error) {
 			return Bool(o >= v), nil
 		}
 	case Int:
-		switch tok {
-		case token.Add:
-			return o + Char(v), nil
-		case token.Sub:
-			return o - Char(v), nil
-		case token.Less:
-			return Bool(Int(o) < v), nil
-		case token.LessEq:
-			return Bool(Int(o) <= v), nil
-		case token.Greater:
-			return Bool(Int(o) > v), nil
-		case token.GreaterEq:
-			return Bool(Int(o) >= v), nil
-		}
+		return Int(o).BinaryOp(tok, v)
 	case Byte:
-		switch tok {
-		case token.Add:
-			return Byte(o) + v, nil
-		case token.Sub:
-			return Byte(o) - v, nil
-		case token.Less:
-			return Bool(o < Char(v)), nil
-		case token.LessEq:
-			return Bool(o <= Char(v)), nil
-		case token.Greater:
-			return Bool(o > Char(v)), nil
-		case token.GreaterEq:
-			return Bool(o >= Char(v)), nil
-		}
+		return o.BinaryOp(tok, Char(v))
 	case Uint:
-		switch tok {
-		case token.Add:
-			return o + Char(v), nil
-		case token.Sub:
-			return o - Char(v), nil
-		case token.Less:
-			return Bool(Uint(o) < v), nil
-		case token.LessEq:
-			return Bool(Uint(o) <= v), nil
-		case token.Greater:
-			return Bool(Uint(o) > v), nil
-		case token.GreaterEq:
-			return Bool(Uint(o) >= v), nil
-		}
+		return Uint(o).BinaryOp(tok, v)
 	case Bool:
 		if v {
 			right = Char(1)
 		} else {
 			right = Char(0)
 		}
+
 		return o.BinaryOp(tok, right)
+	case *BigInt:
+		rs := &BigInt{Value: big.NewInt(int64(o))}
+		return rs.BinaryOp(tok, v)
 	case String:
 		if tok == token.Add {
 			var sb strings.Builder
@@ -1524,6 +1497,8 @@ func (o Byte) Equal(right Object) bool {
 		return Float(o) == v
 	case Char:
 		return Char(o) == v
+	case *BigInt:
+		return big.NewInt(int64(o)).Cmp(v.Value) == 0
 	case Bool:
 		if v {
 			return o == 1
@@ -1561,7 +1536,7 @@ func (o Byte) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return o, nil
 		}
 
@@ -1619,25 +1594,12 @@ func (o Byte) BinaryOp(tok token.Token, right Object) (Object, error) {
 		}
 	case Int:
 		return Int(o).BinaryOp(tok, right)
+	case Char:
+		return Char(o).BinaryOp(tok, right)
 	case Uint:
 		return Uint(o).BinaryOp(tok, right)
 	case Float:
 		return Float(o).BinaryOp(tok, right)
-	case Char:
-		switch tok {
-		case token.Add:
-			return Char(o) + v, nil
-		case token.Sub:
-			return Char(o) - v, nil
-		case token.Less:
-			return Bool(Char(o) < v), nil
-		case token.LessEq:
-			return Bool(Char(o) <= v), nil
-		case token.Greater:
-			return Bool(Char(o) > v), nil
-		case token.GreaterEq:
-			return Bool(Char(o) >= v), nil
-		}
 	case Bool:
 		if v {
 			right = Int(1)
@@ -1645,6 +1607,9 @@ func (o Byte) BinaryOp(tok token.Token, right Object) (Object, error) {
 			right = Int(0)
 		}
 		return o.BinaryOp(tok, right)
+	case *BigInt:
+		rs := &BigInt{Value: big.NewInt(int64(o))}
+		return rs.BinaryOp(tok, v)
 	case *UndefinedType:
 		switch tok {
 		case token.Less, token.LessEq:
@@ -1671,7 +1636,7 @@ type String struct {
 	ObjectImpl
 	Value string
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 	// Methods map[string]*Function
 }
 
@@ -1748,6 +1713,9 @@ func (o String) SetMember(idxA string, valueA Object) error {
 }
 
 func (o String) Copy() Object {
+	if DebugModeG {
+		tk.Pl("string copy: %#v", o)
+	}
 	return String{Value: o.Value, Members: o.Members} // , Methods: o.Methods
 }
 
@@ -1765,7 +1733,7 @@ func (o String) IndexSet(index, value Object) error {
 
 	// if ok {
 	// 	strT := idxT.Value
-	// 	if strT == "v" || strT == "value" {
+	// 	if strT == "value" {
 	// 		o.Value = value.String()
 	// 		return nil
 	// 	}
@@ -1791,7 +1759,7 @@ func (o String) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return ToStringObject(o.Value), nil
 		}
 
@@ -1818,6 +1786,7 @@ func (o String) Equal(right Object) bool {
 	if v, ok := right.(String); ok {
 		return o.Value == v.Value
 	}
+
 	if v, ok := right.(Bytes); ok {
 		return o.Value == string(v)
 	}
@@ -1897,6 +1866,11 @@ func (o String) Format(s fmt.State, verb rune) {
 	fmt.Fprintf(s, format, o.Value)
 }
 
+func (o String) MarshalJSON() ([]byte, error) {
+	b1, err := json.Marshal(o.Value)
+	return b1, err
+}
+
 func ToStringObject(argA interface{}) String {
 	switch nv := argA.(type) {
 	case String:
@@ -1917,6 +1891,10 @@ func ToStringObject(argA interface{}) String {
 		return String{Value: ""}
 	case []byte:
 		return String{Value: string(nv)}
+	case *BigInt:
+		return String{Value: nv.Value.String()}
+	case *BigFloat:
+		return String{Value: nv.Value.String()}
 	case *tk.Seq:
 		return String{Value: nv.String()}
 	case *sync.RWMutex:
@@ -1936,28 +1914,55 @@ func ToIntObject(argA interface{}, defaultA ...int) Int {
 		defaultT = defaultA[0]
 	}
 	switch nv := argA.(type) {
-	case String:
-		return Int(tk.StrToInt(nv.Value, defaultT))
-	case Int:
-		return nv
-	case Float:
-		return Int(nv)
+	case Bool:
+		if nv {
+			return Int(1)
+		}
+
+		return Int(0)
 	case Byte:
 		return Int(nv)
 	case Char:
 		return Int(nv)
+	case Int:
+		return nv
+	case Uint:
+		return Int(nv)
+	case Float:
+		return Int(nv)
+	case String:
+		return Int(tk.StrToInt(nv.Value, defaultT))
 	case Object:
 		return Int(tk.StrToInt(nv.String(), defaultT))
-	case string:
-		return Int(tk.StrToInt(nv, defaultT))
+	case bool:
+		if nv {
+			return Int(1)
+		}
+
+		return Int(0)
+	case byte:
+		return Int(nv)
 	case int:
+		return Int(nv)
+	case rune:
 		return Int(nv)
 	case int64:
 		return Int(nv)
-	case int32:
+	case uint:
 		return Int(nv)
-	case uint8:
+	case uint64:
 		return Int(nv)
+	case float64:
+		return Int(nv)
+	case float32:
+		return Int(nv)
+	case *big.Int:
+		return Int(nv.Int64())
+	case *big.Float:
+		n1, _ := nv.Int64()
+		return Int(n1)
+	case string:
+		return Int(tk.StrToInt(nv, defaultT))
 	case nil:
 		return Int(defaultT)
 	case []byte:
@@ -2073,7 +2078,7 @@ func (o Bytes) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return o, nil
 		}
 
@@ -2279,7 +2284,7 @@ func (o Chars) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return o, nil
 		}
 
@@ -2433,7 +2438,7 @@ type Function struct {
 	Value   func(args ...Object) (Object, error)
 	ValueEx func(Call) (Object, error)
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var _ Object = (*Function)(nil)
@@ -2545,8 +2550,10 @@ type BuiltinFunction struct {
 	Value   func(args ...Object) (Object, error)
 	ValueEx func(Call) (Object, error)
 
-	Members map[string]Object
-	Methods map[string]*Function
+	Members map[string]Object `json:"-"`
+	// Methods map[string]*Function
+
+	Remark string
 }
 
 var _ ExCallerObject = (*BuiltinFunction)(nil)
@@ -2661,220 +2668,220 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 		return Undefined, NewIndexTypeError("string", index.TypeName())
 	}
 
-	fNameT := o.Name + "." + nv.Value
+	// fNameT := o.Name + "." + nv.Value
 
-	if o.Methods == nil {
-		o.Methods = map[string]*Function{}
-	}
+	// if o.Methods == nil {
+	// 	o.Methods = map[string]*Function{}
+	// }
 
 	if o.Members == nil {
 		o.Members = map[string]Object{}
 	}
 
-	switch fNameT {
-	case "any.new":
-		fT, ok := o.Methods["any.new"]
-		if !ok {
-			o.Methods["any.new"] = &Function{
-				Name: "any.new",
-				ValueEx: func(c Call) (Object, error) {
-					return builtinAnyFunc(c)
-				}}
-			fT = o.Methods["any.new"]
-		}
+	// switch fNameT {
+	// case "any.new":
+	// 	fT, ok := o.Methods["any.new"]
+	// 	if !ok {
+	// 		o.Methods["any.new"] = &Function{
+	// 			Name: "any.new",
+	// 			ValueEx: func(c Call) (Object, error) {
+	// 				return builtinAnyFunc(c)
+	// 			}}
+	// 		fT = o.Methods["any.new"]
+	// 	}
 
-		return fT, nil
-	case "database.connect":
-		fT, ok := o.Methods["database.connect"]
-		if !ok {
-			o.Methods["database.connect"] = &Function{
-				Name: "database.connect",
-				Value: func(args ...Object) (Object, error) {
+	// 	return fT, nil
+	// case "database.connect":
+	// 	fT, ok := o.Methods["database.connect"]
+	// 	if !ok {
+	// 		o.Methods["database.connect"] = &Function{
+	// 			Name: "database.connect",
+	// 			Value: func(args ...Object) (Object, error) {
 
-					nv0, ok := args[0].(String)
+	// 				nv0, ok := args[0].(String)
 
-					if !ok {
-						return NewCommonError("invalid paramter 1"), nil
-					}
+	// 				if !ok {
+	// 					return NewCommonError("invalid paramter 1"), nil
+	// 				}
 
-					nv1, ok := args[1].(String)
+	// 				nv1, ok := args[1].(String)
 
-					if !ok {
-						return NewCommonError("invalid paramter 2"), nil
-					}
+	// 				if !ok {
+	// 					return NewCommonError("invalid paramter 2"), nil
+	// 				}
 
-					rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
-					if tk.IsError(rsT) {
-						return NewFromError(rsT.(error)), nil
-					}
+	// 				rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
+	// 				if tk.IsError(rsT) {
+	// 					return NewFromError(rsT.(error)), nil
+	// 				}
 
-					return &Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
-				}}
-			fT = o.Methods["database.connect"]
-		}
+	// 				return &Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
+	// 			}}
+	// 		fT = o.Methods["database.connect"]
+	// 	}
 
-		return fT, nil
-	case "database.formatSQLValue", "database.format":
-		fT, ok := o.Methods["database.formatSQLValue"]
-		if !ok {
-			o.Methods["database.formatSQLValue"] = &Function{
-				Name: "database.formatSQLValue",
-				Value: func(args ...Object) (Object, error) {
-					if len(args) < 1 {
-						return NewCommonError("not enough paramters"), nil
-					}
+	// 	return fT, nil
+	// case "database.formatSQLValue", "database.format":
+	// 	fT, ok := o.Methods["database.formatSQLValue"]
+	// 	if !ok {
+	// 		o.Methods["database.formatSQLValue"] = &Function{
+	// 			Name: "database.formatSQLValue",
+	// 			Value: func(args ...Object) (Object, error) {
+	// 				if len(args) < 1 {
+	// 					return NewCommonError("not enough paramters"), nil
+	// 				}
 
-					nv0 := args[0].String()
+	// 				nv0 := args[0].String()
 
-					return ToStringObject(sqltk.FormatSQLValue(nv0)), nil
-				}}
-			fT = o.Methods["database.formatSQLValue"]
-		}
+	// 				return ToStringObject(sqltk.FormatSQLValue(nv0)), nil
+	// 			}}
+	// 		fT = o.Methods["database.formatSQLValue"]
+	// 	}
 
-		return fT, nil
-	case "database.oneColumnToArray", "database.oneColToAry":
-		fT, ok := o.Methods["database.oneColumnToArray"]
-		if !ok {
-			o.Methods["database.oneColumnToArray"] = &Function{
-				Name: "database.oneColumnToArray",
-				Value: func(args ...Object) (Object, error) {
-					if len(args) < 1 {
-						return NewCommonError("not enough paramters"), nil
-					}
+	// 	return fT, nil
+	// case "database.oneColumnToArray", "database.oneColToAry":
+	// 	fT, ok := o.Methods["database.oneColumnToArray"]
+	// 	if !ok {
+	// 		o.Methods["database.oneColumnToArray"] = &Function{
+	// 			Name: "database.oneColumnToArray",
+	// 			Value: func(args ...Object) (Object, error) {
+	// 				if len(args) < 1 {
+	// 					return NewCommonError("not enough paramters"), nil
+	// 				}
 
-					nv0, ok := args[0].(Array)
-					if !ok {
-						return NewCommonError("invalid paramter 1"), nil
-					}
+	// 				nv0, ok := args[0].(Array)
+	// 				if !ok {
+	// 					return NewCommonError("invalid paramter 1"), nil
+	// 				}
 
-					aryT := Array{}
-					for i, v := range nv0 {
-						if i == 0 {
-							continue
-						}
+	// 				aryT := Array{}
+	// 				for i, v := range nv0 {
+	// 					if i == 0 {
+	// 						continue
+	// 					}
 
-						aryT = append(aryT, v.(Array)[0])
-					}
+	// 					aryT = append(aryT, v.(Array)[0])
+	// 				}
 
-					return aryT, nil
-				}}
-			fT = o.Methods["database.oneColumnToArray"]
-		}
+	// 				return aryT, nil
+	// 			}}
+	// 		fT = o.Methods["database.oneColumnToArray"]
+	// 	}
 
-		return fT, nil
-	case "statusResult.success":
-		fT, ok := o.Methods["statusResult.success"]
-		if !ok {
-			o.Methods["statusResult.success"] = &Function{
-				Name: "statusResult.success",
-				Value: func(args ...Object) (Object, error) {
-					if len(args) < 1 {
-						return &StatusResultSuccess, nil
-					}
+	// 	return fT, nil
+	// case "statusResult.success":
+	// 	fT, ok := o.Methods["statusResult.success"]
+	// 	if !ok {
+	// 		o.Methods["statusResult.success"] = &Function{
+	// 			Name: "statusResult.success",
+	// 			Value: func(args ...Object) (Object, error) {
+	// 				if len(args) < 1 {
+	// 					return &StatusResultSuccess, nil
+	// 				}
 
-					return &StatusResult{Status: "success", Value: args[0].String()}, nil
-				}}
-			fT = o.Methods["statusResult.success"]
-		}
+	// 				return &StatusResult{Status: "success", Value: args[0].String()}, nil
+	// 			}}
+	// 		fT = o.Methods["statusResult.success"]
+	// 	}
 
-		return fT, nil
-	case "statusResult.fail":
-		fT, ok := o.Methods["statusResult.fail"]
-		if !ok {
-			o.Methods["statusResult.fail"] = &Function{
-				Name: "statusResult.fail",
-				Value: func(args ...Object) (Object, error) {
-					if len(args) < 1 {
-						return &StatusResultFail, nil
-					}
+	// 	return fT, nil
+	// case "statusResult.fail":
+	// 	fT, ok := o.Methods["statusResult.fail"]
+	// 	if !ok {
+	// 		o.Methods["statusResult.fail"] = &Function{
+	// 			Name: "statusResult.fail",
+	// 			Value: func(args ...Object) (Object, error) {
+	// 				if len(args) < 1 {
+	// 					return &StatusResultFail, nil
+	// 				}
 
-					return &StatusResult{Status: "fail", Value: args[0].String()}, nil
-				}}
-			fT = o.Methods["statusResult.fail"]
-		}
+	// 				return &StatusResult{Status: "fail", Value: args[0].String()}, nil
+	// 			}}
+	// 		fT = o.Methods["statusResult.fail"]
+	// 	}
 
-		return fT, nil
-	case "time.format":
-		fT, ok := o.Methods["time.format"]
-		if !ok {
-			o.Methods["time.format"] = &Function{
-				Name: "time.format",
-				Value: func(args ...Object) (Object, error) {
-					if len(args) < 1 {
-						return ToStringObject(tk.FormatTime(time.Now(), ObjectsToS(args)...)), nil
-					}
+	// 	return fT, nil
+	// case "time.format":
+	// 	fT, ok := o.Methods["time.format"]
+	// 	if !ok {
+	// 		o.Methods["time.format"] = &Function{
+	// 			Name: "time.format",
+	// 			Value: func(args ...Object) (Object, error) {
+	// 				if len(args) < 1 {
+	// 					return ToStringObject(tk.FormatTime(time.Now(), ObjectsToS(args)...)), nil
+	// 				}
 
-					return ToStringObject(tk.FormatTime(args[0].(*Time).Value, ObjectsToS(args[1:])...)), nil
-				}}
-			fT = o.Methods["time.format"]
-		}
+	// 				return ToStringObject(tk.FormatTime(args[0].(*Time).Value, ObjectsToS(args[1:])...)), nil
+	// 			}}
+	// 		fT = o.Methods["time.format"]
+	// 	}
 
-		return fT, nil
-	case "time.now":
-		fT, ok := o.Methods["time.now"]
-		if !ok {
-			o.Methods["time.now"] = &Function{
-				Name: "time.now",
-				Value: func(args ...Object) (Object, error) {
-					return &Time{Value: time.Now()}, nil
-				}}
-			fT = o.Methods["time.now"]
-		}
+	// 	return fT, nil
+	// case "time.now":
+	// 	fT, ok := o.Methods["time.now"]
+	// 	if !ok {
+	// 		o.Methods["time.now"] = &Function{
+	// 			Name: "time.now",
+	// 			Value: func(args ...Object) (Object, error) {
+	// 				return &Time{Value: time.Now()}, nil
+	// 			}}
+	// 		fT = o.Methods["time.now"]
+	// 	}
 
-		return fT, nil
-	case "time.timeFormatRFC1123":
-		mT, ok := o.Members["time.timeFormatRFC1123"]
-		if !ok {
-			o.Members["time.timeFormatRFC1123"] = ToStringObject(time.RFC1123)
-			mT = o.Members["time.timeFormatRFC1123"]
-		}
+	// 	return fT, nil
+	// case "time.timeFormatRFC1123":
+	// 	mT, ok := o.Members["time.timeFormatRFC1123"]
+	// 	if !ok {
+	// 		o.Members["time.timeFormatRFC1123"] = ToStringObject(time.RFC1123)
+	// 		mT = o.Members["time.timeFormatRFC1123"]
+	// 	}
 
-		return mT, nil
-	case "time.second":
-		mT, ok := o.Members["time.second"]
-		if !ok {
-			o.Members["time.second"] = Int(time.Second)
-			mT = o.Members["time.second"]
-		}
+	// 	return mT, nil
+	// case "time.second":
+	// 	mT, ok := o.Members["time.second"]
+	// 	if !ok {
+	// 		o.Members["time.second"] = Int(time.Second)
+	// 		mT = o.Members["time.second"]
+	// 	}
 
-		return mT, nil
-	case "time.timeFormatCompact":
-		mT, ok := o.Members["time.timeFormatCompact"]
-		if !ok {
-			o.Members["time.timeFormatCompact"] = ToStringObject(tk.TimeFormatCompact)
-			mT = o.Members["time.timeFormatCompact"]
-		}
+	// 	return mT, nil
+	// case "time.timeFormatCompact":
+	// 	mT, ok := o.Members["time.timeFormatCompact"]
+	// 	if !ok {
+	// 		o.Members["time.timeFormatCompact"] = ToStringObject(tk.TimeFormatCompact)
+	// 		mT = o.Members["time.timeFormatCompact"]
+	// 	}
 
-		return mT, nil
-	case "time.timeFormat":
-		mT, ok := o.Members["time.timeFormat"]
-		if !ok {
-			o.Members["time.timeFormat"] = ToStringObject(tk.TimeFormat)
-			mT = o.Members["time.timeFormat"]
-		}
+	// 	return mT, nil
+	// case "time.timeFormat":
+	// 	mT, ok := o.Members["time.timeFormat"]
+	// 	if !ok {
+	// 		o.Members["time.timeFormat"] = ToStringObject(tk.TimeFormat)
+	// 		mT = o.Members["time.timeFormat"]
+	// 	}
 
-		return mT, nil
-	case "time.timeFormatMS":
-		mT, ok := o.Members["time.timeFormatMS"]
-		if !ok {
-			o.Members["time.timeFormatMS"] = ToStringObject(tk.TimeFormatMS)
-			mT = o.Members["time.timeFormatMS"]
-		}
+	// 	return mT, nil
+	// case "time.timeFormatMS":
+	// 	mT, ok := o.Members["time.timeFormatMS"]
+	// 	if !ok {
+	// 		o.Members["time.timeFormatMS"] = ToStringObject(tk.TimeFormatMS)
+	// 		mT = o.Members["time.timeFormatMS"]
+	// 	}
 
-		return mT, nil
-	case "time.timeFormatMSCompact":
-		mT, ok := o.Members["time.timeFormatMSCompact"]
-		if !ok {
-			o.Members["time.timeFormatMSCompact"] = ToStringObject(tk.TimeFormatMSCompact)
-			mT = o.Members["time.timeFormatMSCompact"]
-		}
+	// 	return mT, nil
+	// case "time.timeFormatMSCompact":
+	// 	mT, ok := o.Members["time.timeFormatMSCompact"]
+	// 	if !ok {
+	// 		o.Members["time.timeFormatMSCompact"] = ToStringObject(tk.TimeFormatMSCompact)
+	// 		mT = o.Members["time.timeFormatMSCompact"]
+	// 	}
 
-		return mT, nil
-	}
+	// 	return mT, nil
+	// }
 
 	strT := nv.Value
 
-	if strT == "v" || strT == "value" {
+	if strT == "value" {
 		return o, nil
 	}
 
@@ -3019,7 +3026,7 @@ func (o Array) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return o, nil
 		}
 
@@ -3114,7 +3121,7 @@ type ObjectPtr struct {
 	ObjectImpl
 	Value *Object
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var (
@@ -3413,7 +3420,7 @@ type SyncMap struct {
 	mu    sync.RWMutex
 	Value Map
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var (
@@ -3612,7 +3619,7 @@ type Error struct {
 	Message string
 	Cause   error
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var (
@@ -3759,7 +3766,7 @@ func (o *Error) IndexGet(index Object) (Object, error) {
 
 	strT := s
 
-	if strT == "v" || strT == "value" {
+	if strT == "value" {
 		return o, nil
 	}
 
@@ -3788,7 +3795,7 @@ func (o *Error) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			if nv, ok := value.(*Error); ok {
 				o.Name = nv.Name
 				o.Message = nv.Message
@@ -3830,7 +3837,7 @@ type RuntimeError struct {
 	fileSet *parser.SourceFileSet
 	Trace   []parser.Pos
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var (
@@ -3978,7 +3985,7 @@ func (o *RuntimeError) IndexGet(index Object) (Object, error) {
 
 	strT := index.String()
 
-	if strT == "v" || strT == "value" {
+	if strT == "value" {
 		return o, nil
 	}
 
@@ -4007,7 +4014,7 @@ func (o *RuntimeError) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return ErrNotIndexAssignable
 		}
 
@@ -4126,7 +4133,7 @@ func (st StackTrace) Format(s fmt.State, verb rune) {
 type Time struct {
 	Value time.Time
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var _ NameCallerObject = (*Time)(nil)
@@ -4254,6 +4261,41 @@ func (o *Time) BinaryOp(tok token.Token,
 		case token.Sub:
 			return &Time{Value: o.Value.Add(time.Duration(-v))}, nil
 		}
+	case Byte:
+		switch tok {
+		case token.Add:
+			return &Time{Value: o.Value.Add(time.Duration(v))}, nil
+		case token.Sub:
+			return &Time{Value: o.Value.Add(time.Duration(-v))}, nil
+		}
+	case Char:
+		switch tok {
+		case token.Add:
+			return &Time{Value: o.Value.Add(time.Duration(v))}, nil
+		case token.Sub:
+			return &Time{Value: o.Value.Add(time.Duration(-v))}, nil
+		}
+	case Uint:
+		switch tok {
+		case token.Add:
+			return &Time{Value: o.Value.Add(time.Duration(v))}, nil
+		case token.Sub:
+			return &Time{Value: o.Value.Add(time.Duration(-v))}, nil
+		}
+	case Float:
+		switch tok {
+		case token.Add:
+			return &Time{Value: o.Value.Add(time.Duration(v))}, nil
+		case token.Sub:
+			return &Time{Value: o.Value.Add(time.Duration(-v))}, nil
+		}
+	case *BigInt:
+		switch tok {
+		case token.Add:
+			return &Time{Value: o.Value.Add(time.Duration(v.Value.Int64()))}, nil
+		case token.Sub:
+			return &Time{Value: o.Value.Add(time.Duration(-v.Value.Int64()))}, nil
+		}
 	case *Time:
 		switch tok {
 		case token.Sub:
@@ -4288,7 +4330,7 @@ func (o *Time) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			if nv, ok := value.(*Time); ok {
 				o.Value = nv.Value
 				return nil
@@ -4356,7 +4398,7 @@ func (o *Time) IndexGet(index Object) (Object, error) {
 
 	strT := v.Value
 
-	if strT == "v" || strT == "value" {
+	if strT == "value" {
 		return ToStringObject(o.Value), nil
 	}
 
@@ -4793,7 +4835,7 @@ type Location struct {
 	ObjectImpl
 	Value *time.Location
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 func (*Location) TypeCode() int {
@@ -4889,8 +4931,8 @@ type Database struct {
 	DBType          string
 	DBConnectString string
 
-	Members map[string]Object
-	Methods map[string]*Function
+	Members map[string]Object    `json:"-"`
+	Methods map[string]*Function `json:"-"`
 }
 
 var _ Object = &Database{}
@@ -4992,7 +5034,7 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 
 	strT := nv.Value
 
-	if strT == "v" || strT == "value" {
+	if strT == "value" {
 		return o, nil
 	}
 
@@ -5278,7 +5320,7 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 		return fT, nil
 	}
 
-	// if strT == "v" || strT == "value" {
+	// if strT == "value" {
 	// 	return o, nil
 	// }
 
@@ -5298,7 +5340,7 @@ func (o *Database) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			if nv, ok := value.(*Database); ok {
 				o.Value = nv.Value
 				return nil
@@ -5323,8 +5365,8 @@ type StatusResult struct {
 	Value   string
 	Objects interface{}
 
-	Members map[string]Object
-	Methods map[string]*Function
+	Members map[string]Object    `json:"-"`
+	Methods map[string]*Function `json:"-"`
 }
 
 var StatusResultInvalid = StatusResult{Status: "", Value: ""}
@@ -5615,7 +5657,7 @@ func (o *StatusResult) IndexGet(index Object) (Object, error) {
 
 	strT := nv.Value
 
-	// if strT == "v" || strT == "value" {
+	// if strT == "value" {
 	// 	return o, nil
 	// }
 
@@ -5635,7 +5677,7 @@ func (o *StatusResult) IndexSet(key, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			if nv, ok := value.(*StatusResult); ok {
 				o.Status = nv.Status
 				o.Value = nv.Value
@@ -5661,7 +5703,7 @@ type Any struct {
 	OriginalType string
 	OriginalCode int
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var (
@@ -5764,6 +5806,7 @@ func (o *Any) Equal(right Object) bool {
 	if v, ok := right.(*Any); ok {
 		return v.Value == o.Value
 	}
+
 	return false
 }
 
@@ -5776,7 +5819,7 @@ func (o *Any) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return o, nil
 		}
 
@@ -5870,7 +5913,7 @@ func (o *Any) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return o.SetValue(value)
 		}
 
@@ -5959,7 +6002,7 @@ type StringBuilder struct {
 	ObjectImpl
 	Value *strings.Builder
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var _ Object = &StringBuilder{}
@@ -6058,7 +6101,7 @@ func (o *StringBuilder) IndexGet(index Object) (value Object, err error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return ToStringObject(o.Value.String()), nil
 		}
 
@@ -6075,7 +6118,7 @@ func (o *StringBuilder) IndexGet(index Object) (value Object, err error) {
 	// case String:
 	// 	strT := v.Value
 
-	// 	if strT == "v" || strT == "value" {
+	// 	if strT == "value" {
 	// 		return ToStringObject(o.Value.String()), nil
 	// 	}
 
@@ -6234,7 +6277,7 @@ func (o *StringBuilder) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			if nv, ok := value.(String); ok {
 				o.Value.Reset()
 				o.Value.WriteString(nv.Value)
@@ -6272,7 +6315,7 @@ type BytesBuffer struct {
 	ObjectImpl
 	Value *bytes.Buffer
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var _ Object = &BytesBuffer{}
@@ -6372,7 +6415,7 @@ func (o *BytesBuffer) IndexGet(index Object) (value Object, err error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return Bytes(o.Value.Bytes()), nil
 		}
 
@@ -6389,7 +6432,7 @@ func (o *BytesBuffer) IndexGet(index Object) (value Object, err error) {
 	// case String:
 	// 	strT := v.Value
 
-	// 	if strT == "v" || strT == "value" {
+	// 	if strT == "value" {
 	// 		return o, nil
 	// 	}
 
@@ -6406,7 +6449,7 @@ func (o *BytesBuffer) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			if nv, ok := value.(Bytes); ok {
 				o.Value.Reset()
 				o.Value.Write(nv)
@@ -6440,7 +6483,7 @@ type ObjectRef struct {
 	ObjectImpl
 	Value *Object
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var (
@@ -6559,7 +6602,7 @@ type MutableString struct {
 	ObjectImpl
 	Value string
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 	// Methods map[string]*Function
 }
 
@@ -6577,6 +6620,11 @@ func (*MutableString) TypeName() string {
 
 func (o *MutableString) String() string {
 	return o.Value // fmt.Sprintf("%v (%#v, %#v)", o, o.Members, o.Methods) //
+}
+
+func (o *MutableString) MarshalJSON() ([]byte, error) {
+	b1, err := json.Marshal(o.Value)
+	return b1, err
 }
 
 func (o *MutableString) SetValue(valueA Object) error {
@@ -6655,7 +6703,7 @@ func (o *MutableString) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			o.Value = value.String()
 			return nil
 		}
@@ -6679,7 +6727,7 @@ func (o *MutableString) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return ToStringObject(o.Value), nil
 		}
 
@@ -6726,6 +6774,7 @@ func (o *MutableString) Call(_ ...Object) (Object, error) {
 
 // BinaryOp implements Object interface.
 func (o *MutableString) BinaryOp(tok token.Token, right Object) (Object, error) {
+	// tk.Pl("*MutableString BinaryOp: %v, %v", tok, right)
 	switch v := right.(type) {
 	case String:
 		switch tok {
@@ -6820,7 +6869,7 @@ type Seq struct {
 	ObjectImpl
 	Value *(tk.Seq)
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 	// Methods map[string]*Function
 }
 
@@ -6906,7 +6955,7 @@ func (o *Seq) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			o.Value.Reset(int(ToIntObject(value)))
 			return nil
 		}
@@ -6922,7 +6971,7 @@ func (o *Seq) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			// return builtinAnyFunc(Call{args: []Object{o}})
 			return ToIntObject(o.Value), nil
 		}
@@ -6980,7 +7029,7 @@ type Mutex struct {
 	ObjectImpl
 	Value *(sync.RWMutex)
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 	// Methods map[string]*Function
 }
 
@@ -7067,7 +7116,7 @@ func (o *Mutex) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		// if strT == "v" || strT == "value" {
+		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
 		// }
@@ -7083,7 +7132,7 @@ func (o *Mutex) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return builtinAnyFunc(Call{args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
@@ -7133,7 +7182,7 @@ type Mux struct {
 	ObjectImpl
 	Value *http.ServeMux
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var _ Object = NewMux()
@@ -7217,7 +7266,7 @@ func (o *Mux) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		// if strT == "v" || strT == "value" {
+		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
 		// }
@@ -7233,7 +7282,7 @@ func (o *Mux) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return builtinAnyFunc(Call{args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
@@ -7283,7 +7332,7 @@ type HttpReq struct {
 	ObjectImpl
 	Value *http.Request
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 // var _ Object = NewHttpReq()
@@ -7367,7 +7416,7 @@ func (o *HttpReq) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		// if strT == "v" || strT == "value" {
+		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
 		// }
@@ -7383,7 +7432,7 @@ func (o *HttpReq) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return builtinAnyFunc(Call{args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
@@ -7429,7 +7478,7 @@ type HttpResp struct {
 	ObjectImpl
 	Value http.ResponseWriter
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 // var _ Object = NewHttpReq()
@@ -7513,7 +7562,7 @@ func (o *HttpResp) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		// if strT == "v" || strT == "value" {
+		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
 		// }
@@ -7529,7 +7578,7 @@ func (o *HttpResp) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return builtinAnyFunc(Call{args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
@@ -7575,7 +7624,7 @@ type Reader struct {
 	ObjectImpl
 	Value *io.Reader
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var _ Object = NewReader()
@@ -7659,7 +7708,7 @@ func (o *Reader) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		// if strT == "v" || strT == "value" {
+		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
 		// }
@@ -7675,7 +7724,7 @@ func (o *Reader) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return builtinAnyFunc(Call{args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
@@ -7734,7 +7783,7 @@ type CharCode struct {
 
 	LastError string
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var _ Object = NewCharCode("")
@@ -7818,7 +7867,7 @@ func (o *CharCode) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		// if strT == "v" || strT == "value" {
+		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
 		// }
@@ -7834,7 +7883,7 @@ func (o *CharCode) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return builtinAnyFunc(Call{args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
@@ -7891,7 +7940,11 @@ func NewCharCode(srcA string, optsA ...*CompilerOptions) *CharCode {
 	if len(optsA) > 0 {
 		compilerOptionsT = optsA[0]
 	} else {
-		compilerOptionsT = &DefaultCompilerOptions
+		if MainCompilerOptions != nil {
+			compilerOptionsT = MainCompilerOptions
+		} else {
+			compilerOptionsT = &DefaultCompilerOptions
+		}
 	}
 
 	return &CharCode{Source: srcA, Value: nil, CompilerOptions: compilerOptionsT}
@@ -7912,10 +7965,10 @@ func NewCharCode(srcA string, optsA ...*CompilerOptions) *CharCode {
 // Gel object is like modules based on CharCode object
 type Gel struct {
 	ObjectImpl
-	Source string
-	Value  *CharCode
+	// Source string
+	Value *CharCode
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 // var _ Object = NewGel()[0]
@@ -7999,7 +8052,7 @@ func (o *Gel) IndexSet(index, value Object) error {
 
 	if ok {
 		strT := idxT.Value
-		// if strT == "v" || strT == "value" {
+		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
 		// }
@@ -8015,7 +8068,7 @@ func (o *Gel) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "v" || strT == "value" {
+		if strT == "value" {
 			return builtinAnyFunc(Call{args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
@@ -8030,6 +8083,10 @@ func (o *Gel) IndexGet(index Object) (Object, error) {
 		rs1, errT := GetObjectMethodFunc(o, strT)
 
 		if errT != nil || IsUndefInternal(rs1) {
+
+			if o.Value == nil || o.Value.Value == nil {
+				return Undefined, NewCommonError("not compiled")
+			}
 
 			var globalsA map[string]interface{} = nil
 			// var additionsA []Object = make([]Object, 0, len(argsT)+1)
@@ -8080,6 +8137,8 @@ func (o *Gel) IndexGet(index Object) (Object, error) {
 			// return fnT, nil
 
 		}
+
+		return rs1, nil
 	}
 
 	return nil, NewCommonError("not indexable: %v", o.TypeName())
@@ -8117,12 +8176,1205 @@ func NewGel(argsA ...Object) (Object, error) {
 	nv, ok := argsA[0].(*CharCode)
 
 	if !ok {
-		return Undefined, fmt.Errorf("invalid input type")
+		nv = NewCharCode(argsA[0].String())
+
+		// return Undefined, fmt.Errorf("invalid input type")
 	}
 
 	if nv == nil {
-		return Undefined, fmt.Errorf("not compiled")
+		return Undefined, fmt.Errorf("nil CharCode")
 	}
 
 	return &Gel{Value: nv}, nil
+}
+
+// OrderedMap represents map of objects but has order(in the order of push-in) and implements Object interface.
+type OrderedMap struct {
+	ObjectImpl
+	Value *tk.OrderedMap
+
+	// Members map[string]Object
+}
+
+var (
+	_ Object       = &OrderedMap{}
+	_ Copier       = &OrderedMap{}
+	_ IndexDeleter = &OrderedMap{}
+	_ LengthGetter = &OrderedMap{}
+)
+
+func (*OrderedMap) TypeCode() int {
+	return 135
+}
+
+// TypeName implements Object interface.
+func (*OrderedMap) TypeName() string {
+	return "orderedMap"
+}
+
+// String implements Object interface.
+func (o *OrderedMap) String() string {
+	var sb strings.Builder
+	sb.WriteString("{")
+	lenT := o.Value.Len()
+	last := lenT - 1
+	i := 0
+
+	for _, k := range o.Value.GetStringKeys() {
+		sb.WriteString(strconv.Quote(k))
+		sb.WriteString(": ")
+		switch v := o.Value.GetQuick(k).(type) {
+		case String:
+			sb.WriteString(strconv.Quote(v.String()))
+		case Char:
+			sb.WriteString(strconv.QuoteRune(rune(v)))
+		case Bytes:
+			sb.WriteString(fmt.Sprint([]byte(v)))
+		default:
+			sb.WriteString(v.(Object).String())
+		}
+		if i != last {
+			sb.WriteString(", ")
+		}
+		i++
+	}
+
+	sb.WriteString("}")
+	return sb.String()
+}
+
+func (o *OrderedMap) HasMemeber() bool {
+	return true
+}
+
+func (o *OrderedMap) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *OrderedMap) GetValue() Object {
+	return o
+}
+
+func (o *OrderedMap) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o *OrderedMap) SetMember(idxA string, valueA Object) error {
+	return fmt.Errorf("unsupported action(set member)")
+}
+
+// Copy implements Copier interface.
+func (o *OrderedMap) Copy() Object {
+	cp, _ := NewOrderedMap()
+
+	cpn := cp.(*OrderedMap)
+
+	lenT := o.Value.Len()
+
+	for i := 0; i < lenT; i++ {
+		v, ok := o.Value.GetByIndex(i)
+
+		if !ok {
+			continue
+		}
+
+		vv, ok := v.(Object)
+
+		if !ok {
+			continue
+		}
+
+		k, ok := o.Value.GetKeyByIndex(i)
+
+		if !ok {
+			continue
+		}
+
+		vvv, ok := vv.(Copier)
+
+		if ok {
+			cpn.Value.Set(k, vvv.Copy())
+		} else {
+			cpn.Value.Set(k, vvv)
+		}
+
+	}
+
+	// for _, k := range o.Value.GetStringKeys() {
+	// 	if vv, ok := v..(Copier); ok {
+	// 		cp[k] = vv.Copy()
+	// 	} else {
+	// 		cp[k] = v
+	// 	}
+	// }
+	return cp
+}
+
+// IndexSet implements Object interface.
+func (o *OrderedMap) IndexSet(index, value Object) error {
+	o.Value.Set(index.String(), value)
+	return nil
+}
+
+// IndexGet implements Object interface.
+func (o *OrderedMap) IndexGet(index Object) (Object, error) {
+	switch nv := index.(type) {
+	case Int:
+		rs1, ok := o.Value.GetByIndex(int(nv))
+
+		if !ok {
+			return NewCommonError("not found"), nil
+		}
+
+		return ConvertToObject(rs1), nil
+	case Uint:
+		rs1, ok := o.Value.GetByIndex(int(nv))
+
+		if !ok {
+			return NewCommonError("not found"), nil
+		}
+
+		return ConvertToObject(rs1), nil
+	case Byte:
+		rs1, ok := o.Value.GetByIndex(int(nv))
+
+		if !ok {
+			return NewCommonError("not found"), nil
+		}
+
+		return ConvertToObject(rs1), nil
+	case Char:
+		rs1, ok := o.Value.GetByIndex(int(nv))
+
+		if !ok {
+			return NewCommonError("not found"), nil
+		}
+
+		return ConvertToObject(rs1), nil
+	}
+
+	idxT := index.String()
+
+	v, ok := o.Value.Get(idxT)
+	if ok {
+		nv, ok := v.(Object)
+
+		if ok {
+			return nv, nil
+		}
+
+		return ConvertToObject(v), nil
+	}
+
+	if idxT == "value" {
+		return o, nil
+	} else if idxT == "method" {
+		return &Function{
+			Name: "method",
+			ValueEx: func(c Call) (Object, error) {
+				args := c.GetArgs()
+
+				if len(args) < 1 {
+					return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+				}
+
+				return o.CallMethod(args[0].String(), args[1:]...)
+			},
+		}, nil
+	}
+
+	return Undefined, nil
+}
+
+// Equal implements Object interface.
+func (o *OrderedMap) Equal(right Object) bool {
+	v, ok := right.(*OrderedMap)
+	if !ok {
+		return false
+	}
+
+	if o.Value.Len() != o.Value.Len() {
+		return false
+	}
+
+	for _, k := range o.Value.GetStringKeys() {
+		right1, ok := v.Value.Get(k)
+		if !ok {
+			return false
+		}
+		if !o.Value.GetQuick(k).(Object).Equal(right1.(Object)) {
+			return false
+		}
+	}
+	return true
+}
+
+// IsFalsy implements Object interface.
+func (o *OrderedMap) IsFalsy() bool { return o.Value.Len() == 0 }
+
+// CanCall implements Object interface.
+func (*OrderedMap) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (*OrderedMap) Call(...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// BinaryOp implements Object interface.
+func (o *OrderedMap) BinaryOp(tok token.Token, right Object) (Object, error) {
+	if right == Undefined {
+		switch tok {
+		case token.Less, token.LessEq:
+			return False, nil
+		case token.Greater, token.GreaterEq:
+			return True, nil
+		}
+	}
+
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+// CanIterate implements Object interface.
+func (*OrderedMap) CanIterate() bool { return true }
+
+// Iterate implements Iterable interface.
+func (o *OrderedMap) Iterate() Iterator {
+	// keys := make([]string, 0, o.Value.Len())
+	// for _, k := range o.Value.GetStringKeys() {
+	// 	keys = append(keys, k)
+	// }
+
+	return &OrderedMapIterator{V: o, keys: o.Value.GetStringKeys()}
+}
+
+// IndexDelete tries to delete the string value of key from the map.
+// IndexDelete implements IndexDeleter interface.
+func (o *OrderedMap) IndexDelete(key Object) error {
+	switch nv := key.(type) {
+	case Int:
+		return o.Value.DeleteByIndex(int(nv))
+	case Uint:
+		return o.Value.DeleteByIndex(int(nv))
+	case Byte:
+		return o.Value.DeleteByIndex(int(nv))
+	case Char:
+		return o.Value.DeleteByIndex(int(nv))
+	}
+
+	o.Value.Delete(key.String())
+	return nil
+}
+
+// Len implements LengthGetter interface.
+func (o *OrderedMap) Len() int {
+	return o.Value.Len()
+}
+
+func NewOrderedMap(argsA ...Object) (Object, error) {
+	lenT := len(argsA)
+
+	rs := tk.NewOrderedMap()
+
+	if lenT < 1 {
+		return &OrderedMap{Value: rs}, nil
+	}
+
+	nv1, ok := argsA[0].(Map)
+
+	if !ok {
+		return Undefined, NewCommonError("unsupported type: (%T)%v", argsA[0], argsA[0])
+	}
+
+	for k, v := range nv1 {
+		rs.Set(k, v)
+	}
+
+	return &OrderedMap{Value: rs}, nil
+}
+
+// BigInt represents large signed integer values and implements Object interface.
+type BigInt struct {
+	// ObjectImpl
+
+	Value *big.Int
+
+	Members map[string]Object `json:"-"`
+}
+
+func (*BigInt) TypeCode() int {
+	return 201
+}
+
+func (*BigInt) TypeName() string {
+	return "bigInt"
+}
+
+func (o *BigInt) String() string {
+	return o.Value.String()
+}
+
+func (o *BigInt) HasMemeber() bool {
+	return true
+}
+
+func (o *BigInt) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *BigInt) GetValue() Object {
+	return o
+}
+
+func (o *BigInt) SetValue(valueA Object) error {
+	switch nv := valueA.(type) {
+	case *BigInt:
+		o.Value.Set(nv.Value)
+		return nil
+	case Bool:
+		if nv {
+			o.Value.Set(big.NewInt(1))
+		} else {
+			o.Value.Set(big.NewInt(0))
+		}
+
+		return nil
+	case Byte:
+		o.Value.Set(big.NewInt(int64(nv)))
+		return nil
+	case Int:
+		o.Value.Set(big.NewInt(int64(nv)))
+		return nil
+	case Char:
+		o.Value.Set(big.NewInt(int64(nv)))
+		return nil
+	case Uint:
+		o.Value.Set(big.NewInt(int64(nv)))
+		return nil
+	case Float:
+		o.Value.Set(big.NewInt(int64(nv)))
+	case String:
+		rs, ok := big.NewInt(0).SetString(nv.Value, 10)
+		if !ok {
+			return NewCommonError("failed to parse bigInt: %v", nv)
+		}
+
+		o.Value.Set(rs)
+		return nil
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *BigInt) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *BigInt) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (o *BigInt) Equal(right Object) bool {
+	switch v := right.(type) {
+	case *BigInt:
+		return o.Value.Cmp(v.Value) == 0
+	case Bool:
+		if v {
+			return o.Value.Cmp(big.NewInt(1)) == 0
+		}
+
+		return o.Value.Cmp(big.NewInt(0)) == 0
+	case Byte:
+		return o.Value.Cmp(big.NewInt(int64(v))) == 0
+	case Int:
+		return o.Value.Cmp(big.NewInt(int64(v))) == 0
+	case Char:
+		return o.Value.Cmp(big.NewInt(int64(v))) == 0
+	case Uint:
+		return o.Value.Cmp(big.NewInt(int64(v))) == 0
+	case Float:
+		return o.Value.Cmp(big.NewInt(int64(v))) == 0
+	}
+
+	return false
+}
+
+func (o *BigInt) IsFalsy() bool {
+	return o.Value.Cmp(BigIntZero) == 0
+}
+
+func (o *BigInt) CanCall() bool {
+	return false
+}
+
+func (o *BigInt) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (*BigInt) CanIterate() bool {
+	return false
+}
+
+func (*BigInt) Iterate() Iterator {
+	return nil
+}
+
+func (o *BigInt) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "value" {
+			return o.SetValue(value)
+		}
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *BigInt) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "value" {
+			return o.GetValue(), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, ErrNotIndexable
+}
+
+func (o *BigInt) BinaryOp(tok token.Token, right Object) (Object, error) {
+	switch v := right.(type) {
+	case *BigInt:
+		switch tok {
+		case token.Add:
+			return &BigInt{Value: big.NewInt(0).Add(o.Value, v.Value)}, nil
+		case token.Sub:
+			return &BigInt{Value: big.NewInt(0).Sub(o.Value, v.Value)}, nil
+		case token.Mul:
+			return &BigInt{Value: big.NewInt(0).Mul(o.Value, v.Value)}, nil
+		case token.Quo:
+			if v.Value.Cmp(BigIntZero) == 0 {
+				return Undefined, ErrZeroDivision
+			}
+
+			return &BigInt{Value: big.NewInt(0).Quo(o.Value, v.Value)}, nil
+		case token.Rem:
+			return &BigInt{Value: big.NewInt(0).Rem(o.Value, v.Value)}, nil
+		case token.And:
+			return &BigInt{Value: big.NewInt(0).And(o.Value, v.Value)}, nil
+		case token.Or:
+			return &BigInt{Value: big.NewInt(0).Or(o.Value, v.Value)}, nil
+		case token.Xor:
+			return &BigInt{Value: big.NewInt(0).Xor(o.Value, v.Value)}, nil
+		case token.AndNot:
+			return &BigInt{Value: big.NewInt(0).AndNot(o.Value, v.Value)}, nil
+		case token.Shl:
+			return &BigInt{Value: big.NewInt(0).Lsh(o.Value, uint(v.Value.Uint64()))}, nil
+		case token.Shr:
+			return &BigInt{Value: big.NewInt(0).Rsh(o.Value, uint(v.Value.Uint64()))}, nil
+		case token.Less:
+			return Bool(o.Value.Cmp(v.Value) < 0), nil
+		case token.LessEq:
+			rs := o.Value.Cmp(v.Value)
+			return Bool(rs == 0 || rs < 0), nil
+		case token.Greater:
+			return Bool(o.Value.Cmp(v.Value) > 0), nil
+		case token.GreaterEq:
+			rs := o.Value.Cmp(v.Value)
+			return Bool(rs == 0 || rs > 0), nil
+		}
+	case Byte:
+		switch tok {
+		case token.Add:
+			return &BigInt{Value: big.NewInt(0).Add(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Sub:
+			return &BigInt{Value: big.NewInt(0).Sub(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Mul:
+			return &BigInt{Value: big.NewInt(0).Mul(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Quo:
+			if v == 0 {
+				return Undefined, ErrZeroDivision
+			}
+
+			return &BigInt{Value: big.NewInt(0).Quo(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Rem:
+			return &BigInt{Value: big.NewInt(0).Rem(o.Value, big.NewInt(int64(v)))}, nil
+		case token.And:
+			return &BigInt{Value: big.NewInt(0).And(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Or:
+			return &BigInt{Value: big.NewInt(0).Or(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Xor:
+			return &BigInt{Value: big.NewInt(0).Xor(o.Value, big.NewInt(int64(v)))}, nil
+		case token.AndNot:
+			return &BigInt{Value: big.NewInt(0).AndNot(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Shl:
+			return &BigInt{Value: big.NewInt(0).Lsh(o.Value, uint(v))}, nil
+		case token.Shr:
+			return &BigInt{Value: big.NewInt(0).Rsh(o.Value, uint(v))}, nil
+		case token.Less:
+			return Bool(o.Value.Cmp(big.NewInt(int64(v))) < 0), nil
+		case token.LessEq:
+			rs := o.Value.Cmp(big.NewInt(int64(v)))
+			return Bool(rs == 0 || rs < 0), nil
+		case token.Greater:
+			return Bool(o.Value.Cmp(big.NewInt(int64(v))) > 0), nil
+		case token.GreaterEq:
+			rs := o.Value.Cmp(big.NewInt(int64(v)))
+			return Bool(rs == 0 || rs > 0), nil
+		}
+	case Int:
+		switch tok {
+		case token.Add:
+			return &BigInt{Value: big.NewInt(0).Add(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Sub:
+			return &BigInt{Value: big.NewInt(0).Sub(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Mul:
+			return &BigInt{Value: big.NewInt(0).Mul(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Quo:
+			if v == 0 {
+				return Undefined, ErrZeroDivision
+			}
+
+			return &BigInt{Value: big.NewInt(0).Quo(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Rem:
+			return &BigInt{Value: big.NewInt(0).Rem(o.Value, big.NewInt(int64(v)))}, nil
+		case token.And:
+			return &BigInt{Value: big.NewInt(0).And(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Or:
+			return &BigInt{Value: big.NewInt(0).Or(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Xor:
+			return &BigInt{Value: big.NewInt(0).Xor(o.Value, big.NewInt(int64(v)))}, nil
+		case token.AndNot:
+			return &BigInt{Value: big.NewInt(0).AndNot(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Shl:
+			return &BigInt{Value: big.NewInt(0).Lsh(o.Value, uint(v))}, nil
+		case token.Shr:
+			return &BigInt{Value: big.NewInt(0).Rsh(o.Value, uint(v))}, nil
+		case token.Less:
+			return Bool(o.Value.Cmp(big.NewInt(int64(v))) < 0), nil
+		case token.LessEq:
+			rs := o.Value.Cmp(big.NewInt(int64(v)))
+			return Bool(rs == 0 || rs < 0), nil
+		case token.Greater:
+			return Bool(o.Value.Cmp(big.NewInt(int64(v))) > 0), nil
+		case token.GreaterEq:
+			rs := o.Value.Cmp(big.NewInt(int64(v)))
+			return Bool(rs == 0 || rs > 0), nil
+		}
+	case Char:
+		switch tok {
+		case token.Add:
+			return &BigInt{Value: big.NewInt(0).Add(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Sub:
+			return &BigInt{Value: big.NewInt(0).Sub(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Mul:
+			return &BigInt{Value: big.NewInt(0).Mul(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Quo:
+			if v == 0 {
+				return Undefined, ErrZeroDivision
+			}
+
+			return &BigInt{Value: big.NewInt(0).Quo(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Rem:
+			return &BigInt{Value: big.NewInt(0).Rem(o.Value, big.NewInt(int64(v)))}, nil
+		case token.And:
+			return &BigInt{Value: big.NewInt(0).And(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Or:
+			return &BigInt{Value: big.NewInt(0).Or(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Xor:
+			return &BigInt{Value: big.NewInt(0).Xor(o.Value, big.NewInt(int64(v)))}, nil
+		case token.AndNot:
+			return &BigInt{Value: big.NewInt(0).AndNot(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Shl:
+			return &BigInt{Value: big.NewInt(0).Lsh(o.Value, uint(v))}, nil
+		case token.Shr:
+			return &BigInt{Value: big.NewInt(0).Rsh(o.Value, uint(v))}, nil
+		case token.Less:
+			return Bool(o.Value.Cmp(big.NewInt(int64(v))) < 0), nil
+		case token.LessEq:
+			rs := o.Value.Cmp(big.NewInt(int64(v)))
+			return Bool(rs == 0 || rs < 0), nil
+		case token.Greater:
+			return Bool(o.Value.Cmp(big.NewInt(int64(v))) > 0), nil
+		case token.GreaterEq:
+			rs := o.Value.Cmp(big.NewInt(int64(v)))
+			return Bool(rs == 0 || rs > 0), nil
+		}
+	case Uint:
+		switch tok {
+		case token.Add:
+			return &BigInt{Value: big.NewInt(0).Add(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Sub:
+			return &BigInt{Value: big.NewInt(0).Sub(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Mul:
+			return &BigInt{Value: big.NewInt(0).Mul(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Quo:
+			if v == 0 {
+				return Undefined, ErrZeroDivision
+			}
+
+			return &BigInt{Value: big.NewInt(0).Quo(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Rem:
+			return &BigInt{Value: big.NewInt(0).Rem(o.Value, big.NewInt(int64(v)))}, nil
+		case token.And:
+			return &BigInt{Value: big.NewInt(0).And(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Or:
+			return &BigInt{Value: big.NewInt(0).Or(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Xor:
+			return &BigInt{Value: big.NewInt(0).Xor(o.Value, big.NewInt(int64(v)))}, nil
+		case token.AndNot:
+			return &BigInt{Value: big.NewInt(0).AndNot(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Shl:
+			return &BigInt{Value: big.NewInt(0).Lsh(o.Value, uint(v))}, nil
+		case token.Shr:
+			return &BigInt{Value: big.NewInt(0).Rsh(o.Value, uint(v))}, nil
+		case token.Less:
+			return Bool(o.Value.Cmp(big.NewInt(int64(v))) < 0), nil
+		case token.LessEq:
+			rs := o.Value.Cmp(big.NewInt(int64(v)))
+			return Bool(rs == 0 || rs < 0), nil
+		case token.Greater:
+			return Bool(o.Value.Cmp(big.NewInt(int64(v))) > 0), nil
+		case token.GreaterEq:
+			rs := o.Value.Cmp(big.NewInt(int64(v)))
+			return Bool(rs == 0 || rs > 0), nil
+		}
+	case Float:
+		switch tok {
+		case token.Add:
+			return &BigInt{Value: big.NewInt(0).Add(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Sub:
+			return &BigInt{Value: big.NewInt(0).Sub(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Mul:
+			return &BigInt{Value: big.NewInt(0).Mul(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Quo:
+			if v == 0 {
+				return Undefined, ErrZeroDivision
+			}
+
+			return &BigInt{Value: big.NewInt(0).Quo(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Rem:
+			return &BigInt{Value: big.NewInt(0).Rem(o.Value, big.NewInt(int64(v)))}, nil
+		case token.And:
+			return &BigInt{Value: big.NewInt(0).And(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Or:
+			return &BigInt{Value: big.NewInt(0).Or(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Xor:
+			return &BigInt{Value: big.NewInt(0).Xor(o.Value, big.NewInt(int64(v)))}, nil
+		case token.AndNot:
+			return &BigInt{Value: big.NewInt(0).AndNot(o.Value, big.NewInt(int64(v)))}, nil
+		case token.Shl:
+			return &BigInt{Value: big.NewInt(0).Lsh(o.Value, uint(v))}, nil
+		case token.Shr:
+			return &BigInt{Value: big.NewInt(0).Rsh(o.Value, uint(v))}, nil
+		case token.Less:
+			return Bool(o.Value.Cmp(big.NewInt(int64(v))) < 0), nil
+		case token.LessEq:
+			rs := o.Value.Cmp(big.NewInt(int64(v)))
+			return Bool(rs == 0 || rs < 0), nil
+		case token.Greater:
+			return Bool(o.Value.Cmp(big.NewInt(int64(v))) > 0), nil
+		case token.GreaterEq:
+			rs := o.Value.Cmp(big.NewInt(int64(v)))
+			return Bool(rs == 0 || rs > 0), nil
+		}
+	case Bool:
+		var v1 int64
+		if v {
+			v1 = 1
+		} else {
+			v1 = 0
+		}
+		switch tok {
+		case token.Add:
+			return &BigInt{Value: big.NewInt(0).Add(o.Value, big.NewInt(int64(v1)))}, nil
+		case token.Sub:
+			return &BigInt{Value: big.NewInt(0).Sub(o.Value, big.NewInt(int64(v1)))}, nil
+		case token.Mul:
+			return &BigInt{Value: big.NewInt(0).Mul(o.Value, big.NewInt(int64(v1)))}, nil
+		case token.Quo:
+			if v1 == 0 {
+				return Undefined, ErrZeroDivision
+			}
+
+			return &BigInt{Value: big.NewInt(0).Quo(o.Value, big.NewInt(int64(v1)))}, nil
+		case token.Rem:
+			return &BigInt{Value: big.NewInt(0).Rem(o.Value, big.NewInt(int64(v1)))}, nil
+		case token.And:
+			return &BigInt{Value: big.NewInt(0).And(o.Value, big.NewInt(int64(v1)))}, nil
+		case token.Or:
+			return &BigInt{Value: big.NewInt(0).Or(o.Value, big.NewInt(int64(v1)))}, nil
+		case token.Xor:
+			return &BigInt{Value: big.NewInt(0).Xor(o.Value, big.NewInt(int64(v1)))}, nil
+		case token.AndNot:
+			return &BigInt{Value: big.NewInt(0).AndNot(o.Value, big.NewInt(int64(v1)))}, nil
+		case token.Shl:
+			return &BigInt{Value: big.NewInt(0).Lsh(o.Value, uint(v1))}, nil
+		case token.Shr:
+			return &BigInt{Value: big.NewInt(0).Rsh(o.Value, uint(v1))}, nil
+		case token.Less:
+			return Bool(o.Value.Cmp(big.NewInt(int64(v1))) < 0), nil
+		case token.LessEq:
+			rs := o.Value.Cmp(big.NewInt(int64(v1)))
+			return Bool(rs == 0 || rs < 0), nil
+		case token.Greater:
+			return Bool(o.Value.Cmp(big.NewInt(int64(v1))) > 0), nil
+		case token.GreaterEq:
+			rs := o.Value.Cmp(big.NewInt(int64(v1)))
+			return Bool(rs == 0 || rs > 0), nil
+		}
+	case *UndefinedType:
+		switch tok {
+		case token.Less, token.LessEq:
+			return False, nil
+		case token.Greater, token.GreaterEq:
+			return True, nil
+		}
+	}
+
+	return Undefined, NewCommonError("unsupported type: %T", right)
+}
+
+func NewBigInt(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	if len(argsA) < 1 {
+		return &BigInt{Value: big.NewInt(0)}, nil
+	}
+
+	arg0 := argsA[0]
+
+	switch nv := arg0.(type) {
+	case Byte:
+		return &BigInt{Value: big.NewInt(int64(nv))}, nil
+	case Int:
+		return &BigInt{Value: big.NewInt(int64(nv))}, nil
+	case Char:
+		return &BigInt{Value: big.NewInt(int64(nv))}, nil
+	case Uint:
+		return &BigInt{Value: big.NewInt(int64(nv))}, nil
+	case Float:
+		return &BigInt{Value: big.NewInt(int64(nv))}, nil
+	case Bool:
+		if nv {
+			return &BigInt{Value: big.NewInt(1)}, nil
+		}
+
+		return &BigInt{Value: big.NewInt(0)}, nil
+	case String:
+		rs, ok := big.NewInt(0).SetString(nv.Value, 10)
+		if !ok {
+			return NewCommonErrorWithPos(c, "failed to parse bigInt: %v", nv), nil
+		}
+
+		return &BigInt{Value: rs}, nil
+	case *BigInt:
+		return &BigInt{Value: big.NewInt(0).Set(nv.Value)}, nil
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported type: %T", arg0), nil
+}
+
+// BigFloat represents large signed float values and implements Object interface.
+type BigFloat struct {
+	// ObjectImpl
+
+	Value *big.Float
+
+	Members map[string]Object `json:"-"`
+}
+
+func (*BigFloat) TypeCode() int {
+	return 203
+}
+
+func (*BigFloat) TypeName() string {
+	return "bigFloat"
+}
+
+func (o *BigFloat) String() string {
+	return o.Value.Text('f', 20) // fmt.Sprintf("%f", o.Value)
+}
+
+func (o *BigFloat) HasMemeber() bool {
+	return true
+}
+
+func (o *BigFloat) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *BigFloat) GetValue() Object {
+	return o
+}
+
+func (o *BigFloat) SetValue(valueA Object) error {
+	switch nv := valueA.(type) {
+	case *BigFloat:
+		o.Value.Set(nv.Value)
+		return nil
+	case *BigInt:
+		o.Value.SetInt(nv.Value)
+		return nil
+	case Bool:
+		if nv {
+			o.Value.Set(big.NewFloat(1))
+		} else {
+			o.Value.Set(big.NewFloat(0))
+		}
+
+		return nil
+	case Byte:
+		o.Value.Set(big.NewFloat(float64(nv)))
+		return nil
+	case Int:
+		o.Value.Set(big.NewFloat(float64(nv)))
+		return nil
+	case Char:
+		o.Value.Set(big.NewFloat(float64(nv)))
+		return nil
+	case Uint:
+		o.Value.Set(big.NewFloat(float64(nv)))
+		return nil
+	case Float:
+		o.Value.Set(big.NewFloat(float64(nv)))
+	case String:
+		rs, _, errT := big.NewFloat(0).Parse(nv.Value, 10)
+		if errT != nil {
+			return fmt.Errorf("failed to parse bigFloat: %v", errT)
+		}
+
+		o.Value.Set(rs)
+		return nil
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *BigFloat) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *BigFloat) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (o *BigFloat) Equal(right Object) bool {
+	switch v := right.(type) {
+	case *BigFloat:
+		return o.Value.Cmp(v.Value) == 0
+	case *BigInt:
+		return o.Value.Cmp(big.NewFloat(0).SetInt(v.Value)) == 0
+	case Bool:
+		if v {
+			return o.Value.Cmp(big.NewFloat(1)) == 0
+		}
+
+		return o.Value.Cmp(big.NewFloat(0)) == 0
+	case Byte:
+		return o.Value.Cmp(big.NewFloat(float64(v))) == 0
+	case Int:
+		// tk.Plo(v, float64(v), big.NewFloat(float64(v)), o.Value, o.Value.Cmp(big.NewFloat(float64(v))))
+		return o.Value.Cmp(big.NewFloat(float64(v))) == 0
+	case Char:
+		return o.Value.Cmp(big.NewFloat(float64(v))) == 0
+	case Uint:
+		return o.Value.Cmp(big.NewFloat(float64(v))) == 0
+	case Float:
+		return o.Value.Cmp(big.NewFloat(float64(v))) == 0
+	}
+
+	return false
+}
+
+func (o *BigFloat) IsFalsy() bool {
+	return o.Value.Cmp(BigFloatZero) == 0
+}
+
+func (o *BigFloat) CanCall() bool {
+	return false
+}
+
+func (o *BigFloat) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (*BigFloat) CanIterate() bool {
+	return false
+}
+
+func (*BigFloat) Iterate() Iterator {
+	return nil
+}
+
+func (o *BigFloat) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "value" {
+			return o.SetValue(value)
+		}
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *BigFloat) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "value" {
+			return o.GetValue(), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, ErrNotIndexable
+}
+
+func (o *BigFloat) BinaryOp(tok token.Token, right Object) (Object, error) {
+	switch v := right.(type) {
+	case *BigFloat:
+		switch tok {
+		case token.Add:
+			return &BigFloat{Value: big.NewFloat(0).Add(o.Value, v.Value)}, nil
+		case token.Sub:
+			return &BigFloat{Value: big.NewFloat(0).Sub(o.Value, v.Value)}, nil
+		case token.Mul:
+			return &BigFloat{Value: big.NewFloat(0).Mul(o.Value, v.Value)}, nil
+		case token.Quo:
+			if v.Value.Cmp(BigFloatZero) == 0 {
+				return Undefined, ErrZeroDivision
+			}
+
+			return &BigFloat{Value: big.NewFloat(0).Quo(o.Value, v.Value)}, nil
+		// case token.Rem:
+		// 	return &BigFloat{Value: big.NewFloat(0).Rem(o.Value, v.Value)}, nil
+		// case token.And:
+		// 	return &BigFloat{Value: big.NewFloat(0).And(o.Value, v.Value)}, nil
+		// case token.Or:
+		// 	return &BigFloat{Value: big.NewFloat(0).Or(o.Value, v.Value)}, nil
+		// case token.Xor:
+		// 	return &BigFloat{Value: big.NewFloat(0).Xor(o.Value, v.Value)}, nil
+		// case token.AndNot:
+		// 	return &BigFloat{Value: big.NewFloat(0).AndNot(o.Value, v.Value)}, nil
+		// case token.Shl:
+		// 	return &BigFloat{Value: big.NewFloat(0).Lsh(o.Value, uint(v.Value.Uint64()))}, nil
+		// case token.Shr:
+		// 	return &BigFloat{Value: big.NewFloat(0).Rsh(o.Value, uint(v.Value.Uint64()))}, nil
+		case token.Less:
+			return Bool(o.Value.Cmp(v.Value) < 0), nil
+		case token.LessEq:
+			rs := o.Value.Cmp(v.Value)
+			return Bool(rs == 0 || rs < 0), nil
+		case token.Greater:
+			return Bool(o.Value.Cmp(v.Value) > 0), nil
+		case token.GreaterEq:
+			rs := o.Value.Cmp(v.Value)
+			return Bool(rs == 0 || rs > 0), nil
+		}
+	case *BigInt:
+		return o.BinaryOp(tok, &BigFloat{Value: big.NewFloat(0).SetInt(v.Value)})
+		// switch tok {
+		// case token.Add:
+		// 	return &BigInt{Value: big.NewInt(0).Add(o.Value, v.Value)}, nil
+		// case token.Sub:
+		// 	return &BigInt{Value: big.NewInt(0).Sub(o.Value, v.Value)}, nil
+		// case token.Mul:
+		// 	return &BigInt{Value: big.NewInt(0).Mul(o.Value, v.Value)}, nil
+		// case token.Quo:
+		// 	if v.Value.Cmp(BigIntZero) == 0 {
+		// 		return Undefined, ErrZeroDivision
+		// 	}
+
+		// 	return &BigInt{Value: big.NewInt(0).Quo(o.Value, v.Value)}, nil
+		// case token.Rem:
+		// 	return &BigInt{Value: big.NewInt(0).Rem(o.Value, v.Value)}, nil
+		// case token.And:
+		// 	return &BigInt{Value: big.NewInt(0).And(o.Value, v.Value)}, nil
+		// case token.Or:
+		// 	return &BigInt{Value: big.NewInt(0).Or(o.Value, v.Value)}, nil
+		// case token.Xor:
+		// 	return &BigInt{Value: big.NewInt(0).Xor(o.Value, v.Value)}, nil
+		// case token.AndNot:
+		// 	return &BigInt{Value: big.NewInt(0).AndNot(o.Value, v.Value)}, nil
+		// case token.Shl:
+		// 	return &BigInt{Value: big.NewInt(0).Lsh(o.Value, uint(v.Value.Uint64()))}, nil
+		// case token.Shr:
+		// 	return &BigInt{Value: big.NewInt(0).Rsh(o.Value, uint(v.Value.Uint64()))}, nil
+		// case token.Less:
+		// 	return Bool(o.Value.Cmp(v.Value) < 0), nil
+		// case token.LessEq:
+		// 	rs := o.Value.Cmp(v.Value)
+		// 	return Bool(rs == 0 || rs < 0), nil
+		// case token.Greater:
+		// 	return Bool(o.Value.Cmp(v.Value) > 0), nil
+		// case token.GreaterEq:
+		// 	rs := o.Value.Cmp(v.Value)
+		// 	return Bool(rs == 0 || rs > 0), nil
+		// }
+	case Byte:
+		return o.BinaryOp(tok, &BigFloat{Value: big.NewFloat(0).SetInt64(int64(v))})
+	case Int:
+		return o.BinaryOp(tok, &BigFloat{Value: big.NewFloat(0).SetInt64(int64(v))})
+	case Char:
+		return o.BinaryOp(tok, &BigFloat{Value: big.NewFloat(0).SetInt64(int64(v))})
+	case Uint:
+		return o.BinaryOp(tok, &BigFloat{Value: big.NewFloat(0).SetInt64(int64(v))})
+	case Float:
+		return o.BinaryOp(tok, &BigFloat{Value: big.NewFloat(float64(v))})
+	case Bool:
+		var v1 float64
+		if v {
+			v1 = 1
+		} else {
+			v1 = 0
+		}
+
+		return o.BinaryOp(tok, &BigFloat{Value: big.NewFloat(v1)})
+	case *UndefinedType:
+		switch tok {
+		case token.Less, token.LessEq:
+			return False, nil
+		case token.Greater, token.GreaterEq:
+			return True, nil
+		}
+	}
+
+	return Undefined, NewCommonError("unsupported type: %T", right)
+}
+
+func NewBigFloat(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	if len(argsA) < 1 {
+		return &BigFloat{Value: big.NewFloat(0)}, nil
+	}
+
+	arg0 := argsA[0]
+
+	switch nv := arg0.(type) {
+	case Byte:
+		return &BigFloat{Value: big.NewFloat(float64(nv))}, nil
+	case Int:
+		return &BigFloat{Value: big.NewFloat(float64(nv))}, nil
+	case Char:
+		return &BigFloat{Value: big.NewFloat(float64(nv))}, nil
+	case Uint:
+		return &BigFloat{Value: big.NewFloat(float64(nv))}, nil
+	case Float:
+		return &BigFloat{Value: big.NewFloat(float64(nv))}, nil
+	case Bool:
+		if nv {
+			return &BigFloat{Value: big.NewFloat(1)}, nil
+		}
+
+		return &BigFloat{Value: big.NewFloat(0)}, nil
+	case String:
+		rs, _, errT := big.NewFloat(0).Parse(nv.Value, 10)
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to parse bigFloat: %v", errT), nil
+		}
+
+		return &BigFloat{Value: rs}, nil
+	case *BigInt:
+		return &BigFloat{Value: big.NewFloat(0).SetInt(nv.Value)}, nil
+	case *BigFloat:
+		return &BigFloat{Value: big.NewFloat(0).Set(nv.Value)}, nil
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported type: %T", arg0), nil
 }

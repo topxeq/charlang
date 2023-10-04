@@ -1,0 +1,31 @@
+// char -gopath bmi.char 1.7 65
+
+global argsG
+
+argsT := getParams(argsG)
+
+if len(argsT) < 4 {
+	fatalf("not enough paramters")
+}
+
+H := toFloat(argsT[2])
+W := toFloat(argsT[3])
+
+pl("height: %.2f m", H)
+pl("weight: %.2f kg", W)
+
+BMI := W / (H * H)
+
+pl("BMI: %.2f", BMI)
+
+if BMI < 18.5 {
+	pl("thin")
+} else if (18.5 <= BMI) && (BMI < 24) {
+	pl("normal")
+} else if 24 <= BMI && BMI < 28 {
+	pl("Overweight")
+} else if 28 <= BMI && BMI < 30 {
+	pl("fat")
+} else if BMI >= 30 {
+	pl("severe obesity")
+}

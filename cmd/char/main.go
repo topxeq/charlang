@@ -25,7 +25,8 @@ import (
 	// ugofmt "github.com/topxeq/charlang/stdlib/fmt"
 	// ugotime "github.com/topxeq/charlang/stdlib/time"
 	// ugostrings "github.com/topxeq/charlang/stdlib/strings"
-	ugoex "github.com/topxeq/charlang/stdlib/ex"
+	charex "github.com/topxeq/charlang/stdlib/ex"
+	// charfmt "github.com/topxeq/charlang/stdlib/fmt"
 	"github.com/topxeq/tk"
 	// _ "github.com/denisenkom/go-mssqldb"
 	// _ "github.com/godror/godror"
@@ -622,9 +623,10 @@ func runInteractiveShell() int {
 	// moduleMap.AddBuiltinModule("time", ugotime.Module).
 	// 	AddBuiltinModule("strings", ugostrings.Module).
 	// 	AddBuiltinModule("fmt", ugofmt.Module)
-	moduleMap.AddBuiltinModule("ex", ugoex.Module)
+	moduleMap.AddBuiltinModule("ex", charex.Module)
+	// moduleMap.AddBuiltinModule("fmt", charfmt.Module)
 
-	opts := &charlang.CompilerOptions{
+	charlang.MainCompilerOptions = &charlang.CompilerOptions{
 		ModulePath:        "", //"(repl)",
 		ModuleMap:         moduleMap,
 		SymbolTable:       charlang.NewSymbolTable(),
@@ -638,7 +640,7 @@ func runInteractiveShell() int {
 
 	// evalT := charlang.NewEval(opts, scriptGlobals)
 
-	evalT := charlang.NewEvalQuick(map[string]interface{}{"argsG": charlang.ConvertToObject(os.Args[1:])}, opts)
+	evalT := charlang.NewEvalQuick(map[string]interface{}{"argsG": charlang.ConvertToObject(os.Args[1:])}, charlang.MainCompilerOptions)
 
 	var following bool
 	var source string
@@ -982,6 +984,8 @@ func runArgs(argsA ...string) interface{} {
 		// 	return nil
 		// }
 	}
+
+	charlang.DebugModeG = tk.IfSwitchExistsWhole(argsT, "-debug")
 
 	// ifXieT := tk.IfSwitchExistsWhole(argsT, "-xie")
 	ifClipT := tk.IfSwitchExistsWhole(argsT, "-clip")
@@ -1454,9 +1458,10 @@ func runArgs(argsA ...string) interface{} {
 
 	// errT = gox.QlVMG.SafeEval(fcT)
 	moduleMap := charlang.NewModuleMap()
-	moduleMap.AddBuiltinModule("ex", ugoex.Module)
+	moduleMap.AddBuiltinModule("ex", charex.Module)
+	// moduleMap.AddBuiltinModule("fmt", charfmt.Module)
 
-	opts := &charlang.CompilerOptions{
+	charlang.MainCompilerOptions = &charlang.CompilerOptions{
 		// ModulePath:        "", //"(repl)",
 		ModuleMap: moduleMap,
 		// SymbolTable:       charlang.NewSymbolTable(),
@@ -1475,8 +1480,32 @@ func runArgs(argsA ...string) interface{} {
 		// OptimizeConst:     false,
 		// OptimizeExpr:      false,
 	}
+
+	if charlang.DebugModeG {
+		// opts = &charlang.CompilerOptions{
+		// 	// ModulePath:        "", //"(repl)",
+		// 	ModuleMap: moduleMap,
+		// 	// SymbolTable:       charlang.NewSymbolTable(),
+		// 	// OptimizerMaxCycle: charlang.TraceCompilerOptions.OptimizerMaxCycle,
+		// 	// TraceParser:       true,
+		// 	// TraceOptimizer:    true,
+		// 	// TraceCompiler:     true,
+		// 	// OptimizeConst:     !noOptimizer,
+		// 	// OptimizeExpr:      !noOptimizer,
+
+		// 	// Trace: os.Stdout,
+		// 	// TraceParser: true,
+		// 	// TraceCompiler: true,
+		// 	// TraceOptimizer:    true,
+		// 	// OptimizerMaxCycle: 1<<8 - 1,
+		// 	// OptimizeConst:     false,
+		// 	// OptimizeExpr:      false,
+		// }
+
+	}
+
 	// tk.Pln(2.1)
-	bytecodeT, errT := charlang.Compile([]byte(fcT), opts) // charlang.DefaultCompilerOptions)
+	bytecodeT, errT := charlang.Compile([]byte(fcT), charlang.MainCompilerOptions) // charlang.DefaultCompilerOptions)
 	if errT != nil {
 		return errT
 	}

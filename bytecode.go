@@ -71,7 +71,7 @@ type CompiledFunction struct {
 	// SourceMap holds the index of instruction and token's position.
 	SourceMap map[int]int
 
-	Members map[string]Object
+	Members map[string]Object `json:"-"`
 }
 
 var _ Object = (*CompiledFunction)(nil)

@@ -1,0 +1,18 @@
+H := 1.75
+W := 65.0
+
+BMI := W / (H * H)
+
+pl("BMI: %.2f", BMI)
+
+if BMI < 18.5 {
+	pl("thin")
+} else if (18.5 <= BMI) && (BMI < 24) {
+	pl("normal")
+} else if 24 <= BMI && BMI < 28 {
+	pl("Overweight")
+} else if 28 <= BMI && BMI < 30 {
+	pl("fat")
+} else if BMI >= 30 {
+	pl("severe obesity")
+}

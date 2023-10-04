@@ -10,7 +10,7 @@ type Importable interface {
 	Import(moduleName string) (interface{}, error)
 }
 
-// ExtImporter wraps methods for a module which will be impored dynamically like
+// ExtImporter wraps methods for a module which will be imported dynamically like
 // a file.
 type ExtImporter interface {
 	Importable

@@ -1,0 +1,32 @@
+f1 := getConst("maxFloat")
+f2 := f1 - 1
+
+r1 := f1 * f2
+
+pl("f1: %v, f2: %v, r1: %v", f1, f2, r1)
+
+bigF1 := bigFloat(f1)
+
+// plo(bigF1)
+
+bigF2 := bigFloat(f2)
+
+// plo(bigF2)
+
+bigR1 := bigF1 * bigF2
+
+// plo(bigR1)
+
+pl("bigF1: %v, bigF2: %v, bigR1: %v", bigF1, bigF2, bigR1)
+
+plt(toStr(bigF1))
+
+plt("987654321000" + toStr(bigF1) + "000987654321")
+
+bigF3 := bigFloat("987654321000" + toStr(bigF1) + "000987654321")
+
+plt(bigF3)
+
+bigF4 := bigFloat("987654321000.000987654321")
+
+plt(bigF4)

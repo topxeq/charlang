@@ -1,0 +1,37 @@
+a := "abc"
+
+b := a
+
+pln(a, b)
+
+a += "12"
+
+pln(a, b)
+
+b += "de"
+
+pln(a, b)
+
+f1 := func(arg1, arg2) {
+	try {
+		arg1.value = arg1 + "+++"
+	} catch e {
+		pl("exception: %v", e)
+	}
+
+	arg1 += "+++"
+	arg2 += "---"
+
+	pln(arg1, arg2)
+}
+
+f1(a, b)
+
+pln(a, b)
+
+c := mutableString("o7p8q9")
+
+f1(c, b)
+
+pln(c, b)
+

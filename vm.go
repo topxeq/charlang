@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -242,9 +243,37 @@ func (vm *VM) run() (rerun bool) {
 }
 
 func (vm *VM) loop() {
+	if DebugModeG {
+		fmt.Printf("byteCode: %v\n", vm.bytecode)
+		fmt.Printf("curInsts: %v\n", vm.curInsts)
+	}
+
 VMLoop:
 	for atomic.LoadInt64(&vm.abort) == 0 {
 		vm.ip++
+		if DebugModeG {
+			var operands []int
+
+			numOperands := OpcodeOperands[vm.curInsts[vm.ip]]
+			operands, offset := ReadOperands(numOperands, vm.curInsts[vm.ip+1:], operands)
+			// _, _ = fmt.Fprintf(w, "%04d %-12s", i, OpcodeNames[op])
+			// fmt.Printf("%04d %-12s numOperands: %v %#v\n", vm.ip, OpcodeNames[vm.curInsts[vm.ip]], numOperands, operands)
+
+			var sb1 strings.Builder
+
+			if len(operands) > 0 {
+				for _, r := range operands {
+					// _, _ = fmt.Fprint(w, "    ", strconv.Itoa(r))
+
+					sb1.WriteString("    ")
+					sb1.WriteString(strconv.Itoa(r))
+				}
+			}
+
+			// _, _ = fmt.Fprintln(w)
+
+			fmt.Printf("ip: %#v, op: %#v, opName: %#v, srcPos: %#v, offset: %v, operands: %v\n", vm.ip, vm.curInsts[vm.ip], OpcodeNames[vm.curInsts[vm.ip]], vm.GetSrcPos(), offset, sb1.String())
+		}
 		switch vm.curInsts[vm.ip] {
 		case OpConstant:
 			cidx := int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8
@@ -690,6 +719,7 @@ VMLoop:
 			cidx := int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8
 			midx := int(vm.curInsts[vm.ip+4]) | int(vm.curInsts[vm.ip+3])<<8
 			value := vm.modulesCache[midx]
+			// fmt.Printf("OpLoadModule: %#v\n", value)
 
 			if value == nil {
 				// module cache is empty, load the object from constants
@@ -707,6 +737,7 @@ VMLoop:
 				vm.stack[vm.sp] = False
 				vm.sp++
 			}
+			// fmt.Printf("OpLoadModule end: %#v\n", value)
 
 			vm.ip += 4
 		case OpStoreModule:

@@ -1052,7 +1052,7 @@ func (c *Compiler) compileImportExpr(node *parser.ImportExpr) error {
 			moduleName = name
 		}
 	}
-
+	// fmt.Printf("moduleName: %v\n", moduleName)
 	module, exists := c.getModule(moduleName)
 	if !exists {
 		mod, err := importer.Import(moduleName)
@@ -1079,6 +1079,8 @@ func (c *Compiler) compileImportExpr(node *parser.ImportExpr) error {
 		}
 	}
 
+	// fmt.Printf("module: %#v\n", module)
+
 	switch module.typ {
 	case 1:
 		var numParams int
@@ -1102,6 +1104,7 @@ func (c *Compiler) compileImportExpr(node *parser.ImportExpr) error {
 		c.emit(node, OpCall, numParams, 0)
 		c.emit(node, OpStoreModule, module.moduleIndex)
 		c.changeOperand(jumpPos, len(c.instructions))
+
 	case 2:
 		// load module
 		// if module is already stored, load from VM.modulesCache otherwise copy object
@@ -1110,6 +1113,9 @@ func (c *Compiler) compileImportExpr(node *parser.ImportExpr) error {
 		jumpPos := c.emit(node, OpJumpFalsy, 0)
 		c.emit(node, OpStoreModule, module.moduleIndex)
 		c.changeOperand(jumpPos, len(c.instructions))
+
+		// fmt.Printf("end emit: %#v\n", node)
+
 	default:
 		return c.errorf(node, "invalid module type: %v", module.typ)
 	}

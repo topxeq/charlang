@@ -138,6 +138,35 @@ func (it *MapIterator) Value() Object {
 	return v
 }
 
+// OrderedMapIterator represents an iterator for the map.
+type OrderedMapIterator struct {
+	V    *OrderedMap
+	keys []string
+	i    int
+}
+
+var _ Iterator = (*OrderedMapIterator)(nil)
+
+// Next implements Iterator interface.
+func (it *OrderedMapIterator) Next() bool {
+	it.i++
+	return it.i-1 < len(it.keys)
+}
+
+// Key implements Iterator interface.
+func (it *OrderedMapIterator) Key() Object {
+	return ToStringObject(it.keys[it.i-1])
+}
+
+// Value implements Iterator interface.
+func (it *OrderedMapIterator) Value() Object {
+	v, ok := it.V.Value.Get(it.keys[it.i-1])
+	if !ok {
+		return Undefined
+	}
+	return v.(Object)
+}
+
 // SyncIterator represents an iterator for the SyncMap.
 type SyncIterator struct {
 	mu sync.Mutex

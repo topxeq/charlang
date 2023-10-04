@@ -1,0 +1,47 @@
+// char -gopath binCompare.char d:\tmpx\demo1.html d:\tmpx\demo2.html -limit=10
+
+global argsG
+
+argsT := getParams(argsG)
+
+if len(argsT) < 4 {
+	fatalf("not enough parameters")
+}
+
+file1 := trim(argsT[2])
+
+if file1 == "" {
+	fatalf("file1 empty")
+}
+
+file2 := trim(argsT[3])
+
+if file2 == "" {
+	fatalf("file2 empty")
+}
+
+pl("compare %v -> %v", file1, file2)
+
+buf1 := loadBytes(file1)
+
+if isErr(buf1) {
+	fatalf("failed to read file1: %v", buf1)
+}
+plt(buf1)
+buf2 := loadBytes(file2)
+
+if isErr(buf2) {
+	fatalf("failed to read file2: %v", buf2)
+}
+
+limit := getIntSwitch(argsG, "-limit=", 0)
+
+plt(limit)
+
+compareResult := compareBytes(buf1, buf2, limit)
+plt(compareResult)
+
+for i, v in compareResult {
+	pl("[%v] pos: %v %v/%v(%v) - %v/%X(%v)", i+1, v[0], v[1], toHex(v[1]), strQuote(spr("%c", v[1])), v[2], v[2], strQuote(spr("%c", v[2])))
+}
+

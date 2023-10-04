@@ -1,0 +1,7 @@
+ex := import("ex")
+
+math := ex.math
+
+plo(math.Pi)
+
+plo(math.sqrt(1.2, 3))

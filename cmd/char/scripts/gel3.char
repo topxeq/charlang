@@ -1,0 +1,64 @@
+sourceT := `
+return {
+	"Pi": 3.1415926,
+	"add": func(a1, a2) {
+		return a1 + a2
+	},
+	"mul": func(a1, a2) {
+		return a1 * a2
+	},
+}
+`
+
+g1 := gel(sourceT)
+
+// plo(g1)
+
+try {
+	plo(g1.add)
+} catch e {
+	pl("error will occur since not compiled: %v", e)
+}
+
+simpleMath := g1.load()
+
+if isErr(simpleMath) {
+	fatalf("failed to compile the gel: %v", simpleMath)
+}
+
+map1 := toOrderedMap(simpleMath).method("sortKeys", "-desc")
+
+plt(map1)
+
+map1 = callMethod(map1, "sortKeys")
+
+plt(map1)
+
+rs := simpleMath.add(1, 2)
+
+plo(rs)
+
+pl("simpleMath.Pi:  (%T)%v", simpleMath.Pi, simpleMath.Pi)
+
+pl("unknown member: (%v)%v", typeName(simpleMath.var1), simpleMath.var1)
+
+pln(isErr(simpleMath.var1))
+
+pln(getErrStr(simpleMath.var1))
+
+pln(isNil(simpleMath.var1))
+
+pln(isNilOrEmpty(simpleMath.var1))
+
+pln(isUndefined(simpleMath.var1))
+
+try {
+	pl("unknown func: %v", simpleMath.func1())
+} catch e {
+	pl("unknown func(%v): %v", simpleMath.func1, e)
+}
+
+rs2 := simpleMath.mul(3.6, 8)
+
+plo(rs2)
+

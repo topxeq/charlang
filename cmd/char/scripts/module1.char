@@ -1,0 +1,16 @@
+// ZZZ...
+
+s1 := `
+param (...vargs)
+
+plo(vargs)
+
+return 0
+
+`
+
+m1 := import("s1")
+
+rs := s1.abc
+
+plo(rs)
