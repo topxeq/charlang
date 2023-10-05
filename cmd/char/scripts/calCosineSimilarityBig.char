@@ -1,0 +1,56 @@
+// work out the cosine similarity of two vectors
+// the result is in [0..1], which 1 indicates almost the same, 0 indicates not same at all
+
+calCosineSimilarityBig := func(f1, f2) {
+
+	l1 := len(f1)
+	l2 := len(f2)
+
+	if l1 != l2 {
+		pl("two vectors' length are not same，length of f1: %v，length of f2: %v", l1, l2)
+		return -1
+	}
+
+	rr := bigFloat(0.0)
+
+	f1r := bigFloat(0.0)
+
+	f2r := bigFloat(0.0)
+
+	for i := 0; i < l1; i++ {
+		f1Sub := bigFloat(f1[i])
+		f2Sub := bigFloat(f2[i])
+
+		rr += f1Sub * f2Sub
+		f1r += f1Sub * f1Sub
+		f2r += f2Sub * f2Sub
+	}
+
+	// tmp1 :=  // big.NewFloat(0).Mul(big.NewFloat(0).Sqrt(f1r), big.NewFloat(0).Sqrt(f2r))
+
+	// tmp2 = big.NewFloat(0).Quo(rr, tmp1)
+
+	// tmp3, _ = tmp2.Float64()
+
+	return rr / (mathSqrt(f1r) * mathSqrt(f2r))
+}
+
+
+v1 := [1, 2, 3, 5]
+v2 := [2.0, 2, 3, 4]
+
+pln(calCosineSimilarityBig(v1, v2))
+
+v3 := [9, 9, 8, 8]
+pln(calCosineSimilarityBig(v1, v3))
+
+pln("------------")
+
+v4 := [111111, 2222222, 3333333, 55555555555555]
+v5 := [2.0, 2, 3, 4]
+
+pln(calCosineSimilarityBig(v4, v5))
+
+v6 := [7877358736587356853, 9666666, 8.01, 999999999999]
+pln(calCosineSimilarityBig(v4, v6))
+

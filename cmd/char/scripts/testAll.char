@@ -12,6 +12,10 @@ rs = systemCmd("char", "-gopath", "calCosineSimilarity.char")
 
 testByText(rs, "(float)0.9756156783416059\n(charlang.Float)0.8556774556139578\n", getSeq(), "calCosineSimilarity.char")
 
+rs = systemCmd("char", "-gopath", "calCosineSimilarityBig.char")
+
+testByText(rs, "0.97561567834160589641\n0.85567745561395780474\n------------\n0.69631066977928557371\n0.00000012894610181964\n", getSeq(), "calCosineSimilarityBig.char")
+
 rs = systemCmd("char", "-gopath", "ex1.char")
 
 testByText(rs, "(charlang.Float)3.141592653589793\n(charlang.Float)1.0954451150103321\n", getSeq(), "ex1.char")

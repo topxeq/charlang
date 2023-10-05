@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -951,7 +952,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	317: map[string]*Function{ // *Seq
+	317: map[string]*Function{ // *Mutex
 		"toStr": &Function{
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
@@ -1040,7 +1041,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 		"toStr": &Function{
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
-				return ToStringObject(fmt.Sprintf("%v", ((*sync.RWMutex)(args[0].(*Mutex).Value)))), nil
+				return ToStringObject(fmt.Sprintf("%v", ((*http.ServeMux)(args[0].(*Mux).Value)))), nil
 			},
 		},
 		"setHandler": &Function{
@@ -1078,6 +1079,45 @@ var methodFuncMapG = map[int]map[string]*Function{
 					})
 
 					return Undefined, nil
+				}
+
+				fn1T, ok := fnObjT.(*HttpHandler)
+
+				if ok {
+					objT.HandleFunc(pathT, fn1T.Value)
+
+					return Undefined, nil
+				}
+
+				fnsT, ok := fnObjT.(String)
+
+				if ok {
+					var compilerOptionsT *CompilerOptions
+
+					vmT := c.VM()
+
+					if vmT != nil {
+						compilerOptionsT = vmT.bytecode.CompilerOptionsM
+					} else {
+						if MainCompilerOptions != nil {
+							compilerOptionsT = MainCompilerOptions
+						} else {
+							compilerOptionsT = &DefaultCompilerOptions
+						}
+					}
+
+					ccT := NewCharCode(fnsT.Value, compilerOptionsT)
+
+					byteCodeT := QuickCompile(ccT.Source, ccT.CompilerOptions) // quickCompile(tk.ToStr(argsA[0])) //
+
+					if tk.IsError(byteCodeT) {
+						ccT.LastError = fmt.Sprintf("%v", byteCodeT)
+						return NewCommonError("%v", byteCodeT), nil
+					}
+
+					ccT.Value = byteCodeT.(*Bytecode)
+
+					fnObjT = ccT
 				}
 
 				fn2T, ok := fnObjT.(*CharCode)
@@ -1125,15 +1165,117 @@ var methodFuncMapG = map[int]map[string]*Function{
 		"startHttpServer": &Function{
 			Name: "startHttpServer",
 			ValueEx: func(c Call) (Object, error) {
-				portT := ":80"
+				args := ObjectsToS(c.GetArgs())
+
+				portT := tk.GetSwitch(args, "-port=", ":80")
+
+				if !strings.HasPrefix(portT, ":") {
+					portT = ":" + portT
+				}
 
 				muxT := (*http.ServeMux)(c.This.(*Mux).Value)
+
+				if tk.IfSwitchExists(args, "-thread") || tk.IfSwitchExists(args, "-go") {
+					go tk.PlErrX(http.ListenAndServe(portT, muxT))
+
+					return Undefined, nil
+				}
 
 				errT := http.ListenAndServe(portT, muxT)
 
 				if errT != nil {
-					return NewCommonError("failed to start server: %v", errT), nil
+					return NewCommonError("failed to start http server: %v", errT), nil
 				}
+
+				return Undefined, nil
+			},
+		},
+		"startHttpsServer": &Function{
+			Name: "startHttpsServer",
+			ValueEx: func(c Call) (Object, error) {
+				args := ObjectsToS(c.GetArgs())
+
+				portT := tk.GetSwitch(args, "-port=", ":443")
+
+				if !strings.HasPrefix(portT, ":") {
+					portT = ":" + portT
+				}
+
+				certPathT := tk.GetSwitch(args, "-certDir=", ".")
+
+				muxT := (*http.ServeMux)(c.This.(*Mux).Value)
+
+				certFilePathT := filepath.Join(certPathT, "server.crt")
+				certKeyPathT := filepath.Join(certPathT, "server.key")
+
+				if !tk.IfFileExists(certFilePathT) {
+					return NewCommonErrorWithPos(c, "SSL certification file(%v) not found", certFilePathT), nil
+				}
+
+				if !tk.IfFileExists(certKeyPathT) {
+					return NewCommonErrorWithPos(c, "SSL certification key file(%v) not found", certKeyPathT), nil
+				}
+
+				if tk.IfSwitchExists(args, "-thread") || tk.IfSwitchExists(args, "-go") {
+					go tk.PlErrX(http.ListenAndServeTLS(portT, certFilePathT, certKeyPathT, muxT))
+
+					return Undefined, nil
+				}
+
+				errT := http.ListenAndServeTLS(portT, certFilePathT, certKeyPathT, muxT)
+
+				if errT != nil {
+					return NewCommonError("failed to start https server: %v", errT), nil
+				}
+
+				return Undefined, nil
+			},
+		},
+		"threadStartHttpServer": &Function{
+			Name: "threadStartHttpServer",
+			ValueEx: func(c Call) (Object, error) {
+				args := ObjectsToS(c.GetArgs())
+
+				portT := tk.GetSwitch(args, "-port=", ":80")
+
+				if !strings.HasPrefix(portT, ":") {
+					portT = ":" + portT
+				}
+
+				muxT := (*http.ServeMux)(c.This.(*Mux).Value)
+
+				go http.ListenAndServe(portT, muxT)
+
+				return Undefined, nil
+			},
+		},
+		"threadStartHttpsServer": &Function{
+			Name: "threadStartHttpsServer",
+			ValueEx: func(c Call) (Object, error) {
+				args := ObjectsToS(c.GetArgs())
+
+				portT := tk.GetSwitch(args, "-port=", ":443")
+
+				if !strings.HasPrefix(portT, ":") {
+					portT = ":" + portT
+				}
+
+				certPathT := tk.GetSwitch(args, "-certDir=", ".")
+
+				muxT := (*http.ServeMux)(c.This.(*Mux).Value)
+
+				certFilePathT := filepath.Join(certPathT, "server.crt")
+				certKeyPathT := filepath.Join(certPathT, "server.key")
+
+				if !tk.IfFileExists(certFilePathT) {
+					return NewCommonErrorWithPos(c, "SSL certification file(%v) not found", certFilePathT), nil
+				}
+
+				if !tk.IfFileExists(certKeyPathT) {
+					return NewCommonErrorWithPos(c, "SSL certification key file(%v) not found", certKeyPathT), nil
+				}
+
+				go tk.PlErr(http.ListenAndServeTLS(portT, certFilePathT, certKeyPathT, muxT))
 
 				return Undefined, nil
 			},
@@ -1149,6 +1291,155 @@ var methodFuncMapG = map[int]map[string]*Function{
 					o.Value.Reset()
 				}
 				return Undefined, nil
+			},
+		},
+	},
+	325: map[string]*Function{ // *HttpHandler
+		"toStr": &Function{
+			Name: "toStr",
+			Value: func(args ...Object) (Object, error) {
+				return ToStringObject(fmt.Sprintf("%v", ((func(http.ResponseWriter, *http.Request))(args[0].(*HttpHandler).Value)))), nil
+			},
+		},
+		"set": &Function{
+			Name: "set",
+			ValueEx: func(c Call) (Object, error) {
+				objT := c.This.(*HttpHandler)
+
+				argsA := c.GetArgs()
+
+				if len(argsA) < 1 {
+					return NewCommonErrorWithPos(c, "not enough parameters"), nil
+				}
+
+				arg0 := argsA[0].String()
+
+				switch arg0 {
+				case "static":
+					if len(argsA) < 2 {
+						return NewCommonErrorWithPos(c, "not enough parameters"), nil
+					}
+
+					rs := tk.NewStaticWebHandler(argsA[1].String())
+
+					if tk.IsError(rs) {
+						return NewCommonErrorWithPos(c, "failed to create static web handler:", rs), nil
+					}
+
+					objT.Value = rs.(func(http.ResponseWriter, *http.Request))
+
+					return c.This, nil
+				case "code":
+					if len(argsA) < 2 {
+						return NewCommonErrorWithPos(c, "not enough parameters"), nil
+					}
+
+					fnObjT := argsA[1]
+
+					fnT, ok := fnObjT.(*CompiledFunction)
+
+					if ok {
+						handlerT := func(w http.ResponseWriter, req *http.Request) {
+							retT, errT := NewInvoker(c.VM(), fnT).Invoke(ConvertToObject(req), ConvertToObject(w))
+
+							if errT != nil {
+								tk.Pl("failed to invoke handler: %v", errT)
+								return
+							}
+
+							rs := retT.String()
+
+							if rs != "TX_END_RESPONSE_XT" {
+								w.Write([]byte(rs))
+							}
+
+						}
+
+						objT.Value = handlerT
+						return c.This, nil
+					}
+
+					fnsT, ok := fnObjT.(String)
+
+					if ok {
+						var compilerOptionsT *CompilerOptions
+
+						vmT := c.VM()
+
+						if vmT != nil {
+							compilerOptionsT = vmT.bytecode.CompilerOptionsM
+						} else {
+							if MainCompilerOptions != nil {
+								compilerOptionsT = MainCompilerOptions
+							} else {
+								compilerOptionsT = &DefaultCompilerOptions
+							}
+						}
+
+						ccT := NewCharCode(fnsT.Value, compilerOptionsT)
+
+						byteCodeT := QuickCompile(ccT.Source, ccT.CompilerOptions) // quickCompile(tk.ToStr(argsA[0])) //
+
+						if tk.IsError(byteCodeT) {
+							ccT.LastError = fmt.Sprintf("%v", byteCodeT)
+							return NewCommonError("%v", byteCodeT), nil
+						}
+
+						ccT.Value = byteCodeT.(*Bytecode)
+
+						fnObjT = ccT
+					}
+
+					fn2T, ok := fnObjT.(*CharCode)
+
+					if ok {
+						lenT := len(argsA)
+
+						var additionsA []Object = make([]Object, 0, lenT-2)
+
+						for i := 2; i < lenT; i++ {
+							additionsA = append(additionsA, c.Get(i))
+						}
+
+						// tk.Plv("additionsA", additionsA)
+
+						handlerT := func(w http.ResponseWriter, req *http.Request) {
+							var globalsA map[string]interface{} = map[string]interface{}{
+								"requestG":  req,
+								"responseG": w,
+							}
+
+							envT := NewBaseEnv(globalsA) // Map{}
+
+							// if lenT > 1 {
+							// 	additionsA = argsA[1:]
+							// }
+							retT, errT := NewVM(fn2T.Value).Run(envT, additionsA...)
+
+							if errT != nil {
+								tk.Pl("failed to run handler: %v", errT)
+								return
+							}
+
+							rs := retT.String()
+
+							if rs != "TX_END_RESPONSE_XT" {
+								w.Write([]byte(rs))
+							}
+
+						}
+
+						objT.Value = handlerT
+						return c.This, nil
+					}
+
+					return NewCommonErrorWithPos(c, "unsupported handler type: %T", fnObjT), nil
+				}
+
+				return NewCommonErrorWithPos(c, "unsupported type: %T", arg0), nil
+
+				// return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+
 			},
 		},
 	},
@@ -1802,6 +2093,10 @@ func ConvertToObject(vA interface{}) Object {
 		return nv
 	case *HttpResp:
 		return nv
+	case func(http.ResponseWriter, *http.Request):
+		return &HttpHandler{Value: nv}
+	case *HttpHandler:
+		return nv
 	case *OrderedMap:
 		return nv
 	case *tk.OrderedMap:
@@ -1941,6 +2236,8 @@ func ConvertFromObject(vA Object) interface{} {
 	case *HttpReq:
 		return nv.Value
 	case *HttpResp:
+		return nv.Value
+	case *HttpHandler:
 		return nv.Value
 	case *Reader:
 		return nv.Value

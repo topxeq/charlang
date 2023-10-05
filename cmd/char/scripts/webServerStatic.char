@@ -1,0 +1,23 @@
+// quickly start a static web server to serve files under certain directory
+// port and certificate directory could be set
+handlerT := httpHandler("static", joinPath(getHomeDir(), "pages"))
+
+if isErr(handlerT) {
+	fatalf("failed to create httpHandler: %v", getErrStr(handlerT))
+}
+
+muxT := mux()
+
+muxT.setHandler("/", handlerT)
+
+pln("starting http server on port 80(default)...")
+checkErr(muxT.threadStartHttpServer())
+
+pln("starting https(SSL) server on port 8080...")
+plErr(muxT.threadStartHttpsServer("-port=8080", "-certDir=."))
+
+for {
+	pln(time().format("2006-01-02 15:04:05"), "heartbeat")
+	sleep(5.0)
+}
+

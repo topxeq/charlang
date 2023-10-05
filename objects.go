@@ -45,7 +45,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *Reader: 331, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -1891,6 +1891,10 @@ func ToStringObject(argA interface{}) String {
 		return String{Value: ""}
 	case []byte:
 		return String{Value: string(nv)}
+	case *big.Int:
+		return String{Value: nv.String()}
+	case *big.Float:
+		return String{Value: nv.String()}
 	case *BigInt:
 		return String{Value: nv.Value.String()}
 	case *BigFloat:
@@ -7617,6 +7621,271 @@ func (o *HttpResp) BinaryOp(tok token.Token, right Object) (Object, error) {
 		tok.String(),
 		o.TypeName(),
 		right.TypeName())
+}
+
+// HttpHandler object is used to represent the http response
+type HttpHandler struct {
+	// ObjectImpl
+	Value func(http.ResponseWriter, *http.Request)
+
+	Members map[string]Object `json:"-"`
+}
+
+// var _ Object = NewHttpReq()
+
+func (*HttpHandler) TypeCode() int {
+	return 325
+}
+
+// TypeName implements Object interface.
+func (*HttpHandler) TypeName() string {
+	return "httpHandler"
+}
+
+func (o *HttpHandler) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+// func (o *HttpResp) SetValue(valueA Object) error {
+// 	// o.Value.Reset(int(ToIntObject(valueA)))
+
+// 	return NewCommonError("unsupported action(set value)")
+// }
+
+func (o *HttpHandler) HasMemeber() bool {
+	return true
+}
+
+func (o *HttpHandler) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return builtinAnyFunc(Call{args: []Object{o}})
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *HttpHandler) GetValue() Object {
+	return Undefined
+}
+
+func (o *HttpHandler) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *HttpHandler) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (*HttpHandler) CanIterate() bool { return false }
+
+func (o *HttpHandler) Iterate() Iterator {
+	return nil
+}
+
+func (o *HttpHandler) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		// if strT == "value" {
+		// 	o.Value.Reset(int(ToIntObject(value)))
+		// 	return nil
+		// }
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *HttpHandler) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "value" {
+			return builtinAnyFunc(Call{args: []Object{o}})
+			// return ToIntObject(o.Value), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, NewCommonError("not indexable: %v", o.TypeName())
+}
+
+func (o *HttpHandler) Equal(right Object) bool {
+	if v, ok := right.(*HttpHandler); ok {
+		return v == o
+	}
+
+	return false
+}
+
+func (o *HttpHandler) IsFalsy() bool { return o.Value == nil }
+
+func (o *HttpHandler) CanCall() bool { return false }
+
+func (o *HttpHandler) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o *HttpHandler) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+func NewHttpHandler(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	if len(argsA) > 1 {
+		arg0 := argsA[0].String()
+
+		if arg0 == "static" {
+			rs := tk.NewStaticWebHandler(argsA[1].String())
+
+			if tk.IsError(rs) {
+				return NewCommonErrorWithPos(c, "failed to create static web handler:", rs), nil
+			}
+
+			return &HttpHandler{Value: rs.(func(http.ResponseWriter, *http.Request))}, nil
+
+		}
+
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	return &HttpHandler{Value: nil}, nil
+	// argsA := c.GetArgs()
+
+	// if len(argsA) < 1 {
+	// 	return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	// }
+
+	// arg0 := argsA[0].String()
+
+	// switch arg0 {
+	// case "static":
+	// 	if len(argsA) < 2 {
+	// 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	// 	}
+
+	// 	rs := tk.NewStaticWebHandler(argsA[1].String())
+
+	// 	if tk.IsError(rs) {
+	// 		return NewCommonErrorWithPos(c, "failed to create static web handler:", rs), nil
+	// 	}
+
+	// 	return &HttpHandler{Value: rs.(func(http.ResponseWriter, *http.Request))}, nil
+	// case "code":
+	// 	if len(argsA) < 2 {
+	// 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	// 	}
+
+	// 	fnObjT := argsA[1]
+
+	// 	fnT, ok := fnObjT.(*CompiledFunction)
+
+	// 	if ok {
+	// 		handlerT := func(w http.ResponseWriter, req *http.Request) {
+	// 			retT, errT := NewInvoker(c.VM(), fnT).Invoke(ConvertToObject(req), ConvertToObject(w))
+
+	// 			if errT != nil {
+	// 				tk.Pl("failed to invoke handler: %v", errT)
+	// 				return
+	// 			}
+
+	// 			rs := retT.String()
+
+	// 			if rs != "TX_END_RESPONSE_XT" {
+	// 				w.Write([]byte(rs))
+	// 			}
+
+	// 		}
+
+	// 		return &HttpHandler{Value: handlerT}, nil
+	// 	}
+
+	// 	fn2T, ok := fnObjT.(*CharCode)
+
+	// 	if ok {
+	// 		lenT := len(argsA)
+
+	// 		var additionsA []Object = make([]Object, 0, lenT-2)
+
+	// 		for i := 2; i < lenT; i++ {
+	// 			additionsA = append(additionsA, c.Get(i))
+	// 		}
+
+	// 		// tk.Plv("additionsA", additionsA)
+
+	// 		handlerT := func(w http.ResponseWriter, req *http.Request) {
+	// 			var globalsA map[string]interface{} = map[string]interface{}{
+	// 				"requestG":  req,
+	// 				"responseG": w,
+	// 			}
+
+	// 			envT := NewBaseEnv(globalsA) // Map{}
+
+	// 			// if lenT > 1 {
+	// 			// 	additionsA = argsA[1:]
+	// 			// }
+	// 			retT, errT := NewVM(fn2T.Value).Run(envT, additionsA...)
+
+	// 			if errT != nil {
+	// 				tk.Pl("failed to run handler: %v", errT)
+	// 				return
+	// 			}
+
+	// 			rs := retT.String()
+
+	// 			if rs != "TX_END_RESPONSE_XT" {
+	// 				w.Write([]byte(rs))
+	// 			}
+
+	// 		}
+
+	// 		return &HttpHandler{Value: handlerT}, nil
+	// 	}
+
+	// 	return NewCommonErrorWithPos(c, "unsupported handler type: %T", fnObjT), nil
+	// }
+
+	// return NewCommonErrorWithPos(c, "unsupported type: %T", arg0), nil
 }
 
 // Reader object is used for represent io.Reader type value
