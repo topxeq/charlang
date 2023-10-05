@@ -37,6 +37,8 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinToKMG
+	BuiltinGetFileList
 	BuiltinMathSqrt
 	BuiltinAdjustFloat
 	BuiltinBigInt
@@ -317,6 +319,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"toTime":  BuiltinToTime,
 	"toHex":   BuiltinToHex,
 	"unhex":   BuiltinUnhex,
+	"toKMG":   BuiltinToKMG,
 
 	// string related
 	"trim":          BuiltinTrim,
@@ -445,8 +448,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getHomeDir": BuiltinGetHomeDir,
 	"getTempDir": BuiltinGetTempDir,
 
-	// path related
-	"joinPath": BuiltinJoinPath, // join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
+	// dir/path related
+	"joinPath":    BuiltinJoinPath, // join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
+	"getFileList": BuiltinGetFileList,
+	"genFileList": BuiltinGetFileList,
 
 	// file related
 	"fileExists":   BuiltinFileExists,
@@ -1267,6 +1272,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASRLby(tk.HexToBytes),
 		ValueEx: FnASRLbyex(tk.HexToBytes),
 	},
+	BuiltinToKMG: &BuiltinFunction{
+		Name:    "toKMG",
+		Value:   FnAAVaRS(tk.IntToKMGT),
+		ValueEx: FnAAVaRSex(tk.IntToKMGT),
+	},
 
 	// command-line related
 	BuiltinIfSwitchExists: &BuiltinFunction{
@@ -1351,11 +1361,16 @@ var BuiltinObjects = [...]Object{
 		ValueEx: FnASVsRSex(tk.SystemCmd),
 	},
 
-	// path related
+	// dir/path related
 	BuiltinJoinPath: &BuiltinFunction{
 		Name:    "joinPath",
 		Value:   FnAVsRS(filepath.Join),
 		ValueEx: FnAVsRSex(filepath.Join),
+	},
+	BuiltinGetFileList: &BuiltinFunction{
+		Name:    "getFileList",
+		Value:   FnASVsRLmss(tk.GetFileList),
+		ValueEx: FnASVsRLmssex(tk.GetFileList),
 	},
 	BuiltinGetHomeDir: &BuiltinFunction{
 		Name:    "getHomeDir",
@@ -2991,6 +3006,33 @@ func FnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 	}
 }
 
+// like tk.GetFileList
+func FnASVsRLmss(fn func(string, ...string) []map[string]string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToS(args[1:])
+		rs := fn(args[0].String(), vargs...)
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASVsRLmssex(fn func(string, ...string) []map[string]string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToS(args[1:])
+		rs := fn(args[0].String(), vargs...)
+		return ConvertToObject(rs), nil
+	}
+}
+
 // like tk.ErrStrf
 func FnASVaRS(fn func(string, ...interface{}) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
@@ -3016,6 +3058,35 @@ func FnASVaRSex(fn func(string, ...interface{}) string) CallableExFunc {
 		vargs := ObjectsToI(args[1:])
 
 		rs := fn(args[0].String(), vargs...)
+		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.ErrStrf
+func FnAAVaRS(fn func(interface{}, ...interface{}) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToI(args[1:])
+
+		rs := fn(ConvertFromObject(args[0]), vargs...)
+		return ToStringObject(rs), nil
+	}
+}
+
+func FnAAVaRSex(fn func(interface{}, ...interface{}) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToI(args[1:])
+
+		rs := fn(ConvertFromObject(args[0]), vargs...)
 		return ToStringObject(rs), nil
 	}
 }
