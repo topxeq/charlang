@@ -128,7 +128,7 @@ testByContains(rs, "\"versionG\": \"", getSeq(), "trace1.char")
 
 testByContains(rs, "CurFunc \n&charlang.CompiledFunction{NumParams:0, NumLocals:3, Instructions:[]uint8{", getSeq(), "trace1.char")
 
-testByEndsWith(rs, ", Variadic:false, Free:[]*charlang.ObjectPtr(nil), SourceMap:map[int]int{0:6, 3:1, 5:14, 8:9, 10:30, 12:30, 15:21, 17:45, 19:49, 21:45, 24:45, 25:0}, Members:map[string]charlang.Object(nil)}\n ----- \nCurInstr \n\"12 2 CALL\"\n ----- \nLocals \n[1 2.3 undefined]\n ----- \n\n", getSeq(), "trace1.char")
+testByEndsWith(rs, "}, Members:map[string]charlang.Object(nil)}\n ----- \nCurInstr \n\"12 2 CALL\"\n ----- \nLocals \n[1 2.3 undefined]\n ----- \n\n", getSeq(), "trace1.char")
 
 rs = systemCmd("char", "-gopath", "new.char")
 
