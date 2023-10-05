@@ -122,6 +122,7 @@ const (
 	BuiltinArchiveFilesToZip
 	BuiltinGetOSName
 	BuiltinGetOSArch
+	BuiltinGetOSArgs
 	BuiltinGetAppDir
 	BuiltinGetCurDir
 	BuiltinGetHomeDir
@@ -167,6 +168,7 @@ const (
 	BuiltinGetParam
 	BuiltinGetParams
 	BuiltinGetSwitch
+	BuiltinGetSwitches
 	BuiltinGetIntSwitch
 	BuiltinIfSwitchExists
 	BuiltinTypeCode
@@ -417,6 +419,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"ifSwitchExists": BuiltinIfSwitchExists,
 	"getSwitch":      BuiltinGetSwitch,
 	"getIntSwitch":   BuiltinGetIntSwitch,
+	"getSwitches":    BuiltinGetSwitches,
 	"getParam":       BuiltinGetParam,
 	"getParams":      BuiltinGetParams,
 
@@ -435,6 +438,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getOSName":  BuiltinGetOSName,
 	"getOSArch":  BuiltinGetOSArch,
 	"getOsArch":  BuiltinGetOSArch,
+	"getOSArgs":  BuiltinGetOSArgs,
+	"getOsArgs":  BuiltinGetOSArgs,
 	"getAppDir":  BuiltinGetAppDir,
 	"getCurDir":  BuiltinGetCurDir,
 	"getHomeDir": BuiltinGetHomeDir,
@@ -1279,6 +1284,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnALsSViRI(tk.GetSwitchWithDefaultIntValue),
 		ValueEx: FnALsSViRIex(tk.GetSwitchWithDefaultIntValue),
 	},
+	BuiltinGetSwitches: &BuiltinFunction{
+		Name:    "getSwitches", // usage: getSwitches(argsG)
+		Value:   FnALsRLs(tk.GetAllSwitches),
+		ValueEx: FnALsRLsex(tk.GetAllSwitches),
+	},
 	BuiltinGetParam: &BuiltinFunction{
 		Name:    "getParam", // usage: getParam(argsG, 1, "default")
 		Value:   CallExAdapter(builtinGetParamFunc),
@@ -1318,6 +1328,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getOSArch",
 		Value:   FnARS(tk.GetOSArch),
 		ValueEx: FnARSex(tk.GetOSArch),
+	},
+	BuiltinGetOSArgs: &BuiltinFunction{
+		Name:    "getOSArgs",
+		Value:   FnARLs(tk.GetOSArgs),
+		ValueEx: FnARLsex(tk.GetOSArgs),
 	},
 	BuiltinGetEnv: &BuiltinFunction{
 		Name:    "getEnv",
@@ -2741,6 +2756,21 @@ func FnASRLsex(fn func(string) []string) CallableExFunc {
 		}
 
 		rs := fn(c.Get(0).String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.GetOSArgs
+func FnARLs(fn func() []string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		rs := fn()
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnARLsex(fn func() []string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		rs := fn()
 		return ConvertToObject(rs), nil
 	}
 }

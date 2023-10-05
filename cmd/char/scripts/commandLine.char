@@ -1,0 +1,52 @@
+// test command-line functions
+// for example: char -gopath commandLine.char abc 123 -file=a.txt -file1=b.zip -file2=c:\dig123.log -verbose
+
+// Get all command line parameters
+pl("All command-line args: %v", getOSArgs())
+
+// Obtain command line parameters other than the first command line parameter (usually the Charlang main program name)
+argsT := getOSArgs()[1:]
+pln("The whole command-line without executable:", argsT)
+
+// get the predefined global variable contains the whole command line arguments
+global argsG
+
+// Obtain the number of command line parameters
+lenT := len(argsG)
+
+// Output the first command line parameter
+if lenT > 0 {
+	pl("The first command-line element is: %v", argsG[0])
+}
+
+// Output the second command line parameter
+if lenT > 1 {
+	pl("The sencod command-line element is: %v", argsG[1])
+}
+
+// Safely obtain the 3rd (sequence number 2) command line parameter, if none, return the default empty string
+para1 := getParam(argsG, 2, "")
+pl("para1=%v", para1)
+
+// Safely obtain the 4th (sequence number 3) command line parameter, if none, return the default empty string
+para2 := getParam(argsG, 3, "")
+pl("para2=%v", para2)
+
+// Safely obtain the value of the switch parameter -file=(in the form of -file=a.txt). If it does not exist, return the default empty string
+switch1 := getSwitch(argsG, "-file=", "")
+
+pln("switch1:", switch1)
+
+// Obtain command line parameters for all non switch parameters and output
+paras := getParams(argsG)
+pln("All parameters:", paras)
+
+// Obtain command line parameters for all switch parameters and output
+switches := getSwitches(argsG)
+pln("All switches:", switches)
+
+// Determining whether there are switch parameters such as -v, and -verbose does not count
+pln(ifSwitchExists(argsG, "-v"))
+
+// Determining whether there are switch parameters such as -verbose
+pln(ifSwitchExists(argsG, "-verbose"))
