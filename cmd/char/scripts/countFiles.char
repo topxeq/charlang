@@ -1,0 +1,51 @@
+// count files in specified directories
+// usage: char countFiles.char c:\tmp d:\temp -min=3000
+// will count files larger than or equal to 3000(bytes) in both c:\tmp and d:\temp, and sum of their sizes
+global argsG
+
+paramsT := getParams(argsG)
+
+pln(paramsT)
+
+dirsT := paramsT[2:]
+
+// if not specified, count the current working directory
+if len(dirsT) < 1 {
+	dirsT = [`.`]
+}
+
+pln(dirsT)
+
+minSizeT := getIntSwitch(argsG, "-min=", 0)
+
+countT := 0
+
+sumT := 0
+
+for i, v in dirsT {
+	pl("processing [%v] %v ...", i, v)
+
+	// -recursive to count the sub-directories also
+	listT := getFileList(v, "-compact", "-recursive", "-pattern=*")
+
+	if isNil(listT) {
+		continue
+	}
+
+	// pln(len(listT))
+
+	// plt(listT)
+
+	for j, jv in listT {
+		fileLenT := toInt(trim(jv.Size))
+		// plt(fileLenT)
+
+		if fileLenT >= minSizeT {
+			countT ++
+
+			sumT += fileLenT
+		}
+	}
+}
+
+pl("count: %v, sum: %v", countT, toKMG(sumT))
