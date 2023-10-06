@@ -94,9 +94,13 @@ rs = systemCmd("char", "-gopath", "gel3.char")
 
 testByText(rs, "error will occur since not compiled: error: not compiled\n(orderedMap){\"mul\": <compiledFunction>, \"add\": <compiledFunction>, \"Pi\": 3.1415926}\n(orderedMap){\"Pi\": 3.1415926, \"add\": <compiledFunction>, \"mul\": <compiledFunction>}\n(charlang.Int)3\nsimpleMath.Pi:  (charlang.Float)3.1415926\nunknown member: (undefined)undefined\nfalse\n\ntrue\ntrue\ntrue\nunknown func(undefined): NotCallableError: undefined\n(charlang.Float)28.8\n", getSeq(), "gel3.char")
 
-rs = systemCmd("char", "-gopath", "mutex.char")
+rs = systemCmd("char", "-gopath", "mutex1.char")
 
-testByText(rs, "(objectRef)<objectRef:5>\n(int)5\nresult: 15005\n", getSeq(), "mutex.char")
+testByText(rs, "(objectRef)<objectRef:5>\n(int)5\nresult: 15005\n", getSeq(), "mutex1.char")
+
+rs = systemCmd("char", "-gopath", "mutex2.char")
+
+testByText(rs, "(objectRef)<objectRef:5>\n(int)5\nresult: 15005\n", getSeq(), "mutex2.char")
 
 rs = systemCmd("char", "-gopath", "seq.char")
 

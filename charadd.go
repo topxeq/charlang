@@ -458,6 +458,48 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
+	185: map[string]*Function{ // *CompiledFunction
+		"toStr": &Function{
+			Name: "toStr",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*CompiledFunction)
+
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				return ToStringObject(nv.String()), nil
+			},
+		},
+		"run": &Function{
+			Name: "run",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*CompiledFunction)
+
+				if !ok {
+					return NewCommonError("invalid type: %#v", c.This), nil
+				}
+
+				if nv.Instructions == nil {
+					return NewCommonError("code not compiled"), nil
+				}
+
+				if c.VM() == nil {
+					return NewCommonError("no VM specified"), nil
+				}
+
+				argsT := c.GetArgs()
+
+				retT, errT := NewInvoker(c.VM(), nv).Invoke(argsT...)
+
+				if errT != nil {
+					return NewCommonError("failed to run compiled function: %v", errT), nil
+				}
+
+				return retT, nil
+			},
+		},
+	},
 	191: map[string]*Function{ // *CharCode
 		"toStr": &Function{
 			Name: "toStr",
@@ -539,8 +581,8 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return retT, nil
 			},
 		},
-		"goRun": &Function{
-			Name: "goRun",
+		"threadRun": &Function{
+			Name: "threadRun",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*CharCode)
 
@@ -1017,25 +1059,6 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 			},
 		},
-		"getCurrent": &Function{
-			Name: "getCurrent",
-			Value: func(args ...Object) (Object, error) {
-				return ToIntObject(((*tk.Seq)(args[0].(*Seq).Value)).GetCurrent()), nil
-			},
-		},
-		"reset": &Function{
-			Name: "reset",
-			Value: func(argsA ...Object) (Object, error) {
-				o := argsA[0].(*Seq)
-
-				if len(argsA) > 1 {
-					o.Value.Reset(int(ToIntObject(argsA[1])))
-				} else {
-					o.Value.Reset()
-				}
-				return Undefined, nil
-			},
-		},
 	},
 	319: map[string]*Function{ // *Mux
 		"toStr": &Function{
@@ -1277,19 +1300,6 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 				go tk.PlErr(http.ListenAndServeTLS(portT, certFilePathT, certKeyPathT, muxT))
 
-				return Undefined, nil
-			},
-		},
-		"reset": &Function{
-			Name: "reset",
-			Value: func(argsA ...Object) (Object, error) {
-				o := argsA[0].(*Seq)
-
-				if len(argsA) > 1 {
-					o.Value.Reset(int(ToIntObject(argsA[1])))
-				} else {
-					o.Value.Reset()
-				}
 				return Undefined, nil
 			},
 		},

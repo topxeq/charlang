@@ -1,26 +1,24 @@
-ex := import("ex")
-
 n1 := new("int", 5)
 
 flag1 := new("bool", false)
 
 flag2 := new("bool", false)
 
-m1 := make("mutex")
+m1 := mutex()
 
 plt(n1)
 
 plt(unref(n1))
 
-sourceT := `
+c1 := charCode(`
 param (v0, v1, v2)
 
 for i := 0; i < 5000; i++ {
-	v2.lock()
+	lock(v2)
 
 	setValueByRef(v0, unref(v0) + 1)
 
-	v2.unlock()
+	unlock(v2)
 
 	// sleep(0.001)
 }
@@ -28,20 +26,18 @@ for i := 0; i < 5000; i++ {
 setValueByRef(v1, true)
 
 return
-`
+`).compile()
 
-c1 := ex.compile(sourceT)
+c1.threadRun(n1, flag1, m1)
 
-ex.goRunCompiled(c1, n1, flag1, m1)
-
-ex.goRunCompiled(c1, n1, flag2, m1)
+c1.threadRun(n1, flag2, m1)
 
 for i := 0; i < 5000; i++ {
-	m1.lock()
+	lock(m1)
 
 	setValueByRef(n1, unref(n1)+1)
 
-	m1.unlock()
+	unlock(m1)
 
 	// sleep(0.001)
 }

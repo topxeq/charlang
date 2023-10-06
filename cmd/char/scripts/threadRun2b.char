@@ -15,17 +15,15 @@ return
 
 `
 
-c1 := charCode(sourceT)
+c1 := charCode(sourceT).compile()
 
-rs1 := c1.compile()
-
-if isErrX(rs1) {
-	fatalf("failed to compile code: %v", rs1)
+if isErr(c1) {
+	fatalf("failed to compile code: %v", c1)
 }
 
 a := [5]
 
-c1.goRun(a)
+c1.threadRun(a)
 
 sleep(0.15)
 

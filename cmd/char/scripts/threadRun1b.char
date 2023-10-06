@@ -23,7 +23,7 @@ if isErrX(rs1) {
 
 a := 5
 
-c1.goRun(a)
+c1.threadRun(a)
 
 sleep(0.15)
 

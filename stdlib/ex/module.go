@@ -148,7 +148,7 @@ func runCompiledFunc(argsA ...charlang.Object) (charlang.Object, error) {
 	return retT, nil
 }
 
-func goRunCompiledFunc(argsA ...charlang.Object) (charlang.Object, error) {
+func threadRunCompiledFunc(argsA ...charlang.Object) (charlang.Object, error) {
 	lenT := len(argsA)
 
 	if lenT < 1 {
@@ -499,14 +499,14 @@ var Module = map[string]charlang.Object{
 		Name:  "runCompiled", // run compiled code
 		Value: runCompiledFunc,
 	},
-	"goRunCompiled": &charlang.Function{
-		Name:  "goRunCompiled", // run compiled code in a new thread
-		Value: goRunCompiledFunc,
-	},
 	"threadRunCompiled": &charlang.Function{
 		Name:  "threadRunCompiled", // run compiled code in a new thread
-		Value: goRunCompiledFunc,
+		Value: threadRunCompiledFunc,
 	},
+	// "threadRunCompiled": &charlang.Function{
+	// 	Name:  "threadRunCompiled", // run compiled code in a new thread
+	// 	Value: threadRunCompiledFunc,
+	// },
 	"loadGel": &charlang.Function{
 		Name:    "loadGel", // compile a piece of code and turn it to Gel
 		Value:   charlang.CallExAdapter(quickCompileGelFunc),

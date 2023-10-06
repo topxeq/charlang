@@ -1,7 +1,5 @@
 // using Array or Map to pass parameters which may change in the thread
 
-ex := import("ex")
-
 sourceT := `
 param (v0)
 
@@ -17,11 +15,17 @@ return
 
 `
 
-c1 := ex.compile(sourceT)
+c1 := charCode(sourceT)
+
+rs1 := c1.compile()
+
+if isErrX(rs1) {
+	fatalf("failed to compile code: %v", rs1)
+}
 
 a := [5]
 
-ex.threadRunCompiled(c1, a)
+c1.threadRun(a)
 
 sleep(0.15)
 

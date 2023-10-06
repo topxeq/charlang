@@ -37,6 +37,12 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinLock
+	BuiltinUnlock
+	BuiltinTryLock
+	BuiltinRLock
+	BuiltinRUnlock
+	BuiltinTryRLock
 	BuiltinToKMG
 	BuiltinGetFileList
 	BuiltinMathSqrt
@@ -432,6 +438,13 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// thread related
 	"sleep": BuiltinSleep,
+
+	"lock":     BuiltinLock,
+	"unlock":   BuiltinUnlock,
+	"tryLock":  BuiltinTryLock,
+	"rLock":    BuiltinRLock,
+	"rUnlock":  BuiltinRUnlock,
+	"tryRLock": BuiltinTryRLock,
 
 	// os/system related
 	"systemCmd":  BuiltinSystemCmd,
@@ -1326,6 +1339,31 @@ var BuiltinObjects = [...]Object{
 	BuiltinSleep: &BuiltinFunction{
 		Name:    "sleep", // usage: sleep(1.2) sleep for 1.2 seconds
 		ValueEx: builtinSleepFunc,
+	},
+
+	BuiltinLock: &BuiltinFunction{
+		Name:    "lock", // usage: lock(mutext1)
+		ValueEx: builtinLockFunc,
+	},
+	BuiltinUnlock: &BuiltinFunction{
+		Name:    "unlock", // usage: unlock(mutext1)
+		ValueEx: builtinUnlockFunc,
+	},
+	BuiltinRLock: &BuiltinFunction{
+		Name:    "rLock", // usage: rLock(mutext1)
+		ValueEx: builtinRLockFunc,
+	},
+	BuiltinRUnlock: &BuiltinFunction{
+		Name:    "rUnlock", // usage: rUnlock(mutext1)
+		ValueEx: builtinRUnlockFunc,
+	},
+	BuiltinTryLock: &BuiltinFunction{
+		Name:    "tryLock", // usage: tryLock(mutext1)
+		ValueEx: builtinTryLockFunc,
+	},
+	BuiltinTryRLock: &BuiltinFunction{
+		Name:    "tryRLock", // usage: tryRLock(mutext1)
+		ValueEx: builtinTryRLockFunc,
 	},
 
 	// os/system related
@@ -4045,6 +4083,138 @@ func builtinSleepFunc(c Call) (Object, error) {
 	tk.Sleep(f)
 
 	return Undefined, nil
+}
+
+func builtinLockFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	nv, ok := args[0].(*Mutex)
+
+	if !ok {
+		return Undefined, NewCommonErrorWithPos(c, "invalid parameter type: %T", args[0])
+	}
+
+	if nv == nil {
+		return Undefined, NewCommonErrorWithPos(c, "parameter is nil: %v", args[0])
+	}
+
+	nv.Value.Lock()
+
+	return Undefined, nil
+}
+
+func builtinUnlockFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	nv, ok := args[0].(*Mutex)
+
+	if !ok {
+		return Undefined, NewCommonErrorWithPos(c, "invalid parameter type: %T", args[0])
+	}
+
+	if nv == nil {
+		return Undefined, NewCommonErrorWithPos(c, "parameter is nil: %v", args[0])
+	}
+
+	nv.Value.Unlock()
+
+	return Undefined, nil
+}
+
+func builtinRLockFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	nv, ok := args[0].(*Mutex)
+
+	if !ok {
+		return Undefined, NewCommonErrorWithPos(c, "invalid parameter type: %T", args[0])
+	}
+
+	if nv == nil {
+		return Undefined, NewCommonErrorWithPos(c, "parameter is nil: %v", args[0])
+	}
+
+	nv.Value.RLock()
+
+	return Undefined, nil
+}
+
+func builtinRUnlockFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	nv, ok := args[0].(*Mutex)
+
+	if !ok {
+		return Undefined, NewCommonErrorWithPos(c, "invalid parameter type: %T", args[0])
+	}
+
+	if nv == nil {
+		return Undefined, NewCommonErrorWithPos(c, "parameter is nil: %v", args[0])
+	}
+
+	nv.Value.RUnlock()
+
+	return Undefined, nil
+}
+
+func builtinTryLockFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	nv, ok := args[0].(*Mutex)
+
+	if !ok {
+		return Undefined, NewCommonErrorWithPos(c, "invalid parameter type: %T", args[0])
+	}
+
+	if nv == nil {
+		return Undefined, NewCommonErrorWithPos(c, "parameter is nil: %v", args[0])
+	}
+
+	b1 := nv.Value.TryLock()
+
+	return Bool(b1), nil
+}
+
+func builtinTryRLockFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	nv, ok := args[0].(*Mutex)
+
+	if !ok {
+		return Undefined, NewCommonErrorWithPos(c, "invalid parameter type: %T", args[0])
+	}
+
+	if nv == nil {
+		return Undefined, NewCommonErrorWithPos(c, "parameter is nil: %v", args[0])
+	}
+
+	b1 := nv.Value.TryRLock()
+
+	return Bool(b1), nil
 }
 
 func builtinExitFunc(args ...Object) (Object, error) {

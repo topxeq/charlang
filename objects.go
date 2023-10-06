@@ -2435,6 +2435,247 @@ func (o Chars) Format(s fmt.State, verb rune) {
 	fmt.Fprintf(s, format, []rune(o))
 }
 
+// CompiledFunction holds the constants and instructions to pass VM.
+type CompiledFunction struct {
+	// number of parameters
+	NumParams int
+	// number of local variabls including parameters NumLocals>=NumParams
+	NumLocals    int
+	Instructions []byte
+	Variadic     bool
+	Free         []*ObjectPtr
+	// SourceMap holds the index of instruction and token's position.
+	SourceMap map[int]int
+
+	Members map[string]Object `json:"-"`
+}
+
+var _ Object = (*CompiledFunction)(nil)
+
+func (*CompiledFunction) TypeCode() int {
+	return 185
+}
+
+// TypeName implements Object interface
+func (*CompiledFunction) TypeName() string {
+	return "compiledFunction"
+}
+
+func (o *CompiledFunction) String() string {
+	return "<compiledFunction>"
+}
+
+func (o *CompiledFunction) HasMemeber() bool {
+	return true
+}
+
+func (o *CompiledFunction) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return Undefined, NewCommonError("unknown method: %v", nameA)
+}
+
+func (o *CompiledFunction) GetValue() Object {
+	return o
+}
+
+func (o *CompiledFunction) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *CompiledFunction) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action")
+	return nil
+}
+
+// Copy implements the Copier interface.
+func (o *CompiledFunction) Copy() Object {
+	var insts []byte
+	if o.Instructions != nil {
+		insts = make([]byte, len(o.Instructions))
+		copy(insts, o.Instructions)
+	}
+
+	var free []*ObjectPtr
+	if o.Free != nil {
+		// DO NOT Copy() elements; these are variable pointers
+		free = make([]*ObjectPtr, len(o.Free))
+		copy(free, o.Free)
+	}
+
+	var sourceMap map[int]int
+	if o.SourceMap != nil {
+		sourceMap = make(map[int]int, len(o.SourceMap))
+		for k, v := range o.SourceMap {
+			sourceMap[k] = v
+		}
+	}
+
+	return &CompiledFunction{
+		NumParams:    o.NumParams,
+		NumLocals:    o.NumLocals,
+		Instructions: insts,
+		Variadic:     o.Variadic,
+		Free:         free,
+		SourceMap:    sourceMap,
+	}
+}
+
+// CanIterate implements Object interface.
+func (*CompiledFunction) CanIterate() bool { return false }
+
+// Iterate implements Object interface.
+func (*CompiledFunction) Iterate() Iterator { return nil }
+
+// IndexGet represents string values and implements Object interface.
+func (*CompiledFunction) IndexGet(index Object) (Object, error) {
+	return nil, ErrNotIndexable
+}
+
+// IndexSet implements Object interface.
+func (*CompiledFunction) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+// CanCall implements Object interface.
+func (*CompiledFunction) CanCall() bool { return true }
+
+// Call implements Object interface. CompiledFunction is not directly callable.
+// You should use Invoker to call it with a Virtual Machine. Because of this, it
+// always returns an error.
+func (*CompiledFunction) Call(...Object) (Object, error) {
+	return Undefined, ErrNotCallable
+}
+
+// BinaryOp implements Object interface.
+func (*CompiledFunction) BinaryOp(token.Token, Object) (Object, error) {
+	return nil, ErrInvalidOperator
+}
+
+// IsFalsy implements Object interface.
+func (o *CompiledFunction) IsFalsy() bool { return o.Instructions == nil }
+
+// Equal implements Object interface.
+func (o *CompiledFunction) Equal(right Object) bool {
+	v, ok := right.(*CompiledFunction)
+	return ok && o == v
+}
+
+// SourcePos returns the source position of the instruction at ip.
+func (o *CompiledFunction) SourcePos(ip int) parser.Pos {
+begin:
+	if ip >= 0 {
+		if p, ok := o.SourceMap[ip]; ok {
+			return parser.Pos(p)
+		}
+		ip--
+		goto begin
+	}
+	return parser.NoPos
+}
+
+// Fprint writes constants and instructions to given Writer in a human readable form.
+func (o *CompiledFunction) Fprint(w io.Writer) {
+	_, _ = fmt.Fprintf(w, "Params:%d Variadic:%t Locals:%d\n", o.NumParams, o.Variadic, o.NumLocals)
+	_, _ = fmt.Fprintf(w, "Instructions:\n")
+
+	i := 0
+	var operands []int
+
+	for i < len(o.Instructions) {
+
+		op := o.Instructions[i]
+		numOperands := OpcodeOperands[op]
+		operands, offset := ReadOperands(numOperands, o.Instructions[i+1:], operands)
+		_, _ = fmt.Fprintf(w, "%04d %-12s", i, OpcodeNames[op])
+
+		if len(operands) > 0 {
+			for _, r := range operands {
+				_, _ = fmt.Fprint(w, "    ", strconv.Itoa(r))
+			}
+		}
+
+		_, _ = fmt.Fprintln(w)
+		i += offset + 1
+	}
+
+	if o.Free != nil {
+		_, _ = fmt.Fprintf(w, "Free:%v\n", o.Free)
+	}
+	_, _ = fmt.Fprintf(w, "SourceMap:%v\n", o.SourceMap)
+}
+
+func (o *CompiledFunction) identical(other *CompiledFunction) bool {
+	if o.NumParams != other.NumParams ||
+		o.NumLocals != other.NumLocals ||
+		o.Variadic != other.Variadic ||
+		len(o.Instructions) != len(other.Instructions) ||
+		len(o.Free) != len(other.Free) ||
+		string(o.Instructions) != string(other.Instructions) {
+		return false
+	}
+	for i := range o.Free {
+		if o.Free[i].Equal(other.Free[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func (o *CompiledFunction) equalSourceMap(other *CompiledFunction) bool {
+	if len(o.SourceMap) != len(other.SourceMap) {
+		return false
+	}
+	for k, v := range o.SourceMap {
+		vv, ok := other.SourceMap[k]
+		if !ok || vv != v {
+			return false
+		}
+	}
+	return true
+}
+
+func (o *CompiledFunction) hash32() uint32 {
+	hash := hashData32(2166136261, []byte{byte(o.NumParams)})
+	hash = hashData32(hash, []byte{byte(o.NumLocals)})
+	if o.Variadic {
+		hash = hashData32(hash, []byte{1})
+	} else {
+		hash = hashData32(hash, []byte{0})
+	}
+	hash = hashData32(hash, o.Instructions)
+	return hash
+}
+
+func hashData32(hash uint32, data []byte) uint32 {
+	for _, c := range data {
+		hash *= 16777619 // prime32
+		hash ^= uint32(c)
+	}
+	return hash
+}
+
 // Function represents a function object and implements Object interface.
 type Function struct {
 	ObjectImpl
@@ -2530,7 +2771,7 @@ func (o *Function) Equal(right Object) bool {
 }
 
 // IsFalsy implements Object interface.
-func (*Function) IsFalsy() bool { return false }
+func (o *Function) IsFalsy() bool { return o.Value == nil && o.ValueEx == nil }
 
 // CanCall implements Object interface.
 func (*Function) CanCall() bool { return true }
@@ -2645,7 +2886,7 @@ func (o *BuiltinFunction) Equal(right Object) bool {
 }
 
 // IsFalsy implements Object interface.
-func (*BuiltinFunction) IsFalsy() bool { return false }
+func (o *BuiltinFunction) IsFalsy() bool { return o.Value == nil && o.ValueEx == nil }
 
 // CanCall implements Object interface.
 func (*BuiltinFunction) CanCall() bool { return true }
@@ -5018,7 +5259,7 @@ func (o Database) Equal(right Object) bool {
 	return false
 }
 
-func (o *Database) IsFalsy() bool { return false }
+func (o *Database) IsFalsy() bool { return o.Value == nil }
 
 func (*Database) CanCall() bool { return false }
 
@@ -5815,7 +6056,7 @@ func (o *Any) Equal(right Object) bool {
 }
 
 // IsFalsy implements Object interface.
-func (o *Any) IsFalsy() bool { return false }
+func (o *Any) IsFalsy() bool { return o.Value == nil }
 
 // IndexGet implements Object interface.
 func (o *Any) IndexGet(index Object) (Object, error) {
@@ -6088,7 +6329,7 @@ func (o *StringBuilder) Equal(right Object) bool {
 	return false
 }
 
-func (o *StringBuilder) IsFalsy() bool { return false }
+func (o *StringBuilder) IsFalsy() bool { return o.Value == nil }
 
 func (*StringBuilder) CanCall() bool { return false }
 
@@ -6402,7 +6643,7 @@ func (o *BytesBuffer) Equal(right Object) bool {
 	return false
 }
 
-func (o *BytesBuffer) IsFalsy() bool { return false }
+func (o *BytesBuffer) IsFalsy() bool { return o.Value == nil }
 
 func (*BytesBuffer) CanCall() bool { return false }
 
@@ -7029,6 +7270,7 @@ func NewSeq(argsA ...Object) *Seq {
 }
 
 // Mutex object is used for thread-safe actions
+// note that the members set/get operations are not thread-safe
 type Mutex struct {
 	ObjectImpl
 	Value *(sync.RWMutex)
@@ -7139,6 +7381,66 @@ func (o *Mutex) IndexGet(index Object) (Object, error) {
 		if strT == "value" {
 			return builtinAnyFunc(Call{args: []Object{o}})
 			// return ToIntObject(o.Value), nil
+		}
+
+		switch strT {
+		case "toStr":
+			return &Function{
+				Name: "toStr",
+				Value: func(args ...Object) (Object, error) {
+					return ToStringObject(fmt.Sprintf("%v", o.Value)), nil
+				},
+			}, nil
+		case "lock":
+			return &Function{
+				Name: "lock",
+				Value: func(args ...Object) (Object, error) {
+					o.Value.Lock()
+					return Undefined, nil
+				},
+			}, nil
+		case "unlock":
+			return &Function{
+				Name: "unlock",
+				Value: func(args ...Object) (Object, error) {
+					o.Value.Unlock()
+					return Undefined, nil
+				},
+			}, nil
+		case "rLock":
+			return &Function{
+				Name: "rLock",
+				Value: func(args ...Object) (Object, error) {
+					o.Value.RLock()
+
+					return Undefined, nil
+				},
+			}, nil
+		case "rUnlock":
+			return &Function{
+				Name: "rUnlock",
+				Value: func(args ...Object) (Object, error) {
+
+					o.Value.RUnlock()
+
+					return Undefined, nil
+				},
+			}, nil
+		case "tryLock":
+			return &Function{
+				Name: "tryLock",
+				Value: func(args ...Object) (Object, error) {
+					return Bool(o.Value.TryLock()), nil
+
+				},
+			}, nil
+		case "tryRLock":
+			return &Function{
+				Name: "tryRLock",
+				Value: func(args ...Object) (Object, error) {
+					return Bool(o.Value.TryRLock()), nil
+				},
+			}, nil
 		}
 
 		rs := o.GetMember(strT)
@@ -8686,7 +8988,7 @@ func (o *OrderedMap) Equal(right Object) bool {
 }
 
 // IsFalsy implements Object interface.
-func (o *OrderedMap) IsFalsy() bool { return o.Value.Len() == 0 }
+func (o *OrderedMap) IsFalsy() bool { return o.Value == nil || o.Value.Len() == 0 }
 
 // CanCall implements Object interface.
 func (*OrderedMap) CanCall() bool { return false }

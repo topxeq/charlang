@@ -19,7 +19,7 @@ c1 := ex.compile(sourceT)
 
 a := 5
 
-ex.goRunCompiled(c1, a)
+ex.threadRunCompiled(c1, a)
 
 sleep(0.15)
 
