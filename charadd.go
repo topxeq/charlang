@@ -15,26 +15,25 @@ import (
 	"time"
 
 	"github.com/topxeq/tk"
-
-	_ "github.com/denisenkom/go-mssqldb"
+	// _ "github.com/denisenkom/go-mssqldb"
+	// _ "github.com/sijms/go-ora/v2"
+	// _ "github.com/go-sql-driver/mysql"
+	// _ "github.com/mattn/go-sqlite3"
 	// _ "github.com/godror/godror"
-	_ "github.com/sijms/go-ora/v2"
-
 	// full version related end
-
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/mattn/go-sqlite3"
 	// ugofmt "github.com/topxeq/charlang/stdlib/fmt"
 )
 
 // global vars
-var VersionG = "0.6.5"
+var VersionG = "0.6.6"
 
 var CodeTextG = ""
 
 var VerboseG = false
 
-var ScriptPathG string
+// var ScriptPathG string
+
+// var RunModeG string
 
 var ServerModeG = false
 
@@ -101,6 +100,74 @@ var namedValueMapG = map[string]interface{}{
 	"minInt":   math.MinInt,
 	"maxFloat": math.MaxFloat64,
 	"minFloat": math.SmallestNonzeroFloat64,
+
+	"http.StatusContinue":           100, // RFC 9110, 15.2.1
+	"http.StatusSwitchingProtocols": 101, // RFC 9110, 15.2.2
+	"http.StatusProcessing":         102, // RFC 2518, 10.1
+	"http.StatusEarlyHints":         103, // RFC 8297
+
+	"http.StatusOK":                   200, // RFC 9110, 15.3.1
+	"http.StatusCreated":              201, // RFC 9110, 15.3.2
+	"http.StatusAccepted":             202, // RFC 9110, 15.3.3
+	"http.StatusNonAuthoritativeInfo": 203, // RFC 9110, 15.3.4
+	"http.StatusNoContent":            204, // RFC 9110, 15.3.5
+	"http.StatusResetContent":         205, // RFC 9110, 15.3.6
+	"http.StatusPartialContent":       206, // RFC 9110, 15.3.7
+	"http.StatusMultiStatus":          207, // RFC 4918, 11.1
+	"http.StatusAlreadyReported":      208, // RFC 5842, 7.1
+	"http.StatusIMUsed":               226, // RFC 3229, 10.4.1
+
+	"http.StatusMultipleChoices":  300, // RFC 9110, 15.4.1
+	"http.StatusMovedPermanently": 301, // RFC 9110, 15.4.2
+	"http.StatusFound":            302, // RFC 9110, 15.4.3
+	"http.StatusSeeOther":         303, // RFC 9110, 15.4.4
+	"http.StatusNotModified":      304, // RFC 9110, 15.4.5
+	"http.StatusUseProxy":         305, // RFC 9110, 15.4.6
+
+	"http.StatusTemporaryRedirect": 307, // RFC 9110, 15.4.8
+	"http.StatusPermanentRedirect": 308, // RFC 9110, 15.4.9
+
+	"http.StatusBadRequest":                   400, // RFC 9110, 15.5.1
+	"http.StatusUnauthorized":                 401, // RFC 9110, 15.5.2
+	"http.StatusPaymentRequired":              402, // RFC 9110, 15.5.3
+	"http.StatusForbidden":                    403, // RFC 9110, 15.5.4
+	"http.StatusNotFound":                     404, // RFC 9110, 15.5.5
+	"http.StatusMethodNotAllowed":             405, // RFC 9110, 15.5.6
+	"http.StatusNotAcceptable":                406, // RFC 9110, 15.5.7
+	"http.StatusProxyAuthRequired":            407, // RFC 9110, 15.5.8
+	"http.StatusRequestTimeout":               408, // RFC 9110, 15.5.9
+	"http.StatusConflict":                     409, // RFC 9110, 15.5.10
+	"http.StatusGone":                         410, // RFC 9110, 15.5.11
+	"http.StatusLengthRequired":               411, // RFC 9110, 15.5.12
+	"http.StatusPreconditionFailed":           412, // RFC 9110, 15.5.13
+	"http.StatusRequestEntityTooLarge":        413, // RFC 9110, 15.5.14
+	"http.StatusRequestURITooLong":            414, // RFC 9110, 15.5.15
+	"http.StatusUnsupportedMediaType":         415, // RFC 9110, 15.5.16
+	"http.StatusRequestedRangeNotSatisfiable": 416, // RFC 9110, 15.5.17
+	"http.StatusExpectationFailed":            417, // RFC 9110, 15.5.18
+	"http.StatusTeapot":                       418, // RFC 9110, 15.5.19 (Unused)
+	"http.StatusMisdirectedRequest":           421, // RFC 9110, 15.5.20
+	"http.StatusUnprocessableEntity":          422, // RFC 9110, 15.5.21
+	"http.StatusLocked":                       423, // RFC 4918, 11.3
+	"http.StatusFailedDependency":             424, // RFC 4918, 11.4
+	"http.StatusTooEarly":                     425, // RFC 8470, 5.2.
+	"http.StatusUpgradeRequired":              426, // RFC 9110, 15.5.22
+	"http.StatusPreconditionRequired":         428, // RFC 6585, 3
+	"http.StatusTooManyRequests":              429, // RFC 6585, 4
+	"http.StatusRequestHeaderFieldsTooLarge":  431, // RFC 6585, 5
+	"http.StatusUnavailableForLegalReasons":   451, // RFC 7725, 3
+
+	"http.StatusInternalServerError":           500, // RFC 9110, 15.6.1
+	"http.StatusNotImplemented":                501, // RFC 9110, 15.6.2
+	"http.StatusBadGateway":                    502, // RFC 9110, 15.6.3
+	"http.StatusServiceUnavailable":            503, // RFC 9110, 15.6.4
+	"http.StatusGatewayTimeout":                504, // RFC 9110, 15.6.5
+	"http.StatusHTTPVersionNotSupported":       505, // RFC 9110, 15.6.6
+	"http.StatusVariantAlsoNegotiates":         506, // RFC 2295, 8.1
+	"http.StatusInsufficientStorage":           507, // RFC 4918, 11.5
+	"http.StatusLoopDetected":                  508, // RFC 5842, 7.2
+	"http.StatusNotExtended":                   510, // RFC 2774, 7
+	"http.StatusNetworkAuthenticationRequired": 511, // RFC 6585, 6
 }
 
 // // first arg of each func is the object reference
@@ -1535,15 +1602,14 @@ func GetObjectMethodFunc(o Object, idxA string) (Object, error) {
 	// tk.Pln("GetObjectMethodFunc:", index, o, o.TypeCode())
 
 	map1, ok := methodFuncMapG[o.TypeCode()]
-
 	if !ok {
-		return nil, NewCommonError("not indexable: %v", o.TypeName())
+		return Undefined, NewCommonError("not indexable: %v", o.TypeName())
 	}
 
 	f1, ok := map1[idxA]
 
 	if !ok {
-		return nil, NewCommonError("method(%v) not found for type: %v", idxA, o.TypeName())
+		return Undefined, NewCommonError("method(%v) not found for type: %v", idxA, o.TypeName())
 	}
 
 	// return &Function{
@@ -1635,6 +1701,8 @@ func NewBaseEnv(varsA map[string]interface{}, additionsA ...Object) *Map {
 	// envT["tk"] = TkFunction
 	envT["argsG"] = Array{}
 	envT["versionG"] = ToStringObject(VersionG)
+	envT["scriptPathG"] = ToStringObject("")
+	envT["runModeG"] = ToStringObject("")
 
 	for k, v := range varsA {
 		envT[k] = ConvertToObject(v)
@@ -1732,7 +1800,7 @@ func NewEvalQuick(globalsA map[string]interface{}, optsA *CompilerOptions, local
 	}
 }
 
-func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.ResponseWriter, req *http.Request, inputA string, argsA []string, parametersA map[string]string, optionsA ...string) (string, error) {
+func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.ResponseWriter, req *http.Request, inputA string, argsA []string, parametersA map[string]string, globalsA map[string]interface{}, optionsA ...string) (string, error) {
 	if tk.IfSwitchExists(optionsA, "-verbose") {
 		tk.Pl("Starting...")
 	}
@@ -1834,6 +1902,9 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 
 	// envT["tk"] = TkFunction
 	(*envT)["argsG"] = ConvertToObject(argsA)
+	(*envT)["versionG"] = ConvertToObject(VersionG)
+	(*envT)["scriptPathG"] = ConvertToObject("")
+	(*envT)["runModeG"] = ConvertToObject("charms")
 
 	(*envT)["requestG"] = ConvertToObject(req)
 	(*envT)["responseG"] = ConvertToObject(res)
@@ -1842,6 +1913,10 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 	(*envT)["basePathG"] = ConvertToObject(tk.GetSwitch(optionsA, "-base=", ""))
 	(*envT)["paraMapG"] = ConvertToObject(parametersA)
 
+	for k, v := range globalsA {
+		(*envT)[k] = ConvertToObject(v)
+	}
+
 	retObjectT, errT := NewVM(bytecodeT).Run(
 		envT,
 		inParasT,
@@ -1849,6 +1924,12 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 
 	if errT != nil {
 		res.Write([]byte(tk.ErrStrf("%v", errT.Error())))
+		tk.Plv(retObjectT)
+
+		if retObjectT == nil {
+			return "", nil
+		}
+
 		return retObjectT.String(), nil
 	}
 

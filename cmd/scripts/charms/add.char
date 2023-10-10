@@ -1,0 +1,22 @@
+// demostrates how to use 'application/x-www-form-urlencoded' for request/response data type
+
+global requestG
+global responseG
+global paraMapG
+
+param (...params)
+
+pl("[%v] paraMapG: %v", getNowStr(), paraMapG)
+
+// pl("[%v] params: %v", getNowStr(), params)
+
+pln("a1:", paraMapG.a1)
+pln("a2:", paraMapG.a2)
+
+result := toInt(paraMapG.a1) + toInt(paraMapG.a2)
+
+// setRespHeader(responseG, "Content-Type", "text/json; charset=utf-8")
+
+writeResp(responseG, toStr(result))
+
+return "TX_END_RESPONSE_XT"

@@ -19,20 +19,18 @@ Charlang is inspired by and based on awesome script language [uGo](https://githu
 
 ## new features
 
-- Added new types such as Byte, Any...
-- Added functions: NewCommonError, NewError and more...
-- Added builtin functions: getRandomInt, writeResp, setRespHeader, writeRespHeader and much more...
-- Added some global variables and resources.
-- Added a new thread-model.
-- Added runtime/dynamically script compiling and running capability.
+- New types such as Byte, Any...
+- New functions: NewCommonError, NewError and more...
+- New builtin functions: getRandomInt, writeResp, setRespHeader, writeRespHeader and much more...
+- New global variables and resources.
+- A new thread-model.
+- Runtime/dynamically script compiling and running capability.
 
 [Go Reference](https://pkg.go.dev/github.com/topxeq/charlang)
 
 **Fibonacci Example**
 
 ```go
-param arg0
-
 var fib
 
 fib = func(x) {
@@ -44,7 +42,7 @@ fib = func(x) {
     return fib(x-1) + fib(x-2)
 }
 
-return fib(arg0)
+return fib(35)
 
 ```
 
@@ -127,21 +125,107 @@ return v
 
 Download the binary release files according to your OS from the website: [Charlang Homepage](http://topget.org/charlang).
 
+### Compile from source code
+
+```shell
+go get -u github.com/topxeq/charlang
+```
+
 ### Start running the shell or scripts
 
 After download, extract the executable from the zip file, put it into a directory, better in the system path.
 
-Then type 'char' in the terminal/console to start the interactive command-line shell interface. Also you can run some scripts using command like 'char test.char', or 'char -example basic.char'.
+Then type 'char' in the terminal/console to start the interactive command-line shell interface. Also you can run some scripts using command like 'char test.char', or 'char -example basic.char'. Here 'test.char' is the source code file(in UTF-8 encoding, plain text format).
 
 Using command-line switch '-view' will show the source code of the script instead of run it.
 
-### Hello world!
+### Various ways to run Charlang scripts
+
+Examples:
+
+- Run from a source file: `char d:\scripts\test.char`
+- Run the text in clipboard as script source: `char -clip`
+- Run from the remote server: `char -remote http://example.com/script/abc.char`
+- Run the example code: `char -example basic.char`
+- Run from Golang source directory: `char -gopath basic.char`
+
+### Get the examples
+
+All the source code examples marked by file names in the document can be retrieved or run by the command line like:
+
+```shell
+C:\Users\Administrator>char -example -view basic.char
+// do simple add operation
+x := 1.2
+y := x + 1
+
+println(x + y)
+
+pass()
+
+C:\Users\Administrator>char -example basic.char
+3.4000000000000004
+
+C:\Users\Administrator>
+```
+
+You can browse to `http://char.topget.org/xc/c/charlang/example/basic.char` to view the source code in an online text editor as well.
+
+### Quick tour
+
+#### Hello world!
+
+file: [helloWorld.char](http://char.topget.org/xc/c/charlang/example/helloWorld.char)
 
 ```go
 pln("Hello world!")
 
 ```
 
-The function 'pln' is the same as 'println' in other languages.
+The function 'pln' is the same as 'println' in other languages. pln formats using the default formats for its operands and writes to standard output.
+
+The result output:
+
+```shell
+C:\Users\Administrator>char -example helloWorld.char
+Hello world!
+
+C:\Users\Administrator>
+
+```
+
+#### Define variables
+
+file: [var.char](http://char.topget.org/xc/c/charlang/example/var.char)
+
+```go
+// define a variable before using it
+var a
+
+a = 1
+
+pln(a)
+
+// assign a value of another type to a
+a = "abc"
+
+pln(a)
+
+// define and assign in one step
+b := true
+
+pln(b)
+
+```
+
+The result:
+
+```shell
+C:\Users\Administrator>char -example var.char
+1
+abc
+true
+
+```
 
 

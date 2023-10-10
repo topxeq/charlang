@@ -3,14 +3,14 @@ var a
 
 a = 1
 
-println(a)
+pln(a)
 
 // assign a value of another type to a
 a = "abc"
 
-println(a)
+pln(a)
 
 // define and assign in one step
 b := true
 
-println(b)
+pln(b)

@@ -7750,7 +7750,23 @@ func (o *HttpReq) IndexGet(index Object) (Object, error) {
 		}
 
 		// return nil, ErrIndexOutOfBounds
-		return GetObjectMethodFunc(o, strT)
+		var errT error
+
+		rs, errT = GetObjectMethodFunc(o, strT)
+
+		if errT == nil && !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		reqT := o.Value
+
+		rs1 := tk.ReflectGetMember(reqT, strT)
+
+		if tk.IsError(rs1) {
+			return Undefined, rs1.(error)
+		}
+
+		return ConvertToObject(rs1), nil
 	}
 
 	return nil, NewCommonError("not indexable: %v", o.TypeName())

@@ -1,0 +1,53 @@
+// demostrates how to use JSON for request/response data type
+
+global requestG
+global responseG
+global paraMapG
+global reqNameG
+
+param (...params)
+
+pl("[%v] %#v %v paraMapG: %v", getNowStr(), requestG.RequestURI, reqNameG, paraMapG)
+
+// pl("[%v] params: %v", getNowStr(), params)
+
+contentTypeT := getReqHeader(requestG, "Content-Type")
+
+plt(contentTypeT)
+
+if toLower(contentTypeT) == "application/json" {
+	acceptT := getReqHeader(requestG, "Accept")
+	plt(acceptT)
+
+	setRespHeader(responseG, "Content-Type", "text/json; charset=utf-8")
+	writeRespHeader(responseG, "http.StatusOK ") // 200
+
+	if !strContains(acceptT, "application/json") {
+		writeResp(responseG, errStrf("unsupported response Content-Type: %v", acceptT))
+		return "TX_END_RESPONSE_XT"
+	}
+
+	bodyT := getReqBody(requestG)
+
+	// plt(bodyT)
+
+	paraObjT := fromJson(bodyT)
+
+	if isErr(paraObjT) {
+		writeResp(responseG, genJsonResp("fail", spr("failed to parse JSON content: %v", paraObjT), requestG))
+		return "TX_END_RESPONSE_XT"
+	}
+
+	plt(paraObjT)
+
+	pln("a1:", paraObjT.a1)
+	pln("a2:", paraObjT.a2)
+	
+	result := toInt(paraObjT.a1) * toInt(paraObjT.a2)
+	
+	writeResp(responseG, genJsonResp("success", toStr(result), requestG))
+	return "TX_END_RESPONSE_XT"
+}
+
+writeResp(responseG, errStrf("%v", "unsupported Content-Type"))
+return "TX_END_RESPONSE_XT"

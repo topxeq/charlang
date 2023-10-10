@@ -37,6 +37,8 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinStrContains
+	BuiltinGetNowStr
 	BuiltinLock
 	BuiltinUnlock
 	BuiltinTryLock
@@ -95,6 +97,7 @@ const (
 	BuiltinGel
 	BuiltinGetReqBody
 	BuiltinGetReqHeader
+	BuiltinWriteRespHeader
 	BuiltinSetRespHeader
 	BuiltinParseReqForm
 	BuiltinParseReqFormEx
@@ -265,6 +268,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	"dumpVar":   BuiltinDumpVar,
 	"debugInfo": BuiltinDebugInfo,
 
+	// infrastructure related
+	"globals": BuiltinGlobals,
+
+	"len": BuiltinLen,
+
 	// data type related
 	"typeCode":  BuiltinTypeCode,
 	"typeName":  BuiltinTypeName,
@@ -336,6 +344,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strTrimRight":  BuiltinStrTrimRight,
 	"toUpper":       BuiltinToUpper,
 	"toLower":       BuiltinToLower,
+	"strContains":   BuiltinStrContains,
 	"strReplace":    BuiltinStrReplace,
 	"strSplitLines": BuiltintStrSplitLines,
 
@@ -359,6 +368,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mathSqrt": BuiltinMathSqrt,
 
 	// time related
+	"getNowStr": BuiltinGetNowStr,
 
 	// control related
 	"exit": BuiltinExit,
@@ -486,14 +496,16 @@ var BuiltinsMap = map[string]BuiltinType{
 	"urlExists": BuiltinUrlExists,
 
 	// server/service related
-	"getReqHeader":   BuiltinGetReqHeader,
-	"getReqBody":     BuiltinGetReqBody,
-	"parseReqForm":   BuiltinParseReqForm,
-	"parseReqFormEx": BuiltinParseReqFormEx,
-	"setRespHeader":  BuiltinSetRespHeader,
-	"writeResp":      BuiltinWriteResp,
-	"genJSONResp":    BuiltinGenJSONResp,
-	"genJsonResp":    BuiltinGenJSONResp,
+	"getReqHeader":    BuiltinGetReqHeader,
+	"getReqBody":      BuiltinGetReqBody,
+	"parseReqForm":    BuiltinParseReqForm,
+	"parseReqFormEx":  BuiltinParseReqFormEx,
+	"writeRespHeader": BuiltinWriteRespHeader,
+	"setRespHeader":   BuiltinSetRespHeader,
+	"writeResp":       BuiltinWriteResp,
+	"genJSONResp":     BuiltinGenJSONResp,
+	"genJsonResp":     BuiltinGenJSONResp,
+	"genResp":         BuiltinGenJSONResp,
 
 	// ssh related
 	"sshUpload": BuiltinSshUpload,
@@ -528,7 +540,6 @@ var BuiltinsMap = map[string]BuiltinType{
 	"copy":          BuiltinCopy,
 	"repeat":        BuiltinRepeat,
 	"contains":      BuiltinContains,
-	"len":           BuiltinLen,
 	"sort":          BuiltinSort,
 	"sortReverse":   BuiltinSortReverse,
 	"error":         BuiltinError,
@@ -545,7 +556,6 @@ var BuiltinsMap = map[string]BuiltinType{
 	"printf":        BuiltinPrintf,
 	"println":       BuiltinPrintln,
 	"sprintf":       BuiltinSprintf,
-	"globals":       BuiltinGlobals,
 
 	"isError":     BuiltinIsError,
 	"isInt":       BuiltinIsInt,
@@ -631,6 +641,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "len",
 		Value:   funcPORO(builtinLenFunc),
 		ValueEx: funcPOROEx(builtinLenFunc),
+	},
+	BuiltinGlobals: &BuiltinFunction{
+		Name:    "globals",
+		Value:   CallExAdapter(builtinGlobalsFunc),
+		ValueEx: builtinGlobalsFunc,
 	},
 
 	// :makeArray is a private builtin function to help destructuring array assignments
@@ -943,6 +958,12 @@ var BuiltinObjects = [...]Object{
 		ValueEx: FnASRSex(strings.ToLower),
 		Remark:  `usage: lowerStr := toLower("abD")`,
 	},
+	BuiltinStrContains: &BuiltinFunction{
+		Name:    "strContains",
+		Value:   FnASSRB(strings.Contains),
+		ValueEx: FnASSRBex(strings.Contains),
+		Remark:  `usage: if strContains("abD", "bD") {...}`,
+	},
 	BuiltinStrReplace: &BuiltinFunction{
 		Name:    "strReplace",
 		Value:   FnASVsRS(tk.StringReplace),
@@ -1067,6 +1088,13 @@ var BuiltinObjects = [...]Object{
 		Name:    "getRandomStr",
 		Value:   CallExAdapter(builtinGetRandomStrFunc),
 		ValueEx: builtinGetRandomStrFunc,
+	},
+
+	// time related
+	BuiltinGetNowStr: &BuiltinFunction{
+		Name:    "getNowStr",
+		Value:   FnARS(tk.GetNowTimeStringFormal),
+		ValueEx: FnARSex(tk.GetNowTimeStringFormal),
 	},
 
 	// compare related
@@ -1498,6 +1526,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinGetReqBodyFunc),
 		ValueEx: builtinGetReqBodyFunc,
 	},
+	BuiltinWriteRespHeader: &BuiltinFunction{
+		Name:    "writeRespHeader",
+		Value:   CallExAdapter(builtinWriteRespHeaderFunc),
+		ValueEx: builtinWriteRespHeaderFunc,
+	},
 	BuiltinSetRespHeader: &BuiltinFunction{
 		Name:    "setRespHeader",
 		Value:   CallExAdapter(builtinSetRespHeaderFunc),
@@ -1639,11 +1672,6 @@ var BuiltinObjects = [...]Object{
 		Name:    "sprintf",
 		Value:   CallExAdapter(builtinSprintfFunc),
 		ValueEx: builtinSprintfFunc,
-	},
-	BuiltinGlobals: &BuiltinFunction{
-		Name:    "globals",
-		Value:   CallExAdapter(builtinGlobalsFunc),
-		ValueEx: builtinGlobalsFunc,
 	},
 
 	// char add start @
@@ -2668,6 +2696,31 @@ func FnASRSex(fn func(string) string) CallableExFunc {
 
 		rs := fn(c.Get(0).String())
 		return ToStringObject(rs), nil
+	}
+}
+
+// like strings.Contains
+func FnASSRB(fn func(string, string) bool) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASSRBex(fn func(string, string) bool) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ConvertToObject(rs), nil
 	}
 }
 
@@ -3973,9 +4026,27 @@ func builtinFromJSONFunc(c Call) (Object, error) {
 		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
-	jsonTextT := args[0].String()
+	var jsonTextT string
 
-	jObjT := tk.FromJSONWithDefault(jsonTextT, nil)
+	objT := args[0]
+
+	switch nv := objT.(type) {
+	case String:
+		jsonTextT = nv.Value
+	case Bytes:
+		jsonTextT = string(nv)
+	case Chars:
+		jsonTextT = string(nv)
+	default:
+		jsonTextT = tk.ToStr(ConvertFromObject(args[0]))
+
+	}
+
+	jObjT, errT := tk.FromJSON(jsonTextT)
+
+	if errT != nil {
+		return NewCommonError("%v", errT), nil
+	}
 
 	cObjT := ConvertToObject(jObjT)
 
@@ -4834,6 +4905,12 @@ func builtinToIntFunc(c Call) (Object, error) {
 
 	if len(args) < 1 {
 		return Int(0), nil
+	}
+
+	if len(args) > 1 {
+		rsT := tk.ToInt(ConvertFromObject(args[0]), ToGoIntQuick(args[1]))
+
+		return Int(rsT), nil
 	}
 
 	rsT := tk.ToInt(ConvertFromObject(args[0]), 0)
@@ -5826,12 +5903,12 @@ func builtinGenJSONRespFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
-	v0, ok := args[0].(*HttpReq)
+	v0, ok := args[2].(*HttpReq)
 	if !ok {
 		return NewCommonErrorWithPos(c, "invalid param type: %T(%v)", args[0], args[0]), nil
 	}
 
-	rsT := tk.GenerateJSONPResponseWithMore(args[1].String(), args[2].String(), v0.Value, ObjectsToS(args[3:])...)
+	rsT := tk.GenerateJSONPResponseWithMore(args[0].String(), args[1].String(), v0.Value, ObjectsToS(args[3:])...)
 
 	return ToStringObject(rsT), nil
 }
@@ -6070,6 +6147,40 @@ func builtinMathSqrtFunc(c Call) (Object, error) {
 
 func builtinHttpHandlerFunc(c Call) (Object, error) {
 	return NewHttpHandler(c)
+}
+
+func builtinWriteRespHeaderFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v, ok := args[0].(*HttpResp)
+	if !ok {
+		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	var statusT int = 200
+
+	switch nv := args[1].(type) {
+	case Int:
+		statusT = int(nv)
+	case String:
+		v1, ok := namedValueMapG[nv.Value]
+
+		if !ok {
+			return NewCommonError("status code not found: (%T)%v", nv.Value, nv.Value), nil
+		}
+
+		statusT = tk.ToInt(v1)
+	default:
+		return NewCommonError("invalid parameter 2 type: (%T)%v", args[1], args[1]), nil
+	}
+
+	v.Value.WriteHeader(statusT)
+
+	return Undefined, nil
 }
 
 // char add end

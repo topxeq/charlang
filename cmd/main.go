@@ -28,10 +28,12 @@ import (
 	charex "github.com/topxeq/charlang/stdlib/ex"
 	// charfmt "github.com/topxeq/charlang/stdlib/fmt"
 	"github.com/topxeq/tk"
-	// _ "github.com/denisenkom/go-mssqldb"
+
+	_ "github.com/denisenkom/go-mssqldb"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/sijms/go-ora/v2"
 	// _ "github.com/godror/godror"
-	// _ "github.com/go-sql-driver/mysql"
-	// _ "github.com/mattn/go-sqlite3"
 )
 
 // for charms
@@ -560,7 +562,7 @@ var (
 
 // 	if filePath != "" {
 // 		if tk.IfSwitchExistsWhole(os.Args, "-gopath") {
-// 			filePath = filepath.Join(tk.GetEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "char", "scripts", filePath)
+// 			filePath = filepath.Join(tk.GetEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "scripts", filePath)
 // 		}
 // 		if timeout > 0 {
 // 			var c func()
@@ -640,7 +642,7 @@ func runInteractiveShell() int {
 
 	// evalT := charlang.NewEval(opts, scriptGlobals)
 
-	evalT := charlang.NewEvalQuick(map[string]interface{}{"argsG": charlang.ConvertToObject(os.Args[1:])}, charlang.MainCompilerOptions)
+	evalT := charlang.NewEvalQuick(map[string]interface{}{"versionG": charlang.VersionG, "argsG": os.Args, "scriptPathG": "", "runModeG": "repl"}, charlang.MainCompilerOptions)
 
 	var following bool
 	var source string
@@ -776,6 +778,7 @@ func startHttpsServer(portA string) {
 
 func doServer() {
 	charlang.ServerModeG = true
+	// charlang.RunModeG = "server"
 
 	portG = tk.GetSwitch(os.Args, "-port=", portG)
 	sslPortG = tk.GetSwitch(os.Args, "-sslPort=", sslPortG)
@@ -876,11 +879,13 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 		fileNameT += ".char"
 	}
 
+	fullPathT := filepath.Join(basePathG, fileNameT)
+
 	if verboseG {
-		tk.Pl("[%v] file path: %#v", tk.GetNowTimeStringFormal(), filepath.Join(basePathG, fileNameT))
+		tk.Pl("[%v] file path: %#v", tk.GetNowTimeStringFormal(), fullPathT)
 	}
 
-	fcT := tk.LoadStringFromFile(filepath.Join(basePathG, fileNameT))
+	fcT := tk.LoadStringFromFile(fullPathT)
 	if tk.IsErrStr(fcT) {
 		res.Write([]byte(tk.ErrStrf("操作失败：%v", tk.GetErrStr(fcT))))
 		return
@@ -889,7 +894,7 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 	// paraMapT["_reqHost"] = req.Host
 	// paraMapT["_reqInfo"] = fmt.Sprintf("%#v", req)
 
-	toWriteT, errT = charlang.RunScriptOnHttp(fcT, nil, res, req, paraMapT["input"], nil, paraMapT, "-base="+basePathG)
+	toWriteT, errT = charlang.RunScriptOnHttp(fcT, nil, res, req, paraMapT["input"], nil, paraMapT, map[string]interface{}{"scriptPathG": fullPathT, "runModeG": "charms", "basePathG": basePathG}, "-base="+basePathG)
 
 	if errT != nil {
 		res.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -924,6 +929,8 @@ func runArgs(argsA ...string) interface{} {
 	}
 
 	scriptT := tk.GetParameterByIndexWithDefaultValue(argsT, 1, "")
+
+	scriptPathT := ""
 
 	// GUI related start
 
@@ -1154,6 +1161,7 @@ func runArgs(argsA ...string) interface{} {
 	}
 
 	ifRunT := tk.IfSwitchExistsWhole(argsT, "-run")
+	ifExampleT := tk.IfSwitchExistsWhole(argsT, "-example")
 	ifGoPathT := tk.IfSwitchExistsWhole(argsT, "-gopath")
 	ifLocalT := tk.IfSwitchExistsWhole(argsT, "-local")
 	ifAppPathT := tk.IfSwitchExistsWhole(argsT, "-apppath")
@@ -1178,7 +1186,7 @@ func runArgs(argsA ...string) interface{} {
 	if ifInExeT && inExeCodeT != "" && !tk.IfSwitchExistsWhole(os.Args, "-noin") {
 		fcT = inExeCodeT
 
-		charlang.ScriptPathG = ""
+		scriptPathT = ""
 	} else if cmdT != "" {
 		fcT = cmdT
 
@@ -1186,11 +1194,11 @@ func runArgs(argsA ...string) interface{} {
 			fcT = tk.UrlDecode(fcT)
 		}
 
-		charlang.ScriptPathG = ""
+		scriptPathT = ""
 		// } else if ifMagicT {
 		// 	fcT = gox.GetMagic(magicNumberT)
 
-		// 	charlang.ScriptPathG = ""
+		// 	scriptPathT = ""
 	} else if ifRunT {
 		if tk.IfSwitchExistsWhole(os.Args, "-urlDecode") {
 			fcT = tk.UrlDecode(scriptT)
@@ -1199,19 +1207,24 @@ func runArgs(argsA ...string) interface{} {
 		}
 		tk.Pl("run cmd(%v)", fcT)
 
-		charlang.ScriptPathG = ""
+		scriptPathT = ""
 	} else if ifRemoteT {
-		charlang.ScriptPathG = scriptT
+		scriptPathT = scriptT
 		fcT = tk.DownloadPageUTF8(scriptT, nil, "", 30)
+
+	} else if ifExampleT {
+		scriptPathT = "http://char.topget.org/xc/t/c/charlang/example/" + scriptT
+
+		fcT = tk.DownloadPageUTF8("http://char.topget.org/xc/t/c/charlang/example/"+scriptT, nil, "", 30)
 
 	} else if ifClipT {
 		fcT = tk.GetClipText()
 
-		charlang.ScriptPathG = ""
+		scriptPathT = ""
 	} else if ifEmbedT {
 		fcT = charlang.CodeTextG
 
-		charlang.ScriptPathG = ""
+		scriptPathT = ""
 	} else if ifCloudT {
 		basePathT := tk.EnsureBasePathInHome("char")
 
@@ -1223,7 +1236,7 @@ func runArgs(argsA ...string) interface{} {
 			cfgStrT := tk.Trim(tk.LoadStringFromFile(cfgPathT))
 
 			if !tk.IsErrorString(cfgStrT) {
-				charlang.ScriptPathG = cfgStrT + scriptT
+				scriptPathT = cfgStrT + scriptT
 
 				fcT = tk.DownloadPageUTF8(cfgStrT+scriptT, nil, "", 30)
 
@@ -1233,7 +1246,7 @@ func runArgs(argsA ...string) interface{} {
 		}
 
 		if !gotT {
-			charlang.ScriptPathG = scriptT
+			scriptPathT = scriptT
 			fcT = tk.DownloadPageUTF8(scriptT, nil, "", 30)
 		}
 
@@ -1245,15 +1258,15 @@ func runArgs(argsA ...string) interface{} {
 			return tk.Errf("failed to get script from SSH: %v", tk.GetErrorString(fcT))
 		}
 
-		charlang.ScriptPathG = ""
+		scriptPathT = ""
 	} else if ifGoPathT {
-		charlang.ScriptPathG = filepath.Join(tk.GetEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "char", "scripts", scriptT)
+		scriptPathT = filepath.Join(tk.GetEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "scripts", scriptT)
 
-		fcT = tk.LoadStringFromFile(charlang.ScriptPathG)
+		fcT = tk.LoadStringFromFile(scriptPathT)
 	} else if ifAppPathT {
-		charlang.ScriptPathG = filepath.Join(tk.GetApplicationPath(), scriptT)
+		scriptPathT = filepath.Join(tk.GetApplicationPath(), scriptT)
 
-		fcT = tk.LoadStringFromFile(charlang.ScriptPathG)
+		fcT = tk.LoadStringFromFile(scriptPathT)
 	} else if ifLocalT {
 		localPathT := charlang.GetCfgString("localScriptPath.cfg")
 
@@ -1267,11 +1280,11 @@ func runArgs(argsA ...string) interface{} {
 		// 	tk.Pl("Try to load script from %v", filepath.Join(localPathT, scriptT))
 		// }
 
-		charlang.ScriptPathG = filepath.Join(localPathT, scriptT)
+		scriptPathT = filepath.Join(localPathT, scriptT)
 
-		fcT = tk.LoadStringFromFile(charlang.ScriptPathG)
+		fcT = tk.LoadStringFromFile(scriptPathT)
 	} else {
-		charlang.ScriptPathG = scriptT
+		scriptPathT = scriptT
 		fcT = tk.LoadStringFromFile(scriptT)
 
 	}
@@ -1363,7 +1376,7 @@ func runArgs(argsA ...string) interface{} {
 	}
 
 	if ifOpenT {
-		tk.RunWinFileWithSystemDefault(charlang.ScriptPathG)
+		tk.RunWinFileWithSystemDefault(scriptPathT)
 
 		return nil
 	}
@@ -1523,13 +1536,12 @@ func runArgs(argsA ...string) interface{} {
 	// envT["tk"] = charlang.TkFunction
 	envT["argsG"] = charlang.ConvertToObject(os.Args)
 	envT["versionG"] = charlang.ToStringObject(charlang.VersionG)
+	envT["scriptPathG"] = charlang.ToStringObject(scriptPathT)
+	envT["runModeG"] = charlang.ToStringObject("script")
 
 	vmT := charlang.NewVM(bytecodeT)
 
-	retT, errT := vmT.Run(
-		envT,
-		// inParasT,
-	)
+	retT, errT := vmT.Run(envT) // inParasT,
 
 	if errT != nil {
 

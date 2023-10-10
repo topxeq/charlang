@@ -1,0 +1,32 @@
+// declare predefined global variable to use
+// argsG is the command-line arguments while running the current script
+// for example, if the command-line is as: char -example fib.char 35
+// argsG will be an array with 4 items(all string type): ["char", "-example", "fib.char", "35"]
+global argsG
+
+var fib
+
+fib = func(x) {
+    if x < 2 {
+        return x
+    }
+
+    return fib(x-1) + fib(x-2)
+}
+
+countT := toInt(getParam(argsG, 2), 35)
+pln("count:", countT)
+
+t1 := time()
+// pln(t1)
+
+rsT := fib(countT)
+
+t2 := time()
+// pln(t2)
+
+diffT := t2 - t1
+
+pln("time elapsed:", diffT / 1000000, "ms")
+
+pln(rsT)

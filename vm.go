@@ -804,6 +804,7 @@ func (vm *VM) initGlobals(globals Object) {
 	if globals == nil {
 		globals = Map{}
 	}
+
 	vm.globals = globals
 }
 

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title></title>
+<script>
+    function cal1Click() {
+        fetch("/charms/add",
+        {
+            method: "POST",
+            mode: "cors",
+            credentials: 'include',
+            headers: {
+                'Accept': 'text/plain',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: "a1=" + encodeURIComponent(document.getElementById("input1").value) + "&a2=" + encodeURIComponent(document.getElementById("input2").value)
+        })
+        .then(function(res){
+            return res.text(); 
+        })
+        .then(function(data){
+            console.log( JSON.stringify( data ) ); 
+
+            document.getElementById("resultSpan1").innerHTML = " = " + data;
+        })
+
+    }
+
+    function cal2Click() {
+        fetch("/charms/mul",
+        {
+            method: "POST",
+            // mode: "cors",
+            // credentials: 'include',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({"a1": document.getElementById("input1").value, "a2": document.getElementById("input2").value}),
+        })
+        .then(function(res){
+            return res.json(); 
+        })
+        .then(function(data){
+            console.log( data ); 
+
+            if (data.Status != "success") {
+                document.getElementById("resultSpan2").innerHTML = ' = <span style="color: #DD1111;">' + data.Value + '</span>';
+                return;
+            }
+
+            document.getElementById("resultSpan2").innerHTML = " = " + data.Value;
+        })
+
+    }
+
+    // window.onload = function() {};
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("document loaded");
+    });
+</script>
+</head>
+<body>
+<div id="div1">
+    <input id="input1" type="number" value="2">
+    <span> + </span>
+    <input id="input2" type="number" value="3">
+    <span id="resultSpan1"> =  </span>
+    <button onclick="cal1Click()">Cal</button>
+</div>
+<div id="div2" style="margin-top: 2.0rem;">
+    <input id="input3" type="number" value="7.2">
+    <span> * </span>
+    <input id="input4" type="number" value="16">
+    <span id="resultSpan2"> =  </span>
+    <button onclick="cal2Click()">Cal</button>
+</div>
+</body>
+</html>
