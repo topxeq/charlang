@@ -452,6 +452,33 @@ func ToGoIntQuick(o Object) int {
 	return 0
 }
 
+func ToGoIntWithDefault(o Object, defaultA int) int {
+	switch o := o.(type) {
+	case Byte:
+		return int(o)
+	case Char:
+		return int(o)
+	case Int:
+		return int(o)
+	case Uint:
+		return int(o)
+	case Float:
+		return int(o)
+	case Bool:
+		if o {
+			return 1
+		} else {
+			return 0
+		}
+	case String:
+		if vv, err := strconv.ParseInt(o.Value, 0, 0); err == nil {
+			return int(vv)
+		}
+	}
+
+	return defaultA
+}
+
 func ToIntQuick(o Object) int {
 	switch o := o.(type) {
 	case Int:

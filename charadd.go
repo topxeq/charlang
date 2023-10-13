@@ -25,7 +25,7 @@ import (
 )
 
 // global vars
-var VersionG = "0.6.6"
+var VersionG = "0.6.8"
 
 var CodeTextG = ""
 
@@ -47,6 +47,39 @@ var MainCompilerOptions *CompilerOptions = nil
 
 var BigIntZero = big.NewInt(0)
 var BigFloatZero = big.NewFloat(0)
+
+var RegiCountG int = 30
+
+type GlobalContext struct {
+	SyncMap   tk.SyncMap
+	SyncQueue tk.SyncQueue
+	SyncStack tk.SyncStack
+
+	SyncSeq tk.Seq
+
+	Vars map[string]interface{}
+
+	Regs []interface{}
+
+	VerboseLevel int
+}
+
+var GlobalsG *GlobalContext
+
+func init() {
+	GlobalsG = &GlobalContext{SyncMap: *tk.NewSyncMap(), SyncQueue: *tk.NewSyncQueue(), SyncStack: *tk.NewSyncStack(), SyncSeq: *tk.NewSeq()}
+
+	GlobalsG.Regs = make([]interface{}, RegiCountG)
+
+	GlobalsG.Vars = make(map[string]interface{}, 0)
+
+	GlobalsG.Vars["backQuote"] = "`"
+
+	GlobalsG.Vars["timeFormat"] = "2006-01-02 15:04:05"
+
+	GlobalsG.Vars["timeFormatCompact"] = "20060102150405"
+
+}
 
 // var TkFunction = &Function{
 // 	Name: "tk",
@@ -1371,6 +1404,68 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
+	321: map[string]*Function{ // *HttpReq
+		"toStr": &Function{
+			Name: "toStr",
+			Value: func(args ...Object) (Object, error) {
+				return ToStringObject(fmt.Sprintf("%v", (*http.Request)(args[0].(*HttpReq).Value))), nil
+			},
+		},
+		"saveFormFile": &Function{
+			Name: "saveFormFile",
+			ValueEx: func(c Call) (Object, error) {
+				objT := c.This.(*HttpReq)
+
+				argsA := c.GetArgs()
+
+				if len(argsA) < 3 {
+					return NewCommonErrorWithPos(c, "not enough parameters"), nil
+				}
+
+				arg0 := argsA[0].String()
+				arg1 := argsA[1].String()
+				arg2 := argsA[2].String()
+
+				argsT := ObjectsToS(argsA[3:])
+
+				formFile1, headerT, errT := objT.Value.FormFile(arg0)
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "failed to get upload file: %v", errT), nil
+				}
+
+				defer formFile1.Close()
+				tk.Pl("file name : %#v", headerT.Filename)
+
+				defaultExtT := tk.GetSwitch(argsT, "-defaultExt=", "")
+
+				baseT := tk.RemoveFileExt(filepath.Base(headerT.Filename))
+				extT := filepath.Ext(headerT.Filename)
+
+				if extT == "" {
+					extT = defaultExtT
+				}
+
+				arg2 = strings.Replace(arg2, "TX_fileName_XT", baseT, -1)
+				arg2 = strings.Replace(arg2, "TX_fileExt_XT", extT, -1)
+
+				destFile1, errT := os.CreateTemp(arg1, arg2) //"pic*.png")
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "failed to save upload file: %v", errT), nil
+				}
+
+				defer destFile1.Close()
+
+				_, errT = io.Copy(destFile1, formFile1)
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "internal server error: %v", errT), nil
+				}
+
+				return ToStringObject(tk.GetLastComponentOfFilePath(destFile1.Name())), nil
+				// return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+
+			},
+		},
+	},
 	325: map[string]*Function{ // *HttpHandler
 		"toStr": &Function{
 			Name: "toStr",
@@ -1829,8 +1924,10 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 	// }
 
 	if reqT == "" {
-		if tk.StartsWith(req.RequestURI, "/charms") {
+		if strings.HasPrefix(req.RequestURI, "/charms") {
 			reqT = req.RequestURI[7:]
+		} else if strings.HasPrefix(req.RequestURI, "/dc") {
+			reqT = req.RequestURI[3:]
 		}
 	}
 
@@ -1909,6 +2006,7 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 	(*envT)["requestG"] = ConvertToObject(req)
 	(*envT)["responseG"] = ConvertToObject(res)
 	(*envT)["reqNameG"] = ConvertToObject(reqT)
+	(*envT)["reqUriG"] = ConvertToObject(req.RequestURI)
 	(*envT)["inputG"] = ConvertToObject(inputA)
 	(*envT)["basePathG"] = ConvertToObject(tk.GetSwitch(optionsA, "-base=", ""))
 	(*envT)["paraMapG"] = ConvertToObject(parametersA)

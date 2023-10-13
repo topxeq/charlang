@@ -6084,6 +6084,24 @@ func (o *Any) IndexGet(index Object) (Object, error) {
 
 		if !tk.IsError(rs5) {
 			rs6 := ConvertToObject(rs5)
+			// tk.Plo(rs6)
+			if nv, ok := rs6.(*Any); ok {
+				if strings.HasPrefix(nv.OriginalType, "func(") {
+					rs2 := &Function{
+						Name: strT,
+						ValueEx: func(c Call) (Object, error) {
+							rs3 := tk.ReflectCallMethodCompact(o.Value, strT, ObjectsToI(c.GetArgs())...)
+
+							return ConvertToObject(rs3), nil
+						},
+					}
+
+					o.SetMember(strT, rs2)
+
+					return rs2, nil
+
+				}
+			}
 			o.SetMember(strT, rs6)
 			return rs6, nil
 		}
@@ -7762,11 +7780,26 @@ func (o *HttpReq) IndexGet(index Object) (Object, error) {
 
 		rs1 := tk.ReflectGetMember(reqT, strT)
 
-		if tk.IsError(rs1) {
-			return Undefined, rs1.(error)
+		if !tk.IsError(rs1) {
+			return ConvertToObject(rs1), nil
 		}
 
-		return ConvertToObject(rs1), nil
+		rs2 := tk.ReflectGetMethod(reqT, strT)
+
+		if !tk.IsError(rs2) {
+			rs2 := &Function{
+				Name: strT,
+				ValueEx: func(c Call) (Object, error) {
+					rs3 := tk.ReflectCallMethodCompact(o.Value, strT, ObjectsToI(c.GetArgs())...)
+
+					return ConvertToObject(rs3), nil
+				},
+			}
+
+			return rs2, nil
+		}
+
+		return NewCommonError("%v", rs2), nil // rs1.(error)
 	}
 
 	return nil, NewCommonError("not indexable: %v", o.TypeName())

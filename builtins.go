@@ -9,6 +9,7 @@ import (
 	"io"
 	"math"
 	"math/big"
+	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -37,6 +38,24 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinStrIn
+	BuiltinEnsureMakeDirs
+	BuiltinExtractFileDir
+	BuiltinCheckToken
+	BuiltinEncryptText
+	BuiltinDecryptText
+	BuiltinHtmlEncode
+	BuiltinHtmlDecode
+	BuiltinServeFile
+	BuiltinGetFileAbs
+	BuiltinGetFileExt
+	BuiltinGetMimeType
+	BuiltinRenderMarkdown
+	BuiltinIsDir
+	BuiltinStrStartsWith
+	BuiltinStrEndsWith
+	BuiltinStrSplit
+	BuiltinGenToken
 	BuiltinStrContains
 	BuiltinGetNowStr
 	BuiltinLock
@@ -109,6 +128,7 @@ const (
 	BuiltinSeq
 	BuiltinIsNil
 	BuiltinIsNilOrEmpty
+	BuiltinIsNilOrErr
 	BuiltinGetValue
 	BuiltinSetValue
 	BuiltinGetMember
@@ -299,6 +319,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"isNil":        BuiltinIsNil,
 	"isNilOrEmpty": BuiltinIsNilOrEmpty,
+	"isNilOrErr":   BuiltinIsNilOrErr,
 
 	// bitwise related
 	"bitNot": BuiltinBitNot,
@@ -345,8 +366,13 @@ var BuiltinsMap = map[string]BuiltinType{
 	"toUpper":       BuiltinToUpper,
 	"toLower":       BuiltinToLower,
 	"strContains":   BuiltinStrContains,
+	"strStartsWith": BuiltinStrStartsWith,
+	"strEndsWith":   BuiltinStrEndsWith,
 	"strReplace":    BuiltinStrReplace,
+	"strSplit":      BuiltinStrSplit,
 	"strSplitLines": BuiltintStrSplitLines,
+
+	"strIn": BuiltinStrIn,
 
 	"strFindDiffPos": BuiltintStrFindDiffPos, // return -1 if 2 strings are identical
 
@@ -426,8 +452,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"writeStr": BuiltintWriteStr,
 
 	// encode/decode related
-	"urlEncode": BuiltinUrlEncode,
-	"urlDecode": BuiltinUrlDecode,
+	"urlEncode":  BuiltinUrlEncode,
+	"urlDecode":  BuiltinUrlDecode,
+	"htmlEncode": BuiltinHtmlEncode,
+	"htmlDecode": BuiltinHtmlDecode,
 
 	"toJSON":   BuiltinToJSON,
 	"toJson":   BuiltinToJSON,
@@ -472,13 +500,23 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getTempDir": BuiltinGetTempDir,
 
 	// dir/path related
-	"joinPath":    BuiltinJoinPath, // join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
+	"joinPath": BuiltinJoinPath, // join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
+
+	"isDir": BuiltinIsDir,
+
+	"ensureMakeDirs": BuiltinEnsureMakeDirs,
+
 	"getFileList": BuiltinGetFileList,
 	"genFileList": BuiltinGetFileList,
 
 	// file related
 	"fileExists":   BuiltinFileExists,
 	"ifFileExists": BuiltinFileExists,
+
+	"getFileAbs": BuiltinGetFileAbs,
+	"getFileExt": BuiltinGetFileExt,
+
+	"extractFileDir": BuiltinExtractFileDir,
 
 	"removeFile": BuiltinRemoveFile,
 
@@ -507,6 +545,17 @@ var BuiltinsMap = map[string]BuiltinType{
 	"genJsonResp":     BuiltinGenJSONResp,
 	"genResp":         BuiltinGenJSONResp,
 
+	"serveFile": BuiltinServeFile,
+
+	"getMimeType": BuiltinGetMimeType,
+
+	// security related
+	"genToken":   BuiltinGenToken,
+	"checkToken": BuiltinCheckToken,
+
+	"encryptText": BuiltinEncryptText,
+	"decryptText": BuiltinDecryptText,
+
 	// ssh related
 	"sshUpload": BuiltinSshUpload,
 
@@ -531,6 +580,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	// misc related
 	"getSeq": BuiltinGetSeq,
 	"pass":   BuiltinPass,
+
+	"renderMarkdown": BuiltinRenderMarkdown,
 
 	// "sortByFunc": BuiltinSortByFunc,
 
@@ -834,6 +885,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinIsNilOrEmptyFunc),
 		ValueEx: builtinIsNilOrEmptyFunc,
 	},
+	BuiltinIsNilOrErr: &BuiltinFunction{
+		Name:    "isNilOrErr", // usage: isNilOrErr(err1), check if the argument is nil, error object, or TXERROR string
+		Value:   CallExAdapter(builtinIsNilOrErrFunc),
+		ValueEx: builtinIsNilOrErrFunc,
+	},
 	BuiltinIsUndefined: &BuiltinFunction{
 		Name:    "isUndefined",
 		Value:   funcPORO(builtinIsUndefinedFunc),
@@ -964,10 +1020,27 @@ var BuiltinObjects = [...]Object{
 		ValueEx: FnASSRBex(strings.Contains),
 		Remark:  `usage: if strContains("abD", "bD") {...}`,
 	},
+	BuiltinStrStartsWith: &BuiltinFunction{
+		Name:    "strStartsWith",
+		Value:   FnASSRB(strings.HasPrefix),
+		ValueEx: FnASSRBex(strings.HasPrefix),
+		Remark:  `usage: if strStartsWith("abD", "bD") {...}`,
+	},
+	BuiltinStrEndsWith: &BuiltinFunction{
+		Name:    "strEndsWith",
+		Value:   FnASSRB(strings.HasSuffix),
+		ValueEx: FnASSRBex(strings.HasSuffix),
+		Remark:  `usage: if strEndsWith("abD", "bD") {...}`,
+	},
 	BuiltinStrReplace: &BuiltinFunction{
 		Name:    "strReplace",
 		Value:   FnASVsRS(tk.StringReplace),
 		ValueEx: FnASVsRSex(tk.StringReplace),
+	},
+	BuiltinStrSplit: &BuiltinFunction{
+		Name:    "strSplit",
+		Value:   CallExAdapter(builtinStrSplitFunc),
+		ValueEx: builtinStrSplitFunc,
 	},
 	BuiltintStrSplitLines: &BuiltinFunction{
 		Name:    "strSplitLines",
@@ -988,6 +1061,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "limitStr",
 		Value:   FnASIVsRS(tk.LimitString),
 		ValueEx: FnASIVsRSex(tk.LimitString),
+	},
+	BuiltinStrIn: &BuiltinFunction{
+		Name:    "strIn",
+		Value:   FnASVsRB(tk.InStrings),
+		ValueEx: FnASVsRBex(tk.InStrings),
 	},
 	BuiltintStrFindDiffPos: &BuiltinFunction{
 		Name:    "strFindDiffPos",
@@ -1195,6 +1273,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "urlDecode",
 		Value:   FnASRS(tk.UrlDecode),
 		ValueEx: FnASRSex(tk.UrlDecode),
+	},
+	BuiltinHtmlEncode: &BuiltinFunction{
+		Name:    "htmlEncode",
+		Value:   FnASRS(tk.EncodeHTML),
+		ValueEx: FnASRSex(tk.EncodeHTML),
+	},
+	BuiltinHtmlDecode: &BuiltinFunction{
+		Name:    "htmlDecode",
+		Value:   FnASRS(tk.DecodeHTML),
+		ValueEx: FnASRSex(tk.DecodeHTML),
 	},
 	BuiltinToJSON: &BuiltinFunction{
 		Name:    "toJSON",
@@ -1433,6 +1521,16 @@ var BuiltinObjects = [...]Object{
 		Value:   FnAVsRS(filepath.Join),
 		ValueEx: FnAVsRSex(filepath.Join),
 	},
+	BuiltinIsDir: &BuiltinFunction{
+		Name:    "isDir",
+		Value:   FnASRB(tk.IsDirectory),
+		ValueEx: FnASRBex(tk.IsDirectory),
+	},
+	BuiltinEnsureMakeDirs: &BuiltinFunction{
+		Name:    "ensureMakeDirs",
+		Value:   FnASRS(tk.EnsureMakeDirs),
+		ValueEx: FnASRSex(tk.EnsureMakeDirs),
+	},
 	BuiltinGetFileList: &BuiltinFunction{
 		Name:    "getFileList",
 		Value:   FnASVsRLmss(tk.GetFileList),
@@ -1464,6 +1562,21 @@ var BuiltinObjects = [...]Object{
 		Name:    "fileExists",
 		Value:   FnASRB(tk.IfFileExists),
 		ValueEx: FnASRBex(tk.IfFileExists),
+	},
+	BuiltinGetFileAbs: &BuiltinFunction{
+		Name:    "getFileAbs",
+		Value:   FnASRS(tk.GetFileAbs),
+		ValueEx: FnASRSex(tk.GetFileAbs),
+	},
+	BuiltinGetFileExt: &BuiltinFunction{
+		Name:    "getFileExt",
+		Value:   FnASRS(filepath.Ext),
+		ValueEx: FnASRSex(filepath.Ext),
+	},
+	BuiltinExtractFileDir: &BuiltinFunction{
+		Name:    "extractFileDir",
+		Value:   FnASRS(filepath.Dir),
+		ValueEx: FnASRSex(filepath.Dir),
 	},
 	BuiltinLoadText: &BuiltinFunction{
 		Name:    "loadText",
@@ -1546,6 +1659,16 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinWriteRespFunc),
 		ValueEx: builtinWriteRespFunc,
 	},
+	BuiltinServeFile: &BuiltinFunction{
+		Name:    "serveFile",
+		Value:   CallExAdapter(builtinServeFileFunc),
+		ValueEx: builtinServeFileFunc,
+	},
+	BuiltinGetMimeType: &BuiltinFunction{
+		Name:    "getMimeType",
+		Value:   FnASRS(tk.GetMimeTypeByExt),
+		ValueEx: FnASRSex(tk.GetMimeTypeByExt),
+	},
 
 	// compress/zip related
 	BuiltinArchiveFilesToZip: &BuiltinFunction{
@@ -1611,6 +1734,28 @@ var BuiltinObjects = [...]Object{
 		ValueEx: FnADSVaRAex(sqltk.ExecDBX),
 	},
 
+	// security related
+	BuiltinGenToken: &BuiltinFunction{
+		Name:    "genToken",
+		Value:   FnASSSVsRS(tk.GenerateToken),
+		ValueEx: FnASSSVsRSex(tk.GenerateToken),
+	},
+	BuiltinCheckToken: &BuiltinFunction{
+		Name:    "checkToken",
+		Value:   FnASVsRS(tk.CheckToken),
+		ValueEx: FnASVsRSex(tk.CheckToken),
+	},
+	BuiltinEncryptText: &BuiltinFunction{
+		Name:    "encryptText",
+		Value:   FnASVsRS(tk.EncryptStringByTXDEF),
+		ValueEx: FnASVsRSex(tk.EncryptStringByTXDEF),
+	},
+	BuiltinDecryptText: &BuiltinFunction{
+		Name:    "decryptText",
+		Value:   FnASVsRS(tk.DecryptStringByTXDEF),
+		ValueEx: FnASVsRSex(tk.DecryptStringByTXDEF),
+	},
+
 	// ssh related
 	BuiltinSshUpload: &BuiltinFunction{
 		Name:    "sshUpload",
@@ -1625,6 +1770,11 @@ var BuiltinObjects = [...]Object{
 			return FnARIex(tk.GetSeq)(NewCall(nil, args))
 		},
 		ValueEx: FnARIex(tk.GetSeq),
+	},
+	BuiltinRenderMarkdown: &BuiltinFunction{
+		Name:    "renderMarkdown",
+		Value:   FnASRS(tk.RenderMarkdown),
+		ValueEx: FnASRSex(tk.RenderMarkdown),
 	},
 
 	// original internal related
@@ -3097,6 +3247,63 @@ func FnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 	}
 }
 
+// like tk.InStrings
+func FnASVsRB(fn func(string, ...string) bool) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToS(args[1:])
+		rs := fn(args[0].String(), vargs...)
+		return Bool(rs), nil
+	}
+}
+
+func FnASVsRBex(fn func(string, ...string) bool) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToS(args[1:])
+		rs := fn(args[0].String(), vargs...)
+		return Bool(rs), nil
+	}
+}
+
+// like tk.GenerateToken
+func FnASSSVsRS(fn func(string, string, string, ...string) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 3 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToS(args[1:])
+
+		rs := fn(args[0].String(), args[1].String(), args[2].String(), vargs...)
+
+		return ToStringObject(rs), nil
+	}
+}
+
+func FnASSSVsRSex(fn func(string, string, string, ...string) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 3 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToS(args[1:])
+
+		rs := fn(args[0].String(), args[1].String(), args[2].String(), vargs...)
+
+		return ToStringObject(rs), nil
+	}
+}
+
 // like tk.GetFileList
 func FnASVsRLmss(fn func(string, ...string) []map[string]string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
@@ -4134,6 +4341,45 @@ func builtinIsNilOrEmptyFunc(c Call) (Object, error) {
 	nv := ConvertFromObject(arg0)
 
 	return Bool(tk.IsNilOrEmpty(nv)), nil
+}
+
+func builtinIsNilOrErrFunc(c Call) (Object, error) {
+	if c.Len() < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	arg0 := c.Get(0)
+
+	switch nv := arg0.(type) {
+	case nil:
+		return Bool(true), nil
+	case *UndefinedType:
+		return Bool(true), nil
+	case *Error:
+		return Bool(true), nil
+	case *RuntimeError:
+		return Bool(true), nil
+	case error:
+		if nv != nil {
+			return Bool(true), nil
+		}
+	case String:
+		if strings.HasPrefix(nv.Value, "TXERROR:") {
+			return Bool(true), nil
+		}
+
+		return Bool(false), nil
+	case *MutableString:
+		if strings.HasPrefix(nv.Value, "TXERROR:") {
+			return Bool(true), nil
+		}
+
+		return Bool(false), nil
+	}
+
+	nv1 := ConvertFromObject(arg0)
+
+	return Bool(tk.IsNilOrErrX(nv1)), nil
 }
 
 func builtinSleepFunc(c Call) (Object, error) {
@@ -5438,6 +5684,30 @@ func builtinWriteRespFunc(c Call) (Object, error) {
 	return Int(r), errT
 }
 
+func builtinServeFileFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	v1, ok := args[0].(*HttpResp)
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
+	}
+
+	v2, ok := args[1].(*HttpReq)
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[1], args[1]), nil
+	}
+
+	v3 := args[2].String()
+
+	http.ServeFile(v1.Value, v2.Value, v3)
+
+	return Undefined, nil
+}
+
 func builtinParseReqFormFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -6116,6 +6386,26 @@ func builtinAdjustFloatFunc(c Call) (Object, error) {
 	}
 
 	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
+}
+
+func builtinStrSplitFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	nv1 := args[0].String()
+
+	nv2 := args[1].String()
+
+	limitT := -1
+
+	if len(args) > 2 {
+		limitT = ToGoIntWithDefault(args[2], -1)
+	}
+
+	return ConvertToObject(strings.SplitN(nv1, nv2, limitT)), nil
 }
 
 func builtinMathSqrtFunc(c Call) (Object, error) {

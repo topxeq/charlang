@@ -17,7 +17,7 @@ Charlang is inspired by and based on awesome script language [uGo](https://githu
 * Module support.
 * Go like syntax with additions.
 
-## new features
+## New features
 
 - New types such as Byte, Any...
 - New functions: NewCommonError, NewError and more...

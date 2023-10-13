@@ -4,6 +4,10 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", getSeq(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "fib.char", "20")
+
+testByReg(rs, "count: 20\ntime elapsed: \\d+ ms\n6765\n", getSeq(), "fib.char")
+
 rs = systemCmd("char", "-gopath", "commandLine.char", "abc", "123", `-file=a.txt`, `-file1=b.zip`, `-file2=c:\dig123.log`, `-verbose`)
 
 testByText(rs, "All command-line args: [\"char\", \"-gopath\", \"commandLine.char\", \"abc\", \"123\", \"-file=a.txt\", \"-file1=b.zip\", \"-file2=c:\\\\dig123.log\", \"-verbose\"]\nThe whole command-line without executable: [\"-gopath\", \"commandLine.char\", \"abc\", \"123\", \"-file=a.txt\", \"-file1=b.zip\", \"-file2=c:\\\\dig123.log\", \"-verbose\"]\nThe first command-line element is: char\nThe sencod command-line element is: -gopath\npara1=abc\npara2=123\nswitch1: a.txt\nAll parameters: [\"char\", \"commandLine.char\", \"abc\", \"123\"]\nAll switches: [\"-gopath\", \"-file=a.txt\", \"-file1=b.zip\", \"-file2=c:\\\\dig123.log\", \"-verbose\"]\nfalse\ntrue\n", getSeq(), "commandLine.char")
