@@ -915,7 +915,7 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 		paraMapT, errT = tk.MSSFromJSON(vo)
 
 		if errT != nil {
-			res.Write([]byte(tk.ErrStrf("操作失败：%v", "invalid vo format")))
+			res.Write([]byte(tk.ErrStrf("action failed: %v", "invalid vo format")))
 			return
 		}
 	}
@@ -940,7 +940,7 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 
 	fcT := tk.LoadStringFromFile(fullPathT)
 	if tk.IsErrStr(fcT) {
-		res.Write([]byte(tk.ErrStrf("操作失败：%v", tk.GetErrStr(fcT))))
+		res.Write([]byte(tk.ErrStrf("action failed: %v", tk.GetErrStr(fcT))))
 		return
 	}
 
@@ -952,7 +952,7 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 	if errT != nil {
 		res.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-		errStrT := tk.ErrStrf("操作失败：%v", errT)
+		errStrT := tk.ErrStrf("action failed: %v", errT)
 		tk.Pln(errStrT)
 		res.Write([]byte(errStrT))
 		return
