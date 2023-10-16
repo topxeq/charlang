@@ -38,6 +38,7 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinRenameFile
 	BuiltinStrJoin
 	BuiltinStrIn
 	BuiltinEnsureMakeDirs
@@ -59,6 +60,7 @@ const (
 	BuiltinGenToken
 	BuiltinStrContains
 	BuiltinGetNowStr
+	BuiltinGetNowStrCompact
 	BuiltinLock
 	BuiltinUnlock
 	BuiltinTryLock
@@ -396,7 +398,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mathSqrt": BuiltinMathSqrt,
 
 	// time related
-	"getNowStr": BuiltinGetNowStr,
+	"getNowStr":        BuiltinGetNowStr,
+	"getNowStrCompact": BuiltinGetNowStrCompact,
 
 	// control related
 	"exit": BuiltinExit,
@@ -520,6 +523,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"extractFileDir": BuiltinExtractFileDir,
 
+	"renameFile": BuiltinRenameFile,
 	"removeFile": BuiltinRemoveFile,
 
 	"loadText": BuiltinLoadText,
@@ -1181,6 +1185,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnARS(tk.GetNowTimeStringFormal),
 		ValueEx: FnARSex(tk.GetNowTimeStringFormal),
 	},
+	BuiltinGetNowStrCompact: &BuiltinFunction{
+		Name:    "getNowStrCompact",
+		Value:   FnARS(tk.GetNowTimeString),
+		ValueEx: FnARSex(tk.GetNowTimeString),
+	},
 
 	// compare related
 	BuiltinCompareBytes: &BuiltinFunction{
@@ -1606,6 +1615,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnALbySRE(tk.SaveBytesToFileE),
 		ValueEx: FnALbySREex(tk.SaveBytesToFileE),
 		Remark:  `save bytes to file, usage: saveBytes(bytesT, "file.bin"), return error if failed`,
+	},
+	BuiltinRenameFile: &BuiltinFunction{
+		Name:    "renameFile",
+		Value:   FnASSVsRE(tk.RenameFile),
+		ValueEx: FnASSVsREex(tk.RenameFile),
 	},
 	BuiltinRemoveFile: &BuiltinFunction{
 		Name:    "removeFile",
@@ -3251,6 +3265,37 @@ func FnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 		vargs := toArgsS(1, c)
 		rs := fn(c.Get(0).String(), vargs...)
 		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.RenameFile
+func FnASSVsRE(fn func(string, string, ...string) error) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToS(args[2:])
+
+		rs := fn(args[0].String(), args[1].String(), vargs...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASSVsREex(fn func(string, string, ...string) error) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToS(args[2:])
+
+		rs := fn(args[0].String(), args[1].String(), vargs...)
+
+		return ConvertToObject(rs), nil
 	}
 }
 
