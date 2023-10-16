@@ -38,6 +38,7 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinIsHttps
 	BuiltinRenameFile
 	BuiltinStrJoin
 	BuiltinStrIn
@@ -538,6 +539,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	// network/web related
 	"getWeb":    BuiltinGetWeb,
 	"urlExists": BuiltinUrlExists,
+
+	"isHttps": BuiltinIsHttps,
 
 	// server/service related
 	"getReqHeader":    BuiltinGetReqHeader,
@@ -1637,6 +1640,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "urlExists",
 		Value:   FnASVaRA(tk.UrlExists),
 		ValueEx: FnASVaRAex(tk.UrlExists),
+	},
+	BuiltinIsHttps: &BuiltinFunction{
+		Name:    "isHttps",
+		Value:   CallExAdapter(builtinIsHttpsFunc),
+		ValueEx: builtinIsHttpsFunc,
 	},
 
 	// server/service related
@@ -5837,6 +5845,23 @@ func builtinGetReqHeaderFunc(c Call) (Object, error) {
 	reqT := nv1.Value
 
 	return ToStringObject(reqT.Header.Get(args[1].String())), nil
+}
+
+func builtinIsHttpsFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	nv1, ok := args[0].(*HttpReq)
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
+	}
+
+	rs := tk.IsHttps(nv1.Value)
+
+	return Bool(rs), nil
 }
 
 func builtinGetReqBodyFunc(c Call) (Object, error) {
