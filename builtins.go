@@ -38,6 +38,7 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinStrJoin
 	BuiltinStrIn
 	BuiltinEnsureMakeDirs
 	BuiltinExtractFileDir
@@ -371,6 +372,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strReplace":    BuiltinStrReplace,
 	"strSplit":      BuiltinStrSplit,
 	"strSplitLines": BuiltintStrSplitLines,
+	"strJoin":       BuiltinStrJoin,
 
 	"strIn": BuiltinStrIn,
 
@@ -1046,6 +1048,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strSplitLines",
 		Value:   FnASRLs(tk.SplitLines),
 		ValueEx: FnASRLsex(tk.SplitLines),
+	},
+	BuiltinStrJoin: &BuiltinFunction{
+		Name:    "strJoin",
+		Value:   CallExAdapter(builtinStrJoinFunc),
+		ValueEx: builtinStrJoinFunc,
 	},
 	BuiltinStrQuote: &BuiltinFunction{
 		Name:    "strQuote",
@@ -6406,6 +6413,48 @@ func builtinStrSplitFunc(c Call) (Object, error) {
 	}
 
 	return ConvertToObject(strings.SplitN(nv1, nv2, limitT)), nil
+}
+
+func builtinStrJoinFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	nv2 := args[1].String()
+
+	switch nv1 := args[0].(type) {
+	case Array:
+		var bufT strings.Builder
+		for j, jv := range nv1 {
+			if j > 0 {
+				bufT.WriteString(nv2)
+			}
+
+			bufT.WriteString(jv.String())
+		}
+
+		return ConvertToObject(bufT.String()), nil
+	case *Any:
+		switch nv1a := nv1.Value.(type) {
+		case []string:
+			return ConvertToObject(strings.Join(nv1a, nv2)), nil
+		case []interface{}:
+			var bufT strings.Builder
+			for j, jv := range nv1a {
+				if j > 0 {
+					bufT.WriteString(nv2)
+				}
+
+				bufT.WriteString(fmt.Sprintf("%v", jv))
+			}
+
+			return ConvertToObject(bufT.String()), nil
+		}
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
 }
 
 func builtinMathSqrtFunc(c Call) (Object, error) {
