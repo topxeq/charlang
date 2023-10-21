@@ -1,0 +1,93 @@
+// char -gopath encryptDir.char -dir=d:\tmpx -pattern=*.jpg -code=abc123 -overwrite
+// char -gopath encryptDir.char -dir=d:\tmpx -pattern=*.jpg -noHead
+
+global argsG
+
+dirT := trim(getSwitch(argsG, "-dir=", ""))
+
+if dirT == "" {
+	fatalf("empty dir")
+}
+
+optionsT := []
+
+patternT := trim(getSwitch(argsG, "-pattern=", ""))
+
+if patternT != "" {
+	optionsT = append(optionsT, "-pattern="+patternT)
+}
+
+recursiveT := ifSwitchExists(argsG, "-recursive")
+
+if recursiveT {
+	optionsT = append(optionsT, "-recursive")
+}
+
+listT := getFileList(dirT, ...optionsT)
+
+// plt(listT)
+
+addHeadT := !ifSwitchExists(argsG, "-noHead")
+
+codeT := trim(getSwitch(argsG, "-code=", ""))
+
+overwriteT := ifSwitchExists(argsG, "-overwrite")
+
+pl("addHead: %v, code: %v", addHeadT, codeT)
+
+for i, v in listT {
+	if toInt(v.Size, 0) <= 0 {
+		continue
+	}
+
+	bytesT := loadBytes(v.Abs)
+
+	if isErr(bytesT) {
+		fatalf("failed to load file content: %v [%v] %v", bytesT, i, v)
+	}
+
+	// plt(bytesT)
+
+	if bytesStartsWith(bytesT, "//TXDEF#") {
+		// already encrypted
+		continue
+	}
+
+	optionsInnerT := []
+
+	if addHeadT {
+		optionsInnerT = append(optionsInnerT, "-addHead")
+	}
+
+	if codeT != "" {
+		optionsInnerT = append(optionsInnerT, "-code="+codeT)
+	}
+
+	encBufT := encryptData(bytesT, ...optionsInnerT)
+
+	plt(len(encBufT))
+
+	if isNil(encBufT) {
+		fatalf("encrypt result nil: [%v] %v", i, v)
+	}
+
+	if overwriteT {
+		rs1 := saveBytes(encBufT, v.Abs)
+
+		if isErr(rs1) {
+			fatalf("failed to overwrite-save file: %v [%v] %v", encBufT, i, v)
+		}
+	} else {
+		encFileNameT := v.Abs+".enc"
+
+		if fileExists(encFileNameT) {
+			fatalf("dest file name exists: %v [%v] %v", encFileNameT, i, v)
+		}
+
+		rs1 := saveBytes(encBufT, encFileNameT)
+
+		if isErr(rs1) {
+			fatalf("failed to save enc file: %v [%v] %v", rs1, i, v)
+		}
+	}
+}

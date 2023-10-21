@@ -285,6 +285,7 @@ func ToBytes(o Object) (v Bytes, ok bool) {
 	if v, ok = o.(Bytes); ok {
 		return
 	}
+
 	vv, ok := ToGoByteSlice(o)
 	if ok {
 		v = Bytes(vv)
@@ -382,9 +383,26 @@ func ToGoByteSlice(o Object) (v []byte, ok bool) {
 	switch nv := o.(type) {
 	case Bytes:
 		v, ok = nv, true
+	case Chars:
+		v, ok = []byte(string(nv)), true
 	case String:
 		v, ok = make([]byte, len(nv.Value)), true
 		copy(v, nv.Value)
+	case Array:
+		lenT := len(nv)
+		bufT := make([]byte, lenT)
+
+		for i := 0; i < lenT; i++ {
+			rs1, errT := builtinByteFunc(Call{args: []Object{nv[i]}})
+
+			if errT != nil {
+				return nil, false
+			}
+
+			bufT[i] = byte(rs1.(Byte))
+		}
+
+		return bufT, true
 	case *Any:
 		rs := tk.DataToBytes(nv.Value)
 
@@ -395,6 +413,7 @@ func ToGoByteSlice(o Object) (v []byte, ok bool) {
 		return rs.([]byte), true
 
 	}
+
 	return
 }
 

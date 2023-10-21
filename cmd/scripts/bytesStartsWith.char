@@ -1,0 +1,49 @@
+s1 := "abc123天气好！"
+
+b1 := bytes(s1)
+
+plo(b1)
+
+plo(bytesStartsWith(b1, "abc1"))
+
+plo(bytesStartsWith(b1, "cdb"))
+
+plo(bytesStartsWith(b1, [10, 11, 12]))
+
+plo(bytesStartsWith(b1, [97, 98]))
+
+plo(bytesStartsWith(b1, [0x61, 0x62, 0x63]))
+
+plo(bytesEndsWith(b1, "天气好！"))
+
+plo(bytesEndsWith(b1, "dajia好"))
+
+plo(bytesEndsWith(b1, [10, 11, 12]))
+
+plo(bytesEndsWith(b1, [0xef, 0xbc, 0x81]))
+
+ary1 := [0x61, 0x62, 0x63, 0x31, 0x32, 0x33, 0xe5, 0xa4, 0xa9, 0xe6, 0xb0, 0x94, 0xe5, 0xa5, 0xbd, 0xef, 0xbc, 0x81]
+
+plo(ary1)
+
+b2 := bytes(ary1)
+
+plo(b2)
+
+plo(bytesStartsWith(b2, "abc1"))
+
+plo(bytesStartsWith(b2, "cdb"))
+
+plo(bytesStartsWith(b2, [10, 11, 12]))
+
+plo(bytesStartsWith(b2, [97, 98]))
+
+plo(bytesStartsWith(b2, [0x61, 0x62, 0x63]))
+
+plo(bytesEndsWith(b2, "天气好！"))
+
+plo(bytesEndsWith(b2, "dajia好"))
+
+plo(bytesEndsWith(b2, [10, 11, 12]))
+
+plo(bytesEndsWith(b2, [0xef, 0xbc, 0x81]))

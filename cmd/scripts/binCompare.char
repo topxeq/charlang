@@ -27,7 +27,7 @@ buf1 := loadBytes(file1)
 if isErr(buf1) {
 	fatalf("failed to read file1: %v", buf1)
 }
-plt(buf1)
+// plt(buf1)
 buf2 := loadBytes(file2)
 
 if isErr(buf2) {

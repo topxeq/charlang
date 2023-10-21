@@ -38,6 +38,13 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinImage
+	BuiltinLoadImageFromBytes
+	BuiltinThumbImage
+	BuiltinBytesStartsWith
+	BuiltinBytesEndsWith
+	BuiltinEncryptData
+	BuiltinDecryptData
 	BuiltinSimpleEncode
 	BuiltinSimpleDecode
 	BuiltinToPinyin
@@ -340,6 +347,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mux":         BuiltinMux,
 	"httpHandler": BuiltinHttpHandler,
 
+	"image": BuiltinImage,
+
 	"charCode": BuiltinCharCode,
 	"gel":      BuiltinGel,
 
@@ -430,6 +439,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	// time related
 	"getNowStr":        BuiltinGetNowStr,
 	"getNowStrCompact": BuiltinGetNowStrCompact,
+
+	// binary/bytes related
+	"bytesStartsWith": BuiltinBytesStartsWith,
+	"bytesEndsWith":   BuiltinBytesEndsWith,
 
 	// compare related
 	"compareBytes": BuiltinCompareBytes,
@@ -621,6 +634,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"encryptText": BuiltinEncryptText,
 	"decryptText": BuiltinDecryptText,
+
+	"encryptData": BuiltinEncryptData,
+	"decryptData": BuiltinDecryptData,
 
 	// ssh related
 	"sshUpload": BuiltinSshUpload,
@@ -878,6 +894,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "mux",
 		Value:   CallExAdapter(builtinMuxFunc),
 		ValueEx: builtinMuxFunc,
+	},
+	BuiltinImage: &BuiltinFunction{
+		Name:    "image",
+		Value:   CallExAdapter(builtinImageFunc),
+		ValueEx: builtinImageFunc,
 	},
 	BuiltinHttpHandler: &BuiltinFunction{
 		Name:    "httpHandler",
@@ -1184,6 +1205,18 @@ var BuiltinObjects = [...]Object{
 		Name:    "getNowStrCompact",
 		Value:   FnARS(tk.GetNowTimeString),
 		ValueEx: FnARSex(tk.GetNowTimeString),
+	},
+
+	// binary/bytes related
+	BuiltinBytesStartsWith: &BuiltinFunction{
+		Name:    "bytesStartsWith",
+		Value:   FnALyARB(tk.BytesStartsWith),
+		ValueEx: FnALyARBex(tk.BytesStartsWith),
+	},
+	BuiltinBytesEndsWith: &BuiltinFunction{
+		Name:    "bytesEndsWith",
+		Value:   FnALyARB(tk.BytesEndsWith),
+		ValueEx: FnALyARBex(tk.BytesEndsWith),
 	},
 
 	// compare related
@@ -1785,6 +1818,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "decryptText",
 		Value:   FnASVsRS(tk.DecryptStringByTXDEF),
 		ValueEx: FnASVsRSex(tk.DecryptStringByTXDEF),
+	},
+	BuiltinEncryptData: &BuiltinFunction{
+		Name:    "encryptData",
+		Value:   FnALyVsRLy(tk.EncryptDataByTXDEF),
+		ValueEx: FnALyVsRLyex(tk.EncryptDataByTXDEF),
+	},
+	BuiltinDecryptData: &BuiltinFunction{
+		Name:    "decryptData",
+		Value:   FnALyVsRLy(tk.DecryptDataByTXDEF),
+		ValueEx: FnALyVsRLyex(tk.DecryptDataByTXDEF),
 	},
 
 	// ssh related
@@ -2492,8 +2535,16 @@ func builtinByteFunc(c Call) (Object, error) {
 	arg1 := c.Get(0)
 
 	switch nv := arg1.(type) {
+	case Bool:
+		if nv {
+			return Byte(1), nil
+		}
+
+		return Byte(0), nil
 	case Byte:
 		return nv, nil
+	case Char:
+		return Byte(nv), nil
 	case Int:
 		return Byte(nv), nil
 	case Uint:
@@ -2600,16 +2651,18 @@ func builtinBytesFunc(c Call) (Object, error) {
 	for _, args := range [][]Object{c.args, c.vargs} {
 		for i, obj := range args {
 			switch v := obj.(type) {
+			case Byte:
+				out = append(out, byte(v))
+			case Char:
+				out = append(out, byte(v))
 			case Int:
 				out = append(out, byte(v))
 			case Uint:
 				out = append(out, byte(v))
-			case Char:
-				out = append(out, byte(v))
 			default:
 				return Undefined, NewArgumentTypeError(
 					strconv.Itoa(i+1),
-					"int|uint|char",
+					"byte|int|uint|char",
 					args[i].TypeName(),
 				)
 			}
@@ -3375,6 +3428,86 @@ func FnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 		rs := fn(tmps, vargs...)
 
 		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.EncryptDataByTXDEF
+func FnALyVsRLy(fn func([]byte, ...string) []byte) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		vargs := ObjectsToS(args[1:])
+
+		rs := fn([]byte(nv1), vargs...)
+
+		return Bytes(rs), nil
+	}
+}
+
+func FnALyVsRLyex(fn func([]byte, ...string) []byte) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		vargs := ObjectsToS(args[1:])
+
+		rs := fn([]byte(nv1), vargs...)
+
+		return Bytes(rs), nil
+	}
+}
+
+// like tk.BytesStartsWith
+func FnALyARB(fn func([]byte, interface{}) bool) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		rs := fn([]byte(nv1), ConvertFromObject(args[1]))
+
+		return Bool(rs), nil
+	}
+}
+
+func FnALyARBex(fn func([]byte, interface{}) bool) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		rs := fn([]byte(nv1), ConvertFromObject(args[1]))
+
+		return Bool(rs), nil
 	}
 }
 
@@ -5059,6 +5192,8 @@ func builtinAnyFunc(c Call) (Object, error) {
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *BigFloat:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *Image:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Any:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	default:
@@ -6295,6 +6430,8 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return NewBigFloat(Call{args: args[1:]})
 	case "httpHandler":
 		return NewHttpHandler(Call{args: args[1:]})
+	case "image":
+		return NewImage(Call{args: args[1:]})
 	case "undefined":
 		return Undefined, nil
 	}
@@ -6744,6 +6881,10 @@ func builtinMathSqrtFunc(c Call) (Object, error) {
 
 func builtinHttpHandlerFunc(c Call) (Object, error) {
 	return NewHttpHandler(c)
+}
+
+func builtinImageFunc(c Call) (Object, error) {
+	return NewImage(c)
 }
 
 func builtinWriteRespHeaderFunc(c Call) (Object, error) {

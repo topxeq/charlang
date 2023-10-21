@@ -1,0 +1,94 @@
+// char -gopath decryptDir.char -dir=d:\tmpx -pattern=*.jpg -code=abc123 -overwrite
+// char -gopath decryptDir.char -dir=d:\tmpx -pattern=*.jpg -noHead
+
+global argsG
+
+dirT := trim(getSwitch(argsG, "-dir=", ""))
+
+if dirT == "" {
+	fatalf("empty dir")
+}
+
+optionsT := []
+
+patternT := trim(getSwitch(argsG, "-pattern=", ""))
+
+if patternT != "" {
+	optionsT = append(optionsT, "-pattern="+patternT)
+}
+
+recursiveT := ifSwitchExists(argsG, "-recursive")
+
+if recursiveT {
+	optionsT = append(optionsT, "-recursive")
+}
+
+withHeadOnlyT := !ifSwitchExists(argsG, "-noHead")
+
+listT := getFileList(dirT, ...optionsT)
+
+// plt(listT)
+
+codeT := trim(getSwitch(argsG, "-code=", ""))
+
+overwriteT := ifSwitchExists(argsG, "-overwrite")
+
+pl("withHeadOnly: %v, code: %v", withHeadOnlyT, codeT)
+
+for i, v in listT {
+	if toInt(v.Size, 0) <= 0 {
+		continue
+	}
+
+	bytesT := loadBytes(v.Abs)
+
+	if isErr(bytesT) {
+		fatalf("failed to load file content: %v [%v] %v", bytesT, i, v)
+	}
+
+	// plt(bytesT)
+
+	if withHeadOnlyT && (!bytesStartsWith(bytesT, "//TXDEF#")) {
+		continue
+	}
+
+	if withHeadOnlyT {
+		bytesT = bytesT[8:]
+	}
+
+	optionsInnerT := []
+
+	if codeT != "" {
+		optionsInnerT = append(optionsInnerT, "-code="+codeT)
+	}
+
+	decBufT := decryptData(bytesT, ...optionsInnerT)
+
+	plt(len(decBufT))
+
+	if isNil(decBufT) {
+		fatalf("decrypt result nil: [%v] %v", i, v)
+	}
+
+	if overwriteT {
+		rs1 := saveBytes(decBufT, v.Abs)
+
+		if isErr(rs1) {
+			fatalf("failed to overwrite-save file: %v [%v] %v", decBufT, i, v)
+		}
+	} else {
+		decFileNameT := v.Abs+".dec"
+
+		if fileExists(decFileNameT) {
+			fatalf("dest file name exists: %v [%v] %v", decFileNameT, i, v)
+		}
+
+		rs1 := saveBytes(decBufT, decFileNameT)
+
+		if isErr(rs1) {
+			fatalf("failed to save enc file: %v [%v] %v", rs1, i, v)
+		}
+	}
+
+	break
+}

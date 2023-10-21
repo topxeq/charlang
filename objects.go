@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
 	"io"
 	"math/big"
 	"net/http"
@@ -45,7 +46,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Image: 501, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -1903,6 +1904,8 @@ func ToStringObject(argA interface{}) String {
 		return String{Value: nv.String()}
 	case *sync.RWMutex:
 		return String{Value: fmt.Sprintf("%v", nv)}
+	case *Image:
+		return String{Value: nv.String()}
 	}
 
 	return String{Value: fmt.Sprintf("%v", argA)}
@@ -9997,4 +10000,162 @@ func NewBigFloat(c Call) (Object, error) {
 	}
 
 	return NewCommonErrorWithPos(c, "unsupported type: %T", arg0), nil
+}
+
+// Image represents an image and implements Object interface.
+type Image struct {
+	// ObjectImpl
+
+	Value image.Image
+
+	Members map[string]Object `json:"-"`
+}
+
+func (*Image) TypeCode() int {
+	return 501
+}
+
+func (*Image) TypeName() string {
+	return "image"
+}
+
+func (o *Image) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+func (o *Image) HasMemeber() bool {
+	return true
+}
+
+func (o *Image) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *Image) GetValue() Object {
+	return o
+}
+
+func (o *Image) SetValue(valueA Object) error {
+	switch nv := valueA.(type) {
+	case image.Image:
+		o.Value = nv
+		return nil
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *Image) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Image) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (o *Image) Equal(right Object) bool {
+	switch v := right.(type) {
+	case *Image:
+		return o.Value == v.Value
+	}
+
+	return false
+}
+
+func (o *Image) IsFalsy() bool {
+	return o.Value == nil
+}
+
+func (o *Image) CanCall() bool {
+	return false
+}
+
+func (o *Image) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (*Image) CanIterate() bool {
+	return false
+}
+
+func (*Image) Iterate() Iterator {
+	return nil
+}
+
+func (o *Image) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "value" {
+			return o.SetValue(value)
+		}
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *Image) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "value" {
+			return o.GetValue(), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, ErrNotIndexable
+}
+
+func (o *Image) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return Undefined, NewCommonError("unsupported type: %T", right)
+}
+
+func NewImage(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	imgPT := tk.NewImage(ObjectsToS(argsA)...)
+
+	return &Image{Value: imgPT}, nil
 }

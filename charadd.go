@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"image"
 	"io"
 	"math"
 	"math/big"
@@ -25,7 +26,7 @@ import (
 )
 
 // global vars
-var VersionG = "0.6.9"
+var VersionG = "0.7.0"
 
 var CodeTextG = ""
 
@@ -2322,6 +2323,10 @@ func ConvertToObject(vA interface{}) Object {
 		return &BigFloat{Value: nv}
 	case *BigFloat:
 		return nv
+	case image.Image:
+		return &Image{Value: nv}
+	case *image.Image:
+		return &Image{Value: *nv}
 	case tk.UndefinedStruct:
 		return Undefined
 	case *tk.UndefinedStruct:
@@ -2453,6 +2458,8 @@ func ConvertFromObject(vA Object) interface{} {
 	case *BigInt:
 		return nv.Value
 	case *BigFloat:
+		return nv.Value
+	case *Image:
 		return nv.Value
 	case *Any:
 		return nv.Value
