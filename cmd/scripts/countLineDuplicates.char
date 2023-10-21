@@ -1,0 +1,26 @@
+textT := getClipText()
+
+listT := strSplitLines(textT)
+
+// plo(listT)
+
+map1T := {}
+
+for i, v in listT {
+	vv := trim(v)
+
+	if vv == "" {
+		continue
+	}
+
+	if !map1T[vv] {
+		map1T[vv] = 1
+	} else {
+		map1T[vv] = map1T[vv] + 1
+	}
+}
+
+for k, v in map1T {
+	pl("%v -> %v", k, v)
+}
+

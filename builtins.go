@@ -38,6 +38,9 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinSimpleEncode
+	BuiltinSimpleDecode
+	BuiltinToPinyin
 	BuiltinIsHttps
 	BuiltinRenameFile
 	BuiltinStrJoin
@@ -175,6 +178,7 @@ const (
 	BuiltinStrTrimRight
 	BuiltinRegFindFirst
 	BuiltinRegFindAll
+	BuiltinRegFindAllGroups
 	BuiltinCheckErrX
 	BuiltinLoadText
 	BuiltinSaveText
@@ -254,6 +258,7 @@ const (
 	BuiltinIsBool
 	BuiltinIsString
 	BuiltinIsBytes
+	BuiltinIsChars
 	BuiltinIsMap
 	BuiltinIsSyncMap
 	BuiltinIsArray
@@ -297,23 +302,40 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"len": BuiltinLen,
 
+	":makeArray": BuiltinMakeArray,
+
 	// data type related
 	"typeCode":  BuiltinTypeCode,
 	"typeName":  BuiltinTypeName,
 	"typeOf":    BuiltinTypeName,
 	"typeOfAny": BuiltinTypeOfAny,
 
+	"any": BuiltinAny,
+
+	"bool":  BuiltinBool,
+	"byte":  BuiltinByte,
+	"char":  BuiltinChar,
+	"int":   BuiltinInt,
+	"uint":  BuiltinUint,
+	"float": BuiltinFloat,
+
 	"bigInt":   BuiltinBigInt,
 	"bigFloat": BuiltinBigFloat,
 
-	"any": BuiltinAny,
+	"string":        BuiltinString,
+	"mutableString": BuiltinMutableString,
+	"bytes":         BuiltinBytes,
+	"chars":         BuiltinChars,
+
+	"error": BuiltinError,
 
 	"time":          BuiltinTime,
 	"stringBuilder": BuiltinStringBuilder,
-	"statusResult":  BuiltinStatusResult,
-	"seq":           BuiltinSeq,
-	"mutex":         BuiltinMutex,
 	"orderedMap":    BuiltinOrderedMap,
+
+	"statusResult": BuiltinStatusResult,
+	"seq":          BuiltinSeq,
+	"mutex":        BuiltinMutex,
 
 	"mux":         BuiltinMux,
 	"httpHandler": BuiltinHttpHandler,
@@ -321,13 +343,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"charCode": BuiltinCharCode,
 	"gel":      BuiltinGel,
 
-	"isNil":        BuiltinIsNil,
-	"isNilOrEmpty": BuiltinIsNilOrEmpty,
-	"isNilOrErr":   BuiltinIsNilOrErr,
-
-	// bitwise related
-	"bitNot": BuiltinBitNot,
-	"not":    BuiltinBitNot,
+	"database": BuiltinDatabase,
 
 	// new related
 	"make": BuiltinMake,
@@ -336,10 +352,16 @@ var BuiltinsMap = map[string]BuiltinType{
 	"newEx":  BuiltinNewEx,
 	"newObj": BuiltinNewEx,
 
+	// bitwise related
+	"bitNot": BuiltinBitNot,
+	"not":    BuiltinBitNot,
+
 	// array/map related
+	"append":      BuiltinAppend,
 	"appendList":  BuiltinAppendList,
 	"appendArray": BuiltinAppendList,
 	"appendSlice": BuiltinAppendList,
+	"delete":      BuiltinDelete,
 
 	"removeItems": BuiltinRemoveItems, // inclusive
 
@@ -348,8 +370,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"toOrderedMap": BuiltinToOrderedMap,
 
 	// ref/pointer related
-	"setValueByRef": BuiltinSetValueByRef,
 	"unref":         BuiltinUnref,
+	"setValueByRef": BuiltinSetValueByRef,
 
 	// convert related
 	"toStr":   BuiltinToStr,
@@ -390,6 +412,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"regFindFirst":       BuiltinRegFindFirst,
 	"regFindFirstGroups": BuiltintRegFindFirstGroups, // obtain the first match of a regular expression and return a list of all matching groups, where the first item is the complete matching result and the second item is the first matching group..., usage example: result := regFindFirstGroups(str1, regex1)
 	"regFindAll":         BuiltinRegFindAll,
+	"regFindAllGroups":   BuiltinRegFindAllGroups,
 	"regQuote":           BuiltinRegQuote,
 	"regReplace":         BuiltinRegReplace,
 
@@ -398,14 +421,57 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"mathSqrt": BuiltinMathSqrt,
 
+	// random related
+	"getRandomInt":   BuiltinGetRandomInt,
+	"getRandomFloat": BuiltinGetRandomFloat,
+	"getRandomStr":   BuiltinGetRandomStr,
+	"genRandomStr":   BuiltinGetRandomStr,
+
 	// time related
 	"getNowStr":        BuiltinGetNowStr,
 	"getNowStrCompact": BuiltinGetNowStrCompact,
 
+	// compare related
+	"compareBytes": BuiltinCompareBytes,
+
 	// control related
+	"isNil":        BuiltinIsNil,
+	"isNilOrEmpty": BuiltinIsNilOrEmpty,
+	"isNilOrErr":   BuiltinIsNilOrErr,
+	"isUndefined":  BuiltinIsUndefined,
+	"isBool":       BuiltinIsBool,
+	"isByte":       BuiltinIsByte,
+	"isChar":       BuiltinIsChar,
+	"isInt":        BuiltinIsInt,
+	"isUint":       BuiltinIsUint,
+	"isFloat":      BuiltinIsFloat,
+	"isString":     BuiltinIsString,
+	"isBytes":      BuiltinIsBytes,
+	"isChars":      BuiltinIsChars,
+	"isArray":      BuiltinIsArray,
+	"isMap":        BuiltinIsMap,
+	"isSyncMap":    BuiltinIsSyncMap,
+	"isError":      BuiltinIsError,
+	"isFunction":   BuiltinIsFunction,
+	"isCallable":   BuiltinIsCallable,
+	"isIterable":   BuiltinIsIterable,
+
 	"exit": BuiltinExit,
 
-	// print related
+	"pass": BuiltinPass,
+
+	// error related
+	"isErrX":     BuiltinIsErrX,
+	"isErr":      BuiltinIsErrX,
+	"getErrStrX": BuiltinGetErrStrX,
+	"getErrStr":  BuiltinGetErrStrX,
+
+	"checkErrX": BuiltinCheckErrX,
+	"checkErr":  BuiltinCheckErrX,
+
+	"errStrf": BuiltinErrStrf,
+
+	// output/print related
 	"prf":    BuiltinPrf,
 	"pl":     BuiltinPl,
 	"pln":    BuiltinPln,
@@ -419,49 +485,36 @@ var BuiltinsMap = map[string]BuiltinType{
 	// scan related
 	"sscanf": BuiltinSscanf,
 
-	// error related
-	"isErrX":     BuiltinIsErrX,
-	"isErr":      BuiltinIsErrX,
-	"getErrStrX": BuiltinGetErrStrX,
-	"getErrStr":  BuiltinGetErrStrX,
+	// resource related
+	"getNamedValue": BuiltinGetNamedValue,
+	"getConst":      BuiltinGetNamedValue,
 
-	"checkErrX": BuiltinCheckErrX,
-	"checkErr":  BuiltinCheckErrX,
-
-	"errStrf": BuiltinErrStrf,
-
-	// compare related
-	"compareBytes": BuiltinCompareBytes,
-
-	// random related
-	"getRandomInt":   BuiltinGetRandomInt,
-	"getRandomFloat": BuiltinGetRandomFloat,
-	"getRandomStr":   BuiltinGetRandomStr,
-	"genRandomStr":   BuiltinGetRandomStr,
-
-	// member/method related
-	"getValue":         BuiltinGetValue,
-	"setValue":         BuiltinSetValue,
-	"getMember":        BuiltinGetMember,
-	"mb":               BuiltinGetMember,
-	"setMember":        BuiltinSetMember,
-	"callMethod":       BuiltinCallMethod,
-	"mt":               BuiltinCallMethod,
-	"callMethodEx":     BuiltinCallMethodEx,
-	"mtEx":             BuiltinCallMethodEx,
 	"callNamedFunc":    BuiltinCallNamedFunc,
 	"callInternalFunc": BuiltinCallInternalFunc,
-	"getNamedValue":    BuiltinGetNamedValue,
-	"getConst":         BuiltinGetNamedValue,
+
+	// member/method related
+	"getValue": BuiltinGetValue,
+	"setValue": BuiltinSetValue,
+
+	"getMember": BuiltinGetMember,
+	"mb":        BuiltinGetMember,
+	"setMember": BuiltinSetMember,
+
+	"callMethod":   BuiltinCallMethod,
+	"mt":           BuiltinCallMethod,
+	"callMethodEx": BuiltinCallMethodEx,
+	"mtEx":         BuiltinCallMethodEx,
 
 	// read/write related
 	"writeStr": BuiltintWriteStr,
 
 	// encode/decode related
-	"urlEncode":  BuiltinUrlEncode,
-	"urlDecode":  BuiltinUrlDecode,
-	"htmlEncode": BuiltinHtmlEncode,
-	"htmlDecode": BuiltinHtmlDecode,
+	"urlEncode":    BuiltinUrlEncode,
+	"urlDecode":    BuiltinUrlDecode,
+	"htmlEncode":   BuiltinHtmlEncode,
+	"htmlDecode":   BuiltinHtmlDecode,
+	"simpleEncode": BuiltinSimpleEncode,
+	"simpleDecode": BuiltinSimpleDecode,
 
 	"toJSON":   BuiltinToJSON,
 	"toJson":   BuiltinToJSON,
@@ -485,21 +538,25 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"lock":     BuiltinLock,
 	"unlock":   BuiltinUnlock,
-	"tryLock":  BuiltinTryLock,
 	"rLock":    BuiltinRLock,
 	"rUnlock":  BuiltinRUnlock,
+	"tryLock":  BuiltinTryLock,
 	"tryRLock": BuiltinTryRLock,
 
 	// os/system related
-	"systemCmd":  BuiltinSystemCmd,
-	"getEnv":     BuiltinGetEnv,
-	"setEnv":     BuiltinSetEnv,
-	"getOsName":  BuiltinGetOSName,
-	"getOSName":  BuiltinGetOSName,
-	"getOSArch":  BuiltinGetOSArch,
-	"getOsArch":  BuiltinGetOSArch,
-	"getOSArgs":  BuiltinGetOSArgs,
-	"getOsArgs":  BuiltinGetOSArgs,
+	"systemCmd": BuiltinSystemCmd,
+
+	"getEnv": BuiltinGetEnv,
+	"setEnv": BuiltinSetEnv,
+
+	"getOSName": BuiltinGetOSName,
+	"getOsName": BuiltinGetOSName,
+	"getOSArch": BuiltinGetOSArch,
+	"getOsArch": BuiltinGetOSArch,
+
+	"getOSArgs": BuiltinGetOSArgs,
+	"getOsArgs": BuiltinGetOSArgs,
+
 	"getAppDir":  BuiltinGetAppDir,
 	"getCurDir":  BuiltinGetCurDir,
 	"getHomeDir": BuiltinGetHomeDir,
@@ -549,10 +606,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"parseReqFormEx":  BuiltinParseReqFormEx,
 	"writeRespHeader": BuiltinWriteRespHeader,
 	"setRespHeader":   BuiltinSetRespHeader,
-	"writeResp":       BuiltinWriteResp,
 	"genJSONResp":     BuiltinGenJSONResp,
 	"genJsonResp":     BuiltinGenJSONResp,
 	"genResp":         BuiltinGenJSONResp,
+	"writeResp":       BuiltinWriteResp,
 
 	"serveFile": BuiltinServeFile,
 
@@ -569,7 +626,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"sshUpload": BuiltinSshUpload,
 
 	// database related
-	"database":  BuiltinDatabase,
+	"formatSQLValue": BuiltinFormatSQLValue,
+
 	"dbConnect": BuiltinDatabase,
 	"dbClose":   BuiltinDbClose,
 
@@ -584,54 +642,25 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"dbExec": BuiltinDbExec,
 
-	"formatSQLValue": BuiltinFormatSQLValue,
+	// unicode related
+	"toPinyin": BuiltinToPinyin,
 
 	// misc related
 	"getSeq": BuiltinGetSeq,
-	"pass":   BuiltinPass,
 
 	"renderMarkdown": BuiltinRenderMarkdown,
 
 	// "sortByFunc": BuiltinSortByFunc,
 
 	// original internal related
-	"append":        BuiltinAppend,
-	"delete":        BuiltinDelete,
-	"copy":          BuiltinCopy,
-	"repeat":        BuiltinRepeat,
-	"contains":      BuiltinContains,
-	"sort":          BuiltinSort,
-	"sortReverse":   BuiltinSortReverse,
-	"error":         BuiltinError,
-	"bool":          BuiltinBool,
-	"int":           BuiltinInt,
-	"uint":          BuiltinUint,
-	"float":         BuiltinFloat,
-	"char":          BuiltinChar,
-	"byte":          BuiltinByte,
-	"string":        BuiltinString,
-	"mutableString": BuiltinMutableString,
-	"bytes":         BuiltinBytes,
-	"chars":         BuiltinChars,
-	"printf":        BuiltinPrintf,
-	"println":       BuiltinPrintln,
-	"sprintf":       BuiltinSprintf,
-
-	"isError":     BuiltinIsError,
-	"isInt":       BuiltinIsInt,
-	"isUint":      BuiltinIsUint,
-	"isFloat":     BuiltinIsFloat,
-	"isChar":      BuiltinIsChar,
-	"isBool":      BuiltinIsBool,
-	"isString":    BuiltinIsString,
-	"isBytes":     BuiltinIsBytes,
-	"isMap":       BuiltinIsMap,
-	"isSyncMap":   BuiltinIsSyncMap,
-	"isArray":     BuiltinIsArray,
-	"isUndefined": BuiltinIsUndefined,
-	"isFunction":  BuiltinIsFunction,
-	"isCallable":  BuiltinIsCallable,
-	"isIterable":  BuiltinIsIterable,
+	"copy":        BuiltinCopy,
+	"repeat":      BuiltinRepeat,
+	"contains":    BuiltinContains,
+	"sort":        BuiltinSort,
+	"sortReverse": BuiltinSortReverse,
+	"printf":      BuiltinPrintf,
+	"println":     BuiltinPrintln,
+	"sprintf":     BuiltinSprintf,
 
 	"WrongNumArgumentsError":  BuiltinWrongNumArgumentsError,
 	"InvalidOperatorError":    BuiltinInvalidOperatorError,
@@ -644,8 +673,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"ZeroDivisionError":       BuiltinZeroDivisionError,
 	"TypeError":               BuiltinTypeError,
 
-	":makeArray": BuiltinMakeArray,
-	"cap":        BuiltinCap,
+	"cap": BuiltinCap,
 
 	// funcs end
 
@@ -653,6 +681,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 // BuiltinObjects is list of builtins, exported for REPL.
 var BuiltinObjects = [...]Object{
+	// funcs detail start
+
 	// internal & debug related
 	BuiltinTestByText: &BuiltinFunction{
 		Name:    "testByText",
@@ -697,15 +727,15 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// infrastructure related
-	BuiltinLen: &BuiltinFunction{
-		Name:    "len",
-		Value:   funcPORO(builtinLenFunc),
-		ValueEx: funcPOROEx(builtinLenFunc),
-	},
 	BuiltinGlobals: &BuiltinFunction{
 		Name:    "globals",
 		Value:   CallExAdapter(builtinGlobalsFunc),
 		ValueEx: builtinGlobalsFunc,
+	},
+	BuiltinLen: &BuiltinFunction{
+		Name:    "len",
+		Value:   funcPORO(builtinLenFunc),
+		ValueEx: funcPOROEx(builtinLenFunc),
 	},
 
 	// :makeArray is a private builtin function to help destructuring array assignments
@@ -733,20 +763,10 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinTypeOfAnyFunc,
 	},
 
-	BuiltinMake: &BuiltinFunction{
-		Name:    "make",
-		Value:   CallExAdapter(builtinMakeFunc),
-		ValueEx: builtinMakeFunc,
-	},
-	BuiltinNew: &BuiltinFunction{
-		Name:    "new",
-		Value:   CallExAdapter(builtinNewFunc),
-		ValueEx: builtinNewFunc,
-	},
-	BuiltinNewEx: &BuiltinFunction{
-		Name:    "newEx",
-		Value:   CallExAdapter(builtinNewExFunc),
-		ValueEx: builtinNewExFunc,
+	BuiltinAny: &BuiltinFunction{
+		Name:    "any",
+		Value:   CallExAdapter(builtinAnyFunc),
+		ValueEx: builtinAnyFunc,
 	},
 
 	BuiltinBool: &BuiltinFunction{
@@ -813,10 +833,22 @@ var BuiltinObjects = [...]Object{
 		ValueEx: funcPOROeEx(builtinCharsFunc),
 	},
 
+	BuiltinError: &BuiltinFunction{
+		Name:    "error",
+		Value:   funcPORO(builtinErrorFunc),
+		ValueEx: funcPOROEx(builtinErrorFunc),
+	},
+
 	BuiltinTime: &BuiltinFunction{
 		Name:    "time", // new a Time object
 		Value:   CallExAdapter(builtinTimeFunc),
 		ValueEx: builtinTimeFunc,
+	},
+
+	BuiltinStringBuilder: &BuiltinFunction{
+		Name:    "stringBuilder",
+		Value:   CallExAdapter(builtinStringBuilderFunc),
+		ValueEx: builtinStringBuilderFunc,
 	},
 
 	BuiltinOrderedMap: &BuiltinFunction{
@@ -825,42 +857,22 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinOrderedMapFunc,
 	},
 
-	BuiltinError: &BuiltinFunction{
-		Name:    "error",
-		Value:   funcPORO(builtinErrorFunc),
-		ValueEx: funcPOROEx(builtinErrorFunc),
+	BuiltinStatusResult: &BuiltinFunction{
+		Name:    "statusResult",
+		Value:   CallExAdapter(builtinStatusResultFunc),
+		ValueEx: builtinStatusResultFunc,
 	},
 
-	BuiltinAny: &BuiltinFunction{
-		Name:    "any",
-		Value:   CallExAdapter(builtinAnyFunc),
-		ValueEx: builtinAnyFunc,
-	},
-
-	BuiltinStringBuilder: &BuiltinFunction{
-		Name:    "stringBuilder",
-		Value:   CallExAdapter(builtinStringBuilderFunc),
-		ValueEx: builtinStringBuilderFunc,
-	},
-	BuiltinMutex: &BuiltinFunction{
-		Name:    "mutex",
-		Value:   CallExAdapter(builtinMutexFunc),
-		ValueEx: builtinMutexFunc,
-	},
-	BuiltinDatabase: &BuiltinFunction{
-		Name:    "database",
-		Value:   CallExAdapter(builtinDatabaseFunc),
-		ValueEx: builtinDatabaseFunc,
-	},
 	BuiltinSeq: &BuiltinFunction{
 		Name:    "seq",
 		Value:   CallExAdapter(builtinSeqFunc),
 		ValueEx: builtinSeqFunc,
 	},
-	BuiltinStatusResult: &BuiltinFunction{
-		Name:    "statusResult",
-		Value:   CallExAdapter(builtinStatusResultFunc),
-		ValueEx: builtinStatusResultFunc,
+
+	BuiltinMutex: &BuiltinFunction{
+		Name:    "mutex",
+		Value:   CallExAdapter(builtinMutexFunc),
+		ValueEx: builtinMutexFunc,
 	},
 	BuiltinMux: &BuiltinFunction{
 		Name:    "mux",
@@ -884,100 +896,114 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinGelFunc,
 	},
 
-	BuiltinIsNil: &BuiltinFunction{
-		Name:    "isNil", // usage: isNil(err1), check if the argument is nil
-		Value:   CallExAdapter(builtinIsNilFunc),
-		ValueEx: builtinIsNilFunc,
+	BuiltinDatabase: &BuiltinFunction{
+		Name:    "database",
+		Value:   CallExAdapter(builtinDatabaseFunc),
+		ValueEx: builtinDatabaseFunc,
 	},
-	BuiltinIsNilOrEmpty: &BuiltinFunction{
-		Name:    "isNilOrEmpty", // usage: isNilOrEmpty(err1), check if the argument is nil or empty string
-		Value:   CallExAdapter(builtinIsNilOrEmptyFunc),
-		ValueEx: builtinIsNilOrEmptyFunc,
+
+	BuiltinMake: &BuiltinFunction{
+		Name:    "make",
+		Value:   CallExAdapter(builtinMakeFunc),
+		ValueEx: builtinMakeFunc,
 	},
-	BuiltinIsNilOrErr: &BuiltinFunction{
-		Name:    "isNilOrErr", // usage: isNilOrErr(err1), check if the argument is nil, error object, or TXERROR string
-		Value:   CallExAdapter(builtinIsNilOrErrFunc),
-		ValueEx: builtinIsNilOrErrFunc,
+	BuiltinNew: &BuiltinFunction{
+		Name:    "new",
+		Value:   CallExAdapter(builtinNewFunc),
+		ValueEx: builtinNewFunc,
 	},
-	BuiltinIsUndefined: &BuiltinFunction{
-		Name:    "isUndefined",
-		Value:   funcPORO(builtinIsUndefinedFunc),
-		ValueEx: funcPOROEx(builtinIsUndefinedFunc),
+	BuiltinNewEx: &BuiltinFunction{
+		Name:    "newEx",
+		Value:   CallExAdapter(builtinNewExFunc),
+		ValueEx: builtinNewExFunc,
 	},
-	BuiltinIsBool: &BuiltinFunction{
-		Name:    "isBool",
-		Value:   funcPORO(builtinIsBoolFunc),
-		ValueEx: funcPOROEx(builtinIsBoolFunc),
+
+	// bitwise related
+	BuiltinBitNot: &BuiltinFunction{
+		Name:    "bitNot",
+		Value:   CallExAdapter(builtinBitNotFunc),
+		ValueEx: builtinBitNotFunc,
 	},
-	BuiltinIsByte: &BuiltinFunction{
-		Name:    "isByte",
-		Value:   funcPORO(builtinIsByteFunc),
-		ValueEx: funcPOROEx(builtinIsByteFunc),
+
+	// array/map related
+	BuiltinAppend: &BuiltinFunction{
+		Name:    "append",
+		Value:   CallExAdapter(builtinAppendFunc),
+		ValueEx: builtinAppendFunc,
 	},
-	BuiltinIsChar: &BuiltinFunction{
-		Name:    "isChar",
-		Value:   funcPORO(builtinIsCharFunc),
-		ValueEx: funcPOROEx(builtinIsCharFunc),
+	BuiltinAppendList: &BuiltinFunction{
+		Name:    "appendList",
+		Value:   CallExAdapter(builtinAppendListFunc),
+		ValueEx: builtinAppendListFunc,
 	},
-	BuiltinIsInt: &BuiltinFunction{
-		Name:    "isInt",
-		Value:   funcPORO(builtinIsIntFunc),
-		ValueEx: funcPOROEx(builtinIsIntFunc),
+	BuiltinDelete: &BuiltinFunction{
+		Name:    "delete",
+		Value:   funcPOsRe(builtinDeleteFunc),
+		ValueEx: funcPOsReEx(builtinDeleteFunc),
 	},
-	BuiltinIsUint: &BuiltinFunction{
-		Name:    "isUint",
-		Value:   funcPORO(builtinIsUintFunc),
-		ValueEx: funcPOROEx(builtinIsUintFunc),
+	BuiltinRemoveItems: &BuiltinFunction{
+		Name:    "removeItems",
+		Value:   CallExAdapter(builtinRemoveItemsFunc),
+		ValueEx: builtinRemoveItemsFunc,
 	},
-	BuiltinIsFloat: &BuiltinFunction{
-		Name:    "isFloat",
-		Value:   funcPORO(builtinIsFloatFunc),
-		ValueEx: funcPOROEx(builtinIsFloatFunc),
+	BuiltinArrayContains: &BuiltinFunction{
+		Name:    "arrayContains",
+		Value:   CallExAdapter(builtinArrayContainsFunc),
+		ValueEx: builtinArrayContainsFunc,
 	},
-	BuiltinIsString: &BuiltinFunction{
-		Name:    "isString",
-		Value:   funcPORO(builtinIsStringFunc),
-		ValueEx: funcPOROEx(builtinIsStringFunc),
+	BuiltinToOrderedMap: &BuiltinFunction{
+		Name:    "toOrderedMap",
+		Value:   CallExAdapter(builtinToOrderedMapFunc),
+		ValueEx: builtinToOrderedMapFunc,
 	},
-	BuiltinIsBytes: &BuiltinFunction{
-		Name:    "isBytes",
-		Value:   funcPORO(builtinIsBytesFunc),
-		ValueEx: funcPOROEx(builtinIsBytesFunc),
+
+	// ref/pointer related
+	BuiltinUnref: &BuiltinFunction{
+		Name:    "unref",
+		Value:   CallExAdapter(builtinUnrefFunc),
+		ValueEx: builtinUnrefFunc,
 	},
-	BuiltinIsArray: &BuiltinFunction{
-		Name:    "isArray",
-		Value:   funcPORO(builtinIsArrayFunc),
-		ValueEx: funcPOROEx(builtinIsArrayFunc),
+	BuiltinSetValueByRef: &BuiltinFunction{
+		Name:    "setValueByRef",
+		Value:   CallExAdapter(builtinSetValueByRefFunc),
+		ValueEx: builtinSetValueByRefFunc,
 	},
-	BuiltinIsMap: &BuiltinFunction{
-		Name:    "isMap",
-		Value:   funcPORO(builtinIsMapFunc),
-		ValueEx: funcPOROEx(builtinIsMapFunc),
+
+	// convert related
+	BuiltinToStr: &BuiltinFunction{
+		Name:    "toStr", // usage: toStr(any)
+		Value:   CallExAdapter(builtinToStrFunc),
+		ValueEx: builtinToStrFunc,
 	},
-	BuiltinIsSyncMap: &BuiltinFunction{
-		Name:    "isSyncMap",
-		Value:   funcPORO(builtinIsSyncMapFunc),
-		ValueEx: funcPOROEx(builtinIsSyncMapFunc),
+	BuiltinToInt: &BuiltinFunction{
+		Name:    "toInt",
+		Value:   CallExAdapter(builtinToIntFunc),
+		ValueEx: builtinToIntFunc,
 	},
-	BuiltinIsError: &BuiltinFunction{
-		Name:    "isError",
-		Value:   CallExAdapter(builtinIsErrorFunc),
-		ValueEx: builtinIsErrorFunc,
+	BuiltinToFloat: &BuiltinFunction{
+		Name:    "toFloat",
+		Value:   CallExAdapter(builtinToFloatFunc),
+		ValueEx: builtinToFloatFunc,
 	},
-	BuiltinIsFunction: &BuiltinFunction{
-		Name:    "isFunction",
-		Value:   funcPORO(builtinIsFunctionFunc),
-		ValueEx: funcPOROEx(builtinIsFunctionFunc),
+	BuiltinToTime: &BuiltinFunction{
+		Name:    "toTime", // new a Time object
+		Value:   CallExAdapter(builtinTimeFunc),
+		ValueEx: builtinTimeFunc,
 	},
-	BuiltinIsCallable: &BuiltinFunction{
-		Name:  "isCallable",
-		Value: funcPORO(builtinIsCallableFunc),
-		//ValueEx: funcPOROEx(builtinIsCallableFunc),
+	BuiltinToHex: &BuiltinFunction{
+		Name:    "toHex",
+		Value:   CallExAdapter(builtinToHexFunc),
+		ValueEx: builtinToHexFunc,
 	},
-	BuiltinIsIterable: &BuiltinFunction{
-		Name:    "isIterable",
-		Value:   funcPORO(builtinIsIterableFunc),
-		ValueEx: funcPOROEx(builtinIsIterableFunc),
+	BuiltinUnhex: &BuiltinFunction{
+		Name:    "unhex",
+		Value:   FnASRLby(tk.HexToBytes),
+		ValueEx: FnASRLbyex(tk.HexToBytes),
+	},
+	BuiltinToKMG: &BuiltinFunction{
+		Name:    "toKMG",
+		Value:   FnAAVaRS(tk.IntToKMGT),
+		ValueEx: FnAAVaRSex(tk.IntToKMGT),
 	},
 
 	// string related
@@ -1061,21 +1087,6 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinStrJoinFunc),
 		ValueEx: builtinStrJoinFunc,
 	},
-	BuiltinStrQuote: &BuiltinFunction{
-		Name:    "strQuote",
-		Value:   FnASRS(strconv.Quote),
-		ValueEx: FnASRSex(strconv.Quote),
-	},
-	BuiltinStrUnquote: &BuiltinFunction{
-		Name:    "strUnquote",
-		Value:   CallExAdapter(builtintStrUnquoteFunc),
-		ValueEx: builtintStrUnquoteFunc,
-	},
-	BuiltintLimitStr: &BuiltinFunction{
-		Name:    "limitStr",
-		Value:   FnASIVsRS(tk.LimitString),
-		ValueEx: FnASIVsRSex(tk.LimitString),
-	},
 	BuiltinStrIn: &BuiltinFunction{
 		Name:    "strIn",
 		Value:   FnASVsRB(tk.InStrings),
@@ -1086,56 +1097,20 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASSRI(tk.FindFirstDiffIndex),
 		ValueEx: FnASSRIex(tk.FindFirstDiffIndex),
 	},
-
-	// array/map related
-	BuiltinAppend: &BuiltinFunction{
-		Name:    "append",
-		Value:   CallExAdapter(builtinAppendFunc),
-		ValueEx: builtinAppendFunc,
+	BuiltintLimitStr: &BuiltinFunction{
+		Name:    "limitStr",
+		Value:   FnASIVsRS(tk.LimitString),
+		ValueEx: FnASIVsRSex(tk.LimitString),
 	},
-	BuiltinDelete: &BuiltinFunction{
-		Name:    "delete",
-		Value:   funcPOsRe(builtinDeleteFunc),
-		ValueEx: funcPOsReEx(builtinDeleteFunc),
+	BuiltinStrQuote: &BuiltinFunction{
+		Name:    "strQuote",
+		Value:   FnASRS(strconv.Quote),
+		ValueEx: FnASRSex(strconv.Quote),
 	},
-	BuiltinArrayContains: &BuiltinFunction{
-		Name:    "arrayContains",
-		Value:   CallExAdapter(builtinArrayContainsFunc),
-		ValueEx: builtinArrayContainsFunc,
-	},
-	BuiltinAppendList: &BuiltinFunction{
-		Name:    "appendList",
-		Value:   CallExAdapter(builtinAppendListFunc),
-		ValueEx: builtinAppendListFunc,
-	},
-	BuiltinRemoveItems: &BuiltinFunction{
-		Name:    "removeItems",
-		Value:   CallExAdapter(builtinRemoveItemsFunc),
-		ValueEx: builtinRemoveItemsFunc,
-	},
-	BuiltinToOrderedMap: &BuiltinFunction{
-		Name:    "toOrderedMap",
-		Value:   CallExAdapter(builtinToOrderedMapFunc),
-		ValueEx: builtinToOrderedMapFunc,
-	},
-
-	// math related
-	BuiltinAdjustFloat: &BuiltinFunction{
-		Name:    "adjustFloat",
-		Value:   CallExAdapter(builtinAdjustFloatFunc),
-		ValueEx: builtinAdjustFloatFunc,
-	},
-	BuiltinMathSqrt: &BuiltinFunction{
-		Name:    "mathSqrt",
-		Value:   CallExAdapter(builtinMathSqrtFunc),
-		ValueEx: builtinMathSqrtFunc,
-	},
-
-	// bitwise related
-	BuiltinBitNot: &BuiltinFunction{
-		Name:    "bitNot",
-		Value:   CallExAdapter(builtinBitNotFunc),
-		ValueEx: builtinBitNotFunc,
+	BuiltinStrUnquote: &BuiltinFunction{
+		Name:    "strUnquote",
+		Value:   CallExAdapter(builtintStrUnquoteFunc),
+		ValueEx: builtintStrUnquoteFunc,
 	},
 
 	// regex related
@@ -1154,15 +1129,32 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASSIRLs(tk.RegFindAllX),
 		ValueEx: FnASSIRLsex(tk.RegFindAllX),
 	},
-	BuiltinRegReplace: &BuiltinFunction{
-		Name:    "regReplace",
-		Value:   FnASSSRS(tk.RegReplaceX),
-		ValueEx: FnASSSRSex(tk.RegReplaceX),
+	BuiltinRegFindAllGroups: &BuiltinFunction{
+		Name:    "regFindAllGroups",
+		Value:   FnASSRLls(tk.RegFindAllGroupsX),
+		ValueEx: FnASSRLlsex(tk.RegFindAllGroupsX),
 	},
 	BuiltinRegQuote: &BuiltinFunction{
 		Name:    "regQuote",
 		Value:   CallExAdapter(builtinRegQuoteFunc),
 		ValueEx: builtinRegQuoteFunc,
+	},
+	BuiltinRegReplace: &BuiltinFunction{
+		Name:    "regReplace",
+		Value:   FnASSSRS(tk.RegReplaceX),
+		ValueEx: FnASSSRSex(tk.RegReplaceX),
+	},
+
+	// math related
+	BuiltinAdjustFloat: &BuiltinFunction{
+		Name:    "adjustFloat",
+		Value:   CallExAdapter(builtinAdjustFloatFunc),
+		ValueEx: builtinAdjustFloatFunc,
+	},
+	BuiltinMathSqrt: &BuiltinFunction{
+		Name:    "mathSqrt",
+		Value:   CallExAdapter(builtinMathSqrtFunc),
+		ValueEx: builtinMathSqrtFunc,
 	},
 
 	// random related
@@ -1203,6 +1195,107 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// control related
+	BuiltinIsNil: &BuiltinFunction{
+		Name:    "isNil", // usage: isNil(err1), check if the argument is nil
+		Value:   CallExAdapter(builtinIsNilFunc),
+		ValueEx: builtinIsNilFunc,
+	},
+	BuiltinIsNilOrEmpty: &BuiltinFunction{
+		Name:    "isNilOrEmpty", // usage: isNilOrEmpty(err1), check if the argument is nil or empty string
+		Value:   CallExAdapter(builtinIsNilOrEmptyFunc),
+		ValueEx: builtinIsNilOrEmptyFunc,
+	},
+	BuiltinIsNilOrErr: &BuiltinFunction{
+		Name:    "isNilOrErr", // usage: isNilOrErr(err1), check if the argument is nil, error object, or TXERROR string
+		Value:   CallExAdapter(builtinIsNilOrErrFunc),
+		ValueEx: builtinIsNilOrErrFunc,
+	},
+	BuiltinIsUndefined: &BuiltinFunction{
+		Name:    "isUndefined",
+		Value:   funcPORO(builtinIsUndefinedFunc),
+		ValueEx: funcPOROEx(builtinIsUndefinedFunc),
+	},
+	BuiltinIsBool: &BuiltinFunction{
+		Name:    "isBool",
+		Value:   funcPORO(builtinIsBoolFunc),
+		ValueEx: funcPOROEx(builtinIsBoolFunc),
+	},
+	BuiltinIsByte: &BuiltinFunction{
+		Name:    "isByte",
+		Value:   funcPORO(builtinIsByteFunc),
+		ValueEx: funcPOROEx(builtinIsByteFunc),
+	},
+	BuiltinIsChar: &BuiltinFunction{
+		Name:    "isChar",
+		Value:   funcPORO(builtinIsCharFunc),
+		ValueEx: funcPOROEx(builtinIsCharFunc),
+	},
+	BuiltinIsInt: &BuiltinFunction{
+		Name:    "isInt",
+		Value:   funcPORO(builtinIsIntFunc),
+		ValueEx: funcPOROEx(builtinIsIntFunc),
+	},
+	BuiltinIsUint: &BuiltinFunction{
+		Name:    "isUint",
+		Value:   funcPORO(builtinIsUintFunc),
+		ValueEx: funcPOROEx(builtinIsUintFunc),
+	},
+	BuiltinIsFloat: &BuiltinFunction{
+		Name:    "isFloat",
+		Value:   funcPORO(builtinIsFloatFunc),
+		ValueEx: funcPOROEx(builtinIsFloatFunc),
+	},
+	BuiltinIsString: &BuiltinFunction{
+		Name:    "isString",
+		Value:   funcPORO(builtinIsStringFunc),
+		ValueEx: funcPOROEx(builtinIsStringFunc),
+	},
+	BuiltinIsBytes: &BuiltinFunction{
+		Name:    "isBytes",
+		Value:   funcPORO(builtinIsBytesFunc),
+		ValueEx: funcPOROEx(builtinIsBytesFunc),
+	},
+	BuiltinIsChars: &BuiltinFunction{
+		Name:    "isChars",
+		Value:   funcPORO(builtinIsCharsFunc),
+		ValueEx: funcPOROEx(builtinIsCharsFunc),
+	},
+	BuiltinIsArray: &BuiltinFunction{
+		Name:    "isArray",
+		Value:   funcPORO(builtinIsArrayFunc),
+		ValueEx: funcPOROEx(builtinIsArrayFunc),
+	},
+	BuiltinIsMap: &BuiltinFunction{
+		Name:    "isMap",
+		Value:   funcPORO(builtinIsMapFunc),
+		ValueEx: funcPOROEx(builtinIsMapFunc),
+	},
+	BuiltinIsSyncMap: &BuiltinFunction{
+		Name:    "isSyncMap",
+		Value:   funcPORO(builtinIsSyncMapFunc),
+		ValueEx: funcPOROEx(builtinIsSyncMapFunc),
+	},
+	BuiltinIsError: &BuiltinFunction{
+		Name:    "isError",
+		Value:   CallExAdapter(builtinIsErrorFunc),
+		ValueEx: builtinIsErrorFunc,
+	},
+	BuiltinIsFunction: &BuiltinFunction{
+		Name:    "isFunction",
+		Value:   funcPORO(builtinIsFunctionFunc),
+		ValueEx: funcPOROEx(builtinIsFunctionFunc),
+	},
+	BuiltinIsCallable: &BuiltinFunction{
+		Name:  "isCallable",
+		Value: funcPORO(builtinIsCallableFunc),
+		//ValueEx: funcPOROEx(builtinIsCallableFunc),
+	},
+	BuiltinIsIterable: &BuiltinFunction{
+		Name:    "isIterable",
+		Value:   funcPORO(builtinIsIterableFunc),
+		ValueEx: funcPOROEx(builtinIsIterableFunc),
+	},
+
 	BuiltinExit: &BuiltinFunction{
 		Name:  "exit", // usage: exit() or exit(1)
 		Value: builtinExitFunc,
@@ -1214,11 +1307,6 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// error related
-	BuiltinErrStrf: &BuiltinFunction{
-		Name:    "errStrf",
-		Value:   FnASVaRS(tk.ErrStrf),
-		ValueEx: FnASVaRSex(tk.ErrStrf),
-	},
 	BuiltinIsErrX: &BuiltinFunction{
 		Name:    "isErrX", // usage: isErrX(err1), check if err1 is error or error string(which starts with TXERROR:)
 		Value:   CallExAdapter(builtinIsErrXFunc),
@@ -1234,91 +1322,10 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinCheckErrXFunc),
 		ValueEx: builtinCheckErrXFunc,
 	},
-
-	// member/method related
-	BuiltinGetNamedValue: &BuiltinFunction{
-		Name:    "getNamedValue",
-		Value:   CallExAdapter(builtinGetNamedValueFunc),
-		ValueEx: builtinGetNamedValueFunc,
-	},
-	BuiltinCallNamedFunc: &BuiltinFunction{
-		Name:    "callNamedFunc",
-		Value:   CallExAdapter(builtinCallNamedFuncFunc),
-		ValueEx: builtinCallNamedFuncFunc,
-	},
-	BuiltinCallInternalFunc: &BuiltinFunction{
-		Name:    "callInternalFunc",
-		Value:   CallExAdapter(builtinCallInternalFuncFunc),
-		ValueEx: builtinCallInternalFuncFunc,
-	},
-	BuiltinGetValue: &BuiltinFunction{
-		Name:    "getValue",
-		Value:   CallExAdapter(builtinGetValueFunc),
-		ValueEx: builtinGetValueFunc,
-	},
-	BuiltinSetValue: &BuiltinFunction{
-		Name:    "setValue",
-		Value:   CallExAdapter(builtinSetValueFunc),
-		ValueEx: builtinSetValueFunc,
-	},
-	BuiltinGetMember: &BuiltinFunction{
-		Name:    "getMember",
-		Value:   CallExAdapter(builtinGetMemberFunc),
-		ValueEx: builtinGetMemberFunc,
-	},
-	BuiltinSetMember: &BuiltinFunction{
-		Name:    "setMember",
-		Value:   CallExAdapter(builtinSetMemberFunc),
-		ValueEx: builtinSetMemberFunc,
-	},
-	BuiltinCallMethod: &BuiltinFunction{
-		Name:    "callMethod",
-		Value:   CallExAdapter(builtinCallMethodFunc),
-		ValueEx: builtinCallMethodFunc,
-	},
-	BuiltinCallMethodEx: &BuiltinFunction{
-		Name:    "callMethodEx",
-		Value:   CallExAdapter(builtinCallMethodExFunc),
-		ValueEx: builtinCallMethodExFunc,
-	},
-
-	// encode/decode related
-	BuiltinUrlEncode: &BuiltinFunction{
-		Name:    "urlEncode",
-		Value:   FnASRS(tk.UrlEncode),
-		ValueEx: FnASRSex(tk.UrlEncode),
-	},
-	BuiltinUrlDecode: &BuiltinFunction{
-		Name:    "urlDecode",
-		Value:   FnASRS(tk.UrlDecode),
-		ValueEx: FnASRSex(tk.UrlDecode),
-	},
-	BuiltinHtmlEncode: &BuiltinFunction{
-		Name:    "htmlEncode",
-		Value:   FnASRS(tk.EncodeHTML),
-		ValueEx: FnASRSex(tk.EncodeHTML),
-	},
-	BuiltinHtmlDecode: &BuiltinFunction{
-		Name:    "htmlDecode",
-		Value:   FnASRS(tk.DecodeHTML),
-		ValueEx: FnASRSex(tk.DecodeHTML),
-	},
-	BuiltinToJSON: &BuiltinFunction{
-		Name:    "toJSON",
-		Value:   CallExAdapter(builtinToJSONFunc),
-		ValueEx: builtinToJSONFunc,
-	},
-	BuiltinFromJSON: &BuiltinFunction{
-		Name:    "fromJSON",
-		Value:   CallExAdapter(builtinFromJSONFunc),
-		ValueEx: builtinFromJSONFunc,
-	},
-
-	// read/write related
-	BuiltintWriteStr: &BuiltinFunction{
-		Name:    "writeStr",
-		Value:   CallExAdapter(builtinWriteStrFunc),
-		ValueEx: builtinWriteStrFunc,
+	BuiltinErrStrf: &BuiltinFunction{
+		Name:    "errStrf",
+		Value:   FnASVaRS(tk.ErrStrf),
+		ValueEx: FnASVaRSex(tk.ErrStrf),
 	},
 
 	// output/print related
@@ -1377,53 +1384,102 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinSscanfFunc,
 	},
 
-	// ref/pointer related
-	BuiltinUnref: &BuiltinFunction{
-		Name:    "unref",
-		Value:   CallExAdapter(builtinUnrefFunc),
-		ValueEx: builtinUnrefFunc,
+	// resource related
+	BuiltinGetNamedValue: &BuiltinFunction{
+		Name:    "getNamedValue",
+		Value:   CallExAdapter(builtinGetNamedValueFunc),
+		ValueEx: builtinGetNamedValueFunc,
 	},
-	BuiltinSetValueByRef: &BuiltinFunction{
-		Name:    "setValueByRef",
-		Value:   CallExAdapter(builtinSetValueByRefFunc),
-		ValueEx: builtinSetValueByRefFunc,
+	BuiltinCallNamedFunc: &BuiltinFunction{
+		Name:    "callNamedFunc",
+		Value:   CallExAdapter(builtinCallNamedFuncFunc),
+		ValueEx: builtinCallNamedFuncFunc,
+	},
+	BuiltinCallInternalFunc: &BuiltinFunction{
+		Name:    "callInternalFunc",
+		Value:   CallExAdapter(builtinCallInternalFuncFunc),
+		ValueEx: builtinCallInternalFuncFunc,
 	},
 
-	// convert related
-	BuiltinToStr: &BuiltinFunction{
-		Name:    "toStr", // usage: toStr(any)
-		Value:   CallExAdapter(builtinToStrFunc),
-		ValueEx: builtinToStrFunc,
+	// member/method related
+	BuiltinGetValue: &BuiltinFunction{
+		Name:    "getValue",
+		Value:   CallExAdapter(builtinGetValueFunc),
+		ValueEx: builtinGetValueFunc,
 	},
-	BuiltinToInt: &BuiltinFunction{
-		Name:    "toInt",
-		Value:   CallExAdapter(builtinToIntFunc),
-		ValueEx: builtinToIntFunc,
+	BuiltinSetValue: &BuiltinFunction{
+		Name:    "setValue",
+		Value:   CallExAdapter(builtinSetValueFunc),
+		ValueEx: builtinSetValueFunc,
 	},
-	BuiltinToFloat: &BuiltinFunction{
-		Name:    "toFloat",
-		Value:   CallExAdapter(builtinToFloatFunc),
-		ValueEx: builtinToFloatFunc,
+	BuiltinGetMember: &BuiltinFunction{
+		Name:    "getMember",
+		Value:   CallExAdapter(builtinGetMemberFunc),
+		ValueEx: builtinGetMemberFunc,
 	},
-	BuiltinToTime: &BuiltinFunction{
-		Name:    "toTime", // new a Time object
-		Value:   CallExAdapter(builtinTimeFunc),
-		ValueEx: builtinTimeFunc,
+	BuiltinSetMember: &BuiltinFunction{
+		Name:    "setMember",
+		Value:   CallExAdapter(builtinSetMemberFunc),
+		ValueEx: builtinSetMemberFunc,
 	},
-	BuiltinToHex: &BuiltinFunction{
-		Name:    "toHex",
-		Value:   CallExAdapter(builtinToHexFunc),
-		ValueEx: builtinToHexFunc,
+	BuiltinCallMethod: &BuiltinFunction{
+		Name:    "callMethod",
+		Value:   CallExAdapter(builtinCallMethodFunc),
+		ValueEx: builtinCallMethodFunc,
 	},
-	BuiltinUnhex: &BuiltinFunction{
-		Name:    "unhex",
-		Value:   FnASRLby(tk.HexToBytes),
-		ValueEx: FnASRLbyex(tk.HexToBytes),
+	BuiltinCallMethodEx: &BuiltinFunction{
+		Name:    "callMethodEx",
+		Value:   CallExAdapter(builtinCallMethodExFunc),
+		ValueEx: builtinCallMethodExFunc,
 	},
-	BuiltinToKMG: &BuiltinFunction{
-		Name:    "toKMG",
-		Value:   FnAAVaRS(tk.IntToKMGT),
-		ValueEx: FnAAVaRSex(tk.IntToKMGT),
+
+	// read/write related
+	BuiltintWriteStr: &BuiltinFunction{
+		Name:    "writeStr",
+		Value:   CallExAdapter(builtinWriteStrFunc),
+		ValueEx: builtinWriteStrFunc,
+	},
+
+	// encode/decode related
+	BuiltinUrlEncode: &BuiltinFunction{
+		Name:    "urlEncode",
+		Value:   FnASRS(tk.UrlEncode),
+		ValueEx: FnASRSex(tk.UrlEncode),
+	},
+	BuiltinUrlDecode: &BuiltinFunction{
+		Name:    "urlDecode",
+		Value:   FnASRS(tk.UrlDecode),
+		ValueEx: FnASRSex(tk.UrlDecode),
+	},
+	BuiltinHtmlEncode: &BuiltinFunction{
+		Name:    "htmlEncode",
+		Value:   FnASRS(tk.EncodeHTML),
+		ValueEx: FnASRSex(tk.EncodeHTML),
+	},
+	BuiltinHtmlDecode: &BuiltinFunction{
+		Name:    "htmlDecode",
+		Value:   FnASRS(tk.DecodeHTML),
+		ValueEx: FnASRSex(tk.DecodeHTML),
+	},
+	BuiltinSimpleEncode: &BuiltinFunction{
+		Name:    "simpleEncode",
+		Value:   CallExAdapter(builtinSimpleEncodeFunc),
+		ValueEx: builtinSimpleEncodeFunc,
+	},
+	BuiltinSimpleDecode: &BuiltinFunction{
+		Name:    "simpleDecode",
+		Value:   CallExAdapter(builtinSimpleDecodeFunc),
+		ValueEx: builtinSimpleDecodeFunc,
+	},
+	BuiltinToJSON: &BuiltinFunction{
+		Name:    "toJSON",
+		Value:   CallExAdapter(builtinToJSONFunc),
+		ValueEx: builtinToJSONFunc,
+	},
+	BuiltinFromJSON: &BuiltinFunction{
+		Name:    "fromJSON",
+		Value:   CallExAdapter(builtinFromJSONFunc),
+		ValueEx: builtinFromJSONFunc,
 	},
 
 	// command-line related
@@ -1502,6 +1558,23 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// os/system related
+	BuiltinSystemCmd: &BuiltinFunction{
+		Name:    "systemCmd",
+		Value:   FnASVsRS(tk.SystemCmd),
+		ValueEx: FnASVsRSex(tk.SystemCmd),
+	},
+
+	BuiltinGetEnv: &BuiltinFunction{
+		Name:    "getEnv",
+		Value:   CallExAdapter(builtinGetEnvFunc),
+		ValueEx: builtinGetEnvFunc,
+	},
+	BuiltinSetEnv: &BuiltinFunction{
+		Name:    "setEnv",
+		Value:   FnASSRE(os.Setenv),
+		ValueEx: FnASSREex(os.Setenv),
+	},
+
 	BuiltinGetOSName: &BuiltinFunction{
 		Name:    "getOSName",
 		Value:   FnARS(tk.GetOSName),
@@ -1517,21 +1590,26 @@ var BuiltinObjects = [...]Object{
 		Value:   FnARLs(tk.GetOSArgs),
 		ValueEx: FnARLsex(tk.GetOSArgs),
 	},
-	BuiltinGetEnv: &BuiltinFunction{
-		Name:    "getEnv",
-		Value:   CallExAdapter(builtinGetEnvFunc),
-		ValueEx: builtinGetEnvFunc,
-	},
-	BuiltinSetEnv: &BuiltinFunction{
-		Name:    "setEnv",
-		Value:   FnASSRE(os.Setenv),
-		ValueEx: FnASSREex(os.Setenv),
-	},
 
-	BuiltinSystemCmd: &BuiltinFunction{
-		Name:    "systemCmd",
-		Value:   FnASVsRS(tk.SystemCmd),
-		ValueEx: FnASVsRSex(tk.SystemCmd),
+	BuiltinGetAppDir: &BuiltinFunction{
+		Name:    "getAppDir",
+		Value:   FnARS(tk.GetApplicationPath),
+		ValueEx: FnARSex(tk.GetApplicationPath),
+	},
+	BuiltinGetCurDir: &BuiltinFunction{
+		Name:    "getCurDir",
+		Value:   FnARS(tk.GetCurrentDir),
+		ValueEx: FnARSex(tk.GetCurrentDir),
+	},
+	BuiltinGetHomeDir: &BuiltinFunction{
+		Name:    "getHomeDir",
+		Value:   FnARS(tk.GetHomeDir),
+		ValueEx: FnARSex(tk.GetHomeDir),
+	},
+	BuiltinGetTempDir: &BuiltinFunction{
+		Name:    "getTempDir",
+		Value:   FnARS(os.TempDir),
+		ValueEx: FnARSex(os.TempDir),
 	},
 
 	// dir/path related
@@ -1555,26 +1633,6 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASVsRLmss(tk.GetFileList),
 		ValueEx: FnASVsRLmssex(tk.GetFileList),
 	},
-	BuiltinGetHomeDir: &BuiltinFunction{
-		Name:    "getHomeDir",
-		Value:   FnARS(tk.GetHomeDir),
-		ValueEx: FnARSex(tk.GetHomeDir),
-	},
-	BuiltinGetTempDir: &BuiltinFunction{
-		Name:    "getTempDir",
-		Value:   FnARS(os.TempDir),
-		ValueEx: FnARSex(os.TempDir),
-	},
-	BuiltinGetAppDir: &BuiltinFunction{
-		Name:    "getAppDir",
-		Value:   FnARS(tk.GetApplicationPath),
-		ValueEx: FnARSex(tk.GetApplicationPath),
-	},
-	BuiltinGetCurDir: &BuiltinFunction{
-		Name:    "getCurDir",
-		Value:   FnARS(tk.GetCurrentDir),
-		ValueEx: FnARSex(tk.GetCurrentDir),
-	},
 
 	// file related
 	BuiltinFileExists: &BuiltinFunction{
@@ -1597,6 +1655,17 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASRS(filepath.Dir),
 		ValueEx: FnASRSex(filepath.Dir),
 	},
+	BuiltinRenameFile: &BuiltinFunction{
+		Name:    "renameFile",
+		Value:   FnASSVsRE(tk.RenameFile),
+		ValueEx: FnASSVsREex(tk.RenameFile),
+	},
+	BuiltinRemoveFile: &BuiltinFunction{
+		Name:    "removeFile",
+		Value:   FnASRE(tk.RemoveFile),
+		ValueEx: FnASREex(tk.RemoveFile),
+	},
+
 	BuiltinLoadText: &BuiltinFunction{
 		Name:    "loadText",
 		Value:   FnASRS(tk.LoadStringFromFile),
@@ -1619,15 +1688,12 @@ var BuiltinObjects = [...]Object{
 		ValueEx: FnALbySREex(tk.SaveBytesToFileE),
 		Remark:  `save bytes to file, usage: saveBytes(bytesT, "file.bin"), return error if failed`,
 	},
-	BuiltinRenameFile: &BuiltinFunction{
-		Name:    "renameFile",
-		Value:   FnASSVsRE(tk.RenameFile),
-		ValueEx: FnASSVsREex(tk.RenameFile),
-	},
-	BuiltinRemoveFile: &BuiltinFunction{
-		Name:    "removeFile",
-		Value:   FnASRE(tk.RemoveFile),
-		ValueEx: FnASREex(tk.RemoveFile),
+
+	// compress/zip related
+	BuiltinArchiveFilesToZip: &BuiltinFunction{
+		Name:    "archiveFilesToZip",
+		Value:   CallExAdapter(builtinArchiveFilesToZipFunc),
+		ValueEx: builtinArchiveFilesToZipFunc,
 	},
 
 	// network/web related
@@ -1653,6 +1719,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinGetReqHeaderFunc),
 		ValueEx: builtinGetReqHeaderFunc,
 	},
+	BuiltinGetReqBody: &BuiltinFunction{
+		Name:    "getReqBody",
+		Value:   CallExAdapter(builtinGetReqBodyFunc),
+		ValueEx: builtinGetReqBodyFunc,
+	},
 	BuiltinParseReqForm: &BuiltinFunction{
 		Name:    "parseReqForm",
 		Value:   CallExAdapter(builtinParseReqFormFunc),
@@ -1662,11 +1733,6 @@ var BuiltinObjects = [...]Object{
 		Name:    "parseReqFormEx",
 		Value:   CallExAdapter(builtinParseReqFormExFunc),
 		ValueEx: builtinParseReqFormExFunc,
-	},
-	BuiltinGetReqBody: &BuiltinFunction{
-		Name:    "getReqBody",
-		Value:   CallExAdapter(builtinGetReqBodyFunc),
-		ValueEx: builtinGetReqBodyFunc,
 	},
 	BuiltinWriteRespHeader: &BuiltinFunction{
 		Name:    "writeRespHeader",
@@ -1679,7 +1745,7 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinSetRespHeaderFunc,
 	},
 	BuiltinGenJSONResp: &BuiltinFunction{
-		Name:    "genJsonResp",
+		Name:    "genJSONResp",
 		Value:   CallExAdapter(builtinGenJSONRespFunc),
 		ValueEx: builtinGenJSONRespFunc,
 	},
@@ -1697,70 +1763,6 @@ var BuiltinObjects = [...]Object{
 		Name:    "getMimeType",
 		Value:   FnASRS(tk.GetMimeTypeByExt),
 		ValueEx: FnASRSex(tk.GetMimeTypeByExt),
-	},
-
-	// compress/zip related
-	BuiltinArchiveFilesToZip: &BuiltinFunction{
-		Name:    "archiveFilesToZip",
-		Value:   CallExAdapter(builtinArchiveFilesToZipFunc),
-		ValueEx: builtinArchiveFilesToZipFunc,
-	},
-
-	// database related
-	BuiltinFormatSQLValue: &BuiltinFunction{
-		Name:    "formatSQLValue",
-		Value:   FnASRS(sqltk.FormatSQLValue),
-		ValueEx: FnASRSex(sqltk.FormatSQLValue),
-	},
-	BuiltinDbClose: &BuiltinFunction{
-		Name:    "dbClose",
-		Value:   CallExAdapter(BuiltinDbCloseFunc),
-		ValueEx: BuiltinDbCloseFunc,
-	},
-	BuiltinDbQuery: &BuiltinFunction{
-		Name:    "dbQuery",
-		Value:   FnADSVaRA(sqltk.QueryDBX),
-		ValueEx: FnADSVaRAex(sqltk.QueryDBX),
-	},
-	BuiltinDbQueryOrdered: &BuiltinFunction{
-		Name:    "dbQueryOrdered",
-		Value:   FnADSVaRA(sqltk.QueryDBOrderedX),
-		ValueEx: FnADSVaRAex(sqltk.QueryDBOrderedX),
-	},
-	BuiltinDbQueryCount: &BuiltinFunction{
-		Name:    "dbQueryCount",
-		Value:   FnADSVaRA(sqltk.QueryCountX),
-		ValueEx: FnADSVaRAex(sqltk.QueryCountX),
-	},
-	BuiltinDbQueryFloat: &BuiltinFunction{
-		Name:    "dbQueryFloat",
-		Value:   FnADSVaRA(sqltk.QueryFloatX),
-		ValueEx: FnADSVaRAex(sqltk.QueryFloatX),
-	},
-	BuiltinDbQueryString: &BuiltinFunction{
-		Name:    "dbQueryString",
-		Value:   FnADSVaRA(sqltk.QueryStringX),
-		ValueEx: FnADSVaRAex(sqltk.QueryStringX),
-	},
-	BuiltinDbQueryRecs: &BuiltinFunction{
-		Name:    "dbQueryRecs",
-		Value:   FnADSVaRA(sqltk.QueryDBRecsX),
-		ValueEx: FnADSVaRAex(sqltk.QueryDBRecsX),
-	},
-	BuiltinDbQueryMap: &BuiltinFunction{
-		Name:    "dbQueryMap",
-		Value:   FnADSSVaRA(sqltk.QueryDBMapX),
-		ValueEx: FnADSSVaRAex(sqltk.QueryDBMapX),
-	},
-	BuiltinDbQueryMapArray: &BuiltinFunction{
-		Name:    "dbQueryMapArray",
-		Value:   FnADSSVaRA(sqltk.QueryDBMapArrayX),
-		ValueEx: FnADSSVaRAex(sqltk.QueryDBMapArrayX),
-	},
-	BuiltinDbExec: &BuiltinFunction{
-		Name:    "dbExec",
-		Value:   FnADSVaRA(sqltk.ExecDBX),
-		ValueEx: FnADSVaRAex(sqltk.ExecDBX),
 	},
 
 	// security related
@@ -1790,6 +1792,70 @@ var BuiltinObjects = [...]Object{
 		Name:    "sshUpload",
 		Value:   CallExAdapter(builtinSshUploadFunc),
 		ValueEx: builtinSshUploadFunc,
+	},
+
+	// database related
+	BuiltinFormatSQLValue: &BuiltinFunction{
+		Name:    "formatSQLValue",
+		Value:   FnASRS(sqltk.FormatSQLValue),
+		ValueEx: FnASRSex(sqltk.FormatSQLValue),
+	},
+	BuiltinDbClose: &BuiltinFunction{
+		Name:    "dbClose",
+		Value:   CallExAdapter(BuiltinDbCloseFunc),
+		ValueEx: BuiltinDbCloseFunc,
+	},
+	BuiltinDbQuery: &BuiltinFunction{
+		Name:    "dbQuery",
+		Value:   FnADSVaRA(sqltk.QueryDBX),
+		ValueEx: FnADSVaRAex(sqltk.QueryDBX),
+	},
+	BuiltinDbQueryOrdered: &BuiltinFunction{
+		Name:    "dbQueryOrdered",
+		Value:   FnADSVaRA(sqltk.QueryDBOrderedX),
+		ValueEx: FnADSVaRAex(sqltk.QueryDBOrderedX),
+	},
+	BuiltinDbQueryRecs: &BuiltinFunction{
+		Name:    "dbQueryRecs",
+		Value:   FnADSVaRA(sqltk.QueryDBRecsX),
+		ValueEx: FnADSVaRAex(sqltk.QueryDBRecsX),
+	},
+	BuiltinDbQueryMap: &BuiltinFunction{
+		Name:    "dbQueryMap",
+		Value:   FnADSSVaRA(sqltk.QueryDBMapX),
+		ValueEx: FnADSSVaRAex(sqltk.QueryDBMapX),
+	},
+	BuiltinDbQueryMapArray: &BuiltinFunction{
+		Name:    "dbQueryMapArray",
+		Value:   FnADSSVaRA(sqltk.QueryDBMapArrayX),
+		ValueEx: FnADSSVaRAex(sqltk.QueryDBMapArrayX),
+	},
+	BuiltinDbQueryCount: &BuiltinFunction{
+		Name:    "dbQueryCount",
+		Value:   FnADSVaRA(sqltk.QueryCountX),
+		ValueEx: FnADSVaRAex(sqltk.QueryCountX),
+	},
+	BuiltinDbQueryFloat: &BuiltinFunction{
+		Name:    "dbQueryFloat",
+		Value:   FnADSVaRA(sqltk.QueryFloatX),
+		ValueEx: FnADSVaRAex(sqltk.QueryFloatX),
+	},
+	BuiltinDbQueryString: &BuiltinFunction{
+		Name:    "dbQueryString",
+		Value:   FnADSVaRA(sqltk.QueryStringX),
+		ValueEx: FnADSVaRAex(sqltk.QueryStringX),
+	},
+	BuiltinDbExec: &BuiltinFunction{
+		Name:    "dbExec",
+		Value:   FnADSVaRA(sqltk.ExecDBX),
+		ValueEx: FnADSVaRAex(sqltk.ExecDBX),
+	},
+
+	// unicode related
+	BuiltinToPinyin: &BuiltinFunction{
+		Name:    "toPinyin",
+		Value:   FnASVsRA(tk.ToPinYin),
+		ValueEx: FnASVsRAex(tk.ToPinYin),
 	},
 
 	// misc related
@@ -1875,6 +1941,9 @@ var BuiltinObjects = [...]Object{
 	BuiltinNotImplementedError:     ErrNotImplemented,
 	BuiltinZeroDivisionError:       ErrZeroDivision,
 	BuiltinTypeError:               ErrType,
+
+	// funcs detail end
+
 }
 
 func builtinMakeArrayFunc(n int, arg Object) (Object, error) {
@@ -2741,6 +2810,11 @@ func builtinIsBytesFunc(arg Object) Object {
 	return Bool(ok)
 }
 
+func builtinIsCharsFunc(arg Object) Object {
+	_, ok := arg.(Chars)
+	return Bool(ok)
+}
+
 func builtinIsMapFunc(arg Object) Object {
 	_, ok := arg.(Map)
 	return Bool(ok)
@@ -3106,6 +3180,30 @@ func FnASSIRLsex(fn func(string, string, int) []string) CallableExFunc {
 	}
 }
 
+// like tk.RegFindAllGroupsX
+func FnASSRLls(fn func(string, string) [][]string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASSRLlsex(fn func(string, string) [][]string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ConvertToObject(rs), nil
+	}
+}
+
 // // like tk.LoadStringFromFile
 // func FnASRSe(fn func(string) string) CallableFunc {
 // 	return func(args ...Object) (ret Object, err error) {
@@ -3253,26 +3351,62 @@ func FnASVsRS(fn func(string, ...string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
 			return NewCommonError("not enough parameters"), nil
-			// return Undefined, ErrWrongNumArguments.NewError(
-			// 	"want>=1 got=" + strconv.Itoa(len(args)))
 		}
 
 		vargs := ObjectsToS(args[1:])
+
 		rs := fn(args[0].String(), vargs...)
+
 		return ToStringObject(rs), nil
 	}
 }
 
 func FnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
-		if c.Len() < 1 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
-			// return Undefined, ErrWrongNumArguments.NewError(
-			// 	"want>=1 got=" + strconv.Itoa(c.Len()))
+		args := c.GetArgs()
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
 		}
-		vargs := toArgsS(1, c)
-		rs := fn(c.Get(0).String(), vargs...)
+
+		vargs := ObjectsToS(args[1:])
+
+		tmps := args[0].String()
+
+		rs := fn(tmps, vargs...)
+
 		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.ToPinyin
+func FnASVsRA(fn func(string, ...string) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToS(args[1:])
+
+		rs := fn(args[0].String(), vargs...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASVsRAex(fn func(string, ...string) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToS(args[1:])
+
+		tmps := args[0].String()
+
+		rs := fn(tmps, vargs...)
+
+		return ConvertToObject(rs), nil
 	}
 }
 
@@ -4282,6 +4416,60 @@ func builtinToJSONFunc(c Call) (Object, error) {
 	cObjT := ConvertFromObject(args[0])
 
 	rsT := tk.ToJSONX(cObjT, ObjectsToS(args[1:])...)
+
+	return ToStringObject(rsT), nil
+}
+
+func builtinSimpleEncodeFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	lenT := len(args)
+
+	if lenT < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	var rsT string
+
+	if lenT > 1 {
+		nv1, ok := args[1].(Byte)
+
+		if ok {
+			rsT = tk.EncodeStringCustomEx(args[0].String(), byte(nv1))
+		} else {
+			rsT = tk.EncodeStringCustomEx(args[0].String(), tk.ToByte(ConvertFromObject(args[1])))
+		}
+
+	} else {
+		rsT = tk.EncodeStringCustomEx(args[0].String())
+	}
+
+	return ToStringObject(rsT), nil
+}
+
+func builtinSimpleDecodeFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	lenT := len(args)
+
+	if lenT < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	var rsT string
+
+	if lenT > 1 {
+		nv1, ok := args[1].(Byte)
+
+		if ok {
+			rsT = tk.DecodeStringCustom(args[0].String(), byte(nv1))
+		} else {
+			rsT = tk.DecodeStringCustom(args[0].String(), tk.ToByte(ConvertFromObject(args[1])))
+		}
+
+	} else {
+		rsT = tk.DecodeStringCustom(args[0].String())
+	}
 
 	return ToStringObject(rsT), nil
 }
@@ -6576,6 +6764,7 @@ func builtinWriteRespHeaderFunc(c Call) (Object, error) {
 	case Int:
 		statusT = int(nv)
 	case String:
+
 		v1, ok := namedValueMapG[nv.Value]
 
 		if !ok {

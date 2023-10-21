@@ -125,7 +125,7 @@ func NewCompiler(file *parser.SourceFile, opts CompilerOptions) *Compiler {
 		opts.constsCache = make(map[Object]int)
 		for i := range opts.Constants {
 			switch opts.Constants[i].(type) {
-			case Int, Uint, String, Bool, Float, Char, *UndefinedType:
+			case Bool, Byte, Char, Int, Uint, Float, *UndefinedType: // , String
 				opts.constsCache[opts.Constants[i]] = i
 			}
 		}

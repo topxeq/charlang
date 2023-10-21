@@ -1,0 +1,61 @@
+filePathT := joinPath(getEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "builtins.go")
+
+fcT := loadText(filePathT)
+
+// plt(fcT)
+
+docBodyT := regFindFirst(fcT, `(?sm)// funcs start(.*?)// funcs end`, 1)
+
+// plt(docBodyT)
+
+checkErrX(docBodyT)
+
+docBodyDetailT := regFindFirst(fcT, `(?sm)// funcs detail start(.*?)// funcs detail end`, 1)
+
+// plt(docBodyDetailT)
+
+checkErrX(docBodyDetailT)
+
+finds1 := regFindAllGroups(docBodyT, `(?sm)^\s*?"([^"]*?)".*?\s*?$`)
+
+// plt(finds1)
+
+finds2 := regFindAllGroups(docBodyDetailT, `(?sm)^\s*?Name:\s*?"([^"]*?)",.*?\s*?$`)
+
+// for i, v in finds1 {
+// 	pl("process [%v] %v", i, v[1])
+// }
+
+// for i, v in finds2 {
+// 	pl("process [%v] %v", i, v[1])
+// }
+
+i := 0
+j := 0
+
+len1 := len(finds1)
+len2 := len(finds2)
+
+for {
+	if finds1[i][1] != finds2[j][1] {
+		if strIn(finds1[i][1], "typeOf", "newObj", "not", "appendArray", "appendSlice", "genRandomStr", "isErr", "getErrStr", "checkErr", "getConst", "mb", "mt", "mtEx", "toJson", "fromJson", "getOsName", "getOsArch", "getOsArgs", "genFileList", "ifFileExists", "genJsonResp", "genResp", "dbConnect") {
+			i++
+
+			if i >= len1 || j >= len2 {
+				break
+			}
+
+			continue
+		}
+
+		pl("[i: %v/%v, j: %v/%v] %v -> %v", i+1, len1, j+1, len2, finds1[i][1], finds2[j][1])
+		break
+	}
+
+	i++
+	j++
+
+	if i >= len1 || j >= len2 {
+		break
+	}
+}
