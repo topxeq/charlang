@@ -33,7 +33,7 @@ codeT := trim(getSwitch(argsG, "-code=", ""))
 
 overwriteT := ifSwitchExists(argsG, "-overwrite")
 
-pl("withHeadOnly: %v, code: %v", withHeadOnlyT, codeT)
+pl("files: %v, withHeadOnly: %v, code: %v", len(listT), withHeadOnlyT, codeT)
 
 for i, v in listT {
 	if toInt(v.Size, 0) <= 0 {
