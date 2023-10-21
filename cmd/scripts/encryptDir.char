@@ -65,7 +65,7 @@ for i, v in listT {
 
 	encBufT := encryptData(bytesT, ...optionsInnerT)
 
-	plt(len(encBufT))
+	// plt(len(encBufT))
 
 	if isNil(encBufT) {
 		fatalf("encrypt result nil: [%v] %v", i, v)
