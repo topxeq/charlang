@@ -674,9 +674,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	"contains":    BuiltinContains,
 	"sort":        BuiltinSort,
 	"sortReverse": BuiltinSortReverse,
-	"printf":      BuiltinPrintf,
-	"println":     BuiltinPrintln,
-	"sprintf":     BuiltinSprintf,
+	"cap":         BuiltinCap,
+
+	"printf":  BuiltinPrintf,
+	"println": BuiltinPrintln,
+	"sprintf": BuiltinSprintf,
 
 	"WrongNumArgumentsError":  BuiltinWrongNumArgumentsError,
 	"InvalidOperatorError":    BuiltinInvalidOperatorError,
@@ -688,8 +690,6 @@ var BuiltinsMap = map[string]BuiltinType{
 	"NotImplementedError":     BuiltinNotImplementedError,
 	"ZeroDivisionError":       BuiltinZeroDivisionError,
 	"TypeError":               BuiltinTypeError,
-
-	"cap": BuiltinCap,
 
 	// funcs end
 
@@ -895,15 +895,16 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinMuxFunc),
 		ValueEx: builtinMuxFunc,
 	},
-	BuiltinImage: &BuiltinFunction{
-		Name:    "image",
-		Value:   CallExAdapter(builtinImageFunc),
-		ValueEx: builtinImageFunc,
-	},
 	BuiltinHttpHandler: &BuiltinFunction{
 		Name:    "httpHandler",
 		Value:   CallExAdapter(builtinHttpHandlerFunc),
 		ValueEx: builtinHttpHandlerFunc,
+	},
+
+	BuiltinImage: &BuiltinFunction{
+		Name:    "image",
+		Value:   CallExAdapter(builtinImageFunc),
+		ValueEx: builtinImageFunc,
 	},
 
 	BuiltinCharCode: &BuiltinFunction{
@@ -1931,11 +1932,6 @@ var BuiltinObjects = [...]Object{
 		Value:   funcPOOROe(builtinContainsFunc),
 		ValueEx: funcPOOROeEx(builtinContainsFunc),
 	},
-	BuiltinCap: &BuiltinFunction{
-		Name:    "cap",
-		Value:   funcPORO(builtinCapFunc),
-		ValueEx: funcPOROEx(builtinCapFunc),
-	},
 	BuiltinSort: &BuiltinFunction{
 		Name:    "sort",
 		Value:   funcPOROe(builtinSortFunc),
@@ -1945,6 +1941,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "sortReverse",
 		Value:   funcPOROe(builtinSortReverseFunc),
 		ValueEx: funcPOROeEx(builtinSortReverseFunc),
+	},
+	BuiltinCap: &BuiltinFunction{
+		Name:    "cap",
+		Value:   funcPORO(builtinCapFunc),
+		ValueEx: funcPOROEx(builtinCapFunc),
 	},
 	BuiltinPrintf: &BuiltinFunction{
 		Name:    "printf",
