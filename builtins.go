@@ -38,6 +38,7 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinHttpRedirect
 	BuiltinImage
 	BuiltinLoadImageFromBytes
 	BuiltinThumbImage
@@ -611,6 +612,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"urlExists": BuiltinUrlExists,
 
 	"isHttps": BuiltinIsHttps,
+
+	"httpRedirect": BuiltinHttpRedirect,
 
 	// server/service related
 	"getReqHeader":    BuiltinGetReqHeader,
@@ -1745,6 +1748,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "isHttps",
 		Value:   CallExAdapter(builtinIsHttpsFunc),
 		ValueEx: builtinIsHttpsFunc,
+	},
+	BuiltinHttpRedirect: &BuiltinFunction{
+		Name:    "httpRedirect",
+		Value:   CallExAdapter(builtinHttpRedirectFunc),
+		ValueEx: builtinHttpRedirectFunc,
 	},
 
 	// server/service related
@@ -6186,6 +6194,38 @@ func builtinIsHttpsFunc(c Call) (Object, error) {
 	rs := tk.IsHttps(nv1.Value)
 
 	return Bool(rs), nil
+}
+
+func builtinHttpRedirectFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	lenT := len(args)
+
+	if lenT < 3 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	nv1, ok := args[0].(*HttpResp)
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
+	}
+
+	nv2, ok := args[1].(*HttpReq)
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[1], args[1]), nil
+	}
+
+	nv3 := args[2].String()
+
+	statusCodeT := http.StatusFound
+
+	if lenT > 3 {
+		statusCodeT = ToGoIntWithDefault(args[3], 302)
+	}
+
+	http.Redirect(nv1.Value, nv2.Value, nv3, statusCodeT)
+
+	return Undefined, nil
 }
 
 func builtinGetReqBodyFunc(c Call) (Object, error) {
