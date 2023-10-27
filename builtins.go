@@ -38,6 +38,7 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinPostRequest
 	BuiltinHttpRedirect
 	BuiltinImage
 	BuiltinLoadImageFromBytes
@@ -608,7 +609,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"archiveFilesToZip": BuiltinArchiveFilesToZip, // Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
 
 	// network/web related
-	"getWeb":    BuiltinGetWeb,
+	"getWeb": BuiltinGetWeb,
+
+	"postRequest": BuiltinPostRequest,
+
 	"urlExists": BuiltinUrlExists,
 
 	"isHttps": BuiltinIsHttps,
@@ -1738,6 +1742,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getWeb",
 		Value:   FnASVaRA(tk.GetWeb),
 		ValueEx: FnASVaRAex(tk.GetWeb),
+	},
+	BuiltinPostRequest: &BuiltinFunction{
+		Name:    "postRequest",
+		Value:   CallExAdapter(builtinPostRequestFunc),
+		ValueEx: builtinPostRequestFunc,
 	},
 	BuiltinUrlExists: &BuiltinFunction{
 		Name:    "urlExists",
@@ -6194,6 +6203,27 @@ func builtinIsHttpsFunc(c Call) (Object, error) {
 	rs := tk.IsHttps(nv1.Value)
 
 	return Bool(rs), nil
+}
+
+func builtinPostRequestFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 4 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	// nv1, ok := args[0].(*HttpReq)
+	// if !ok {
+	// 	return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
+	// }
+
+	rs, errT := tk.PostRequestX(args[0].String(), args[1].String(), args[2].String(), time.Duration(ToGoIntWithDefault(args[3], 30)), ObjectsToS(args[4:])...)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, errT.Error()), nil
+	}
+
+	return ToStringObject(rs), nil
 }
 
 func builtinHttpRedirectFunc(c Call) (Object, error) {
