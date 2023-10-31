@@ -38,6 +38,7 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinMd5
 	BuiltinPostRequest
 	BuiltinHttpRedirect
 	BuiltinImage
@@ -63,6 +64,7 @@ const (
 	BuiltinHtmlDecode
 	BuiltinServeFile
 	BuiltinGetFileAbs
+	BuiltinGetFileRel
 	BuiltinGetFileExt
 	BuiltinGetMimeType
 	BuiltinRenderMarkdown
@@ -524,6 +526,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"writeStr": BuiltintWriteStr,
 
 	// encode/decode related
+	"md5": BuiltinMd5,
+
 	"urlEncode":    BuiltinUrlEncode,
 	"urlDecode":    BuiltinUrlDecode,
 	"htmlEncode":   BuiltinHtmlEncode,
@@ -593,6 +597,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"getFileAbs": BuiltinGetFileAbs,
 	"getFileExt": BuiltinGetFileExt,
+	"getFileRel": BuiltinGetFileRel,
 
 	"extractFileDir": BuiltinExtractFileDir,
 
@@ -1482,6 +1487,11 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// encode/decode related
+	BuiltinMd5: &BuiltinFunction{
+		Name:    "md5",
+		Value:   FnASRS(tk.MD5Encrypt),
+		ValueEx: FnASRSex(tk.MD5Encrypt),
+	},
 	BuiltinUrlEncode: &BuiltinFunction{
 		Name:    "urlEncode",
 		Value:   FnASRS(tk.UrlEncode),
@@ -1690,6 +1700,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getFileExt",
 		Value:   FnASRS(filepath.Ext),
 		ValueEx: FnASRSex(filepath.Ext),
+	},
+	BuiltinGetFileRel: &BuiltinFunction{
+		Name:    "getFileRel",
+		Value:   FnASSRSE(filepath.Rel),
+		ValueEx: FnASSRSEex(filepath.Rel),
 	},
 	BuiltinExtractFileDir: &BuiltinFunction{
 		Name:    "extractFileDir",
@@ -3019,6 +3034,41 @@ func FnASRSex(fn func(string) string) CallableExFunc {
 		}
 
 		rs := fn(c.Get(0).String())
+		return ToStringObject(rs), nil
+	}
+}
+
+// like filepath.Rel
+func FnASSRSE(fn func(string, string) (string, error)) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		rs, errT := fn(args[0].String(), args[1].String())
+
+		if errT != nil {
+			return NewCommonError(errT.Error()), nil
+		}
+
+		return ToStringObject(rs), nil
+	}
+}
+
+func FnASSRSEex(fn func(string, string) (string, error)) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		rs, errT := fn(args[0].String(), args[1].String())
+
+		if errT != nil {
+			return NewCommonError(errT.Error()), nil
+		}
+
 		return ToStringObject(rs), nil
 	}
 }
