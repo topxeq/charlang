@@ -1405,9 +1405,9 @@ func runArgs(argsA ...string) interface{} {
 		fcT = tk.DownloadPageUTF8(scriptT, nil, "", 30)
 
 	} else if ifExampleT {
-		scriptPathT = "http://char.topget.org/xc/t/c/charlang/example/" + scriptT
+		scriptPathT = "http://topget.org/dc/t/charlang/example/" + scriptT
 
-		fcT = tk.DownloadPageUTF8("http://char.topget.org/xc/t/c/charlang/example/"+scriptT, nil, "", 30)
+		fcT = tk.DownloadPageUTF8("http://topget.org/dc/t/charlang/example/"+scriptT, nil, "", 30)
 
 	} else if ifClipT {
 		fcT = tk.GetClipText()

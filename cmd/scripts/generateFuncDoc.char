@@ -12,11 +12,15 @@ fcT := loadText(pathT)
 
 checkErrX(fcT)
 
+pln(1.0, "builtins.go loaded")
+
 docBodyT := regFindFirst(fcT, `(?sm)// funcs start(.*?)// funcs end`, 1)
 
 plt(docBodyT)
 
 checkErrX(docBodyT)
+
+pln(1.1, "docBodyT found")
 
 // pln("done")
 
@@ -24,7 +28,7 @@ docBodyT = strReplace(docBodyT, "\r", "")
 
 linesT := strSplitLines(docBodyT)
 
-bufT := new("stringBuilder")
+bufT := stringBuilder()
 
 // plt(bufT)
 
@@ -63,8 +67,17 @@ for i, v in linesT {
         continue
     }
 
+    tmp1 = regFindFirst(tv, `//\s+(.*)`, 1)
+
+    if !isErrX(tmp1) && len(tmp1) > 0 {
+        writeStr(bufT, "// " + tmp1 + "" + "\n\n")
+        continue
+    }
+
     writeStr(bufT, tv + "\n")
 }
+
+pln(1.2, "Builtin Function done")
 
 // writeStr(bufT, "\n\n" + "```" + "\n" + docBodyT + "```" + "\n")
 
@@ -72,11 +85,15 @@ fc2T := loadText(path2T)
 
 checkErrX(fc2T)
 
+pln(1.3, "ex/module.go loaded")
+
 docBody2T := regFindFirst(fc2T, `(?sm)// funcs start(.*?)// funcs end`, 1)
 
 plt(docBody2T)
 
 checkErrX(docBody2T)
+
+pln(1.3, "ex/module.go funcs found")
 
 // pln("done")
 
@@ -119,7 +136,11 @@ for i, v in lines2T {
     // writeStr(bufT, tv + "\n")
 }
 
+plo(bufT)
+
 pln(bufT.toStr())
+
+pln(1.4, "ex/module.go funcs done")
 
 rs := saveText(toStr(bufT), mdPathT)
 // rs := saveText(bufT.toStr(), mdPathT)

@@ -17,7 +17,7 @@ Charlang is inspired by and based on awesome script language [uGo](https://githu
 * Module support.
 * Go like syntax with additions.
 
-## New features
+## New Features
 
 - New types such as Byte, Any...
 - New functions: NewCommonError, NewError and more...
@@ -25,8 +25,6 @@ Charlang is inspired by and based on awesome script language [uGo](https://githu
 - New global variables and resources.
 - A new thread-model.
 - Runtime/dynamically script compiling and running capability.
-
-[Go Reference](https://pkg.go.dev/github.com/topxeq/charlang)
 
 **Fibonacci Example**
 
@@ -45,6 +43,11 @@ fib = func(x) {
 return fib(35)
 
 ```
+
+## Quick Links
+
+[Go Reference](https://pkg.go.dev/github.com/topxeq/charlang)
+[Builtin Functions](https://pkg.go.dev/github.com/topxeq/charlang)
 
 ## Quick Start
 
@@ -169,13 +172,13 @@ C:\Users\Administrator>char -example basic.char
 C:\Users\Administrator>
 ```
 
-You can browse to `http://char.topget.org/xc/c/charlang/example/basic.char` to view the source code in an online text editor as well.
+You can browse to `http://topget.org/dc/c/charlang/example/basic.char` to view the source code in an online text editor as well.
 
 ### Quick tour
 
 #### Hello world!
 
-file: [helloWorld.char](http://char.topget.org/xc/c/charlang/example/helloWorld.char)
+file: [helloWorld.char](http://topget.org/dc/c/charlang/example/helloWorld.char)
 
 ```go
 pln("Hello world!")
@@ -196,7 +199,7 @@ C:\Users\Administrator>
 
 #### Define variables
 
-file: [var.char](http://char.topget.org/xc/c/charlang/example/var.char)
+file: [var.char](http://topget.org/dc/c/charlang/example/var.char)
 
 ```go
 // define a variable before using it

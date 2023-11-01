@@ -38,6 +38,7 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinStrXmlEncode
 	BuiltinMd5
 	BuiltinPostRequest
 	BuiltinHttpRedirect
@@ -298,7 +299,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	// funcs start
 
 	// internal & debug related
-	"testByText":        BuiltinTestByText,
+
+	// the "testBy*" functions are builtin test functions for internal use only, see testAll.char for usage examples
+
+	"testByText":        BuiltinTestByText, // usage: testByText(strToTest, strToCompare, indexInteger, scriptFileName)
 	"testByStartsWith":  BuiltinTestByStartsWith,
 	"testByEndsWith":    BuiltinTestByEndsWith,
 	"testByContains":    BuiltinTestByContains,
@@ -539,6 +543,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"toJson":   BuiltinToJSON,
 	"fromJSON": BuiltinFromJSON,
 	"fromJson": BuiltinFromJSON,
+
+	// XML related
+	"xmlEncodeStr": BuiltinStrXmlEncode,
 
 	// command-line related
 	"ifSwitchExists": BuiltinIfSwitchExists,
@@ -1531,6 +1538,13 @@ var BuiltinObjects = [...]Object{
 		Name:    "fromJSON",
 		Value:   CallExAdapter(builtinFromJSONFunc),
 		ValueEx: builtinFromJSONFunc,
+	},
+
+	// XML related
+	BuiltinStrXmlEncode: &BuiltinFunction{
+		Name:    "xmlEncodeStr",
+		Value:   FnASRS(tk.EncodeToXMLString),
+		ValueEx: FnASRSex(tk.EncodeToXMLString),
 	},
 
 	// command-line related
