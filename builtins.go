@@ -195,6 +195,7 @@ const (
 	BuiltinCheckErrX
 	BuiltinLoadText
 	BuiltinSaveText
+	BuiltinAppendText
 	BuiltinJoinPath
 	BuiltinGetEnv
 	BuiltinSetEnv
@@ -613,8 +614,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"renameFile": BuiltinRenameFile,
 	"removeFile": BuiltinRemoveFile,
 
-	"loadText": BuiltinLoadText,
-	"saveText": BuiltinSaveText,
+	"loadText":   BuiltinLoadText,
+	"saveText":   BuiltinSaveText,
+	"appendText": BuiltinAppendText,
 
 	"loadBytes": BuiltinLoadBytes,
 	"saveBytes": BuiltinSaveBytes,
@@ -1752,6 +1754,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "saveText",
 		Value:   FnASSRS(tk.SaveStringToFile),
 		ValueEx: FnASSRSex(tk.SaveStringToFile),
+	},
+	BuiltinAppendText: &BuiltinFunction{
+		Name:    "appendText",
+		Value:   FnASSRS(tk.AppendStringToFile),
+		ValueEx: FnASSRSex(tk.AppendStringToFile),
 	},
 	BuiltinLoadBytes: &BuiltinFunction{
 		Name:    "loadBytes",
