@@ -38,6 +38,7 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinXmlGetNodeStr
 	BuiltinStrXmlEncode
 	BuiltinMd5
 	BuiltinPostRequest
@@ -545,7 +546,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"fromJson": BuiltinFromJSON,
 
 	// XML related
-	"xmlEncodeStr": BuiltinStrXmlEncode,
+	"xmlEncodeStr":  BuiltinStrXmlEncode,
+	"xmlGetNodeStr": BuiltinXmlGetNodeStr,
 
 	// command-line related
 	"ifSwitchExists": BuiltinIfSwitchExists,
@@ -1545,6 +1547,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "xmlEncodeStr",
 		Value:   FnASRS(tk.EncodeToXMLString),
 		ValueEx: FnASRSex(tk.EncodeToXMLString),
+	},
+	BuiltinXmlGetNodeStr: &BuiltinFunction{
+		Name:    "xmlGetNodeStr",
+		Value:   FnASSRSE(tk.GetNodeStringFromXML),
+		ValueEx: FnASSRSEex(tk.GetNodeStringFromXML),
 	},
 
 	// command-line related
