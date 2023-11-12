@@ -1,0 +1,19 @@
+// char -exam base64EncodeImage.char -file=d:\downtemp\pic1.png
+
+global argsG
+
+fileNameT := trim(getSwitch(argsG, "-file=", ""))
+
+if fileNameT == "" {
+	fatalf("empty file name")
+}
+
+bufT := loadBytes(fileNameT)
+
+checkErr(bufT)
+
+base64StrT := base64Encode(bufT)
+
+fileExtT := getFileExt(fileNameT)
+
+pl("data:image/%v;base64,%v", strTrim(fileExtT, "."), base64StrT)

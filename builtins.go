@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/flate"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -38,6 +39,8 @@ type BuiltinType byte
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinBase64Encode
+	BuiltinBase64Decode
 	BuiltinXmlGetNodeStr
 	BuiltinStrXmlEncode
 	BuiltinMd5
@@ -540,6 +543,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"htmlDecode":   BuiltinHtmlDecode,
 	"simpleEncode": BuiltinSimpleEncode,
 	"simpleDecode": BuiltinSimpleDecode,
+
+	"base64Encode": BuiltinBase64Encode,
+	"base64Decode": BuiltinBase64Decode,
 
 	"toJSON":   BuiltinToJSON,
 	"toJson":   BuiltinToJSON,
@@ -1532,6 +1538,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "simpleDecode",
 		Value:   CallExAdapter(builtinSimpleDecodeFunc),
 		ValueEx: builtinSimpleDecodeFunc,
+	},
+	BuiltinBase64Encode: &BuiltinFunction{
+		Name:    "base64Encode",
+		Value:   CallExAdapter(builtinBase64EncodeFunc),
+		ValueEx: builtinBase64EncodeFunc,
+	},
+	BuiltinBase64Decode: &BuiltinFunction{
+		Name:    "base64Decode",
+		Value:   FnASRA(tk.FromBase64),
+		ValueEx: FnASRAex(tk.FromBase64),
 	},
 	BuiltinToJSON: &BuiltinFunction{
 		Name:    "toJSON",
@@ -3063,6 +3079,31 @@ func FnASRSex(fn func(string) string) CallableExFunc {
 
 		rs := fn(c.Get(0).String())
 		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.FromBase64
+func FnASRA(fn func(string) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		rs := fn(args[0].String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASRAex(fn func(string) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+
+		rs := fn(args[0].String())
+		return ConvertToObject(rs), nil
 	}
 }
 
@@ -4701,6 +4742,29 @@ func builtinSimpleDecodeFunc(c Call) (Object, error) {
 	}
 
 	return ToStringObject(rsT), nil
+}
+
+func builtinBase64EncodeFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	lenT := len(args)
+
+	if lenT < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	switch nv := args[0].(type) {
+	case String:
+		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv.Value))}, nil
+	case Bytes:
+		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv))}, nil
+	case *StringBuilder:
+		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv.String()))}, nil
+	case *BytesBuffer:
+		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv.Value.Bytes()))}, nil
+	default:
+		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv.String()))}, nil
+	}
 }
 
 func builtinFromJSONFunc(c Call) (Object, error) {
