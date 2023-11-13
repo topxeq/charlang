@@ -11,6 +11,7 @@ import (
 	"math"
 	"math/big"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -20,6 +21,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/topxeq/awsapi"
 	"github.com/topxeq/charlang/token"
 	"github.com/topxeq/sqltk"
 	"github.com/topxeq/tk"
@@ -33,12 +35,16 @@ var (
 )
 
 // BuiltinType represents a builtin type
-type BuiltinType byte
+type BuiltinType int
 
 // Builtins
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinAwsSign
+	BuiltinNow
+	BuiltinTimeToTick
+	BuiltinGetNowTimeStamp
 	BuiltinBase64Encode
 	BuiltinBase64Decode
 	BuiltinXmlGetNodeStr
@@ -450,8 +456,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	"genRandomStr":   BuiltinGetRandomStr,
 
 	// time related
+	"now":              BuiltinNow,
 	"getNowStr":        BuiltinGetNowStr,
 	"getNowStrCompact": BuiltinGetNowStrCompact,
+	"getNowTimeStamp":  BuiltinGetNowTimeStamp,
+	"timeToTick":       BuiltinTimeToTick,
 
 	// binary/bytes related
 	"bytesStartsWith": BuiltinBytesStartsWith,
@@ -689,6 +698,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// unicode related
 	"toPinyin": BuiltinToPinyin,
+
+	// 3rd party related
+	"awsSign": BuiltinAwsSign,
 
 	// misc related
 	"getSeq": BuiltinGetSeq,
@@ -1226,6 +1238,11 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// time related
+	BuiltinNow: &BuiltinFunction{
+		Name:    "now",
+		Value:   FnART(time.Now),
+		ValueEx: FnARTex(time.Now),
+	},
 	BuiltinGetNowStr: &BuiltinFunction{
 		Name:    "getNowStr",
 		Value:   FnARS(tk.GetNowTimeStringFormal),
@@ -1235,6 +1252,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "getNowStrCompact",
 		Value:   FnARS(tk.GetNowTimeString),
 		ValueEx: FnARSex(tk.GetNowTimeString),
+	},
+	BuiltinTimeToTick: &BuiltinFunction{
+		Name:    "timeToTick",
+		Value:   FnATRS(tk.GetTimeStampMid),
+		ValueEx: FnATRSex(tk.GetTimeStampMid),
+	},
+	BuiltinGetNowTimeStamp: &BuiltinFunction{
+		Name:    "getNowTimeStamp",
+		Value:   CallExAdapter(builtinGetNowTimeStampFunc),
+		ValueEx: builtinGetNowTimeStampFunc,
 	},
 
 	// binary/bytes related
@@ -1976,6 +2003,14 @@ var BuiltinObjects = [...]Object{
 		Name:    "toPinyin",
 		Value:   FnASVsRA(tk.ToPinYin),
 		ValueEx: FnASVsRAex(tk.ToPinYin),
+	},
+
+	// 3rd party related
+
+	BuiltinAwsSign: &BuiltinFunction{
+		Name:    "awsSign",
+		Value:   CallExAdapter(builtinAwsSignFunc),
+		ValueEx: builtinAwsSignFunc,
 	},
 
 	// misc related
@@ -3033,6 +3068,58 @@ func FnARSex(fn func() string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		rs := fn()
 		return ToStringObject(rs), nil
+	}
+}
+
+// like time.Now
+func FnART(fn func() time.Time) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		rs := fn()
+		return &Time{Value: rs}, nil
+	}
+}
+
+func FnARTex(fn func() time.Time) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		rs := fn()
+		return &Time{Value: rs}, nil
+	}
+}
+
+// like tk.GetTimeStampMid
+func FnATRS(fn func(time.Time) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv, ok := args[0].(*Time)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		rs := fn(nv.Value)
+		return String{Value: rs}, nil
+	}
+}
+
+func FnATRSex(fn func(time.Time) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv, ok := args[0].(*Time)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		rs := fn(nv.Value)
+		return String{Value: rs}, nil
 	}
 }
 
@@ -4155,19 +4242,27 @@ func FnASVaRA(fn func(string, ...interface{}) interface{}) CallableFunc {
 		if len(args) < 1 {
 			return NewCommonError("not enough parameters"), nil
 		}
+
 		vargs := ObjectsToI(args[1:])
+
 		rs := fn(args[0].String(), vargs...)
+
 		return ConvertToObject(rs), nil
 	}
 }
 
 func FnASVaRAex(fn func(string, ...interface{}) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
-		if c.Len() < 1 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
 		}
-		vargs := toArgsA(1, c)
-		rs := fn(c.Get(0).String(), vargs...)
+
+		vargs := ObjectsToI(args[1:])
+
+		rs := fn(args[0].String(), vargs...)
+
 		return ConvertToObject(rs), nil
 	}
 }
@@ -4840,6 +4935,10 @@ func builtinIsErrXFunc(c Call) (Object, error) {
 	}
 
 	return False, nil
+}
+
+func builtinGetNowTimeStampFunc(c Call) (Object, error) {
+	return String{Value: tk.GetTimeStampMid(time.Now())}, nil
 }
 
 func builtinIsNilFunc(c Call) (Object, error) {
@@ -6818,6 +6917,32 @@ func BuiltinDbCloseFunc(c Call) (Object, error) {
 	}
 
 	return Undefined, nil
+}
+
+func builtinAwsSignFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	nv1, ok := args[0].(Map)
+
+	if !ok {
+		return NewCommonError("invalid parameter type: (%T)%v", args[0], args[0]), nil
+	}
+
+	nv2 := args[1].String()
+
+	postDataT := url.Values{}
+
+	for k, v := range nv1 {
+		postDataT.Set(k, v.String())
+	}
+
+	rsT := awsapi.Sign(postDataT, nv2)
+
+	return String{Value: rsT}, nil
 }
 
 func builtinArrayContainsFunc(c Call) (Object, error) {

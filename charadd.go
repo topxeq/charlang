@@ -26,7 +26,7 @@ import (
 )
 
 // global vars
-var VersionG = "0.7.1"
+var VersionG = "0.7.2"
 
 var CodeTextG = ""
 
@@ -2473,6 +2473,7 @@ func ConvertFromObject(vA Object) interface{} {
 }
 
 func ObjectsToI(aryA []Object) []interface{} {
+	// tk.Plo("ObjectsToI:", aryA)
 	if aryA == nil {
 		return nil
 	}
