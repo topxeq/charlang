@@ -1,0 +1,80 @@
+text1 := `
+Three bulls fed in a field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began secretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.
+
+No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.
+
+No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.
+
+The quarrels of friends are the opportunities of foes.
+`
+
+leLoadFromStr(text1)
+
+pl("-- leLoadFromStr/lePrint")
+
+lePrint("-lineNumber", "-withLen")
+
+leSort()
+
+pl("-- leSort")
+
+lePrint("-lineNumber")
+
+leSort("-order=desc")
+
+pl("-- leSort(descending order)/leViewAll")
+
+leViewAll()
+
+pl("-- leViewLines")
+
+leViewLines(1, 3)
+
+pl("-- leAppendLine")
+
+leAppendLine("append line 1")
+
+lePrint("-lineNumber")
+
+pl("-- leInsertLine")
+
+leInsertLine(2, "insert line 1")
+
+lePrint("-lineNumber")
+
+pl("-- leFindLines")
+
+leFindLines(`a.+c`, "-print")
+
+pl("-- leReplace")
+
+leReplace(`a(.+)c`, "a[${1}]c")
+
+pl("%v", leSaveToStr())
+
+pl("-- leFind")
+
+plt(toJson(leFind(`a(.+)c`, 1), "-sort"))
+
+pl("-- leFindAll")
+
+plt(toJson(leFindAll(`a(.+?)c`, 1), "-sort"))
+
+pl("-- leSetLine/leGetList")
+
+leSetLine(2, leGetLine(2)+" / set line here")
+
+plt(leGetList())
+
+pl("-- leGetList partial")
+
+plt(leGetList(2, 3))
+
+pl("-- leClear")
+
+leClear()
+
+plt(leToStr())
+
+
+

@@ -36,6 +36,9 @@ type VM struct {
 	mu           sync.Mutex
 	err          error
 	noPanic      bool
+
+	LeBuf     []string
+	LeSshInfo map[string]string
 }
 
 // NewVM creates a VM object.
@@ -253,7 +256,7 @@ VMLoop:
 		vm.ip++
 		if DebugModeG {
 			var operands []int
-
+			fmt.Printf("OpcodeOperands: %#v, vm.curInsts: %#v, vm.ip: %v\n", OpcodeOperands, vm.curInsts, vm.ip)
 			numOperands := OpcodeOperands[vm.curInsts[vm.ip]]
 			operands, offset := ReadOperands(numOperands, vm.curInsts[vm.ip+1:], operands)
 			// _, _ = fmt.Fprintf(w, "%04d %-12s", i, OpcodeNames[op])
@@ -449,10 +452,10 @@ VMLoop:
 			vm.curFrame = parent
 			vm.curInsts = vm.curFrame.fn.Instructions
 		case OpGetBuiltin:
-			builtinIndex := BuiltinType(int(vm.curInsts[vm.ip+1]))
+			builtinIndex := BuiltinType(int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8)
 			vm.stack[vm.sp] = BuiltinObjects[builtinIndex]
 			vm.sp++
-			vm.ip++
+			vm.ip += 2
 		case OpClosure:
 			constIdx := int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8
 			fn := vm.constants[constIdx].(*CompiledFunction)
@@ -1311,8 +1314,9 @@ func (vm *VM) xOpCallExCaller(callee ExCallerObject, numArgs, flags int) error {
 		vargs: vargs,
 	}
 
+	// fmt.Printf("6--------------hrere callex: %#v, %#v\n", callee, c)
 	result, err := callee.CallEx(c)
-	// tk.Pl("6--------------hrere result: %v", result)
+	// fmt.Printf("7--------------hrere result: %v, err: %v\n", result, err)
 
 	for i := 0; i < numArgs; i++ {
 		vm.sp--

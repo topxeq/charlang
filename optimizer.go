@@ -144,7 +144,8 @@ func canOptimizeInsts(constants []Object, insts []byte) bool {
 		BuiltinIsFloat: true, BuiltinIsChar: true, BuiltinIsBool: true,
 		BuiltinIsString: true, BuiltinIsBytes: true, BuiltinIsMap: true,
 		BuiltinIsArray: true, BuiltinIsUndefined: true, BuiltinIsIterable: true,
-		^byte(0): false,
+		2000: false, // by TopXeQ, allow 2000 builtin functions
+		// ^byte(0): false, // by TopXeQ
 	}
 
 	canOptimize := true

@@ -108,7 +108,7 @@ var OpcodeOperands = [...][]int{
 	OpSetGlobal:    {2},    // constant index
 	OpGetLocal:     {1},    // local variable index
 	OpSetLocal:     {1},    // local variable index
-	OpGetBuiltin:   {1},    // builtin index
+	OpGetBuiltin:   {2},    // builtin index
 	OpBinaryOp:     {1},    // operator
 	OpUnary:        {1},    // operator
 	OpEqual:        {},

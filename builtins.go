@@ -41,6 +41,37 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinLePrint
+	BuiltinLeFindLines
+	BuiltinLeFind
+	BuiltinLeFindAll
+	BuiltinLeReplace
+	BuiltinLeLoadFromSsh
+	BuiltinLeSaveToSsh
+	BuiltinLeRemoveLine
+	BuiltinLeRemoveLines
+	BuiltinLeInsertLine
+	BuiltinLeAppendLine
+	BuiltinLeGetLine
+	BuiltinLeSetLine
+	BuiltinLeSetLines
+	BuiltinLeConvertToUtf8
+	BuiltinLeSort
+	BuiltinLeViewAll
+	BuiltinLeViewLine
+	BuiltinLeViewLines
+	BuiltinLeLoadFromUrl
+	BuiltinLeLoadFromClip
+	BuiltinLeSaveToClip
+	BuiltinLeAppendFromFile
+	BuiltinLeAppendToFile
+	BuiltinLeLoadFromFile
+	BuiltinLeSaveToFile
+	BuiltinLeLoadFromStr
+	BuiltinLeSaveToStr
+	BuiltinLeGetList
+	BuiltinLeAppendFromStr
+	BuiltinLeClear
 	BuiltinAwsSign
 	BuiltinNow
 	BuiltinTimeToTick
@@ -698,6 +729,40 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// unicode related
 	"toPinyin": BuiltinToPinyin,
+
+	// line editor related
+	"leClear":          BuiltinLeClear,
+	"leLoadFromStr":    BuiltinLeLoadFromStr,
+	"leAppendFromStr":  BuiltinLeAppendFromStr,
+	"leSaveToStr":      BuiltinLeSaveToStr,
+	"leToStr":          BuiltinLeSaveToStr,
+	"leLoadFromFile":   BuiltinLeLoadFromFile,
+	"leAppendFromFile": BuiltinLeAppendFromFile,
+	"leSaveToFile":     BuiltinLeSaveToFile,
+	"leAppendToFile":   BuiltinLeAppendToFile,
+	"leLoadFromClip":   BuiltinLeLoadFromClip,
+	"leSaveToClip":     BuiltinLeSaveToClip,
+	"leLoadFromUrl":    BuiltinLeLoadFromUrl,
+	"leLoadFromSsh":    BuiltinLeLoadFromSsh,
+	"leSaveToSsh":      BuiltinLeSaveToSsh,
+	"leViewAll":        BuiltinLeViewAll,
+	"leViewLine":       BuiltinLeViewLine,
+	"leViewLines":      BuiltinLeViewLines,
+	"leSort":           BuiltinLeSort,
+	"leConvertToUtf8":  BuiltinLeConvertToUtf8,
+	"leGetLine":        BuiltinLeGetLine,
+	"leSetLine":        BuiltinLeSetLine,
+	"leSetLines":       BuiltinLeSetLines,
+	"leInsertLine":     BuiltinLeInsertLine,
+	"leAppendLine":     BuiltinLeAppendLine,
+	"leRemoveLine":     BuiltinLeRemoveLine,
+	"leRemoveLines":    BuiltinLeRemoveLines,
+	"leFindLines":      BuiltinLeFindLines,
+	"leFind":           BuiltinLeFind,
+	"leFindAll":        BuiltinLeFindAll,
+	"leReplace":        BuiltinLeReplace,
+	"lePrint":          BuiltinLePrint,
+	"leGetList":        BuiltinLeGetList,
 
 	// 3rd party related
 	"awsSign": BuiltinAwsSign,
@@ -2005,6 +2070,163 @@ var BuiltinObjects = [...]Object{
 		ValueEx: FnASVsRAex(tk.ToPinYin),
 	},
 
+	// line editor related
+	BuiltinLeClear: &BuiltinFunction{
+		Name:    "leClear",
+		Value:   CallExAdapter(builtinLeClearFunc),
+		ValueEx: builtinLeClearFunc,
+	},
+	BuiltinLeLoadFromStr: &BuiltinFunction{
+		Name:    "leLoadFromStr",
+		Value:   CallExAdapter(builtinLeLoadFromStrFunc),
+		ValueEx: builtinLeLoadFromStrFunc,
+	},
+	BuiltinLeAppendFromStr: &BuiltinFunction{
+		Name:    "leAppendFromStr",
+		Value:   CallExAdapter(builtinLeAppendFromStrFunc),
+		ValueEx: builtinLeAppendFromStrFunc,
+	},
+	BuiltinLeSaveToStr: &BuiltinFunction{
+		Name:    "leSaveToStr",
+		Value:   CallExAdapter(builtinLeSaveToStrFunc),
+		ValueEx: builtinLeSaveToStrFunc,
+	},
+	BuiltinLeLoadFromFile: &BuiltinFunction{
+		Name:    "leLoadFromFile",
+		Value:   CallExAdapter(builtinLeLoadFromFileFunc),
+		ValueEx: builtinLeLoadFromFileFunc,
+	},
+	BuiltinLeAppendFromFile: &BuiltinFunction{
+		Name:    "leAppendFromFile",
+		Value:   CallExAdapter(builtinLeAppendFromFileFunc),
+		ValueEx: builtinLeAppendFromFileFunc,
+	},
+	BuiltinLeSaveToFile: &BuiltinFunction{
+		Name:    "leSaveToFile",
+		Value:   CallExAdapter(builtinLeSaveToFileFunc),
+		ValueEx: builtinLeSaveToFileFunc,
+	},
+	BuiltinLeAppendToFile: &BuiltinFunction{
+		Name:    "leAppendToFile",
+		Value:   CallExAdapter(builtinLeAppendToFileFunc),
+		ValueEx: builtinLeAppendToFileFunc,
+	},
+	BuiltinLeLoadFromClip: &BuiltinFunction{
+		Name:    "leLoadFromClip",
+		Value:   CallExAdapter(builtinLeLoadFromClipFunc),
+		ValueEx: builtinLeLoadFromClipFunc,
+	},
+	BuiltinLeSaveToClip: &BuiltinFunction{
+		Name:    "leSaveToClip",
+		Value:   CallExAdapter(builtinLeSaveToClipFunc),
+		ValueEx: builtinLeSaveToClipFunc,
+	},
+	BuiltinLeLoadFromUrl: &BuiltinFunction{
+		Name:    "leLoadFromUrl",
+		Value:   CallExAdapter(builtinLeLoadFromUrlFunc),
+		ValueEx: builtinLeLoadFromUrlFunc,
+	},
+	BuiltinLeLoadFromSsh: &BuiltinFunction{
+		Name:    "leLoadFromSsh",
+		Value:   CallExAdapter(builtinLeLoadFromSshFunc),
+		ValueEx: builtinLeLoadFromSshFunc,
+	},
+	BuiltinLeSaveToSsh: &BuiltinFunction{
+		Name:    "leSaveToSsh",
+		Value:   CallExAdapter(builtinLeSaveToSshFunc),
+		ValueEx: builtinLeSaveToSshFunc,
+	},
+	BuiltinLeViewAll: &BuiltinFunction{
+		Name:    "leViewAll",
+		Value:   CallExAdapter(builtinLeViewAllFunc),
+		ValueEx: builtinLeViewAllFunc,
+	},
+	BuiltinLeViewLine: &BuiltinFunction{
+		Name:    "leViewLine",
+		Value:   CallExAdapter(builtinLeViewLineFunc),
+		ValueEx: builtinLeViewLineFunc,
+	},
+	BuiltinLeViewLines: &BuiltinFunction{
+		Name:    "leViewLines",
+		Value:   CallExAdapter(builtinLeViewLinesFunc),
+		ValueEx: builtinLeViewLinesFunc,
+	},
+	BuiltinLeSort: &BuiltinFunction{
+		Name:    "leSort",
+		Value:   CallExAdapter(builtinLeSortFunc),
+		ValueEx: builtinLeSortFunc,
+	},
+	BuiltinLeConvertToUtf8: &BuiltinFunction{
+		Name:    "leConvertToUtf8",
+		Value:   CallExAdapter(builtinLeConvertToUtf8Func),
+		ValueEx: builtinLeConvertToUtf8Func,
+	},
+	BuiltinLeGetLine: &BuiltinFunction{
+		Name:    "leGetLine",
+		Value:   CallExAdapter(builtinLeGetLineFunc),
+		ValueEx: builtinLeGetLineFunc,
+	},
+	BuiltinLeSetLine: &BuiltinFunction{
+		Name:    "leSetLine",
+		Value:   CallExAdapter(builtinLeSetLineFunc),
+		ValueEx: builtinLeSetLineFunc,
+	},
+	BuiltinLeSetLines: &BuiltinFunction{
+		Name:    "leSetLines",
+		Value:   CallExAdapter(builtinLeSetLinesFunc),
+		ValueEx: builtinLeSetLinesFunc,
+	},
+	BuiltinLeInsertLine: &BuiltinFunction{
+		Name:    "leInsertLine",
+		Value:   CallExAdapter(builtinLeInsertLineFunc),
+		ValueEx: builtinLeInsertLineFunc,
+	},
+	BuiltinLeAppendLine: &BuiltinFunction{
+		Name:    "leAppendLine",
+		Value:   CallExAdapter(builtinLeAppendLineFunc),
+		ValueEx: builtinLeAppendLineFunc,
+	},
+	BuiltinLeRemoveLine: &BuiltinFunction{
+		Name:    "leRemoveLine",
+		Value:   CallExAdapter(builtinLeRemoveLineFunc),
+		ValueEx: builtinLeRemoveLineFunc,
+	},
+	BuiltinLeRemoveLines: &BuiltinFunction{
+		Name:    "leRemoveLines",
+		Value:   CallExAdapter(builtinLeRemoveLinesFunc),
+		ValueEx: builtinLeRemoveLinesFunc,
+	},
+	BuiltinLeFindLines: &BuiltinFunction{
+		Name:    "leFindLines",
+		Value:   CallExAdapter(builtinLeFindLinesFunc),
+		ValueEx: builtinLeFindLinesFunc,
+	},
+	BuiltinLeFind: &BuiltinFunction{
+		Name:    "leFind",
+		Value:   CallExAdapter(builtinLeFindFunc),
+		ValueEx: builtinLeFindFunc,
+	},
+	BuiltinLeFindAll: &BuiltinFunction{
+		Name:    "leFindAll",
+		Value:   CallExAdapter(builtinLeFindAllFunc),
+		ValueEx: builtinLeFindAllFunc,
+	},
+	BuiltinLeReplace: &BuiltinFunction{
+		Name:    "leReplace",
+		Value:   CallExAdapter(builtinLeReplaceFunc),
+		ValueEx: builtinLeReplaceFunc,
+	},
+	BuiltinLePrint: &BuiltinFunction{
+		Name:    "lePrint",
+		Value:   CallExAdapter(builtinLePrintFunc),
+		ValueEx: builtinLePrintFunc,
+	},
+	BuiltinLeGetList: &BuiltinFunction{
+		Name:    "leGetList",
+		Value:   CallExAdapter(builtinLeGetListFunc),
+		ValueEx: builtinLeGetListFunc,
+	},
+
 	// 3rd party related
 
 	BuiltinAwsSign: &BuiltinFunction{
@@ -3022,6 +3244,7 @@ func builtinIsIterableFunc(arg Object) Object { return Bool(arg.CanIterate()) }
 func CallExAdapter(fn CallableExFunc) CallableFunc {
 	// tk.Pl("CallExAdapter: %v", fn)
 	return func(args ...Object) (Object, error) {
+		// tk.Pl("func in CallExAdapter: %v", fn)
 		return fn(Call{args: args})
 	}
 }
@@ -4749,6 +4972,33 @@ func builtinGetSwitchFunc(c Call) (Object, error) {
 	return defaultT, nil
 }
 
+func GetSwitchFromObjects(argsA []Object, switchA string, defaultA string) string {
+	if argsA == nil {
+		return defaultA
+	}
+
+	if len(argsA) < 1 {
+		return defaultA
+	}
+
+	tmpStrT := ""
+
+	for _, v := range argsA {
+		argOT := v.String()
+
+		if tk.StartsWith(argOT, switchA) {
+			tmpStrT = argOT[len(switchA):]
+			if tk.StartsWith(tmpStrT, "\"") && tk.EndsWith(tmpStrT, "\"") {
+				return tmpStrT[1 : len(tmpStrT)-1]
+			}
+
+			return tmpStrT
+		}
+	}
+
+	return defaultA
+}
+
 func builtinIfSwitchExistsFunc(c Call) (Object, error) {
 	argsA := c.GetArgs()
 	if len(argsA) < 2 {
@@ -4768,6 +5018,21 @@ func builtinIfSwitchExistsFunc(c Call) (Object, error) {
 	}
 
 	return Bool(tk.IfSwitchExistsWhole(listT, argsA[1].String())), nil
+
+}
+
+func IfSwitchExistsInObjects(argsA []Object, switchA string) bool {
+	if len(argsA) < 1 {
+		return false
+	}
+
+	listT := ObjectsToS(argsA)
+
+	if listT == nil {
+		return false
+	}
+
+	return tk.IfSwitchExistsWhole(listT, switchA)
 
 }
 
@@ -6914,6 +7179,1073 @@ func BuiltinDbCloseFunc(c Call) (Object, error) {
 
 	if errT != nil {
 		return NewCommonError("failed to close DB: %v", errT), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinLeClearFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	vmT.LeBuf = make([]string, 0, 100)
+
+	return Undefined, nil
+}
+
+func builtinLeLoadFromStrFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	// if vmT.LeBuf == nil {
+	// 	builtinLeClearFunc(c)
+	// }
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	vmT.LeBuf = tk.SplitLines(args[0].String())
+
+	return Undefined, nil
+}
+
+func builtinLeAppendFromStrFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	vmT.LeBuf = append(vmT.LeBuf, tk.SplitLines(args[0].String())...)
+
+	return Undefined, nil
+}
+
+func builtinLeSaveToStrFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	return String{Value: tk.JoinLines(vmT.LeBuf, "\n")}, nil
+}
+
+func builtinLeLoadFromFileFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	// if vmT.LeBuf == nil {
+	// 	builtinLeClearFunc(c)
+	// }
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	strT, errT := tk.LoadStringFromFileE(args[0].String())
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "%v", errT), nil
+	}
+
+	vmT.LeBuf = tk.SplitLines(strT)
+
+	return Undefined, nil
+}
+
+func builtinLeLoadFromUrlFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	// if vmT.LeBuf == nil {
+	// 	builtinLeClearFunc(c)
+	// }
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	strT := tk.GetWeb(args[0].String(), ObjectsToI(args[1:])...)
+
+	if tk.IsErrX(strT) {
+		return NewCommonErrorWithPos(c, "%v", tk.GetErrStrX(strT)), nil
+	}
+
+	vmT.LeBuf = tk.SplitLines(strT.(string))
+
+	return Undefined, nil
+}
+
+func builtinLeLoadFromSshFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeSshInfo == nil {
+		vmT.LeSshInfo = make(map[string]string)
+	}
+
+	// if vmT.LeBuf == nil {
+	// 	builtinLeClearFunc(c)
+	// }
+
+	args := c.GetArgs()
+
+	if len(args) < 5 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v5 string
+
+	v1 = tk.SafelyGetStringForKeyWithDefault(vmT.LeSshInfo, "Host")
+	v2 = tk.SafelyGetStringForKeyWithDefault(vmT.LeSshInfo, "Port")
+	v3 = tk.SafelyGetStringForKeyWithDefault(vmT.LeSshInfo, "User")
+	v4 = tk.SafelyGetStringForKeyWithDefault(vmT.LeSshInfo, "Password")
+	v5 = tk.SafelyGetStringForKeyWithDefault(vmT.LeSshInfo, "Path")
+
+	v1 = tk.GetSwitch(pa, "-host=", v1)
+	v2 = tk.GetSwitch(pa, "-port=", v2)
+	v3 = tk.GetSwitch(pa, "-user=", v3)
+	v4 = tk.GetSwitch(pa, "-password=", v4)
+	if strings.HasPrefix(v4, "740404") {
+		v4 = tk.DecryptStringByTXDEF(v4)
+	}
+	v5 = tk.GetSwitch(pa, "-path=", v5)
+
+	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to connect to server: %v", errT), nil
+	}
+
+	defer sshT.Close()
+
+	bufT, errT := sshT.GetFileContent(v5)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to get file content from server: %v", errT), nil
+	}
+
+	vmT.LeSshInfo["Host"] = v1
+	vmT.LeSshInfo["Port"] = v2
+	vmT.LeSshInfo["User"] = v3
+	vmT.LeSshInfo["Password"] = v4
+	vmT.LeSshInfo["Path"] = v5
+
+	_, errT = builtinLeLoadFromStrFunc(Call{args: []Object{String{Value: string(bufT)}}})
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to load file content into le buffer: %v", errT), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinLeSaveToSshFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeSshInfo == nil {
+		vmT.LeSshInfo = make(map[string]string)
+	}
+
+	// if vmT.LeBuf == nil {
+	// 	builtinLeClearFunc(c)
+	// }
+
+	args := c.GetArgs()
+
+	if len(args) < 5 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v5 string
+
+	v1 = tk.SafelyGetStringForKeyWithDefault(vmT.LeSshInfo, "Host")
+	v2 = tk.SafelyGetStringForKeyWithDefault(vmT.LeSshInfo, "Port")
+	v3 = tk.SafelyGetStringForKeyWithDefault(vmT.LeSshInfo, "User")
+	v4 = tk.SafelyGetStringForKeyWithDefault(vmT.LeSshInfo, "Password")
+	v5 = tk.SafelyGetStringForKeyWithDefault(vmT.LeSshInfo, "Path")
+
+	v1 = tk.GetSwitch(pa, "-host=", v1)
+	v2 = tk.GetSwitch(pa, "-port=", v2)
+	v3 = tk.GetSwitch(pa, "-user=", v3)
+	v4 = tk.GetSwitch(pa, "-password=", v4)
+	if strings.HasPrefix(v4, "740404") {
+		v4 = tk.DecryptStringByTXDEF(v4)
+	}
+	v5 = tk.GetSwitch(pa, "-path=", v5)
+
+	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to connect to server: %v", errT), nil
+	}
+
+	defer sshT.Close()
+
+	errT = sshT.UploadFileContent([]byte(tk.JoinLines(vmT.LeBuf, "\n")), v5)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to get file content from server: %v", errT), nil
+	}
+
+	vmT.LeSshInfo["Host"] = v1
+	vmT.LeSshInfo["Port"] = v2
+	vmT.LeSshInfo["User"] = v3
+	vmT.LeSshInfo["Password"] = v4
+	vmT.LeSshInfo["Path"] = v5
+
+	return Undefined, nil
+}
+
+func builtinLeAppendFromFileFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	strT, errT := tk.LoadStringFromFileE(args[0].String())
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "%v", errT), nil
+	}
+
+	vmT.LeBuf = append(vmT.LeBuf, tk.SplitLines(strT)...)
+
+	return Undefined, nil
+}
+
+func builtinLeSaveToFileFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	var errT error
+
+	textT := tk.JoinLines(vmT.LeBuf, "\n")
+
+	if tk.IsErrStr(textT) {
+		return NewCommonErrorWithPos(c, "%v", tk.GetErrStr(textT)), nil
+	}
+
+	errT = tk.SaveStringToFileE(textT, args[0].String())
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "%v", errT), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinLeAppendToFileFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	textT := tk.JoinLines(vmT.LeBuf, "\n")
+
+	if tk.IsErrStr(textT) {
+		return NewCommonErrorWithPos(c, "%v", tk.GetErrStr(textT)), nil
+	}
+
+	errStrT := tk.AppendStringToFile(textT, args[0].String())
+
+	if tk.IsErrStr(errStrT) {
+		return NewCommonErrorWithPos(c, "%v", tk.GetErrStr(errStrT)), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinLeLoadFromClipFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	// if vmT.LeBuf == nil {
+	// 	builtinLeClearFunc(c)
+	// }
+
+	// args := c.GetArgs()
+
+	// if len(args) < 1 {
+	// 	return NewCommonError("not enough parameters"), nil
+	// }
+
+	textT := tk.GetClipText()
+
+	if tk.IsErrStr(textT) {
+		return NewCommonErrorWithPos(c, "%v", tk.GetErrStr(textT)), nil
+	}
+
+	vmT.LeBuf = tk.SplitLines(textT)
+
+	return Undefined, nil
+}
+
+func builtinLeSaveToClipFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	// args := c.GetArgs()
+
+	// if len(args) < 1 {
+	// 	return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	// }
+
+	textT := tk.JoinLines(vmT.LeBuf, "\n")
+
+	if tk.IsErrStr(textT) {
+		return NewCommonErrorWithPos(c, "%v", tk.GetErrStr(textT)), nil
+	}
+
+	errT := tk.SetClipText(textT)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "%v", errT), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinLeViewAllFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	// if len(args) < 1 {
+	// 	return NewCommonError("not enough parameters"), nil
+	// }
+
+	noLineNumberT := tk.IfSwitchExistsWhole(ObjectsToS(args), "-nl")
+
+	for i, v := range vmT.LeBuf {
+		if noLineNumberT {
+			tk.Pl("%v", v)
+		} else {
+			tk.Pl("%v: %v", i, v)
+		}
+	}
+
+	return Undefined, nil
+}
+
+func builtinLeViewLinesFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	startA := tk.ToInt(ConvertFromObject(args[0]), 0)
+
+	endA := tk.ToInt(ConvertFromObject(args[1]), -1)
+
+	if startA >= len(vmT.LeBuf) {
+		return NewCommonError("start index out of range: %v/%v", startA, len(vmT.LeBuf)), nil
+	}
+
+	if startA < 0 {
+		return NewCommonError("start index out of range: %v/%v", startA, len(vmT.LeBuf)), nil
+	}
+
+	if endA < 0 {
+		endA = len(vmT.LeBuf) - 1
+	}
+
+	if endA >= len(vmT.LeBuf) {
+		return NewCommonError("end index out of range: %v/%v", endA, len(vmT.LeBuf)), nil
+	}
+
+	noLineNumberT := tk.IfSwitchExistsWhole(ObjectsToS(args), "-nl")
+
+	for i := startA; i <= endA; i++ {
+		if noLineNumberT {
+			tk.Pl("%v", vmT.LeBuf[i])
+		} else {
+			tk.Pl("%v: %v", i, vmT.LeBuf[i])
+		}
+	}
+
+	return Undefined, nil
+}
+
+func builtinLeGetListFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	// if len(args) < 1 {
+	// 	return NewCommonError("not enough parameters"), nil
+	// }
+
+	startT := 0
+
+	if len(args) > 0 {
+		startT = ToGoIntWithDefault(args[0], 0)
+	}
+
+	lenT := len(vmT.LeBuf)
+
+	if startT < 0 {
+		return NewCommonError("start index out of range: %v/%v", startT, lenT), nil
+	}
+
+	endT := lenT - 1
+
+	if len(args) > 1 {
+		endT = ToGoIntWithDefault(args[1], -1)
+	}
+
+	if endT < 0 {
+		endT = lenT - 1
+	}
+
+	if endT > lenT-1 {
+		return NewCommonError("start index out of range: %v/%v", endT, lenT), nil
+	}
+
+	rs := make(Array, 0, lenT)
+
+	for i := startT; i <= endT; i++ {
+		rs = append(rs, String{Value: vmT.LeBuf[i]})
+	}
+
+	return rs, nil
+}
+
+func builtinLeViewLineFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	idxA := tk.ToInt(ConvertFromObject(args[0]), 0)
+
+	if idxA < 0 || idxA >= len(vmT.LeBuf) {
+		return NewCommonErrorWithPos(c, "line index out of range"), nil
+	}
+
+	tk.Pln(vmT.LeBuf[idxA])
+
+	return Undefined, nil
+}
+
+func builtinLeSortFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	// if len(args) < 1 {
+	// 	return NewCommonError("not enough parameters"), nil
+	// }
+
+	argListT := ObjectsToS(args)
+
+	descentT := false
+
+	if tk.GetSwitch(argListT, "-order=", "") == "desc" {
+		descentT = true
+	}
+
+	if descentT {
+		sort.Sort(sort.Reverse(sort.StringSlice(vmT.LeBuf)))
+	} else {
+		sort.Sort(sort.StringSlice(vmT.LeBuf))
+	}
+
+	return Undefined, nil
+}
+
+func builtinLeConvertToUtf8Func(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	// if len(args) < 1 {
+	// 	return NewCommonError("not enough parameters"), nil
+	// }
+
+	encT := GetSwitchFromObjects(args, "-encoding=", "")
+
+	vmT.LeBuf = tk.SplitLines(tk.ConvertStringToUTF8(tk.JoinLines(vmT.LeBuf, "\n"), encT))
+
+	return Undefined, nil
+}
+
+func builtinLeGetLineFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	idxA := tk.ToInt(ConvertFromObject(args[0]), 0)
+
+	if idxA < 0 || idxA >= len(vmT.LeBuf) {
+		return NewCommonErrorWithPos(c, "%v", "line index out of range"), nil
+	}
+
+	return String{Value: vmT.LeBuf[idxA]}, nil
+}
+
+func builtinLeSetLineFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	idxA := tk.ToInt(ConvertFromObject(args[0]), 0)
+
+	if idxA < 0 || idxA >= len(vmT.LeBuf) {
+		return NewCommonErrorWithPos(c, "%v", "line index out of range"), nil
+	}
+
+	vmT.LeBuf[idxA] = args[1].String()
+
+	return Undefined, nil
+}
+
+func builtinLeSetLinesFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	startA := tk.ToInt(ConvertFromObject(args[0]), 0)
+
+	endA := tk.ToInt(ConvertFromObject(args[1]), -1)
+
+	if startA > endA {
+		return NewCommonErrorWithPos(c, "%v", "start index greater than end index"), nil
+	}
+
+	listT := tk.SplitLines(args[2].String())
+
+	if endA < 0 {
+		rs := make([]string, 0, len(vmT.LeBuf)+len(listT))
+
+		rs = append(rs, listT...)
+		rs = append(rs, vmT.LeBuf...)
+
+		vmT.LeBuf = rs
+
+		return Undefined, nil
+	}
+
+	if startA >= len(vmT.LeBuf) {
+		vmT.LeBuf = append(vmT.LeBuf, listT...)
+
+		return Undefined, nil
+	}
+
+	if startA < 0 {
+		startA = 0
+	}
+
+	if endA >= len(vmT.LeBuf) {
+		endA = len(vmT.LeBuf) - 1
+	}
+
+	rs := make([]string, 0, len(vmT.LeBuf)+len(listT)-1)
+
+	rs = append(rs, vmT.LeBuf[:startA]...)
+	rs = append(rs, listT...)
+	rs = append(rs, vmT.LeBuf[endA+1:]...)
+
+	vmT.LeBuf = rs
+
+	return Undefined, nil
+}
+
+func builtinLeInsertLineFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	idxA := tk.ToInt(ConvertFromObject(args[0]), 0)
+
+	if idxA < 0 {
+		idxA = 0
+	}
+
+	listT := tk.SplitLines(args[1].String())
+
+	if idxA >= len(vmT.LeBuf) {
+		vmT.LeBuf = append(vmT.LeBuf, listT...)
+	} else {
+		rs := make([]string, 0, len(vmT.LeBuf)+1)
+
+		rs = append(rs, vmT.LeBuf[:idxA]...)
+		rs = append(rs, listT...)
+		rs = append(rs, vmT.LeBuf[idxA:]...)
+
+		vmT.LeBuf = rs
+
+	}
+
+	return Undefined, nil
+}
+
+func builtinLeAppendLineFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	listT := tk.SplitLines(args[0].String())
+
+	vmT.LeBuf = append(vmT.LeBuf, listT...)
+
+	return Undefined, nil
+}
+
+func builtinLeRemoveLineFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	idxA := tk.ToInt(ConvertFromObject(args[0]), 0)
+
+	if idxA < 0 || idxA >= len(vmT.LeBuf) {
+		return NewCommonErrorWithPos(c, "%v", "line index out of range"), nil
+	}
+
+	rs := make([]string, 0, len(vmT.LeBuf)+1)
+
+	rs = append(rs, vmT.LeBuf[:idxA]...)
+	rs = append(rs, vmT.LeBuf[idxA+1:]...)
+
+	vmT.LeBuf = rs
+
+	return Undefined, nil
+}
+
+func builtinLeRemoveLinesFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	startA := tk.ToInt(ConvertFromObject(args[0]), 0)
+
+	endA := tk.ToInt(ConvertFromObject(args[1]), -1)
+
+	if endA < 0 {
+		endA = len(vmT.LeBuf) - 1
+	}
+
+	if startA < 0 || startA >= len(vmT.LeBuf) {
+		return NewCommonErrorWithPos(c, "%v", "start line index out of range"), nil
+	}
+
+	if endA < 0 || endA >= len(vmT.LeBuf) {
+		return NewCommonErrorWithPos(c, "%v", "end line index out of range"), nil
+	}
+
+	if startA > endA {
+		return NewCommonErrorWithPos(c, "%v", "start line index greater than end line index"), nil
+	}
+
+	rs := make([]string, 0, len(vmT.LeBuf)+1)
+
+	rs = append(rs, vmT.LeBuf[:startA]...)
+	rs = append(rs, vmT.LeBuf[endA+1:]...)
+
+	vmT.LeBuf = rs
+
+	return Undefined, nil
+}
+
+func builtinLeFindLinesFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	regA := args[0].String()
+
+	ifPrintT := IfSwitchExistsInObjects(args[1:], "-print")
+
+	aryT := make(Array, 0, 10)
+
+	for i, v := range vmT.LeBuf {
+		if tk.RegContains(v, regA) {
+			aryT = append(aryT, Map{"Index": Int(i), "Value": String{Value: v}})
+
+			if ifPrintT {
+				tk.Pl("%v: %v", i, v)
+			}
+		}
+	}
+
+	return aryT, nil
+}
+
+func builtinLeFindFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	groupT := 0
+
+	if len(args) > 1 {
+		groupT = ToIntQuick(args[1])
+	}
+
+	regA := args[0].String()
+
+	for i, v := range vmT.LeBuf {
+		findT := tk.RegFindFirstGroupIndexX(v, regA, groupT)
+
+		if findT != nil {
+			return Map{"Line": Int(i), "Group": Int(groupT), "Count": Int(0), "Start": Int(findT[0]), "End": Int(findT[1]), "Text": String{Value: v[findT[0]:findT[1]]}}, nil
+		}
+	}
+
+	return Undefined, nil
+}
+
+func builtinLeFindAllFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	groupT := 0
+
+	if len(args) > 1 {
+		groupT = ToIntQuick(args[1])
+	}
+
+	regA := args[0].String()
+
+	totalFindsT := Array{}
+
+	for i, v := range vmT.LeBuf {
+		findsT := tk.RegFindAllByGroupIndexX(v, regA, groupT)
+
+		if findsT != nil {
+			for j, jv := range findsT {
+				totalFindsT = append(totalFindsT, Map{"Line": Int(i), "Group": Int(groupT), "Count": Int(j), "Start": Int(jv[0]), "End": Int(jv[1]), "Text": String{Value: v[jv[0]:jv[1]]}})
+			}
+		}
+	}
+
+	return totalFindsT, nil
+}
+
+func builtinLeReplaceFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	regA := args[0].String()
+	replA := args[1].String()
+
+	aryT := make(Array, 0, 10)
+
+	for i, v := range vmT.LeBuf {
+		if tk.RegContains(v, regA) {
+			vmT.LeBuf[i] = tk.RegReplace(v, regA, replA)
+			aryT = append(aryT, String{Value: fmt.Sprintf("%v: %v -> %v", i, v, vmT.LeBuf[i])})
+		}
+	}
+
+	return aryT, nil
+}
+
+func builtinLePrintFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	if vmT.LeBuf == nil {
+		builtinLeClearFunc(c)
+	}
+
+	args := c.GetArgs()
+
+	ifLineNumberT := IfSwitchExistsInObjects(args, "-lineNumber")
+	withLenT := IfSwitchExistsInObjects(args, "-withLen")
+
+	for i, v := range vmT.LeBuf {
+		withLenStrT := ""
+		if withLenT {
+			withLenStrT = "(" + tk.IntToStr(len(v)) + ")"
+		}
+
+		if ifLineNumberT {
+			tk.Pl("%v%v: %v", i, withLenStrT, v)
+		} else {
+			tk.Pl("%v%v", withLenStrT, v)
+		}
 	}
 
 	return Undefined, nil
