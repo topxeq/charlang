@@ -22,12 +22,15 @@ import (
 	"time"
 
 	"github.com/topxeq/charlang"
+
 	// ugofmt "github.com/topxeq/charlang/stdlib/fmt"
 	// ugotime "github.com/topxeq/charlang/stdlib/time"
 	// ugostrings "github.com/topxeq/charlang/stdlib/strings"
 	charex "github.com/topxeq/charlang/stdlib/ex"
 	// charfmt "github.com/topxeq/charlang/stdlib/fmt"
 	"github.com/topxeq/tk"
+
+	"github.com/kardianos/service"
 
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
@@ -69,6 +72,295 @@ var (
 var (
 	initialSuggLen int
 )
+
+var serviceNameG = "charService"
+var configFileNameG = serviceNameG + ".cfg"
+var serviceModeG = false
+var currentOSG = ""
+var scriptPathG = "" // for service only
+
+type program struct {
+	BasePath string
+}
+
+func (p *program) Start(s service.Service) error {
+	// Start should not block. Do the actual work async.
+	// basePathG = p.BasePath
+	// logWithTime("basePath: %v", basePathG)
+	serviceModeG = true
+
+	go p.run()
+
+	return nil
+}
+
+func (p *program) run() {
+	go doWork()
+}
+
+func (p *program) Stop(s service.Service) error {
+	// Stop should not block. Return with a few seconds.
+	return nil
+}
+
+func initSvc() *service.Service {
+	if tk.GetOSName() == "windows" {
+		currentOSG = "win"
+		if tk.Trim(basePathG) == "." || strings.TrimSpace(basePathG) == "" {
+			basePathG = "c:\\" + "char" // serviceNameG
+		}
+		configFileNameG = serviceNameG + "win.cfg"
+	} else {
+		currentOSG = "linux"
+		if tk.Trim(basePathG) == "." || strings.TrimSpace(basePathG) == "" {
+			basePathG = "/" + "char" //  + serviceNameG
+		}
+		configFileNameG = serviceNameG + "linux.cfg"
+	}
+
+	if !tk.IfFileExists(basePathG) {
+		os.MkdirAll(basePathG, 0777)
+	}
+
+	tk.SetLogFile(filepath.Join(basePathG, serviceNameG+".log"))
+
+	svcConfigT := &service.Config{
+		Name:        serviceNameG,
+		DisplayName: serviceNameG,
+		Description: serviceNameG + " V" + charlang.VersionG,
+		Arguments:   []string{"-service"},
+	}
+
+	prgT := &program{BasePath: basePathG}
+	var s, err = service.New(prgT, svcConfigT)
+
+	if err != nil {
+		tk.LogWithTimeCompact("%v unable to init servcie: %v\n", svcConfigT.DisplayName, err)
+		return nil
+	}
+
+	return &s
+}
+
+func QuickRunChar(codeA string, scriptPathA string, argsA ...string) interface{} {
+	moduleMap := charlang.NewModuleMap()
+	moduleMap.AddBuiltinModule("ex", charex.Module)
+	// moduleMap.AddBuiltinModule("fmt", charfmt.Module)
+
+	charlang.MainCompilerOptions = &charlang.CompilerOptions{
+		// ModulePath:        "", //"(repl)",
+		ModuleMap: moduleMap,
+		// SymbolTable:       charlang.NewSymbolTable(),
+		// OptimizerMaxCycle: charlang.TraceCompilerOptions.OptimizerMaxCycle,
+		// TraceParser:       true,
+		// TraceOptimizer:    true,
+		// TraceCompiler:     true,
+		// OptimizeConst:     !noOptimizer,
+		// OptimizeExpr:      !noOptimizer,
+
+		// Trace:             os.Stdout,
+		// TraceParser:       true,
+		// TraceCompiler:     true,
+		// TraceOptimizer:    true,
+		// OptimizerMaxCycle: 1<<8 - 1,
+		// OptimizeConst:     false,
+		// OptimizeExpr:      false,
+	}
+
+	if charlang.DebugModeG {
+		// opts = &charlang.CompilerOptions{
+		// 	// ModulePath:        "", //"(repl)",
+		// 	ModuleMap: moduleMap,
+		// 	// SymbolTable:       charlang.NewSymbolTable(),
+		// 	// OptimizerMaxCycle: charlang.TraceCompilerOptions.OptimizerMaxCycle,
+		// 	// TraceParser:       true,
+		// 	// TraceOptimizer:    true,
+		// 	// TraceCompiler:     true,
+		// 	// OptimizeConst:     !noOptimizer,
+		// 	// OptimizeExpr:      !noOptimizer,
+
+		// 	// Trace: os.Stdout,
+		// 	// TraceParser: true,
+		// 	// TraceCompiler: true,
+		// 	// TraceOptimizer:    true,
+		// 	// OptimizerMaxCycle: 1<<8 - 1,
+		// 	// OptimizeConst:     false,
+		// 	// OptimizeExpr:      false,
+		// }
+
+	}
+
+	// tk.Pln(2.1)
+	bytecodeT, errT := charlang.Compile([]byte(codeA), charlang.MainCompilerOptions) // charlang.DefaultCompilerOptions)
+	if errT != nil {
+		return errT
+	}
+	// tk.Pln(2.2)
+
+	// inParasT := make(charlang.Map, len(paraMapT))
+	// for k, v := range paraMapT {
+	// 	inParasT[k] = charlang.ToString(v)
+	// }
+
+	// inParasT := make(charlang.Map, 0)
+
+	envT := charlang.Map{}
+
+	// envT["tk"] = charlang.TkFunction
+	envT["argsG"] = charlang.ConvertToObject(os.Args)
+	envT["versionG"] = charlang.ToStringObject(charlang.VersionG)
+	envT["scriptPathG"] = charlang.ToStringObject(scriptPathA)
+	envT["basePathG"] = charlang.ToStringObject(basePathG)
+	envT["runModeG"] = charlang.ToStringObject(tk.GetSwitch(argsA, "-runMode=", "script"))
+
+	vmT := charlang.NewVM(bytecodeT)
+
+	retT, errT := vmT.Run(envT) // inParasT,
+
+	if errT != nil {
+
+		// tk.Pl()
+
+		// f, l := QlVMG.Code.Line(QlVMG.Code.Reserve().Next())
+		// tk.Pl("Next line: %v, %v", f, l)
+
+		return tk.Errf("failed to execute script(%v) error: %v\n", scriptPathA, errT)
+	}
+
+	return charlang.ConvertFromObject(retT)
+}
+
+func Svc() {
+	if tk.GetOSName() == "windows" {
+		currentOSG = "win"
+		if tk.Trim(basePathG) == "." || strings.TrimSpace(basePathG) == "" {
+			basePathG = "c:\\" + "char" // serviceNameG
+		}
+		configFileNameG = serviceNameG + "win.cfg"
+	} else {
+		currentOSG = "linux"
+		if tk.Trim(basePathG) == "." || strings.TrimSpace(basePathG) == "" {
+			basePathG = "/" + "char" //  + serviceNameG
+		}
+		configFileNameG = serviceNameG + "linux.cfg"
+	}
+
+	if !tk.IfFileExists(basePathG) {
+		os.MkdirAll(basePathG, 0777)
+	}
+
+	tk.SetLogFile(filepath.Join(basePathG, serviceNameG+".log"))
+
+	defer func() {
+		if v := recover(); v != nil {
+			tk.LogWithTimeCompact("panic in service: %v", v)
+		}
+	}()
+
+	tk.DebugModeG = true
+
+	tk.LogWithTimeCompact("%v V%v", serviceNameG, charlang.VersionG)
+	tk.LogWithTimeCompact("os: %v, basePathG: %v, configFileNameG: %v, scriptPathG: %v", runtime.GOOS, basePathG, configFileNameG, scriptPathG)
+	tk.LogWithTimeCompact("command-line args: %v", os.Args)
+
+	// tk.Pl("os: %v, basePathG: %v, configFileNameG: %v", runtime.GOOS, basePathG, configFileNameG)
+
+	cfgFileNameT := filepath.Join(basePathG, configFileNameG)
+	if tk.IfFileExists(cfgFileNameT) {
+		fileContentT := tk.LoadSimpleMapFromFile(cfgFileNameT)
+
+		if fileContentT != nil {
+			basePathG = fileContentT["charBasePath"]
+		}
+	}
+
+	tk.LogWithTimeCompact("Service started.")
+	// tk.LogWithTimeCompact("Using config file: %v", cfgFileNameT)
+
+	runAutoRemoveTask := func() {
+		for {
+			taskFileListT := tk.GetFileList(basePathG, "-pattern=autoRemoveTask*.char", "-sort=asc", "-sortKey=Name")
+
+			if len(taskFileListT) > 0 {
+				for i, v := range taskFileListT {
+
+					fcT := tk.LoadStringFromFile(v["Abs"])
+
+					if tk.IsErrX(fcT) {
+						tk.LogWithTimeCompact("failed to load run-then-remove task - [%v] %v: %v", i, v["Abs"], tk.GetErrStrX(fcT))
+						continue
+					}
+
+					tk.LogWithTimeCompact("running run-then-remove task: %v ...", v["Abs"])
+
+					scriptPathG = v["Abs"]
+
+					rs := QuickRunChar(fcT, scriptPathG)
+					if !tk.IsUndefined(rs) && !tk.IsNil(rs) {
+						tk.LogWithTimeCompact("task result: %v", rs)
+					}
+
+					tk.RemoveFile(v["Abs"])
+				}
+			}
+
+			tk.Sleep(5.0)
+
+		}
+
+	}
+
+	go runAutoRemoveTask()
+
+	taskFileListT := tk.GetFileList(basePathG, "-pattern=task*.char", "-sort=asc", "-sortKey=Name")
+
+	if len(taskFileListT) > 0 {
+		for i, v := range taskFileListT {
+
+			fcT := tk.LoadStringFromFile(v["Abs"])
+
+			if tk.IsErrX(fcT) {
+				tk.LogWithTimeCompact("failed to load auto task - [%v] %v: %v", i, v["Abs"], tk.GetErrStrX(fcT))
+				continue
+			}
+
+			tk.LogWithTimeCompact("running task: %v ...", v["Abs"])
+
+			scriptPathG = v["Abs"]
+
+			rs := QuickRunChar(fcT, scriptPathG)
+			if !tk.IsUndefined(rs) && !tk.IsNil(rs) {
+				tk.LogWithTimeCompact("auto task result: %v", rs)
+			}
+		}
+	}
+
+	// c := 0
+	for {
+		tk.Sleep(60.0)
+
+		// c++
+		// tk.Pl("c: %v", c)
+		// tk.LogWithTimeCompact("c: %v", c)
+	}
+
+}
+
+var exitG = make(chan struct{})
+
+func doWork() {
+	serviceModeG = true
+
+	go Svc()
+
+	for {
+		select {
+		case <-exitG:
+			os.Exit(0)
+			return
+		}
+	}
+}
 
 // var scriptGlobals = &charlang.SyncMap{
 // 	Map: charlang.Map{
@@ -1773,6 +2065,204 @@ func main() {
 	// }
 
 	rand.Seed(time.Now().Unix())
+
+	// service route
+
+	argsT := os.Args
+
+	if tk.IfSwitchExistsWhole(argsT, "-service") {
+		tk.Pl("%v V%v is running in service(server) mode. Running the application with argument \"-service\" will cause it running in service mode.\n", serviceNameG, charlang.VersionG)
+		serviceModeG = true
+
+		s := initSvc()
+
+		if s == nil {
+			tk.LogWithTimeCompact("Failed to init service")
+			return
+		}
+
+		err := (*s).Run()
+		if err != nil {
+			tk.LogWithTimeCompact("Service \"%s\" failed to run.", (*s).String())
+		}
+
+		return
+	}
+
+	if tk.IfSwitchExistsWhole(argsT, "-installService") {
+		s := initSvc()
+
+		if s == nil {
+			tk.Pl("failed to initialize service")
+			return
+		}
+
+		tk.Pl("installing service \"%v\"...", (*s).String())
+
+		errT := (*s).Install()
+		if errT != nil {
+			tk.Pl("failed to install service: %v", errT)
+			return
+		}
+
+		tk.Pl("service installed - \"%s\" .", (*s).String())
+
+		// tk.Pl("启动服务（starting service） \"%v\"...", (*s).String())
+
+		// errT = (*s).Start()
+		// if errT != nil {
+		// 	tk.Pl("启动服务失败（failed to start）: %v", errT)
+		// 	return
+		// }
+
+		// tk.Pl("服务已启动（service started） - \"%s\" .", (*s).String())
+
+		return
+
+	}
+
+	if tk.IfSwitchExistsWhole(argsT, "-startService") {
+		s := initSvc()
+
+		if s == nil {
+			tk.Pl("failed to init service")
+			return
+		}
+
+		tk.Pl("starting service \"%v\"...", (*s).String())
+
+		errT := (*s).Start()
+		if errT != nil {
+			tk.Pl("failed to start: %v", errT)
+			return
+		}
+
+		tk.Pl("service started - \"%s\" ", (*s).String())
+
+		return
+
+	}
+
+	if tk.IfSwitchExistsWhole(argsT, "-stopService") {
+		s := initSvc()
+
+		if s == nil {
+			tk.Pl("failed to init service")
+			return
+		}
+
+		errT := (*s).Stop()
+		if errT != nil {
+			tk.Pl("failed to stop service: %s", errT)
+		} else {
+			tk.Pl("service stopped - \"%s\" ", (*s).String())
+		}
+
+		return
+
+	}
+
+	if tk.IfSwitchExistsWhole(argsT, "-removeService") || tk.IfSwitchExistsWhole(argsT, "-uninstallService") {
+		s := initSvc()
+
+		if s == nil {
+			tk.Pl("failed to init service")
+			return
+		}
+
+		errT := (*s).Stop()
+		if errT != nil {
+			tk.Pl("failed to stop service: %s", errT)
+		} else {
+			tk.Pl("service stopped - \"%s\" ", (*s).String())
+		}
+
+		errT = (*s).Uninstall()
+		if errT != nil {
+			tk.Pl("failed to remove service: %v", errT)
+			return
+		}
+
+		tk.Pl("service removed - \"%s\" ", (*s).String())
+
+		return
+
+	}
+
+	if tk.IfSwitchExistsWhole(argsT, "-reinstallService") {
+		s := initSvc()
+
+		if s == nil {
+			tk.Pl("failed to init service")
+			return
+		}
+
+		errT := (*s).Stop()
+		if errT != nil {
+			tk.Pl("failed to stop service: %s", errT)
+		} else {
+			tk.Pl("service stopped - \"%s\" ", (*s).String())
+		}
+
+		errT = (*s).Uninstall()
+		if errT != nil {
+			tk.Pl("failed to remove service: %v", errT)
+		} else {
+			tk.Pl("service removed - \"%s\" ", (*s).String())
+		}
+
+		tk.Pl("installing service \"%v\"...", (*s).String())
+
+		errT = (*s).Install()
+		if errT != nil {
+			tk.Pl("failed to install service: %v", errT)
+			return
+		}
+
+		tk.Pl("service installed - \"%s\" .", (*s).String())
+
+		tk.Pl("starting service \"%v\"...", (*s).String())
+
+		errT = (*s).Start()
+		if errT != nil {
+			tk.Pl("failed to start: %v", errT)
+			return
+		}
+
+		tk.Pl("service started - \"%s\" ", (*s).String())
+
+		return
+
+	}
+
+	if tk.IfSwitchExistsWhole(argsT, "-restartService") {
+		s := initSvc()
+
+		if s == nil {
+			tk.Pl("failed to init service")
+			return
+		}
+
+		errT := (*s).Stop()
+		if errT != nil {
+			tk.Pl("failed to stop service: %s", errT)
+		} else {
+			tk.Pl("service stopped - \"%s\" ", (*s).String())
+		}
+
+		tk.Pl("starting service \"%v\"...", (*s).String())
+
+		errT = (*s).Start()
+		if errT != nil {
+			tk.Pl("failed to start: %v", errT)
+			return
+		}
+
+		tk.Pl("service started - \"%s\" ", (*s).String())
+
+		return
+
+	}
 
 	// rs := runArgs(os.Args[1:]...)
 	rs := runArgs(os.Args...)

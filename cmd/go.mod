@@ -9,6 +9,7 @@ go 1.17
 require (
 	github.com/denisenkom/go-mssqldb v0.12.3
 	github.com/go-sql-driver/mysql v1.7.1
+	github.com/kardianos/service v1.2.2
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/peterh/liner v1.2.2
 	github.com/sijms/go-ora/v2 v2.7.17
