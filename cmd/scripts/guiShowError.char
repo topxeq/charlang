@@ -1,0 +1,6 @@
+global guiG
+
+guiG.showError("error message", "-title=Error", "-okLabel=Ok")
+
+guiG.showError("msg2\nnext")
+

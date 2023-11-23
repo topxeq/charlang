@@ -1,0 +1,4 @@
+global guiG
+
+guiG.showInfo("msg1", "-title=title1", "-okLabel=Close")
+

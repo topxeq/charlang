@@ -393,7 +393,7 @@ func ToGoByteSlice(o Object) (v []byte, ok bool) {
 		bufT := make([]byte, lenT)
 
 		for i := 0; i < lenT; i++ {
-			rs1, errT := builtinByteFunc(Call{args: []Object{nv[i]}})
+			rs1, errT := builtinByteFunc(Call{Args: []Object{nv[i]}})
 
 			if errT != nil {
 				return nil, false

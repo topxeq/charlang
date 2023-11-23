@@ -1806,7 +1806,6 @@ func runArgs(argsA ...string) interface{} {
 
 	if ifCompileT {
 		appPathT, errT := os.Executable()
-
 		tk.CheckError(errT)
 
 		outputT := tk.Trim(tk.GetSwitch(os.Args, "-output=", "output.exe"))
@@ -1829,6 +1828,10 @@ func runArgs(argsA ...string) interface{} {
 		text1T := tk.Trim("740404")
 		text2T := tk.Trim("690415")
 		text3T := tk.Trim("040626")
+
+		tk.SaveBytesToFile(buf1, `d:\tmpx\tmpbytes.exe`)
+
+		tk.SaveBytesToFile([]byte(codeG), `d:\tmpx\tmpbytes2.txt`)
 
 		re := regexp.MustCompile(text1T + text2T + text3T + `(.*)` + text3T + text2T + text1T)
 		matchT := re.FindSubmatchIndex(buf1)
@@ -2022,6 +2025,7 @@ func runArgs(argsA ...string) interface{} {
 	envT["versionG"] = charlang.ToStringObject(charlang.VersionG)
 	envT["scriptPathG"] = charlang.ToStringObject(scriptPathT)
 	envT["runModeG"] = charlang.ToStringObject("script")
+	envT["guiG"] = charlang.NewExternalDelegate(guiHandler)
 
 	vmT := charlang.NewVM(bytecodeT)
 

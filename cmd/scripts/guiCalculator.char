@@ -1,0 +1,102 @@
+global guiG
+
+htmlT := `
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Calculator</title>
+</head>
+<body>
+	<div style="margin-top: 10px; margin-bottom: 10px;">
+		<span>Please enter the expression:</span>
+	</div>
+	<div style="margin-top: 10px; margin-bottom: 10px;">
+		<input id="mainInputID" type=text />
+	</div>
+	<div>
+		<button id="btnCal">Calculate</button>
+		<button id="btnClose" onclick="javascript:closeWindowClick();">Close</button>
+	</div>
+
+    <script>
+        document.getElementById("btnCal").addEventListener("click", function() {
+			var result = eval(document.getElementById("mainInputID").value);
+
+            delegateDo("showResult", result);
+
+            document.getElementById("mainInputID").value = result;
+        });
+
+        function closeWindowClick() {
+			// delegateCloseWindow();
+            delegateDo("closeWindow");
+        }
+ 
+        window.onload = function() {
+        };
+ 
+    </script>
+</body>
+</html>
+`
+
+windowT := guiG.newWindow("-title=Simple Calculator", "-width=640", "-height=480", "-center", "-debug")
+
+// plo(windowT)
+
+dele1 := delegate(`
+	param ...vargs
+	
+	global inputG
+
+	pln(vargs)
+
+	pln(inputG)
+
+	cmdT := vargs[0]
+
+    if cmdT == "showResult" {
+		pl("result: %v", vargs[1])
+
+		return cmdT
+	} else if cmdT == "closeWindow" {
+		pl("close window")
+
+		windowT := inputG[0]
+
+		windowT("close")
+
+		return cmdT
+	}
+	
+    pl("cmd: %v", cmdT)
+
+    return cmdT
+`)
+
+checkErr(dele1)
+
+rs := dele1.compile(windowT)
+
+checkErr(rs)
+
+rs = windowT.setDelegate(dele1)
+
+checkErr(rs)
+
+rs = windowT.setHtml(htmlT)
+
+checkErr(rs)
+
+rs = windowT("show")
+
+checkErr(rs)
+
+rs = windowT("close")
+
+checkErr(rs)
+
+exit()
+

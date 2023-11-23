@@ -1,0 +1,35 @@
+sourceT := `
+param ...vargs
+
+pln(vargs)
+
+v0 := vargs[0]
+
+if v0 == "add" {
+	return vargs[1] + vargs[2]
+} else if v0 == "mul" {
+	return vargs[1] * vargs[2]
+} else if v0 == "Pi" {
+	return 3.1415926
+}
+
+return errStrf("member/method not found: %v", v0)
+`
+
+d1 := delegate(sourceT)
+
+rs := d1.compile()
+
+plt(rs)
+
+plt(d1("Pi"))
+
+rs = d1("add", 1, 2)
+
+plt(rs)
+
+plt(d1("mul", 1.3, 25))
+
+plt(d1("abc"))
+
+

@@ -46,7 +46,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Image: 501, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Image: 501, *Delegate: 601, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -159,24 +159,24 @@ type NameCallerObject interface {
 // arguments directly. Using Len() and Get() methods is preferred. It is safe to
 // create Call with a nil VM as long as VM is not required by the callee.
 type Call struct {
-	vm    *VM
+	Vm    *VM
 	This  Object
-	args  []Object
-	vargs []Object
+	Args  []Object
+	Vargs []Object
 }
 
 // NewCall creates a new Call struct with the given arguments.
 func NewCall(vm *VM, args []Object, vargs ...Object) Call {
 	return Call{
-		vm:    vm,
-		args:  args,
-		vargs: vargs,
+		Vm:    vm,
+		Args:  args,
+		Vargs: vargs,
 	}
 }
 
 // VM returns the VM of the call.
 func (c *Call) VM() *VM {
-	return c.vm
+	return c.Vm
 }
 
 // Get returns the nth argument. If n is greater than the number of arguments,
@@ -184,15 +184,15 @@ func (c *Call) VM() *VM {
 // If n is greater than the number of arguments and variadic arguments, it
 // panics!
 func (c *Call) Get(n int) Object {
-	if n < len(c.args) {
-		return c.args[n]
+	if n < len(c.Args) {
+		return c.Args[n]
 	}
-	return c.vargs[n-len(c.args)]
+	return c.Vargs[n-len(c.Args)]
 }
 
 // Len returns the number of arguments including variadic arguments.
 func (c *Call) Len() int {
-	return len(c.args) + len(c.vargs)
+	return len(c.Args) + len(c.Vargs)
 }
 
 // CheckLen checks the number of arguments and variadic arguments. If the number
@@ -210,36 +210,36 @@ func (c *Call) CheckLen(n int) error {
 // It updates the arguments and variadic arguments accordingly.
 // If it cannot shift, it returns nil and false.
 func (c *Call) shift() (Object, bool) {
-	if len(c.args) == 0 {
-		if len(c.vargs) == 0 {
+	if len(c.Args) == 0 {
+		if len(c.Vargs) == 0 {
 			return nil, false
 		}
-		v := c.vargs[0]
-		c.vargs = c.vargs[1:]
+		v := c.Vargs[0]
+		c.Vargs = c.Vargs[1:]
 		return v, true
 	}
-	v := c.args[0]
-	c.args = c.args[1:]
+	v := c.Args[0]
+	c.Args = c.Args[1:]
 	return v, true
 }
 
 func (c *Call) callArgs() []Object {
-	if len(c.args) == 0 {
-		return c.vargs
+	if len(c.Args) == 0 {
+		return c.Vargs
 	}
 	args := make([]Object, 0, c.Len())
-	args = append(args, c.args...)
-	args = append(args, c.vargs...)
+	args = append(args, c.Args...)
+	args = append(args, c.Vargs...)
 	return args
 }
 
 func (c *Call) GetArgs() []Object {
-	if len(c.args) == 0 {
-		return c.vargs
+	if len(c.Args) == 0 {
+		return c.Vargs
 	}
 	args := make([]Object, 0, c.Len())
-	args = append(args, c.args...)
-	args = append(args, c.vargs...)
+	args = append(args, c.Args...)
+	args = append(args, c.Vargs...)
 	return args
 }
 
@@ -4418,7 +4418,7 @@ func (o *Time) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		// return Undefined, ErrInvalidIndex.NewError(nameA)
 	}
 
-	return fn(o, &Call{args: argsA})
+	return fn(o, &Call{Args: argsA})
 
 	// return Undefined, NewCommonError("unknown method: %v", nameA)
 }
@@ -5974,7 +5974,7 @@ func (o *Any) String() string {
 }
 
 func (o *Any) SetValue(valueA Object) error {
-	rs, errT := builtinAnyFunc(Call{args: []Object{valueA}})
+	rs, errT := builtinAnyFunc(Call{Args: []Object{valueA}})
 
 	if errT != nil {
 		return errT
@@ -6194,7 +6194,7 @@ func (o *Any) IndexSet(index, value Object) error {
 	// 		return ErrNotIndexAssignable
 	// 	}
 
-	// 	rs1, errT := fnT(Call{args: Array{o, nv, value}})
+	// 	rs1, errT := fnT(Call{Args: Array{o, nv, value}})
 
 	// 	if errT != nil {
 	// 		return errT
@@ -7168,7 +7168,7 @@ func (o *Seq) HasMemeber() bool {
 func (o *Seq) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return builtinAnyFunc(Call{args: []Object{o}})
+		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
 	}
@@ -7238,7 +7238,7 @@ func (o *Seq) IndexGet(index Object) (Object, error) {
 		strT := v.Value
 
 		if strT == "value" {
-			// return builtinAnyFunc(Call{args: []Object{o}})
+			// return builtinAnyFunc(Call{Args: []Object{o}})
 			return ToIntObject(o.Value), nil
 		}
 
@@ -7330,7 +7330,7 @@ func (o *Mutex) HasMemeber() bool {
 func (o *Mutex) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return builtinAnyFunc(Call{args: []Object{o}})
+		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
 	}
@@ -7400,7 +7400,7 @@ func (o *Mutex) IndexGet(index Object) (Object, error) {
 		strT := v.Value
 
 		if strT == "value" {
-			return builtinAnyFunc(Call{args: []Object{o}})
+			return builtinAnyFunc(Call{Args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
 
@@ -7540,7 +7540,7 @@ func (o *Mux) HasMemeber() bool {
 func (o *Mux) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return builtinAnyFunc(Call{args: []Object{o}})
+		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
 	}
@@ -7610,7 +7610,7 @@ func (o *Mux) IndexGet(index Object) (Object, error) {
 		strT := v.Value
 
 		if strT == "value" {
-			return builtinAnyFunc(Call{args: []Object{o}})
+			return builtinAnyFunc(Call{Args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
 
@@ -7690,7 +7690,7 @@ func (o *HttpReq) HasMemeber() bool {
 func (o *HttpReq) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return builtinAnyFunc(Call{args: []Object{o}})
+		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
 	}
@@ -7760,7 +7760,7 @@ func (o *HttpReq) IndexGet(index Object) (Object, error) {
 		strT := v.Value
 
 		if strT == "value" {
-			return builtinAnyFunc(Call{args: []Object{o}})
+			return builtinAnyFunc(Call{Args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
 
@@ -7867,7 +7867,7 @@ func (o *HttpResp) HasMemeber() bool {
 func (o *HttpResp) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return builtinAnyFunc(Call{args: []Object{o}})
+		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
 	}
@@ -7937,7 +7937,7 @@ func (o *HttpResp) IndexGet(index Object) (Object, error) {
 		strT := v.Value
 
 		if strT == "value" {
-			return builtinAnyFunc(Call{args: []Object{o}})
+			return builtinAnyFunc(Call{Args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
 
@@ -8013,7 +8013,7 @@ func (o *HttpHandler) HasMemeber() bool {
 func (o *HttpHandler) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return builtinAnyFunc(Call{args: []Object{o}})
+		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
 	}
@@ -8083,7 +8083,7 @@ func (o *HttpHandler) IndexGet(index Object) (Object, error) {
 		strT := v.Value
 
 		if strT == "value" {
-			return builtinAnyFunc(Call{args: []Object{o}})
+			return builtinAnyFunc(Call{Args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
 
@@ -8278,7 +8278,7 @@ func (o *Reader) HasMemeber() bool {
 func (o *Reader) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return builtinAnyFunc(Call{args: []Object{o}})
+		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
 	}
@@ -8348,7 +8348,7 @@ func (o *Reader) IndexGet(index Object) (Object, error) {
 		strT := v.Value
 
 		if strT == "value" {
-			return builtinAnyFunc(Call{args: []Object{o}})
+			return builtinAnyFunc(Call{Args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
 
@@ -8437,7 +8437,7 @@ func (o *CharCode) HasMemeber() bool {
 func (o *CharCode) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return builtinAnyFunc(Call{args: []Object{o}})
+		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
 	}
@@ -8507,7 +8507,7 @@ func (o *CharCode) IndexGet(index Object) (Object, error) {
 		strT := v.Value
 
 		if strT == "value" {
-			return builtinAnyFunc(Call{args: []Object{o}})
+			return builtinAnyFunc(Call{Args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
 
@@ -8622,7 +8622,7 @@ func (o *Gel) HasMemeber() bool {
 func (o *Gel) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return builtinAnyFunc(Call{args: []Object{o}})
+		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
 	}
@@ -8692,7 +8692,7 @@ func (o *Gel) IndexGet(index Object) (Object, error) {
 		strT := v.Value
 
 		if strT == "value" {
-			return builtinAnyFunc(Call{args: []Object{o}})
+			return builtinAnyFunc(Call{Args: []Object{o}})
 			// return ToIntObject(o.Value), nil
 		}
 
@@ -10158,4 +10158,233 @@ func NewImage(c Call) (Object, error) {
 	imgPT := tk.NewImage(ObjectsToS(argsA)...)
 
 	return &Image{Value: imgPT}, nil
+}
+
+// Delegate represents an function caller and implements Object interface.
+type Delegate struct {
+	// ObjectImpl
+	Code  *CharCode
+	Value tk.QuickVarDelegate
+
+	Members map[string]Object `json:"-"`
+}
+
+func (*Delegate) TypeCode() int {
+	return 601
+}
+
+func (*Delegate) TypeName() string {
+	return "delegate"
+}
+
+func (o *Delegate) String() string {
+	return fmt.Sprintf("(delegate)Code: %v, Value: %v", o.Code != nil, o.Value != nil)
+}
+
+func (o *Delegate) HasMemeber() bool {
+	return true
+}
+
+func (o *Delegate) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *Delegate) GetValue() Object {
+	return o
+}
+
+func (o *Delegate) SetValue(valueA Object) error {
+	switch nv := valueA.(type) {
+	case *Delegate:
+		o.Value = nv.Value
+		return nil
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *Delegate) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Delegate) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (o *Delegate) Equal(right Object) bool {
+	// switch v := right.(type) {
+	// case *Delegate:
+	// 	return o.Value == v.Value
+	// }
+
+	return false
+}
+
+func (o *Delegate) IsFalsy() bool {
+	return o.Value == nil
+}
+
+func (o *Delegate) CanCall() bool {
+	return true
+}
+
+func (o *Delegate) Call(argsA ...Object) (Object, error) {
+
+	rs := o.Value(ObjectsToI(argsA)...)
+
+	return ConvertToObject(rs), nil
+}
+
+func (*Delegate) CanIterate() bool {
+	return false
+}
+
+func (*Delegate) Iterate() Iterator {
+	return nil
+}
+
+func (o *Delegate) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "value" {
+			return o.SetValue(value)
+		}
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *Delegate) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "value" {
+			return o.GetValue(), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		rs, errT := GetObjectMethodFunc(o, strT)
+
+		if errT != nil || IsUndefInternal(rs) {
+			if o.Value == nil {
+				return rs, errT
+			}
+
+			fn2 := &Function{
+				Name: strT,
+				Value: func(argsA ...Object) (Object, error) {
+					aryT := make([]interface{}, 0, len(argsA)+1)
+
+					aryT = append(aryT, strT)
+
+					aryT = append(aryT, ObjectsToI(argsA)...)
+
+					rs := o.Value(aryT...)
+
+					return ConvertToObject(rs), nil
+				}}
+
+			o.SetMember(strT, fn2)
+
+			return fn2, nil
+		}
+
+		return rs, nil
+	}
+
+	return nil, ErrNotIndexable
+}
+
+func (o *Delegate) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return Undefined, NewCommonError("unsupported type: %T", right)
+}
+
+func NewDelegate(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	// if len(argsA) < 1 {
+	// 	return Undefined, NewCommonErrorWithPos(c, "%v", "not enough parameters")
+	// }
+
+	if len(argsA) < 1 {
+		return Undefined, fmt.Errorf("not enough parameters")
+	}
+
+	nv, ok := argsA[0].(*CharCode)
+
+	if !ok {
+		nv = NewCharCode(argsA[0].String())
+
+		// return Undefined, fmt.Errorf("invalid input type")
+	}
+
+	// if nv == nil {
+	// 	return Undefined, fmt.Errorf("nil CharCode")
+	// }
+
+	// deleT := func(argsA ...interface{}) interface{} {
+	// 	var globalsA map[string]interface{} = nil
+	// 	// var additionsA []Object = make([]Object, 0, len(argsT)+1)
+
+	// 	envT := NewBaseEnv(globalsA) // Map{}
+
+	// 	(*envT)["inputG"] = ConvertToObject(argsA)
+
+	// 	// additionsA = append(additionsA, ToStringObject(strT))
+	// 	// additionsA = append(additionsA, argsT...)
+
+	// 	retT, errT := NewVM(argsA[0].(*Bytecode)).Run(envT) // , additionsA...)
+
+	// 	if errT != nil {
+	// 		return fmt.Errorf("%v", errT)
+	// 	}
+
+	// 	return ConvertFromObject(retT)
+	// }
+
+	return &Delegate{Code: nv}, nil
+}
+
+func NewExternalDelegate(funcA func(...interface{}) interface{}) Object {
+	return &Delegate{Value: funcA}
 }

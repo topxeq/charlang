@@ -26,7 +26,7 @@ import (
 )
 
 // global vars
-var VersionG = "0.7.5"
+var VersionG = "0.7.6"
 
 var CodeTextG = ""
 
@@ -1616,6 +1616,81 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
+	601: map[string]*Function{ // *Delegate
+		"toStr": &Function{
+			Name: "toStr",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*Delegate)
+
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				return ToStringObject(nv.String()), nil
+			},
+		},
+		"compile": &Function{
+			Name: "compile",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*Delegate)
+
+				if !ok {
+					return NewCommonError("invalid type: %#v", c.This), nil
+				}
+
+				if nv.Code == nil {
+					return NewCommonError("charCode not loaded in Delegate"), nil
+				}
+
+				// byteCodeT := QuickCompile(nv.Source) // quickCompile(tk.ToStr(argsA[0])) //
+
+				// if tk.IsError(byteCodeT) {
+				// 	return NewCommonError("%v", byteCodeT), nil
+				// }
+				byteCodeT := QuickCompile(nv.Code.Source, nv.Code.CompilerOptions) // quickCompile(tk.ToStr(argsA[0])) //
+
+				if tk.IsError(byteCodeT) {
+					nv.Code.LastError = fmt.Sprintf("%v", byteCodeT)
+					return NewCommonError("%v", byteCodeT), nil
+				}
+
+				nv.Code.Value = byteCodeT.(*Bytecode)
+
+				inputGT := append(Array{}, c.GetArgs()...)
+				// tk.Plo(inputGT)
+
+				deleT := func(argsA ...interface{}) interface{} {
+					var globalsA map[string]interface{} = nil
+
+					envT := NewBaseEnv(globalsA) // Map{}
+					// tk.Plo(c.GetArgs())
+
+					(*envT)["inputG"] = inputGT
+
+					// tk.Plo(envT)
+
+					var paramsA []Object = make([]Object, 0, len(argsA)+1)
+					for _, v := range argsA {
+						paramsA = append(paramsA, ConvertToObject(v))
+					}
+					// additionsA = append(additionsA, ToStringObject(strT))
+					// additionsA = append(additionsA, argsT...)
+
+					retT, errT := NewVM(byteCodeT.(*Bytecode)).Run(envT, paramsA...) // , additionsA...)
+
+					if errT != nil {
+						return fmt.Errorf("%v", errT)
+					}
+
+					return ConvertFromObject(retT)
+				}
+
+				nv.Value = deleT
+
+				return nv, nil
+			},
+		},
+	},
 }
 
 // objects
@@ -1765,7 +1840,7 @@ func CallObjectMethodFunc(o Object, idxA string, argsA ...Object) (Object, error
 	}
 
 	if f1.ValueEx != nil {
-		return (*f1).CallEx(Call{This: o, args: argsA})
+		return (*f1).CallEx(Call{This: o, Args: argsA})
 	}
 
 	if f1.Value == nil {
@@ -2327,6 +2402,10 @@ func ConvertToObject(vA interface{}) Object {
 		return &Image{Value: nv}
 	case *image.Image:
 		return &Image{Value: *nv}
+	case tk.QuickVarDelegate:
+		return &Delegate{Value: nv}
+	case *tk.QuickVarDelegate:
+		return &Delegate{Value: *nv}
 	case tk.UndefinedStruct:
 		return Undefined
 	case *tk.UndefinedStruct:
@@ -2460,6 +2539,8 @@ func ConvertFromObject(vA Object) interface{} {
 	case *BigFloat:
 		return nv.Value
 	case *Image:
+		return nv.Value
+	case *Delegate:
 		return nv.Value
 	case *Any:
 		return nv.Value

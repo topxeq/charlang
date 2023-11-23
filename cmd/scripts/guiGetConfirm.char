@@ -1,0 +1,17 @@
+global guiG
+
+rs := guiG.getConfirm("Is it OK to show it?", "-title=Please confirm", "-okLabel=Confirm", "-cancelLabel=Cancel")
+
+plo(rs)
+
+rs2 := guiG.getConfirm("Choose A or B?", "-title=Please choose...", "-okLabel=A", "-cancelLabel=Cancel", "-extraLabel=B")
+
+plo(rs2)
+
+if rs2 == "" {
+	pl("OK button(A) selected")
+} else if rs2 == "extra" {
+	pl("extra button(B) selected")
+} else if rs2 == "cancel" {
+	pl("cancel button selected")
+}

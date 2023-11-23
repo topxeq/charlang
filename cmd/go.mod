@@ -9,18 +9,22 @@ go 1.17
 require (
 	github.com/denisenkom/go-mssqldb v0.12.3
 	github.com/go-sql-driver/mysql v1.7.1
+	github.com/jchv/go-webview2 v0.0.0-20221223143126-dc24628cff85
+	github.com/json-iterator/go v1.1.12
 	github.com/kardianos/service v1.2.2
+	github.com/kbinani/screenshot v0.0.0-20230812210009-b87d31814237
 	github.com/mattn/go-sqlite3 v1.14.17
-	github.com/peterh/liner v1.2.2
+	github.com/ncruces/zenity v0.10.10
 	github.com/sijms/go-ora/v2 v2.7.17
-	github.com/stretchr/testify v1.8.2
 	github.com/topxeq/charlang v0.0.0
+	github.com/topxeq/dlgs v0.0.0-20220223083937-4d3036aff547
 	github.com/topxeq/tk v1.0.6
 
 )
 
 require (
 	github.com/aarzilli/sandblast v0.0.0-20151220083925-43f8fb998d06 // indirect
+	github.com/akavel/rsrc v0.10.2 // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/antonmedv/expr v1.12.5 // indirect
@@ -30,19 +34,25 @@ require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cention-sany/utf7 v0.0.0-20170124080048-26cad61bd60a // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dchest/jsmin v0.0.0-20220218165748-59f39799265f // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/eiannone/keyboard v0.0.0-20200508000154-caf4b762e807 // indirect
+	github.com/gen2brain/shm v0.0.0-20230802011745-f2460f5984f7 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
 	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20211105163654-bc68cce691ba // indirect
+	github.com/jchv/go-winloader v0.0.0-20200815041850-dec1ee9a7fd5 // indirect
+	github.com/jezek/xgb v1.1.0 // indirect
 	github.com/jhillyerd/enmime v0.9.3 // indirect
-	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/josephspurrier/goversioninfo v1.4.0 // indirect
 	github.com/klauspost/compress v1.14.4 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/fs v0.1.0 // indirect
+	github.com/lxn/win v0.0.0-20210218163916-a377121e959e // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mholt/archiver/v3 v3.5.1 // indirect
@@ -54,7 +64,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.14 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/sftp v1.13.4 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/randall77/makefat v0.0.0-20210315173500-7ddd0e42c844 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/topxeq/awsapi v0.0.0-20191115074250-1192cb0fdb97 // indirect
@@ -78,7 +88,6 @@ require (
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace github.com/topxeq/tk v1.0.6 => ../../tk

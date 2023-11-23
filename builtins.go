@@ -174,6 +174,7 @@ const (
 	BuiltinErrStrf
 	BuiltinCharCode
 	BuiltinGel
+	BuiltinDelegate
 	BuiltinGetReqBody
 	BuiltinGetReqHeader
 	BuiltinWriteRespHeader
@@ -401,6 +402,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"charCode": BuiltinCharCode,
 	"gel":      BuiltinGel,
+	"delegate": BuiltinDelegate,
 
 	"database": BuiltinDatabase,
 
@@ -1022,6 +1024,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "gel",
 		Value:   CallExAdapter(builtinGelFunc),
 		ValueEx: builtinGelFunc,
+	},
+	BuiltinDelegate: &BuiltinFunction{
+		Name:    "delegate",
+		Value:   CallExAdapter(BuiltinDelegateFunc),
+		ValueEx: BuiltinDelegateFunc,
 	},
 
 	BuiltinDatabase: &BuiltinFunction{
@@ -2359,12 +2366,12 @@ func builtinAppendFunc(c Call) (Object, error) {
 
 	switch obj := target.(type) {
 	case Array:
-		obj = append(obj, c.args...)
-		obj = append(obj, c.vargs...)
+		obj = append(obj, c.Args...)
+		obj = append(obj, c.Vargs...)
 		return obj, nil
 	case Bytes:
 		n := 0
-		for _, args := range [][]Object{c.args, c.vargs} {
+		for _, args := range [][]Object{c.Args, c.Vargs} {
 			for _, v := range args {
 				n++
 				switch vv := v.(type) {
@@ -2388,7 +2395,7 @@ func builtinAppendFunc(c Call) (Object, error) {
 		return obj, nil
 	case Chars:
 		n := 0
-		for _, args := range [][]Object{c.args, c.vargs} {
+		for _, args := range [][]Object{c.Args, c.Vargs} {
 			for _, v := range args {
 				n++
 				switch vv := v.(type) {
@@ -2412,8 +2419,8 @@ func builtinAppendFunc(c Call) (Object, error) {
 		return obj, nil
 	case *UndefinedType:
 		ret := make(Array, 0, c.Len())
-		ret = append(ret, c.args...)
-		ret = append(ret, c.vargs...)
+		ret = append(ret, c.Args...)
+		ret = append(ret, c.Vargs...)
 		return ret, nil
 	default:
 		return Undefined, NewArgumentTypeError(
@@ -2982,7 +2989,7 @@ func builtinBytesFunc(c Call) (Object, error) {
 	}
 
 	out := make(Bytes, 0, size)
-	for _, args := range [][]Object{c.args, c.vargs} {
+	for _, args := range [][]Object{c.Args, c.Vargs} {
 		for i, obj := range args {
 			switch v := obj.(type) {
 			case Byte:
@@ -3245,7 +3252,7 @@ func CallExAdapter(fn CallableExFunc) CallableFunc {
 	// tk.Pl("CallExAdapter: %v", fn)
 	return func(args ...Object) (Object, error) {
 		// tk.Pl("func in CallExAdapter: %v", fn)
-		return fn(Call{args: args})
+		return fn(Call{Args: args})
 	}
 }
 
@@ -5718,6 +5725,8 @@ func builtinAnyFunc(c Call) (Object, error) {
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Image:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *Delegate:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Any:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	default:
@@ -6869,7 +6878,7 @@ func builtinNewFunc(c Call) (Object, error) {
 	// 		return make(Map, 0), nil
 	// 	}
 	// case "stringBuilder":
-	// 	return builtinStringBuilderFunc(Call{args: args[1:]})
+	// 	return builtinStringBuilderFunc(Call{Args: args[1:]})
 	// }
 
 	// return Undefined, NewCommonErrorWithPos(c, "invalid data type: %v", s1)
@@ -6978,37 +6987,39 @@ func builtinMakeFunc(c Call) (Object, error) {
 	case "syncMap":
 		return &SyncMap{Value: make(Map)}, nil
 	case "time":
-		return builtinTimeFunc(Call{args: args[1:]})
+		return builtinTimeFunc(Call{Args: args[1:]})
 	case "stringBuilder":
-		return builtinStringBuilderFunc(Call{args: args[1:]})
+		return builtinStringBuilderFunc(Call{Args: args[1:]})
 	case "any":
-		return builtinAnyFunc(Call{args: args[1:]})
+		return builtinAnyFunc(Call{Args: args[1:]})
 	case "ref", "objectRef":
 		return &ObjectRef{Value: nil}, nil
 	case "statusResult":
-		return builtinStatusResultFunc(Call{args: args[1:]})
+		return builtinStatusResultFunc(Call{Args: args[1:]})
 	case "database":
-		return builtinStatusResultFunc(Call{args: args[1:]})
+		return builtinStatusResultFunc(Call{Args: args[1:]})
 	case "seq":
-		return builtinSeqFunc(Call{args: args[1:]})
+		return builtinSeqFunc(Call{Args: args[1:]})
 	case "mutex":
-		return builtinMutexFunc(Call{args: args[1:]})
+		return builtinMutexFunc(Call{Args: args[1:]})
 	case "mux":
-		return builtinMuxFunc(Call{args: args[1:]})
+		return builtinMuxFunc(Call{Args: args[1:]})
 	case "charCode":
-		return builtinCharCodeFunc(Call{args: args[1:]})
+		return builtinCharCodeFunc(Call{Args: args[1:]})
 	case "gel":
-		return builtinGelFunc(Call{args: args[1:]})
+		return builtinGelFunc(Call{Args: args[1:]})
 	case "orderedMap":
 		return NewOrderedMap(args[1:]...)
 	case "bigInt":
-		return NewBigInt(Call{args: args[1:]})
+		return NewBigInt(Call{Args: args[1:]})
 	case "bigFloat":
-		return NewBigFloat(Call{args: args[1:]})
+		return NewBigFloat(Call{Args: args[1:]})
 	case "httpHandler":
-		return NewHttpHandler(Call{args: args[1:]})
+		return NewHttpHandler(Call{Args: args[1:]})
 	case "image":
-		return NewImage(Call{args: args[1:]})
+		return NewImage(Call{Args: args[1:]})
+	case "delegate":
+		return NewDelegate(Call{Args: args[1:]})
 	case "undefined":
 		return Undefined, nil
 	}
@@ -7370,7 +7381,7 @@ func builtinLeLoadFromSshFunc(c Call) (Object, error) {
 	vmT.LeSshInfo["Password"] = v4
 	vmT.LeSshInfo["Path"] = v5
 
-	_, errT = builtinLeLoadFromStrFunc(Call{args: []Object{String{Value: string(bufT)}}})
+	_, errT = builtinLeLoadFromStrFunc(Call{Args: []Object{String{Value: string(bufT)}}})
 	if errT != nil {
 		return NewCommonErrorWithPos(c, "failed to load file content into le buffer: %v", errT), nil
 	}
@@ -8419,7 +8430,7 @@ func builtinToOrderedMapFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
 	}
 
-	rs, errT := builtinOrderedMapFunc(Call{args: []Object{nv}})
+	rs, errT := builtinOrderedMapFunc(Call{Args: []Object{nv}})
 
 	if errT != nil {
 		return NewCommonError("%v", errT), nil
@@ -8555,6 +8566,10 @@ func builtinHttpHandlerFunc(c Call) (Object, error) {
 
 func builtinImageFunc(c Call) (Object, error) {
 	return NewImage(c)
+}
+
+func BuiltinDelegateFunc(c Call) (Object, error) {
+	return NewDelegate(c)
 }
 
 func builtinWriteRespHeaderFunc(c Call) (Object, error) {

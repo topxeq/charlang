@@ -1085,9 +1085,9 @@ func (vm *VM) xOpCallName() error {
 			}
 		}
 		c := Call{
-			vm:    vm,
-			args:  vm.stack[vm.sp-numArgs : vm.sp-flags],
-			vargs: vargs,
+			Vm:    vm,
+			Args:  vm.stack[vm.sp-numArgs : vm.sp-flags],
+			Vargs: vargs,
 		}
 		ret, err := nameCaller.CallName(name.String(), c)
 		// tk.Pl("--------------hrere ret: %v", ret)
@@ -1309,9 +1309,9 @@ func (vm *VM) xOpCallExCaller(callee ExCallerObject, numArgs, flags int) error {
 
 	c := Call{
 		// This:  callee,
-		vm:    vm,
-		args:  args,
-		vargs: vargs,
+		Vm:    vm,
+		Args:  args,
+		Vargs: vargs,
 	}
 
 	// fmt.Printf("6--------------hrere callex: %#v, %#v\n", callee, c)
@@ -1721,8 +1721,8 @@ func (inv *Invoker) invokeObject(callee Object, args ...Object) (Object, error) 
 	if c, ok := callee.(ExCallerObject); ok {
 		return c.CallEx(
 			Call{
-				vm:    inv.vm,
-				vargs: args,
+				Vm:    inv.vm,
+				Vargs: args,
 			},
 		)
 	}
