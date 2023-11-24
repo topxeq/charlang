@@ -41,6 +41,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinRegMatch
 	BuiltinLePrint
 	BuiltinLeFindLines
 	BuiltinLeFind
@@ -470,6 +471,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strUnquote": BuiltinStrUnquote,
 
 	// regex related
+	"regMatch": BuiltinRegMatch,
+
 	"regFindFirst":       BuiltinRegFindFirst,
 	"regFindFirstGroups": BuiltintRegFindFirstGroups, // obtain the first match of a regular expression and return a list of all matching groups, where the first item is the complete matching result and the second item is the first matching group..., usage example: result := regFindFirstGroups(str1, regex1)
 	"regFindAll":         BuiltinRegFindAll,
@@ -1249,6 +1252,11 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// regex related
+	BuiltinRegMatch: &BuiltinFunction{
+		Name:    "regMatch",
+		Value:   FnASSRB(tk.RegMatchX),
+		ValueEx: FnASSRBex(tk.RegMatchX),
+	},
 	BuiltinRegFindFirst: &BuiltinFunction{
 		Name:    "regFindFirst",
 		Value:   FnASSIRS(tk.RegFindFirstX),
