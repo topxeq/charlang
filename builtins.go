@@ -41,6 +41,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinRegCount
 	BuiltinStrRepeat
 	BuiltinRegMatch
 	BuiltinLePrint
@@ -98,6 +99,7 @@ const (
 	BuiltinIsHttps
 	BuiltinRenameFile
 	BuiltinStrJoin
+	BuiltinStrCount
 	BuiltinStrIn
 	BuiltinEnsureMakeDirs
 	BuiltinExtractFileDir
@@ -462,6 +464,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strSplitLines": BuiltintStrSplitLines,
 	"strJoin":       BuiltinStrJoin,
 	"strRepeat":     BuiltinStrRepeat,
+	"strCount":      BuiltinStrCount,
 
 	"strIn": BuiltinStrIn,
 
@@ -481,6 +484,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"regFindAllGroups":   BuiltinRegFindAllGroups,
 	"regQuote":           BuiltinRegQuote,
 	"regReplace":         BuiltinRegReplace,
+	"regCount":           BuiltinRegCount,
 
 	// math related
 	"adjustFloat": BuiltinAdjustFloat,
@@ -1232,6 +1236,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASIRS(strings.Repeat),
 		ValueEx: FnASIRSex(strings.Repeat),
 	},
+	BuiltinStrCount: &BuiltinFunction{
+		Name:    "strCount",
+		Value:   FnASSRI(strings.Count),
+		ValueEx: FnASSRIex(strings.Count),
+	},
 	BuiltinStrIn: &BuiltinFunction{
 		Name:    "strIn",
 		Value:   FnASVsRB(tk.InStrings),
@@ -1293,6 +1302,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "regReplace",
 		Value:   FnASSSRS(tk.RegReplaceX),
 		ValueEx: FnASSSRSex(tk.RegReplaceX),
+	},
+	BuiltinRegCount: &BuiltinFunction{
+		Name:    "regCount",
+		Value:   FnASSRI(tk.RegCount),
+		ValueEx: FnASSRIex(tk.RegCount),
 	},
 
 	// math related
