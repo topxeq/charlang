@@ -41,6 +41,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinStrRepeat
 	BuiltinRegMatch
 	BuiltinLePrint
 	BuiltinLeFindLines
@@ -460,6 +461,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strSplit":      BuiltinStrSplit,
 	"strSplitLines": BuiltintStrSplitLines,
 	"strJoin":       BuiltinStrJoin,
+	"strRepeat":     BuiltinStrRepeat,
 
 	"strIn": BuiltinStrIn,
 
@@ -1224,6 +1226,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strJoin",
 		Value:   CallExAdapter(builtinStrJoinFunc),
 		ValueEx: builtinStrJoinFunc,
+	},
+	BuiltinStrRepeat: &BuiltinFunction{
+		Name:    "strRepeat",
+		Value:   FnASIRS(strings.Repeat),
+		ValueEx: FnASIRSex(strings.Repeat),
 	},
 	BuiltinStrIn: &BuiltinFunction{
 		Name:    "strIn",
@@ -3761,6 +3768,31 @@ func FnASSRSex(fn func(string, string) string) CallableExFunc {
 		}
 
 		rs := fn(c.Get(0).String(), c.Get(1).String())
+		return ToStringObject(rs), nil
+	}
+}
+
+// like strings.Repeat
+func FnASIRS(fn func(string, int) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), ToGoIntQuick(args[1]))
+		return ToStringObject(rs), nil
+	}
+}
+
+func FnASIRSex(fn func(string, int) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), ToGoIntQuick(args[1]))
 		return ToStringObject(rs), nil
 	}
 }
