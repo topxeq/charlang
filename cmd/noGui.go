@@ -1,4 +1,4 @@
-//go:build noGui && linux
+//go:build noGui || linux
 // +build noGui,linux
 
 package main
