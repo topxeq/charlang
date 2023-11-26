@@ -41,6 +41,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinGetInput
 	BuiltinRegCount
 	BuiltinStrRepeat
 	BuiltinRegMatch
@@ -455,7 +456,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strTrimLeft":   BuiltinStrTrimLeft,
 	"strTrimRight":  BuiltinStrTrimRight,
 	"toUpper":       BuiltinToUpper,
+	"strToUpper":    BuiltinToUpper,
 	"toLower":       BuiltinToLower,
+	"strToLower":    BuiltinToLower,
 	"strContains":   BuiltinStrContains,
 	"strStartsWith": BuiltinStrStartsWith,
 	"strEndsWith":   BuiltinStrEndsWith,
@@ -647,6 +650,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getCurDir":  BuiltinGetCurDir,
 	"getHomeDir": BuiltinGetHomeDir,
 	"getTempDir": BuiltinGetTempDir,
+
+	"getInput": BuiltinGetInput,
 
 	// dir/path related
 	"joinPath": BuiltinJoinPath, // join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
@@ -1828,6 +1833,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getTempDir",
 		Value:   FnARS(os.TempDir),
 		ValueEx: FnARSex(os.TempDir),
+	},
+	BuiltinGetInput: &BuiltinFunction{
+		Name:    "getInput",
+		Value:   FnASVaRS(tk.GetInputf),
+		ValueEx: FnASVaRSex(tk.GetInputf),
 	},
 
 	// dir/path related
