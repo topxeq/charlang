@@ -41,6 +41,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinRemovePath
 	BuiltinRemoveDir
 	BuiltinGetInput
 	BuiltinRegCount
@@ -677,6 +678,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"renameFile": BuiltinRenameFile,
 	"removeFile": BuiltinRemoveFile,
 	"removeDir":  BuiltinRemoveDir,
+	"removePath": BuiltinRemovePath,
 
 	"loadText":   BuiltinLoadText,
 	"saveText":   BuiltinSaveText,
@@ -1904,6 +1906,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "removeDir",
 		Value:   CallExAdapter(builtinRemoveDirFunc),
 		ValueEx: builtinRemoveDirFunc,
+	},
+	BuiltinRemovePath: &BuiltinFunction{
+		Name:    "removePath",
+		Value:   CallExAdapter(builtinRemovePathFunc),
+		ValueEx: builtinRemovePathFunc,
 	},
 
 	BuiltinLoadText: &BuiltinFunction{
@@ -6405,6 +6412,42 @@ func builtinRemoveDirFunc(c Call) (Object, error) {
 
 	if !tk.IsDirectory(filePathT) {
 		return NewCommonErrorWithPos(c, "not a directory"), nil
+	}
+
+	optsA := args[1:]
+
+	ifRecursivelyT := IfSwitchExistsInObjects(optsA, "-recursive")
+
+	if ifRecursivelyT {
+		errT := os.RemoveAll(filePathT)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		}
+
+		return Undefined, nil
+	}
+
+	errT := os.Remove(filePathT)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "%v", errT), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinRemovePathFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	filePathT := args[0].String()
+
+	if !tk.IfFileExists(filePathT) {
+		return NewCommonErrorWithPos(c, "dir not exists"), nil
 	}
 
 	optsA := args[1:]
