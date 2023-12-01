@@ -20,6 +20,8 @@ import (
 	"github.com/topxeq/charlang/token"
 	"github.com/topxeq/sqltk"
 	"github.com/topxeq/tk"
+
+	"github.com/xuri/excelize/v2"
 )
 
 const (
@@ -46,7 +48,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Image: 501, *Delegate: 601, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Image: 501, *Delegate: 601, *Etable: 1001, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -10387,4 +10389,196 @@ func NewDelegate(c Call) (Object, error) {
 
 func NewExternalDelegate(funcA func(...interface{}) interface{}) Object {
 	return &Delegate{Value: funcA}
+}
+
+// Etable represents an Excel(or compatible) file and implements Object interface.
+type Etable struct {
+	// ObjectImpl
+	Value *excelize.File
+
+	Members map[string]Object `json:"-"`
+}
+
+func (*Etable) TypeCode() int {
+	return 1001
+}
+
+func (*Etable) TypeName() string {
+	return "etable"
+}
+
+func (o *Etable) String() string {
+	return fmt.Sprintf("(etable)Value: %v", o.Value)
+}
+
+func (o *Etable) HasMemeber() bool {
+	return true
+}
+
+func (o *Etable) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *Etable) GetValue() Object {
+	return o
+}
+
+func (o *Etable) SetValue(valueA Object) error {
+	switch nv := valueA.(type) {
+	case *Etable:
+		o.Value = nv.Value
+		return nil
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *Etable) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Etable) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (o *Etable) Equal(right Object) bool {
+	// switch v := right.(type) {
+	// case *Delegate:
+	// 	return o.Value == v.Value
+	// }
+
+	return false
+}
+
+func (o *Etable) IsFalsy() bool {
+	return o.Value == nil
+}
+
+func (o *Etable) CanCall() bool {
+	return false
+}
+
+func (o *Etable) Call(argsA ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (*Etable) CanIterate() bool {
+	return false
+}
+
+func (*Etable) Iterate() Iterator {
+	return nil
+}
+
+func (o *Etable) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		if strT == "value" {
+			return o.SetValue(value)
+		}
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *Etable) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "value" {
+			return o.GetValue(), nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		rs, errT := GetObjectMethodFunc(o, strT)
+
+		if errT != nil || IsUndefInternal(rs) {
+			if o.Value == nil {
+				return rs, errT
+			}
+
+			rs2 := &Function{
+				Name: strT,
+				ValueEx: func(c Call) (Object, error) {
+					rs3 := tk.ReflectCallMethodCompact(o.Value, strT, ObjectsToI(c.GetArgs())...)
+
+					return ConvertToObject(rs3), nil
+				},
+			}
+
+			o.SetMember(strT, rs2)
+
+			return rs2, nil
+		}
+
+		return rs, nil
+	}
+
+	return nil, ErrNotIndexable
+}
+
+func (o *Etable) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return Undefined, NewCommonError("unsupported type: %T", right)
+}
+
+func NewEtable(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	// if len(argsA) < 1 {
+	// 	return Undefined, NewCommonErrorWithPos(c, "%v", "not enough parameters")
+	// }
+
+	pathT := strings.TrimSpace(GetSwitchFromObjects(argsA, "-path=", ""))
+
+	if pathT == "" {
+		f := excelize.NewFile()
+		return &Etable{Value: f}, nil
+	}
+
+	f, err := excelize.OpenFile(pathT)
+	if err != nil {
+		return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+	}
+
+	return &Etable{Value: f}, nil
 }

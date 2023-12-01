@@ -5,6 +5,7 @@ import (
 	"compress/flate"
 	"database/sql"
 	"encoding/base64"
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
@@ -41,6 +42,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinReadCsv
 	BuiltinRemovePath
 	BuiltinRemoveDir
 	BuiltinGetInput
@@ -103,6 +105,7 @@ const (
 	BuiltinRenameFile
 	BuiltinStrJoin
 	BuiltinStrCount
+	BuiltinStrPad
 	BuiltinStrIn
 	BuiltinEnsureMakeDirs
 	BuiltinExtractFileDir
@@ -470,6 +473,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strJoin":       BuiltinStrJoin,
 	"strRepeat":     BuiltinStrRepeat,
 	"strCount":      BuiltinStrCount,
+	"strPad":        BuiltinStrPad,
 
 	"strIn": BuiltinStrIn,
 
@@ -730,6 +734,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	// ssh related
 	"sshUpload": BuiltinSshUpload,
 
+	// eTable related
+	"readCsv": BuiltinReadCsv,
+
 	// database related
 	"formatSQLValue": BuiltinFormatSQLValue,
 
@@ -744,6 +751,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"dbQueryCount":    BuiltinDbQueryCount,
 	"dbQueryFloat":    BuiltinDbQueryFloat,
 	"dbQueryString":   BuiltinDbQueryString,
+	"dbQueryStr":      BuiltinDbQueryString,
 
 	"dbExec": BuiltinDbExec,
 
@@ -1249,6 +1257,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strCount",
 		Value:   FnASSRI(strings.Count),
 		ValueEx: FnASSRIex(strings.Count),
+	},
+	BuiltinStrPad: &BuiltinFunction{
+		Name:    "strPad",
+		Value:   FnASIVsRS(tk.PadString),
+		ValueEx: FnASIVsRSex(tk.PadString),
 	},
 	BuiltinStrIn: &BuiltinFunction{
 		Name:    "strIn",
@@ -2064,6 +2077,13 @@ var BuiltinObjects = [...]Object{
 		Name:    "sshUpload",
 		Value:   CallExAdapter(builtinSshUploadFunc),
 		ValueEx: builtinSshUploadFunc,
+	},
+
+	// eTable related
+	BuiltinReadCsv: &BuiltinFunction{
+		Name:    "readCsv",
+		Value:   CallExAdapter(builtinReadCsvFunc),
+		ValueEx: builtinReadCsvFunc,
 	},
 
 	// database related
@@ -6540,6 +6560,36 @@ func builtinArchiveFilesToZipFunc(c Call) (Object, error) {
 	return ConvertToObject(errT), nil
 }
 
+func builtinReadCsvFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	filePathT := args[0].String()
+
+	f, err := os.Open(filePathT)
+
+	if err != nil {
+		return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+	}
+
+	defer f.Close()
+
+	reader := csv.NewReader(f)
+
+	reader.LazyQuotes = true
+
+	rowsT, err := reader.ReadAll()
+	if err != nil {
+		return NewCommonErrorWithPos(c, "failed to read file content: %v", err), nil
+	}
+
+	return ConvertToObject(rowsT), nil
+
+}
+
 func builtinSshUploadFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -7174,6 +7224,8 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return NewImage(Call{Args: args[1:]})
 	case "delegate":
 		return NewDelegate(Call{Args: args[1:]})
+	case "etable":
+		return NewEtable(Call{Args: args[1:]})
 	case "undefined":
 		return Undefined, nil
 	}

@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/topxeq/tk"
+	"github.com/xuri/excelize/v2"
 	// _ "github.com/denisenkom/go-mssqldb"
 	// _ "github.com/sijms/go-ora/v2"
 	// _ "github.com/go-sql-driver/mysql"
@@ -26,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "0.7.8"
+var VersionG = "0.7.9"
 
 var CodeTextG = ""
 
@@ -2406,6 +2407,8 @@ func ConvertToObject(vA interface{}) Object {
 		return &Delegate{Value: nv}
 	case *tk.QuickVarDelegate:
 		return &Delegate{Value: *nv}
+	case *excelize.File:
+		return &Etable{Value: nv}
 	case tk.UndefinedStruct:
 		return Undefined
 	case *tk.UndefinedStruct:
@@ -2541,6 +2544,8 @@ func ConvertFromObject(vA Object) interface{} {
 	case *Image:
 		return nv.Value
 	case *Delegate:
+		return nv.Value
+	case *Etable:
 		return nv.Value
 	case *Any:
 		return nv.Value
