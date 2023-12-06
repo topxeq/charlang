@@ -42,6 +42,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinRegSplit
 	BuiltinReadCsv
 	BuiltinRemovePath
 	BuiltinRemoveDir
@@ -494,6 +495,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"regQuote":           BuiltinRegQuote,
 	"regReplace":         BuiltinRegReplace,
 	"regCount":           BuiltinRegCount,
+	"regSplit":           BuiltinRegSplit,
 
 	// math related
 	"adjustFloat": BuiltinAdjustFloat,
@@ -1329,6 +1331,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "regCount",
 		Value:   FnASSRI(tk.RegCount),
 		ValueEx: FnASSRIex(tk.RegCount),
+	},
+	BuiltinRegSplit: &BuiltinFunction{
+		Name:    "regSplit",
+		Value:   FnASSViRLs(tk.RegSplitX),
+		ValueEx: FnASSViRLsex(tk.RegSplitX),
 	},
 
 	// math related
@@ -3756,6 +3763,46 @@ func FnASSIRLsex(fn func(string, string, int) []string) CallableExFunc {
 		}
 
 		rs := fn(c.Get(0).String(), c.Get(1).String(), tk.ToInt(ConvertFromObject(c.Get(2))))
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.RegSplitX
+func FnASSViRLs(fn func(string, string, ...int) []string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		lenT := len(args) - 2
+
+		intsT := make([]int, 0)
+
+		for i := 0; i < lenT; i++ {
+			intsT = append(intsT, ToGoIntQuick(args[i]))
+		}
+
+		rs := fn(args[0].String(), args[1].String(), intsT...)
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASSViRLsex(fn func(string, string, ...int) []string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		lenT := len(args) - 2
+
+		intsT := make([]int, 0)
+
+		for i := 0; i < lenT; i++ {
+			intsT = append(intsT, ToGoIntQuick(args[i]))
+		}
+
+		rs := fn(args[0].String(), args[1].String(), intsT...)
 		return ConvertToObject(rs), nil
 	}
 }
