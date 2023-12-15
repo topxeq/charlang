@@ -1,0 +1,13 @@
+global scriptPathG
+
+// pln(scriptPathG)
+
+dirT := extractFileDir(scriptPathG)
+
+// plt(dirT)
+
+csvPathT := joinPath(dirT, "csvData1.csv")
+
+dataT := readCsv(csvPathT)
+
+plt(dataT)

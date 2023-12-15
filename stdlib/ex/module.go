@@ -3,6 +3,7 @@ package ex
 
 import (
 	"fmt"
+	"io"
 	"math"
 	"runtime/debug"
 	"sort"
@@ -460,6 +461,57 @@ func builtinNewFuncFunc(c charlang.Call) (ret charlang.Object, err error) {
 	// return
 }
 
+func builtinCloseFunc(c charlang.Call) (charlang.Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return charlang.NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	// r1, ok := args[0].(*charlang.Reader)
+
+	// if ok {
+	// 	return r1.CallMethod("close")
+	// 	// rs := r1.GetMember(strT)
+
+	// 	// if !charlang.IsUndefInternal(rs) {
+	// 	// 	f1 := rs.(*Function)
+	// 	// 	return (*f1).CallEx(charlang.Call{Args: append([]charlang.Object{o}, argsA[1:]...)}), nil
+	// 	// }
+
+	// 	// charlang.CallObjectMethodFunc(r1, "close")
+	// }
+
+	typeNameT := args[0].TypeName()
+
+	if typeNameT == "reader" {
+		r1 := args[0].(*charlang.Reader)
+
+		rs := r1.GetMember("close")
+
+		if !charlang.IsUndefInternal(rs) {
+			f1 := rs.(*charlang.Function)
+			return (*f1).CallEx(charlang.Call{Args: []charlang.Object{}})
+		}
+
+		return r1.CallMethod("close")
+	} else if typeNameT == "any" {
+		vT := args[0].(*charlang.Any)
+		switch nv := vT.Value.(type) {
+		case io.Closer:
+			nv.Close()
+
+			return charlang.Undefined, nil
+
+		default:
+			return charlang.NewCommonErrorWithPos(c, "unsupported any type: %T", vT.Value), nil
+
+		}
+	}
+
+	return charlang.NewCommonErrorWithPos(c, "unsupported type: %v", typeNameT), nil
+}
+
 // Module represents ex module.
 var Module = map[string]charlang.Object{
 	// modules
@@ -526,6 +578,11 @@ var Module = map[string]charlang.Object{
 		Name:    "newFunc", // new a go function
 		Value:   charlang.CallExAdapter(builtinNewFuncFunc),
 		ValueEx: builtinNewFuncFunc,
+	},
+	"close": &charlang.Function{
+		Name:    "close", // close objects that can close
+		Value:   charlang.CallExAdapter(builtinCloseFunc),
+		ValueEx: builtinCloseFunc,
 	},
 	// funcs end
 }

@@ -42,6 +42,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	// BuiltinClose
 	BuiltinRegSplit
 	BuiltinReadCsv
 	BuiltinRemovePath
@@ -92,6 +93,7 @@ const (
 	BuiltinMd5
 	BuiltinPostRequest
 	BuiltinHttpRedirect
+	BuiltinReader
 	BuiltinImage
 	BuiltinLoadImageFromBytes
 	BuiltinThumbImage
@@ -409,6 +411,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mux":         BuiltinMux,
 	"httpHandler": BuiltinHttpHandler,
 
+	"reader": BuiltinReader,
+
 	"image": BuiltinImage,
 
 	"charCode": BuiltinCharCode,
@@ -592,6 +596,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mt":           BuiltinCallMethod,
 	"callMethodEx": BuiltinCallMethodEx,
 	"mtEx":         BuiltinCallMethodEx,
+
+	// open/close related
+	// "close": BuiltinClose,
 
 	// read/write related
 	"writeStr": BuiltintWriteStr,
@@ -1041,6 +1048,12 @@ var BuiltinObjects = [...]Object{
 		Name:    "image",
 		Value:   CallExAdapter(builtinImageFunc),
 		ValueEx: builtinImageFunc,
+	},
+
+	BuiltinReader: &BuiltinFunction{
+		Name:    "reader",
+		Value:   CallExAdapter(builtinReaderFunc),
+		ValueEx: builtinReaderFunc,
 	},
 
 	BuiltinCharCode: &BuiltinFunction{
@@ -1652,6 +1665,13 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinCallMethodExFunc),
 		ValueEx: builtinCallMethodExFunc,
 	},
+
+	// open/close related
+	// BuiltintClose: &BuiltinFunction{
+	// 	Name:    "close",
+	// 	Value:   CallExAdapter(builtinCloseFunc),
+	// 	ValueEx: builtinCloseFunc,
+	// },
 
 	// read/write related
 	BuiltintWriteStr: &BuiltinFunction{
@@ -6614,21 +6634,30 @@ func builtinReadCsvFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
-	filePathT := args[0].String()
+	r1, ok := args[0].(*Reader)
 
-	f, err := os.Open(filePathT)
+	var readerT *csv.Reader
 
-	if err != nil {
-		return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+	if !ok {
+		filePathT := args[0].String()
+
+		f, err := os.Open(filePathT)
+
+		if err != nil {
+			return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+		}
+
+		defer f.Close()
+
+		readerT = csv.NewReader(f)
+
+	} else {
+		readerT = csv.NewReader(r1.Value)
 	}
 
-	defer f.Close()
+	readerT.LazyQuotes = true
 
-	reader := csv.NewReader(f)
-
-	reader.LazyQuotes = true
-
-	rowsT, err := reader.ReadAll()
+	rowsT, err := readerT.ReadAll()
 	if err != nil {
 		return NewCommonErrorWithPos(c, "failed to read file content: %v", err), nil
 	}
@@ -8819,6 +8848,10 @@ func builtinHttpHandlerFunc(c Call) (Object, error) {
 
 func builtinImageFunc(c Call) (Object, error) {
 	return NewImage(c)
+}
+
+func builtinReaderFunc(c Call) (Object, error) {
+	return NewReader(c)
 }
 
 func BuiltinDelegateFunc(c Call) (Object, error) {

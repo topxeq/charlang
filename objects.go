@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/big"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -8247,12 +8248,12 @@ func NewHttpHandler(c Call) (Object, error) {
 // Reader object is used for represent io.Reader type value
 type Reader struct {
 	ObjectImpl
-	Value *io.Reader
+	Value io.Reader
 
 	Members map[string]Object `json:"-"`
 }
 
-var _ Object = NewReader()
+// var _ Object = NewReader()
 
 func (*Reader) TypeCode() int {
 	return 331
@@ -8390,12 +8391,64 @@ func (o *Reader) BinaryOp(tok token.Token, right Object) (Object, error) {
 		right.TypeName())
 }
 
-func NewReader(argsA ...Object) *Reader {
+func NewReader(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
 	if len(argsA) < 1 {
-		return nil
+		return Undefined, nil
 	}
 
-	return &Reader{Value: argsA[0].(*Reader).Value}
+	optsT := ObjectsToS(argsA[1:])
+
+	r1, ok := argsA[0].(*Reader)
+
+	if ok {
+		return &Reader{Value: r1.Value}, nil
+	}
+
+	b1, ok := argsA[0].(Bytes)
+
+	if ok {
+		return &Reader{Value: bytes.NewReader(b1)}, nil
+	}
+
+	s1, ok := argsA[0].(String)
+
+	if ok {
+		if tk.IfSwitchExists(optsT, "-file") {
+			f, err := os.Open(s1.String())
+
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+			}
+
+			// defer f.Close()
+
+			funcT := &Function{
+				Name: "close",
+				ValueEx: func(c Call) (Object, error) {
+
+					errT := f.Close()
+
+					if errT != nil {
+						return NewCommonErrorWithPos(c, "failed to close reader: %v", errT), nil
+					}
+
+					return Undefined, nil
+				},
+			}
+
+			rs := &Reader{Value: f}
+
+			rs.SetMember("close", funcT)
+
+			return rs, nil
+		}
+
+		return &Reader{Value: strings.NewReader(s1.String())}, nil
+	}
+
+	return Undefined, nil
 }
 
 // CharCode object is used for represent thent io.Reader type value

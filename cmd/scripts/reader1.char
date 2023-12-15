@@ -1,0 +1,38 @@
+ex := import("ex")
+
+s1 := `
+title1,title2,title3
+dataA1,dataB1,dataC1
+dataA2,dataB2,dataC2
+1,2,3
+a,b,c
+`
+
+reader1 := reader(s1)
+
+data1T := readCsv(reader1)
+
+plt(data1T)
+
+global scriptPathG
+
+dirT := extractFileDir(scriptPathG)
+
+csvPathT := joinPath(dirT, "csvData1.csv")
+
+reader2 := reader(csvPathT, "-file")
+
+plo(reader2)
+
+data2T := readCsv(reader2)
+
+plt(data2T)
+
+rs := reader2.close()
+
+plt(rs)
+
+rs2 := ex.close(reader2)
+
+// should be error since already closed
+plt(rs2)
