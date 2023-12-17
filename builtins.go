@@ -42,7 +42,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
-	// BuiltinClose
+	BuiltinClose
 	BuiltinRegSplit
 	BuiltinReadCsv
 	BuiltinRemovePath
@@ -94,6 +94,7 @@ const (
 	BuiltinPostRequest
 	BuiltinHttpRedirect
 	BuiltinReader
+	BuiltinWriter
 	BuiltinImage
 	BuiltinLoadImageFromBytes
 	BuiltinThumbImage
@@ -217,7 +218,10 @@ const (
 	BuiltinSetValueByRef
 	BuiltinGetWeb
 	BuiltintRegFindFirstGroups
+	BuiltintReadAllStr
+	BuiltintReadAllBytes
 	BuiltintWriteStr
+	BuiltintWriteBytes
 	BuiltintStrSplitLines
 	BuiltinNew
 	BuiltinStringBuilder
@@ -412,6 +416,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"httpHandler": BuiltinHttpHandler,
 
 	"reader": BuiltinReader,
+	"writer": BuiltinWriter,
 
 	"image": BuiltinImage,
 
@@ -598,10 +603,13 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mtEx":         BuiltinCallMethodEx,
 
 	// open/close related
-	// "close": BuiltinClose,
+	"close": BuiltinClose,
 
 	// read/write related
-	"writeStr": BuiltintWriteStr,
+	"readAllStr":   BuiltintReadAllStr,
+	"readAllBytes": BuiltintReadAllBytes,
+	"writeStr":     BuiltintWriteStr,
+	"writeBytes":   BuiltintWriteBytes,
 
 	// encode/decode related
 	"md5": BuiltinMd5,
@@ -1054,6 +1062,12 @@ var BuiltinObjects = [...]Object{
 		Name:    "reader",
 		Value:   CallExAdapter(builtinReaderFunc),
 		ValueEx: builtinReaderFunc,
+	},
+
+	BuiltinWriter: &BuiltinFunction{
+		Name:    "writer",
+		Value:   CallExAdapter(builtinWriterFunc),
+		ValueEx: builtinWriterFunc,
 	},
 
 	BuiltinCharCode: &BuiltinFunction{
@@ -1667,17 +1681,32 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// open/close related
-	// BuiltintClose: &BuiltinFunction{
-	// 	Name:    "close",
-	// 	Value:   CallExAdapter(builtinCloseFunc),
-	// 	ValueEx: builtinCloseFunc,
-	// },
+	BuiltinClose: &BuiltinFunction{
+		Name:    "close",
+		Value:   CallExAdapter(builtinCloseFunc),
+		ValueEx: builtinCloseFunc,
+	},
 
 	// read/write related
+	BuiltintReadAllStr: &BuiltinFunction{
+		Name:    "readAllStr",
+		Value:   CallExAdapter(builtinReadAllStrFunc),
+		ValueEx: builtinReadAllStrFunc,
+	},
+	BuiltintReadAllBytes: &BuiltinFunction{
+		Name:    "readAllBytes",
+		Value:   CallExAdapter(builtinReadAllBytesFunc),
+		ValueEx: builtinReadAllBytesFunc,
+	},
 	BuiltintWriteStr: &BuiltinFunction{
 		Name:    "writeStr",
 		Value:   CallExAdapter(builtinWriteStrFunc),
 		ValueEx: builtinWriteStrFunc,
+	},
+	BuiltintWriteBytes: &BuiltinFunction{
+		Name:    "writeBytes",
+		Value:   CallExAdapter(builtinWriteBytesFunc),
+		ValueEx: builtinWriteBytesFunc,
 	},
 
 	// encode/decode related
@@ -5872,6 +5901,8 @@ func builtinAnyFunc(c Call) (Object, error) {
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Reader:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *Writer:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *HttpReq:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *HttpResp:
@@ -7302,6 +7333,10 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return NewDelegate(Call{Args: args[1:]})
 	case "etable":
 		return NewEtable(Call{Args: args[1:]})
+	case "reader":
+		return NewReader(Call{Args: args[1:]})
+	case "writer":
+		return NewWriter(Call{Args: args[1:]})
 	case "undefined":
 		return Undefined, nil
 	}
@@ -7309,11 +7344,238 @@ func builtinMakeFunc(c Call) (Object, error) {
 	return Undefined, NewCommonErrorWithPos(c, "invalid data type: %v", s1)
 }
 
+func builtinReadAllStrFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	nv1, ok := args[0].(*Reader)
+
+	if ok {
+		bufT, errT := io.ReadAll(nv1.Value)
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to read all string: %v", errT), nil
+		}
+
+		return String{Value: string(bufT)}, nil
+	}
+
+	nv2, ok := args[0].(io.Reader)
+
+	if ok {
+		bufT, errT := io.ReadAll(nv2)
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to read all string: %v", errT), nil
+		}
+
+		return String{Value: string(bufT)}, nil
+	}
+
+	nv3, ok := args[0].(*Any)
+
+	switch nv := nv3.Value.(type) {
+	case string:
+		return String{Value: nv}, nil
+	default:
+		return NewCommonErrorWithPos(c, "invalid type in any: %T", nv3.Value), nil
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported type for read all: %T", args[0]), nil
+}
+
+func builtinReadAllBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	nv1, ok := args[0].(*Reader)
+
+	if ok {
+		bufT, errT := io.ReadAll(nv1.Value)
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to read all string: %v", errT), nil
+		}
+
+		return Bytes(bufT), nil
+	}
+
+	nv2, ok := args[0].(io.Reader)
+
+	if ok {
+		bufT, errT := io.ReadAll(nv2)
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to read all string: %v", errT), nil
+		}
+
+		return Bytes(bufT), nil
+	}
+
+	nv3, ok := args[0].(*Any)
+
+	switch nv := nv3.Value.(type) {
+	case string:
+		return Bytes(nv), nil
+	default:
+		return NewCommonErrorWithPos(c, "invalid type in any: %T", nv3.Value), nil
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported type for read all: %T", args[0]), nil
+}
+
 func builtinWriteStrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	s1, ok := args[1].(String)
+
+	if !ok {
+		s1 = ToStringObject(args[1].String())
+	}
+
+	if args[0].TypeName() == "any" {
+		vT := args[0].(*Any)
+		switch nv := vT.Value.(type) {
+		case *strings.Builder:
+			n, errT := nv.WriteString(s1.Value)
+
+			if errT != nil {
+				return NewCommonErrorWithPos(c, "%v", errT), nil
+			}
+
+			return Int(n), nil
+
+		case string:
+			s1.Value = nv + s1.Value
+			return Int(len(s1.Value)), nil
+		case io.StringWriter:
+			n, errT := nv.WriteString(s1.Value)
+
+			if errT != nil {
+				return Int(n), nil
+			}
+
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		default:
+			return NewCommonErrorWithPos(c, "invalid type: %T", vT.Value), nil
+
+		}
+	} else if args[0].TypeName() == "stringBuilder" {
+		vT := args[0].(*StringBuilder)
+		n, errT := vT.Value.WriteString(s1.Value)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		}
+
+		return Int(n), nil
+	}
+
+	return NewCommonErrorWithPos(c, "%v", "invalid data"), nil
+}
+
+func builtinWriteBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	var bufT []byte
+	var errT error
+	var n int
+
+	switch nv := args[1].(type) {
+	case Bytes:
+		bufT = []byte(nv)
+	case String:
+		bufT = []byte(nv.Value)
+	case *MutableString:
+		bufT = []byte(nv.Value)
+	default:
+		return NewCommonErrorWithPos(c, "unsupport content type to write: %T", args[1]), nil
+	}
+
+	switch nv2 := args[0].(type) {
+	case *StringBuilder:
+		n, errT = nv2.Value.Write(bufT)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		}
+
+		return Int(n), nil
+	case *BytesBuffer:
+		n, errT = nv2.Value.Write(bufT)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		}
+
+		return Int(n), nil
+	case *MutableString:
+		nv2.Value += string(bufT)
+
+		n = len(bufT)
+
+		return Int(n), nil
+	case *Any:
+		nvi1, ok := nv2.Value.(io.Writer)
+
+		if !ok {
+			switch nvi2 := nv2.Value.(type) {
+			case *strings.Builder:
+				n, errT := nvi2.Write(bufT)
+
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "%v", errT), nil
+				}
+
+				return Int(n), nil
+			case *bytes.Buffer:
+				n, errT := nvi2.Write(bufT)
+
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "%v", errT), nil
+				}
+
+				return Int(n), nil
+			case string:
+				nv2.Value = nvi2 + string(bufT)
+				return Int(len(bufT)), nil
+			case []byte:
+				nv2.Value = append(nvi2, bufT...)
+				return Int(len(bufT)), nil
+			case io.StringWriter:
+				n, errT := nvi2.WriteString(string(bufT))
+
+				if errT != nil {
+					return Int(n), nil
+				}
+
+				return NewCommonErrorWithPos(c, "%v", errT), nil
+				// default:
+				// 	return NewCommonErrorWithPos(c, "invalid type in any: %T", nv2.Value), nil
+			}
+
+			return NewCommonErrorWithPos(c, "unsupport object type to write: %T", args[0]), nil
+		}
+
+		n, errT = nvi1.Write(bufT)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		}
+
+		return Int(n), nil
+	default:
+		return NewCommonErrorWithPos(c, "unsupport object type to write: %T", args[0]), nil
 	}
 
 	s1, ok := args[1].(String)
@@ -8854,6 +9116,10 @@ func builtinReaderFunc(c Call) (Object, error) {
 	return NewReader(c)
 }
 
+func builtinWriterFunc(c Call) (Object, error) {
+	return NewWriter(c)
+}
+
 func BuiltinDelegateFunc(c Call) (Object, error) {
 	return NewDelegate(c)
 }
@@ -8891,6 +9157,83 @@ func builtinWriteRespHeaderFunc(c Call) (Object, error) {
 	v.Value.WriteHeader(statusT)
 
 	return Undefined, nil
+}
+
+func builtinCloseFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	// r1, ok := args[0].(*Reader)
+
+	// if ok {
+	// 	return r1.CallMethod("close")
+	// 	// rs := r1.GetMember(strT)
+
+	// 	// if !IsUndefInternal(rs) {
+	// 	// 	f1 := rs.(*Function)
+	// 	// 	return (*f1).CallEx(Call{Args: append([]Object{o}, argsA[1:]...)}), nil
+	// 	// }
+
+	// 	// CallObjectMethodFunc(r1, "close")
+	// }
+
+	nv, ok := args[0].(io.Closer)
+
+	if ok {
+		errT := nv.Close()
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to close: %v", errT), nil
+		}
+
+		return Undefined, nil
+	}
+
+	typeNameT := args[0].TypeName()
+
+	if typeNameT == "reader" {
+		r1 := args[0].(*Reader)
+
+		rs := r1.GetMember("close")
+
+		if !IsUndefInternal(rs) {
+			f1 := rs.(*Function)
+			return (*f1).CallEx(Call{Args: []Object{}})
+		}
+
+		return NewCommonErrorWithPos(c, "unsupport method: close"), nil
+	} else if typeNameT == "any" {
+		vT := args[0].(*Any)
+		switch nv := vT.Value.(type) {
+		case io.Closer:
+			errT := nv.Close()
+
+			if errT != nil {
+				return NewCommonErrorWithPos(c, "failed to close: %v", errT), nil
+			}
+
+			return Undefined, nil
+
+		default:
+			rsT := tk.ReflectCallMethodQuick(vT.Value, "Close")
+
+			if len(rsT) > 0 {
+				if tk.IsErrX(rsT[0]) {
+					return NewCommonErrorWithPos(c, "failed to close: %v", tk.GetErrStrX(rsT[0])), nil
+				}
+
+				return Undefined, nil
+			}
+
+			return NewCommonErrorWithPos(c, "unsupported any type for close method: %T", vT.Value), nil
+
+		}
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported type: %v", typeNameT), nil
 }
 
 // char add end

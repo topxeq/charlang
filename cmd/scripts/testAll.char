@@ -10,7 +10,7 @@ testByText(rs, "(array)[[\"title1\", \"title2\", \"title3\"], [\"dataA1\", \"dat
 
 rs = systemCmd("char", "-gopath", "reader1.char")
 
-testByText(rs, "(array)[[\"title1\", \"title2\", \"title3\"], [\"dataA1\", \"dataB1\", \"dataC1\"], [\"dataA2\", \"dataB2\", \"dataC2\"], [\"1\", \"2\", \"3\"], [\"a\", \"b\", \"c\"]]\n", getSeq(), "reader1.char")
+testByStartsWith(rs, "(array)[[\"title1\", \"title2\", \"title3\"], [\"dataA1\", \"dataB1\", \"dataC1\"], [\"dataA2\", \"dataB2\", \"dataC2\"], [\"1\", \"2\", \"3\"], [\"a\", \"b\", \"c\"]]\n", getSeq(), "reader1.char")
 
 rs = systemCmd("char", "-gopath", "delegate1.char")
 

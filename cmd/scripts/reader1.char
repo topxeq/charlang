@@ -28,11 +28,11 @@ data2T := readCsv(reader2)
 
 plt(data2T)
 
-rs := reader2.close()
+rs := close(reader2)
 
 plt(rs)
 
-rs2 := ex.close(reader2)
+rs2 := reader2.close()
 
 // should be error since already closed
 plt(rs2)

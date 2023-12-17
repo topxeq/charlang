@@ -49,7 +49,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Image: 501, *Delegate: 601, *Etable: 1001, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *Image: 501, *Delegate: 601, *Etable: 1001, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -8250,6 +8250,8 @@ type Reader struct {
 	ObjectImpl
 	Value io.Reader
 
+	// CloseHandler io.Closer
+
 	Members map[string]Object `json:"-"`
 }
 
@@ -8273,6 +8275,39 @@ func (o *Reader) String() string {
 
 // 	return NewCommonError("unsupported action(set value)")
 // }
+
+// comply to io.Closer
+func (o *Reader) Close() error {
+	nv, ok := o.Value.(io.Closer)
+
+	if !ok {
+		return fmt.Errorf("unable to close")
+	}
+
+	// if o.CloseHandler == nil {
+	// 	return fmt.Errorf("no close handler")
+	// }
+
+	errT := nv.Close()
+	// errT := o.CloseHandler.Close()
+
+	if errT != nil {
+		return fmt.Errorf("failed to close: %v", errT)
+	}
+
+	return nil
+}
+
+// comply to io.Reader
+func (o *Reader) Read(p []byte) (n int, err error) {
+	nv, ok := o.Value.(io.Reader)
+
+	if !ok {
+		return 0, fmt.Errorf("unable to close")
+	}
+
+	return nv.Read(p)
+}
 
 func (o *Reader) HasMemeber() bool {
 	return true
@@ -8350,9 +8385,17 @@ func (o *Reader) IndexGet(index Object) (Object, error) {
 	case String:
 		strT := v.Value
 
-		if strT == "value" {
+		if strT == "close" {
+			errT := o.Close()
+
+			if errT != nil {
+				return NewCommonError("failed to close reader: %v", errT), nil
+			}
+
+			return Undefined, nil
+		} else if strT == "value" {
 			return builtinAnyFunc(Call{Args: []Object{o}})
-			// return ToIntObject(o.Value), nil
+
 		}
 
 		rs := o.GetMember(strT)
@@ -8395,7 +8438,8 @@ func NewReader(c Call) (Object, error) {
 	argsA := c.GetArgs()
 
 	if len(argsA) < 1 {
-		return Undefined, nil
+		return NewCommonError("not enough parameters"), nil
+		// return Undefined, nil
 	}
 
 	optsT := ObjectsToS(argsA[1:])
@@ -8424,23 +8468,25 @@ func NewReader(c Call) (Object, error) {
 
 			// defer f.Close()
 
-			funcT := &Function{
-				Name: "close",
-				ValueEx: func(c Call) (Object, error) {
-
-					errT := f.Close()
-
-					if errT != nil {
-						return NewCommonErrorWithPos(c, "failed to close reader: %v", errT), nil
-					}
-
-					return Undefined, nil
-				},
-			}
-
 			rs := &Reader{Value: f}
 
-			rs.SetMember("close", funcT)
+			// rs.CloseHandler = f
+
+			// funcT := &Function{
+			// 	Name: "close",
+			// 	ValueEx: func(c Call) (Object, error) {
+
+			// 		errT := rs.Close()
+
+			// 		if errT != nil {
+			// 			return NewCommonErrorWithPos(c, "failed to close reader: %v", errT), nil
+			// 		}
+
+			// 		return Undefined, nil
+			// 	},
+			// }
+
+			// rs.SetMember("close", funcT)
 
 			return rs, nil
 		}
@@ -8449,6 +8495,245 @@ func NewReader(c Call) (Object, error) {
 	}
 
 	return Undefined, nil
+}
+
+// Writer object is used for represent io.Reader type value
+type Writer struct {
+	ObjectImpl
+	Value io.Writer
+
+	Members map[string]Object `json:"-"`
+}
+
+func (*Writer) TypeCode() int {
+	return 333
+}
+
+// TypeName implements Object interface.
+func (*Writer) TypeName() string {
+	return "writer"
+}
+
+func (o *Writer) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+// comply to io.Closer
+func (o *Writer) Close() error {
+	nv, ok := o.Value.(io.Closer)
+
+	if !ok {
+		return fmt.Errorf("unable to close")
+	}
+
+	errT := nv.Close()
+
+	if errT != nil {
+		return fmt.Errorf("failed to close: %v", errT)
+	}
+
+	return nil
+}
+
+// comply to io.Writer
+func (o *Writer) Writer(p []byte) (n int, err error) {
+	nv, ok := o.Value.(io.Writer)
+
+	if !ok {
+		return 0, fmt.Errorf("unable to close")
+	}
+
+	return nv.Write(p)
+}
+
+func (o *Writer) HasMemeber() bool {
+	return true
+}
+
+func (o *Writer) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return builtinAnyFunc(Call{Args: []Object{o}})
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *Writer) GetValue() Object {
+	return Undefined
+}
+
+func (o *Writer) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Writer) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (*Writer) CanIterate() bool { return false }
+
+func (o *Writer) Iterate() Iterator {
+	return nil
+}
+
+func (o *Writer) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		// if strT == "value" {
+		// 	o.Value.Reset(int(ToIntObject(value)))
+		// 	return nil
+		// }
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *Writer) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "close" {
+			errT := o.Close()
+
+			if errT != nil {
+				return NewCommonError("failed to close reader: %v", errT), nil
+			}
+
+			return Undefined, nil
+		} else if strT == "value" {
+			return builtinAnyFunc(Call{Args: []Object{o}})
+
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, NewCommonError("not indexable: %v", o.TypeName())
+}
+
+func (o *Writer) Equal(right Object) bool {
+	if v, ok := right.(*Writer); ok {
+		return v == o
+	}
+
+	return false
+}
+
+func (o *Writer) IsFalsy() bool { return o.Value == nil }
+
+func (o *Writer) CanCall() bool { return false }
+
+func (o *Writer) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o *Writer) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+func NewWriter(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	if len(argsA) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	optsT := ObjectsToS(argsA[1:])
+
+	r1, ok := argsA[0].(*Writer)
+
+	if ok {
+		return &Writer{Value: r1.Value}, nil
+	}
+
+	nv1, ok := argsA[0].(io.Writer)
+
+	if ok {
+		return &Writer{Value: nv1}, nil
+	}
+
+	b1, ok := argsA[0].(Bytes)
+
+	if ok {
+		return &Writer{Value: bytes.NewBuffer(b1)}, nil
+	}
+
+	s1, ok := argsA[0].(String)
+
+	if ok {
+		if tk.IfSwitchExists(optsT, "-file") {
+			flagT := 0
+
+			if tk.IfSwitchExists(optsT, "-create") {
+				flagT = os.O_RDWR | os.O_CREATE
+			} else {
+				flagT = os.O_RDWR | os.O_CREATE | os.O_APPEND
+			}
+
+			f, err := os.OpenFile(s1.String(), flagT, os.FileMode(tk.OctetToInt(tk.GetSwitch(optsT, "-perm=", "0777"), 0777)))
+
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+			}
+
+			rs := &Writer{Value: f}
+
+			return rs, nil
+		}
+
+		var sb strings.Builder
+
+		sb.WriteString(s1.Value)
+
+		return &Writer{Value: &sb}, nil
+	}
+
+	var sb strings.Builder
+
+	// sb.WriteString(s1.Value)
+
+	return &Writer{Value: &sb}, nil
+	// return NewCommonError("unsupported type: %T", argsA[0]), nil
 }
 
 // CharCode object is used for represent thent io.Reader type value

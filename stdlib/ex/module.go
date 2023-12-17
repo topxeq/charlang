@@ -482,6 +482,18 @@ func builtinCloseFunc(c charlang.Call) (charlang.Object, error) {
 	// 	// charlang.CallObjectMethodFunc(r1, "close")
 	// }
 
+	nv, ok := args[0].(io.Closer)
+
+	if ok {
+		errT := nv.Close()
+
+		if errT != nil {
+			return charlang.NewCommonErrorWithPos(c, "failed to close: %v", errT), nil
+		}
+
+		return charlang.Undefined, nil
+	}
+
 	typeNameT := args[0].TypeName()
 
 	if typeNameT == "reader" {

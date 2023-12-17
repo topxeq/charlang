@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "0.8.1"
+var VersionG = "0.8.3"
 
 var CodeTextG = ""
 
@@ -2349,6 +2349,8 @@ func ConvertToObject(vA interface{}) Object {
 		return &HttpResp{Value: nv}
 	case io.Reader:
 		return &Reader{Value: nv}
+	case io.Writer:
+		return &Writer{Value: nv}
 	case *sql.DB:
 		return &Database{Value: nv}
 	case *Bytecode:
@@ -2516,6 +2518,8 @@ func ConvertFromObject(vA Object) interface{} {
 	case *HttpHandler:
 		return nv.Value
 	case *Reader:
+		return nv.Value
+	case *Writer:
 		return nv.Value
 	case *CharCode:
 		return nv.Value
