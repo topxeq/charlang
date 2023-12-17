@@ -49,7 +49,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *Image: 501, *Delegate: 601, *Etable: 1001, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *Etable: 1001, Any: 999
 
 // Object represents an object in the VM.
 type Object interface {
@@ -8497,7 +8497,7 @@ func NewReader(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// Writer object is used for represent io.Reader type value
+// Writer object is used for represent io.Writer type value
 type Writer struct {
 	ObjectImpl
 	Value io.Writer
@@ -8734,6 +8734,192 @@ func NewWriter(c Call) (Object, error) {
 
 	return &Writer{Value: &sb}, nil
 	// return NewCommonError("unsupported type: %T", argsA[0]), nil
+}
+
+// File object is used for represent os.File type value
+type File struct {
+	ObjectImpl
+	Value *os.File
+
+	Members map[string]Object `json:"-"`
+}
+
+func (*File) TypeCode() int {
+	return 401
+}
+
+// TypeName implements Object interface.
+func (*File) TypeName() string {
+	return "file"
+}
+
+func (o *File) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+// comply to io.Closer
+func (o *File) Close() error {
+	errT := o.Value.Close()
+
+	if errT != nil {
+		return fmt.Errorf("failed to close: %v", errT)
+	}
+
+	return nil
+}
+
+// comply to io.Reader
+func (o *File) Read(p []byte) (n int, err error) {
+	return o.Value.Read(p)
+}
+
+// comply to io.Writer
+func (o *File) Writer(p []byte) (n int, err error) {
+	return o.Value.Write(p)
+}
+
+func (o *File) HasMemeber() bool {
+	return true
+}
+
+func (o *File) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return builtinAnyFunc(Call{Args: []Object{o}})
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *File) GetValue() Object {
+	return Undefined
+}
+
+func (o *File) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *File) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (*File) CanIterate() bool { return false }
+
+func (o *File) Iterate() Iterator {
+	return nil
+}
+
+func (o *File) IndexSet(index, value Object) error {
+	idxT, ok := index.(String)
+
+	if ok {
+		strT := idxT.Value
+		// if strT == "value" {
+		// 	o.Value.Reset(int(ToIntObject(value)))
+		// 	return nil
+		// }
+
+		return o.SetMember(strT, value)
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *File) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "close" {
+			errT := o.Close()
+
+			if errT != nil {
+				return NewCommonError("failed to close reader: %v", errT), nil
+			}
+
+			return Undefined, nil
+		} else if strT == "value" {
+			return builtinAnyFunc(Call{Args: []Object{o}})
+
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, NewCommonError("not indexable: %v", o.TypeName())
+}
+
+func (o *File) Equal(right Object) bool {
+	if v, ok := right.(*File); ok {
+		return v == o
+	}
+
+	return false
+}
+
+func (o *File) IsFalsy() bool { return o.Value == nil }
+
+func (o *File) CanCall() bool { return false }
+
+func (o *File) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o *File) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+func NewFile(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	if len(argsA) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	optsT := ObjectsToS(argsA[1:])
+
+	rs := tk.OpenFile(argsA[0].String(), optsT...)
+
+	if tk.IsErrX(rs) {
+		return NewCommonErrorWithPos(c, "failed to open file: %v", tk.GetErrStrX(rs)), nil
+	}
+
+	return &File{Value: rs.(*os.File)}, nil
+
 }
 
 // CharCode object is used for represent thent io.Reader type value

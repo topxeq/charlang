@@ -95,6 +95,7 @@ const (
 	BuiltinHttpRedirect
 	BuiltinReader
 	BuiltinWriter
+	BuiltinFile
 	BuiltinImage
 	BuiltinLoadImageFromBytes
 	BuiltinThumbImage
@@ -417,6 +418,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"reader": BuiltinReader,
 	"writer": BuiltinWriter,
+
+	"file": BuiltinFile,
 
 	"image": BuiltinImage,
 
@@ -1068,6 +1071,12 @@ var BuiltinObjects = [...]Object{
 		Name:    "writer",
 		Value:   CallExAdapter(builtinWriterFunc),
 		ValueEx: builtinWriterFunc,
+	},
+
+	BuiltinFile: &BuiltinFunction{
+		Name:    "file",
+		Value:   CallExAdapter(builtinFileFunc),
+		ValueEx: builtinFileFunc,
 	},
 
 	BuiltinCharCode: &BuiltinFunction{
@@ -5903,6 +5912,8 @@ func builtinAnyFunc(c Call) (Object, error) {
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Writer:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *File:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *HttpReq:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *HttpResp:
@@ -7337,6 +7348,8 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return NewReader(Call{Args: args[1:]})
 	case "writer":
 		return NewWriter(Call{Args: args[1:]})
+	case "file":
+		return NewFile(Call{Args: args[1:]})
 	case "undefined":
 		return Undefined, nil
 	}
@@ -7355,6 +7368,17 @@ func builtinReadAllStrFunc(c Call) (Object, error) {
 
 	if ok {
 		bufT, errT := io.ReadAll(nv1.Value)
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to read all string: %v", errT), nil
+		}
+
+		return String{Value: string(bufT)}, nil
+	}
+
+	nv1a, ok := args[0].(*File)
+
+	if ok {
+		bufT, errT := io.ReadAll(nv1a.Value)
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to read all string: %v", errT), nil
 		}
@@ -7403,6 +7427,17 @@ func builtinReadAllBytesFunc(c Call) (Object, error) {
 		return Bytes(bufT), nil
 	}
 
+	nv1a, ok := args[0].(*File)
+
+	if ok {
+		bufT, errT := io.ReadAll(nv1a.Value)
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to read all string: %v", errT), nil
+		}
+
+		return Bytes(bufT), nil
+	}
+
 	nv2, ok := args[0].(io.Reader)
 
 	if ok {
@@ -7437,6 +7472,30 @@ func builtinWriteStrFunc(c Call) (Object, error) {
 
 	if !ok {
 		s1 = ToStringObject(args[1].String())
+	}
+
+	nv1, ok := args[0].(*Writer)
+
+	if ok {
+		n, errT := nv1.Value.Write([]byte(s1.Value))
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to write string: %v", errT), nil
+		}
+
+		return Int(n), nil
+	}
+
+	nv2, ok := args[0].(*File)
+
+	if ok {
+		n, errT := nv2.Value.Write([]byte(s1.Value))
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to write string: %v", errT), nil
+		}
+
+		return Int(n), nil
 	}
 
 	if args[0].TypeName() == "any" {
@@ -7500,6 +7559,30 @@ func builtinWriteBytesFunc(c Call) (Object, error) {
 		bufT = []byte(nv.Value)
 	default:
 		return NewCommonErrorWithPos(c, "unsupport content type to write: %T", args[1]), nil
+	}
+
+	nv1, ok := args[0].(*Writer)
+
+	if ok {
+		n, errT := nv1.Value.Write(bufT)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to write string: %v", errT), nil
+		}
+
+		return Int(n), nil
+	}
+
+	nv3, ok := args[0].(*File)
+
+	if ok {
+		n, errT := nv3.Value.Write(bufT)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to write string: %v", errT), nil
+		}
+
+		return Int(n), nil
 	}
 
 	switch nv2 := args[0].(type) {
@@ -9118,6 +9201,10 @@ func builtinReaderFunc(c Call) (Object, error) {
 
 func builtinWriterFunc(c Call) (Object, error) {
 	return NewWriter(c)
+}
+
+func builtinFileFunc(c Call) (Object, error) {
+	return NewFile(c)
 }
 
 func BuiltinDelegateFunc(c Call) (Object, error) {

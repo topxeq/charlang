@@ -2351,6 +2351,8 @@ func ConvertToObject(vA interface{}) Object {
 		return &Reader{Value: nv}
 	case io.Writer:
 		return &Writer{Value: nv}
+	case *os.File:
+		return &File{Value: nv}
 	case *sql.DB:
 		return &Database{Value: nv}
 	case *Bytecode:
@@ -2520,6 +2522,8 @@ func ConvertFromObject(vA Object) interface{} {
 	case *Reader:
 		return nv.Value
 	case *Writer:
+		return nv.Value
+	case *File:
 		return nv.Value
 	case *CharCode:
 		return nv.Value
