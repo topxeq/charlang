@@ -539,6 +539,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"isNilOrEmpty": BuiltinIsNilOrEmpty,
 	"isNilOrErr":   BuiltinIsNilOrErr,
 	"isUndefined":  BuiltinIsUndefined,
+	"isUndef":      BuiltinIsUndefined,
 	"isBool":       BuiltinIsBool,
 	"isByte":       BuiltinIsByte,
 	"isChar":       BuiltinIsChar,
