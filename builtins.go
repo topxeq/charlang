@@ -51,6 +51,7 @@ const (
 	BuiltinRegCount
 	BuiltinStrRepeat
 	BuiltinRegMatch
+	BuiltinRegContains
 	BuiltinLePrint
 	BuiltinLeFindLines
 	BuiltinLeFind
@@ -498,7 +499,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strUnquote": BuiltinStrUnquote,
 
 	// regex related
-	"regMatch": BuiltinRegMatch,
+	"regMatch":    BuiltinRegMatch,
+	"regContains": BuiltinRegContains,
 
 	"regFindFirst":       BuiltinRegFindFirst,
 	"regFindFirstGroups": BuiltintRegFindFirstGroups, // obtain the first match of a regular expression and return a list of all matching groups, where the first item is the complete matching result and the second item is the first matching group..., usage example: result := regFindFirstGroups(str1, regex1)
@@ -1333,6 +1335,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "regMatch",
 		Value:   FnASSRB(tk.RegMatchX),
 		ValueEx: FnASSRBex(tk.RegMatchX),
+	},
+	BuiltinRegContains: &BuiltinFunction{
+		Name:    "regContains",
+		Value:   FnASSRB(tk.RegContainsX),
+		ValueEx: FnASSRBex(tk.RegContainsX),
 	},
 	BuiltinRegFindFirst: &BuiltinFunction{
 		Name:    "regFindFirst",
