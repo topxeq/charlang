@@ -11,6 +11,7 @@ require (
 	github.com/topxeq/awsapi v0.0.0-20191115074250-1192cb0fdb97
 	github.com/topxeq/sqltk v0.0.0
 	github.com/topxeq/tk v1.0.6
+	github.com/xuri/excelize/v2 v2.8.0
 )
 
 replace github.com/topxeq/tk v1.0.6 => ../tk
