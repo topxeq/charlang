@@ -1019,6 +1019,42 @@ func runInteractiveShell() int {
 	return 0
 }
 
+func chpHandler(strA string, w http.ResponseWriter, r *http.Request) {
+	evalT := charlang.NewEvalQuick(map[string]interface{}{"versionG": charlang.VersionG, "argsG": []string{}, "scriptPathG": "", "runModeG": "chp"}, charlang.MainCompilerOptions)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	replaceFuncT := func(str1A string) string {
+		// tk.Pl("found: %v", str1A)
+		lastResultT, lastBytecodeT, errT := evalT.Run(ctx, []byte(str1A[5:len(str1A)-2]))
+
+		if verboseG {
+			tk.Pln("result:", lastResultT, lastBytecodeT, errT)
+		}
+
+		if errT != nil {
+			return tk.ErrorToString(errT)
+		}
+
+		if lastResultT != nil && lastResultT.TypeCode() != 0 {
+			return fmt.Sprintf("%v", lastResultT)
+		}
+
+		return ""
+	}
+
+	re := regexp.MustCompile(`(?sm)<\?chp.*?\?>`)
+
+	strT := re.ReplaceAllStringFunc(strA, replaceFuncT)
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	w.Write([]byte(strT))
+}
+
 var staticFS http.Handler = nil
 
 func serveStaticDirHandler(w http.ResponseWriter, r *http.Request) {
@@ -1041,6 +1077,12 @@ func serveStaticDirHandler(w http.ResponseWriter, r *http.Request) {
 	info, err := os.Lstat(name)
 	if err == nil {
 		if !info.IsDir() {
+			if strings.HasSuffix(name, ".chp") {
+				chpHandler(tk.LoadStringFromFile(name), w, r)
+
+				return
+			}
+
 			staticFS.ServeHTTP(w, r)
 			// http.ServeFile(w, r, name)
 		} else {
