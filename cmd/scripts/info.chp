@@ -1,0 +1,8 @@
+<?chp
+mapT := {
+    "PATH": getEnv("PATH"),
+    "GOPATH": getEnv("GOPATH"),
+}
+
+return spr("%v", toJson(mapT, "-sort", "-indent"))
+?>
