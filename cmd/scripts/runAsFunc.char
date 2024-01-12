@@ -1,0 +1,16 @@
+sourceT := `param ...vargs
+
+pln(vargs)
+
+return vargs[2]
+
+`
+
+codeT := charCode(sourceT)
+
+codeT.compile()
+
+rs := codeT.run("abc", 123, true, {"now": now(), "next": newObj("byteQueue")})
+
+pl("rs: %v", rs)
+

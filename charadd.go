@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "0.8.6"
+var VersionG = "0.8.7"
 
 var CodeTextG = ""
 
@@ -1916,6 +1916,41 @@ func QuickRun(codeA interface{}, globalsA map[string]interface{}, additionsA ...
 	// for i, v := range additionsA {
 	// 	envT[tk.IntToStr(i+1)] = v
 	// }
+
+	retT, errT := NewVM(nv).Run(envT, additionsA...)
+
+	if errT != nil {
+		return errT
+	}
+
+	return ConvertFromObject(retT)
+}
+
+func RunAsFunc(codeA interface{}, argsA ...interface{}) interface{} {
+	var errT error
+	nv, ok := codeA.(*Bytecode)
+
+	if !ok {
+		codeT, ok := codeA.(string)
+		if !ok {
+			return fmt.Errorf("invalid parameter")
+		}
+
+		nv, errT = Compile([]byte(codeT), &DefaultCompilerOptions)
+		if errT != nil {
+			return errT
+		}
+	}
+
+	envT := NewBaseEnv(nil) // Map{}
+
+	lenT := len(argsA)
+
+	var additionsA []Object = make([]Object, lenT)
+
+	for i := 0; i < lenT; i++ {
+		additionsA[i] = ConvertToObject(argsA[i])
+	}
 
 	retT, errT := NewVM(nv).Run(envT, additionsA...)
 
