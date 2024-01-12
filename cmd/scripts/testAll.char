@@ -1,261 +1,271 @@
+seqT := newObj("seq")
+
 var rs
 
 rs = systemCmd("char", "-gopath", "basic.char")
 
-testByText(rs, "3.4000000000000004\n", getSeq(), "basic.char")
+testByText(rs, "3.4000000000000004\n", seqT.get(), "basic.char")
+
+rs = systemCmd("char", "-gopath", "runAsFunc.char")
+
+testByText(rs, "[\"abc\", 123.5, true, {\"name\": \"Tom\", \"age\": 16}]\nrs: true\n", seqT.get(), "runAsFunc.char")
+
+rs = systemCmd("char", "-gopath", "sort1.char")
+
+testByText(rs, "[1, 3, 2.5, 435, \"abc\", \"zbds123\", \"0123a\", \"2.33\", 2.33]\n[\"zbds123\", \"abc\", 435, 3, 2.5, \"2.33\", 2.33, 1, \"0123a\"]\n", seqT.get(), "sort1.char")
 
 rs = systemCmd("char", "-gopath", "csv1.char")
 
-testByText(rs, "(array)[[\"title1\", \"title2\", \"title3\"], [\"dataA1\", \"dataB1\", \"dataC1\"], [\"dataA2\", \"dataB2\", \"dataC2\"], [\"1\", \"2\", \"3\"], [\"a\", \"b\", \"c\"]]\n", getSeq(), "csv1.char")
+testByText(rs, "(array)[[\"title1\", \"title2\", \"title3\"], [\"dataA1\", \"dataB1\", \"dataC1\"], [\"dataA2\", \"dataB2\", \"dataC2\"], [\"1\", \"2\", \"3\"], [\"a\", \"b\", \"c\"]]\n", seqT.get(), "csv1.char")
 
 rs = systemCmd("char", "-gopath", "reader1.char")
 
-testByStartsWith(rs, "(array)[[\"title1\", \"title2\", \"title3\"], [\"dataA1\", \"dataB1\", \"dataC1\"], [\"dataA2\", \"dataB2\", \"dataC2\"], [\"1\", \"2\", \"3\"], [\"a\", \"b\", \"c\"]]\n", getSeq(), "reader1.char")
+testByStartsWith(rs, "(array)[[\"title1\", \"title2\", \"title3\"], [\"dataA1\", \"dataB1\", \"dataC1\"], [\"dataA2\", \"dataB2\", \"dataC2\"], [\"1\", \"2\", \"3\"], [\"a\", \"b\", \"c\"]]\n", seqT.get(), "reader1.char")
 
 rs = systemCmd("char", "-gopath", "delegate1.char")
 
-testByText(rs, "(delegate)(delegate)Code: true, Value: true\n[\"Pi\"]\n(float)3.1415926\n[\"add\", 1, 2]\n(int)3\n[\"mul\", 1.3, 25]\n(float)32.5\n[\"abc\"]\n(string)TXERROR:member/method not found: abc\n", getSeq(), "delegate1.char")
+testByText(rs, "(delegate)(delegate)Code: true, Value: true\n[\"Pi\"]\n(float)3.1415926\n[\"add\", 1, 2]\n(int)3\n[\"mul\", 1.3, 25]\n(float)32.5\n[\"abc\"]\n(string)TXERROR:member/method not found: abc\n", seqT.get(), "delegate1.char")
 
 rs = systemCmd("char", "-gopath", "delegate2.char")
 
-testByText(rs, "(charCode)<nil>\n(delegate)(delegate)Code: true, Value: true\n[\"Pi\"]\n(float)3.1415926\n[\"add\", 1, 2]\n(int)3\n[\"mul\", 1.3, 25]\n(float)32.5\n[\"abc\"]\n(string)TXERROR:member/method not found: abc\n", getSeq(), "delegate1.char")
+testByText(rs, "(charCode)<nil>\n(delegate)(delegate)Code: true, Value: true\n[\"Pi\"]\n(float)3.1415926\n[\"add\", 1, 2]\n(int)3\n[\"mul\", 1.3, 25]\n(float)32.5\n[\"abc\"]\n(string)TXERROR:member/method not found: abc\n", seqT.get(), "delegate1.char")
 
 rs = systemCmd("char", "-gopath", "le.char")
 
-testByText(rs, "-- leLoadFromStr/lePrint\n0(0): \n1(364): Three bulls fed in a field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began secretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\n2(0): \n3(156): No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n4(0): \n5(156): No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n6(0): \n7(54): The quarrels of friends are the opportunities of foes.\n8(0): \n-- leSort\n0: \n1: \n2: \n3: \n4: \n5: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n6: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n7: The quarrels of friends are the opportunities of foes.\n8: Three bulls fed in a field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began secretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\n-- leSort(descending order)/leViewAll\n0: Three bulls fed in a field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began secretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\n1: The quarrels of friends are the opportunities of foes.\n2: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n3: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n4: \n5: \n6: \n7: \n8: \n-- leViewLines\n1: The quarrels of friends are the opportunities of foes.\n2: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n3: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n-- leAppendLine\n0: Three bulls fed in a field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began secretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\n1: The quarrels of friends are the opportunities of foes.\n2: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n3: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n4: \n5: \n6: \n7: \n8: \n9: append line 1\n-- leInsertLine\n0: Three bulls fed in a field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began secretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\n1: The quarrels of friends are the opportunities of foes.\n2: insert line 1\n3: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n4: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n5: \n6: \n7: \n8: \n9: \n10: append line 1\n-- leFindLines\n0: Three bulls fed in a field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began secretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\n3: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n4: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n-- leReplace\nThree bulls fed in a[ field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began se]cretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\nThe quarrels of friends are the opportunities of foes.\ninsert line 1\nNo sooner did the lion see tha[t they avoided one another and fed ea]ch by himself apart, than he fell upon them singly, and so made an easy prey of them all.\nNo sooner did the lion see tha[t they avoided one another and fed ea]ch by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n\n\n\n\n\nappend line 1\n-- leFind\n(string){\"Count\":0,\"End\":237,\"Group\":1,\"Line\":0,\"Start\":20,\"Text\":\"[ field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began se]\"}\n-- leFindAll\n(string)[{\"Count\":0,\"End\":56,\"Group\":1,\"Line\":0,\"Start\":20,\"Text\":\"[ field together in the greatest pea\"},{\"Count\":1,\"End\":89,\"Group\":1,\"Line\":0,\"Start\":60,\"Text\":\"nd amity. A lion had long wat\"},{\"Count\":2,\"End\":165,\"Group\":1,\"Line\":0,\"Start\":116,\"Text\":\"king a prize of them, but found there was little \"},{\"Count\":3,\"End\":169,\"Group\":1,\"Line\":0,\"Start\":168,\"Text\":\"n\"},{\"Count\":4,\"End\":237,\"Group\":1,\"Line\":0,\"Start\":189,\"Text\":\"s they kept all together. He therefore began se]\"},{\"Count\":0,\"End\":69,\"Group\":1,\"Line\":3,\"Start\":30,\"Text\":\"[t they avoided one another and fed ea]\"},{\"Count\":0,\"End\":69,\"Group\":1,\"Line\":4,\"Start\":30,\"Text\":\"[t they avoided one another and fed ea]\"}]\n-- leSetLine/leGetList\n(array)[\"Three bulls fed in a[ field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began se]cretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\", \"The quarrels of friends are the opportunities of foes.\", \"insert line 1 / set line here\", \"No sooner did the lion see tha[t they avoided one another and fed ea]ch by himself apart, than he fell upon them singly, and so made an easy prey of them all.\", \"No sooner did the lion see tha[t they avoided one another and fed ea]ch by himself apart, than he fell upon them singly, and so made an easy prey of them all.\", \"\", \"\", \"\", \"\", \"\", \"append line 1\"]\n-- leGetList partial\n(array)[\"insert line 1 / set line here\", \"No sooner did the lion see tha[t they avoided one another and fed ea]ch by himself apart, than he fell upon them singly, and so made an easy prey of them all.\"]\n-- leClear\n(string)\n", getSeq(), "le.char")
+testByText(rs, "-- leLoadFromStr/lePrint\n0(0): \n1(364): Three bulls fed in a field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began secretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\n2(0): \n3(156): No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n4(0): \n5(156): No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n6(0): \n7(54): The quarrels of friends are the opportunities of foes.\n8(0): \n-- leSort\n0: \n1: \n2: \n3: \n4: \n5: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n6: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n7: The quarrels of friends are the opportunities of foes.\n8: Three bulls fed in a field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began secretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\n-- leSort(descending order)/leViewAll\n0: Three bulls fed in a field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began secretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\n1: The quarrels of friends are the opportunities of foes.\n2: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n3: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n4: \n5: \n6: \n7: \n8: \n-- leViewLines\n1: The quarrels of friends are the opportunities of foes.\n2: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n3: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n-- leAppendLine\n0: Three bulls fed in a field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began secretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\n1: The quarrels of friends are the opportunities of foes.\n2: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n3: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n4: \n5: \n6: \n7: \n8: \n9: append line 1\n-- leInsertLine\n0: Three bulls fed in a field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began secretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\n1: The quarrels of friends are the opportunities of foes.\n2: insert line 1\n3: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n4: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n5: \n6: \n7: \n8: \n9: \n10: append line 1\n-- leFindLines\n0: Three bulls fed in a field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began secretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\n3: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n4: No sooner did the lion see that they avoided one another and fed each by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n-- leReplace\nThree bulls fed in a[ field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began se]cretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\nThe quarrels of friends are the opportunities of foes.\ninsert line 1\nNo sooner did the lion see tha[t they avoided one another and fed ea]ch by himself apart, than he fell upon them singly, and so made an easy prey of them all.\nNo sooner did the lion see tha[t they avoided one another and fed ea]ch by himself apart, than he fell upon them singly, and so made an easy prey of them all.\n\n\n\n\n\nappend line 1\n-- leFind\n(string){\"Count\":0,\"End\":237,\"Group\":1,\"Line\":0,\"Start\":20,\"Text\":\"[ field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began se]\"}\n-- leFindAll\n(string)[{\"Count\":0,\"End\":56,\"Group\":1,\"Line\":0,\"Start\":20,\"Text\":\"[ field together in the greatest pea\"},{\"Count\":1,\"End\":89,\"Group\":1,\"Line\":0,\"Start\":60,\"Text\":\"nd amity. A lion had long wat\"},{\"Count\":2,\"End\":165,\"Group\":1,\"Line\":0,\"Start\":116,\"Text\":\"king a prize of them, but found there was little \"},{\"Count\":3,\"End\":169,\"Group\":1,\"Line\":0,\"Start\":168,\"Text\":\"n\"},{\"Count\":4,\"End\":237,\"Group\":1,\"Line\":0,\"Start\":189,\"Text\":\"s they kept all together. He therefore began se]\"},{\"Count\":0,\"End\":69,\"Group\":1,\"Line\":3,\"Start\":30,\"Text\":\"[t they avoided one another and fed ea]\"},{\"Count\":0,\"End\":69,\"Group\":1,\"Line\":4,\"Start\":30,\"Text\":\"[t they avoided one another and fed ea]\"}]\n-- leSetLine/leGetList\n(array)[\"Three bulls fed in a[ field together in the greatest peace and amity. A lion had long watched them in the hope of making a prize of them, but found there was little chance for him so long as they kept all together. He therefore began se]cretly to spread evil and slanderous reports of one against the other, till he had fomented a jealousy and distrust amongst them.\", \"The quarrels of friends are the opportunities of foes.\", \"insert line 1 / set line here\", \"No sooner did the lion see tha[t they avoided one another and fed ea]ch by himself apart, than he fell upon them singly, and so made an easy prey of them all.\", \"No sooner did the lion see tha[t they avoided one another and fed ea]ch by himself apart, than he fell upon them singly, and so made an easy prey of them all.\", \"\", \"\", \"\", \"\", \"\", \"append line 1\"]\n-- leGetList partial\n(array)[\"insert line 1 / set line here\", \"No sooner did the lion see tha[t they avoided one another and fed ea]ch by himself apart, than he fell upon them singly, and so made an easy prey of them all.\"]\n-- leClear\n(string)\n", seqT.get(), "le.char")
 
 rs = systemCmd("char", "-gopath", "bytesStartsWith.char")
 
-testByText(rs, "(charlang.Bytes)[]byte{0x61, 0x62, 0x63, 0x31, 0x32, 0x33, 0xe5, 0xa4, 0xa9, 0xe6, 0xb0, 0x94, 0xe5, 0xa5, 0xbd, 0xef, 0xbc, 0x81}\n(charlang.Bool)true\n(charlang.Bool)false\n(charlang.Bool)false\n(charlang.Bool)true\n(charlang.Bool)true\n(charlang.Bool)true\n(charlang.Bool)false\n(charlang.Bool)false\n(charlang.Bool)true\n(charlang.Array)charlang.Array{97, 98, 99, 49, 50, 51, 229, 164, 169, 230, 176, 148, 229, 165, 189, 239, 188, 129}\n(charlang.Bytes)[]byte{0x61, 0x62, 0x63, 0x31, 0x32, 0x33, 0xe5, 0xa4, 0xa9, 0xe6, 0xb0, 0x94, 0xe5, 0xa5, 0xbd, 0xef, 0xbc, 0x81}\n(charlang.Bool)true\n(charlang.Bool)false\n(charlang.Bool)false\n(charlang.Bool)true\n(charlang.Bool)true\n(charlang.Bool)true\n(charlang.Bool)false\n(charlang.Bool)false\n(charlang.Bool)true\n", getSeq(), "bytesStartsWith.char")
+testByText(rs, "(charlang.Bytes)[]byte{0x61, 0x62, 0x63, 0x31, 0x32, 0x33, 0xe5, 0xa4, 0xa9, 0xe6, 0xb0, 0x94, 0xe5, 0xa5, 0xbd, 0xef, 0xbc, 0x81}\n(charlang.Bool)true\n(charlang.Bool)false\n(charlang.Bool)false\n(charlang.Bool)true\n(charlang.Bool)true\n(charlang.Bool)true\n(charlang.Bool)false\n(charlang.Bool)false\n(charlang.Bool)true\n(charlang.Array)charlang.Array{97, 98, 99, 49, 50, 51, 229, 164, 169, 230, 176, 148, 229, 165, 189, 239, 188, 129}\n(charlang.Bytes)[]byte{0x61, 0x62, 0x63, 0x31, 0x32, 0x33, 0xe5, 0xa4, 0xa9, 0xe6, 0xb0, 0x94, 0xe5, 0xa5, 0xbd, 0xef, 0xbc, 0x81}\n(charlang.Bool)true\n(charlang.Bool)false\n(charlang.Bool)false\n(charlang.Bool)true\n(charlang.Bool)true\n(charlang.Bool)true\n(charlang.Bool)false\n(charlang.Bool)false\n(charlang.Bool)true\n", seqT.get(), "bytesStartsWith.char")
 
 rs = systemCmd("char", "-gopath", "encryptDataWithHead.char")
 
-testByStartsWith(rs, "(charlang.Bytes)[]byte{0x61, 0x62, 0x63, 0x31, 0x32, 0x33, 0xe5, 0xa4, 0xa9, 0xe6, 0xb0, 0x94, 0xe5, 0xa5, 0xbd, 0xef, 0xbc, 0x81}\n(charlang.Bytes)[]byte{0x2f, 0x2f, 0x54, 0x58, 0x44, 0x45, 0x46, 0x23, ", getSeq(), "encryptDataWithHead.char")
+testByStartsWith(rs, "(charlang.Bytes)[]byte{0x61, 0x62, 0x63, 0x31, 0x32, 0x33, 0xe5, 0xa4, 0xa9, 0xe6, 0xb0, 0x94, 0xe5, 0xa5, 0xbd, 0xef, 0xbc, 0x81}\n(charlang.Bytes)[]byte{0x2f, 0x2f, 0x54, 0x58, 0x44, 0x45, 0x46, 0x23, ", seqT.get(), "encryptDataWithHead.char")
 
-testByEndsWith(rs, "}\n[0] (charlang.Bytes)[]byte{0x61, 0x62, 0x63, 0x31, 0x32, 0x33, 0xe5, 0xa4, 0xa9, 0xe6, 0xb0, 0x94, 0xe5, 0xa5, 0xbd, 0xef, 0xbc, 0x81}\n[1] (charlang.String)\"abc123天气好！\"\n[0] (charlang.Bytes)[]byte{0x61, 0x62, 0x63, 0x31, 0x32, 0x33, 0xe5, 0xa4, 0xa9, 0xe6, 0xb0, 0x94, 0xe5, 0xa5, 0xbd, 0xef, 0xbc, 0x81}\n[1] (charlang.String)\"abc123天气好！\"\n", getSeq(), "encryptDataWithHead.char")
+testByEndsWith(rs, "}\n[0] (charlang.Bytes)[]byte{0x61, 0x62, 0x63, 0x31, 0x32, 0x33, 0xe5, 0xa4, 0xa9, 0xe6, 0xb0, 0x94, 0xe5, 0xa5, 0xbd, 0xef, 0xbc, 0x81}\n[1] (charlang.String)\"abc123天气好！\"\n[0] (charlang.Bytes)[]byte{0x61, 0x62, 0x63, 0x31, 0x32, 0x33, 0xe5, 0xa4, 0xa9, 0xe6, 0xb0, 0x94, 0xe5, 0xa5, 0xbd, 0xef, 0xbc, 0x81}\n[1] (charlang.String)\"abc123天气好！\"\n", seqT.get(), "encryptDataWithHead.char")
 
 rs = systemCmd("char", "-gopath", "fib.char", "20")
 
-testByReg(rs, "count: 20\ntime elapsed: \\d+ ms\n6765\n", getSeq(), "fib.char")
+testByReg(rs, "count: 20\ntime elapsed: \\d+ ms\n6765\n", seqT.get(), "fib.char")
 
 rs = systemCmd("char", "-gopath", "commandLine.char", "abc", "123", `-file=a.txt`, `-file1=b.zip`, `-file2=c:\dig123.log`, `-verbose`)
 
-testByText(rs, "All command-line args: [\"char\", \"-gopath\", \"commandLine.char\", \"abc\", \"123\", \"-file=a.txt\", \"-file1=b.zip\", \"-file2=c:\\\\dig123.log\", \"-verbose\"]\nThe whole command-line without executable: [\"-gopath\", \"commandLine.char\", \"abc\", \"123\", \"-file=a.txt\", \"-file1=b.zip\", \"-file2=c:\\\\dig123.log\", \"-verbose\"]\nThe first command-line element is: char\nThe sencod command-line element is: -gopath\npara1=abc\npara2=123\nswitch1: a.txt\nAll parameters: [\"char\", \"commandLine.char\", \"abc\", \"123\"]\nAll switches: [\"-gopath\", \"-file=a.txt\", \"-file1=b.zip\", \"-file2=c:\\\\dig123.log\", \"-verbose\"]\nfalse\ntrue\n", getSeq(), "commandLine.char")
+testByText(rs, "All command-line args: [\"char\", \"-gopath\", \"commandLine.char\", \"abc\", \"123\", \"-file=a.txt\", \"-file1=b.zip\", \"-file2=c:\\\\dig123.log\", \"-verbose\"]\nThe whole command-line without executable: [\"-gopath\", \"commandLine.char\", \"abc\", \"123\", \"-file=a.txt\", \"-file1=b.zip\", \"-file2=c:\\\\dig123.log\", \"-verbose\"]\nThe first command-line element is: char\nThe sencod command-line element is: -gopath\npara1=abc\npara2=123\nswitch1: a.txt\nAll parameters: [\"char\", \"commandLine.char\", \"abc\", \"123\"]\nAll switches: [\"-gopath\", \"-file=a.txt\", \"-file1=b.zip\", \"-file2=c:\\\\dig123.log\", \"-verbose\"]\nfalse\ntrue\n", seqT.get(), "commandLine.char")
 
 rs = systemCmd("char", "-gopath", "bigInt.char")
 
-testByText(rs, "n1: 9223372036854775807, n2: 9223372036854775806, r1: -9223372036854775806\nbigN1: 9223372036854775807, bigN2: 9223372036854775806, bigR1: 85070591730234615838173535747377725442\n(bigInt)9223372036854775807000987654321\n", getSeq(), "bigInt.char")
+testByText(rs, "n1: 9223372036854775807, n2: 9223372036854775806, r1: -9223372036854775806\nbigN1: 9223372036854775807, bigN2: 9223372036854775806, bigR1: 85070591730234615838173535747377725442\n(bigInt)9223372036854775807000987654321\n", seqT.get(), "bigInt.char")
 
 rs = systemCmd("char", "-gopath", "calCosineSimilarity.char")
 
-testByText(rs, "(float)0.9756156783416059\n(charlang.Float)0.8556774556139578\n", getSeq(), "calCosineSimilarity.char")
+testByText(rs, "(float)0.9756156783416059\n(charlang.Float)0.8556774556139578\n", seqT.get(), "calCosineSimilarity.char")
 
 rs = systemCmd("char", "-gopath", "calCosineSimilarityBig.char")
 
-testByText(rs, "0.97561567834160589641\n0.85567745561395780474\n------------\n0.69631066977928557371\n0.00000012894610181964\n", getSeq(), "calCosineSimilarityBig.char")
+testByText(rs, "0.97561567834160589641\n0.85567745561395780474\n------------\n0.69631066977928557371\n0.00000012894610181964\n", seqT.get(), "calCosineSimilarityBig.char")
 
 rs = systemCmd("char", "-gopath", "ex1.char")
 
-testByText(rs, "(charlang.Float)3.141592653589793\n(charlang.Float)1.0954451150103321\n", getSeq(), "ex1.char")
+testByText(rs, "(charlang.Float)3.141592653589793\n(charlang.Float)1.0954451150103321\n", seqT.get(), "ex1.char")
 
 rs = systemCmd("char", "-gopath", "bmi.char", "1.7", "65")
 
-testByText(rs, "height: 1.70 m\nweight: 65.00 kg\nBMI: 22.49\nnormal\n", getSeq(), "bmi.char")
+testByText(rs, "height: 1.70 m\nweight: 65.00 kg\nBMI: 22.49\nnormal\n", seqT.get(), "bmi.char")
 
 rs = systemCmd("char", "-gopath", "bitwise.char")
 
-testByText(rs, "[0] (byte)3\n[1] (string)03\n[0] (int)1\n[1] (byte)163\n163 -> a3 -> 10100011\n92 -> 5C -> 01011100\n00001100\n01011111\n01010011\n", getSeq(), "bitwise.char")
+testByText(rs, "[0] (byte)3\n[1] (string)03\n[0] (int)1\n[1] (byte)163\n163 -> a3 -> 10100011\n92 -> 5C -> 01011100\n00001100\n01011111\n01010011\n", seqT.get(), "bitwise.char")
 
 rs = systemCmd("char", "-gopath", "copy.char")
 
-testByText(rs, "abc abc\nabc12 abc\nabc12 abcde\nexception: NotIndexAssignableError: string\nabc12+++ abcde---\nabc12 abcde\no7p8q9++++++ abcde---\no7p8q9+++ abcde\n", getSeq(), "copy.char")
+testByText(rs, "abc abc\nabc12 abc\nabc12 abcde\nexception: NotIndexAssignableError: string\nabc12+++ abcde---\nabc12 abcde\no7p8q9++++++ abcde---\no7p8q9+++ abcde\n", seqT.get(), "copy.char")
 
 rs = systemCmd("char", "-cmd=pln(\"abc\", 123.5)")
 
-testByText(rs, "abc 123.5\n", getSeq(), "command-line")
+testByText(rs, "abc 123.5\n", seqT.get(), "command-line")
 
 rs = systemCmd("char", "-cmd=pln%28%22abc%22%2C+123.5%29", "-urlDecode")
 
-testByText(rs, "abc 123.5\n", getSeq(), "command-line")
+testByText(rs, "abc 123.5\n", seqT.get(), "command-line")
 
 rs = systemCmd("char", "-gopath", "basic.chare", "-decrun=abc123")
 
-testByText(rs, "3.4000000000000004\n", getSeq(), "basic.chare")
+testByText(rs, "3.4000000000000004\n", seqT.get(), "basic.chare")
 
 rs = systemCmd("char", "-gopath", "orderedMap.char")
 
-testByStartsWith(rs, "(charlang.Array)charlang.Array{\"s1\", \"s2\"}\n(orderedMap){\"SSS\": \"v11\", \"k1\": \"v1\", \"a2\": 1, \"3\": [\"s1\", \"s2\"]}\n{\"SSS\":\"v11\",\"k1\":\"v1\",\"a2\":1,\"3\":[\"s1\",\"s2\"]}\n", getSeq(), "orderedMap.char")
+testByStartsWith(rs, "(charlang.Array)charlang.Array{\"s1\", \"s2\"}\n(orderedMap){\"SSS\": \"v11\", \"k1\": \"v1\", \"a2\": 1, \"3\": [\"s1\", \"s2\"]}\n{\"SSS\":\"v11\",\"k1\":\"v1\",\"a2\":1,\"3\":[\"s1\",\"s2\"]}\n", seqT.get(), "orderedMap.char")
 
-testByEndsWith(rs, "}\n{\"3\": [\"s1\", \"s2\"], \"SSS\": \"v11\", \"a2\": 1, \"k1\": \"v1\"}\n{\"k1\": \"v1\", \"a2\": 1, \"SSS\": \"v11\", \"3\": [\"s1\", \"s2\"]}\nfailed to move: error: [pos: ]failed to move: missing key: kkk\nSSS v11\n3 [\"s1\", \"s2\"]\nk1 v1\na2 1\n[0] SSS: v11\n[1] 3: [\"s1\", \"s2\"]\n[2] k1: v1\n[3] a2: 1\n{\"SSS\": \"v11\", \"a2\": 1, \"3\": [\"s1\", \"s2\"], \"k1\": \"v1\"}\n", getSeq(), "orderedMap.char")
+testByEndsWith(rs, "}\n{\"3\": [\"s1\", \"s2\"], \"SSS\": \"v11\", \"a2\": 1, \"k1\": \"v1\"}\n{\"k1\": \"v1\", \"a2\": 1, \"SSS\": \"v11\", \"3\": [\"s1\", \"s2\"]}\nfailed to move: error: [pos: ]failed to move: missing key: kkk\nSSS v11\n3 [\"s1\", \"s2\"]\nk1 v1\na2 1\n[0] SSS: v11\n[1] 3: [\"s1\", \"s2\"]\n[2] k1: v1\n[3] a2: 1\n{\"SSS\": \"v11\", \"a2\": 1, \"3\": [\"s1\", \"s2\"], \"k1\": \"v1\"}\n", seqT.get(), "orderedMap.char")
 
 rs = systemCmd("char", "-gopath", "arrayContains.char", "-verbose")
 
-testByText(rs, "true\nfalse\ntrue\nfalse\ntrue\nfalse\ntrue\nfalse\n", getSeq(), "arrayContains.char")
+testByText(rs, "true\nfalse\ntrue\nfalse\ntrue\nfalse\ntrue\nfalse\n", seqT.get(), "arrayContains.char")
 
 rs = systemCmd("char", "-gopath", "limitStr.char")
 
-testByText(rs, "abcde...\n34567...\nabcde!!!\n", getSeq(), "limitStr.char")
+testByText(rs, "abcde...\n34567...\nabcde!!!\n", seqT.get(), "limitStr.char")
 
 rs = systemCmd("char", "-gopath", "findStringDiffPos.char")
 
-testByText(rs, "4\n", getSeq(), "findStringDiffPos.char")
+testByText(rs, "4\n", seqT.get(), "findStringDiffPos.char")
 
 rs = systemCmd("char", "-gopath", "sortByFunc.char")
 
-testByText(rs, "charlang.Array{\"0123a\", 1, \"2.33\", 2.33, 2.5, 3, 435, \"abc\", \"zbds123\"}\n[{\"Age\":18,\"Name\":\"Jerry\"},{\"Age\":22,\"Name\":\"Jerry\"},{\"Age\":8,\"Name\":\"Peter\"},{\"Age\":18,\"Name\":\"Tom\"}]\n", getSeq(), "sortByFunc.char")
+testByText(rs, "charlang.Array{\"0123a\", 1, \"2.33\", 2.33, 2.5, 3, 435, \"abc\", \"zbds123\"}\n[{\"Age\":18,\"Name\":\"Jerry\"},{\"Age\":22,\"Name\":\"Jerry\"},{\"Age\":8,\"Name\":\"Peter\"},{\"Age\":18,\"Name\":\"Tom\"}]\n", seqT.get(), "sortByFunc.char")
 
 rs = systemCmd("char", "-gopath", "array.char")
 
-testByText(rs, "a: [1, 2, 3, \"abc\", 12.3]\na[2]: 3\nlength of a: 5\n(array)[1, 2, \"abc\", \"xyz\", 16, [true, [30 31]]]\nexception: IndexOutOfBoundsError: 6\n(array)[2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"]\na[1][1] = 16\na + b = [2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\", 19, 19]\n(array)[[2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"], [\"xyz\", 16], \"xyz\", 16]\n(array)[\"xyz\", 1000]\n(array)[2, 1000, \"last\"]\n(charlang.Array)charlang.Array{charlang.Object(nil), charlang.Object(nil)}\n(array)[[false, true], nil]\n(array)[1.2, 3, 56]\ni: 0, v: [2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"]\ni: 1, v: [\"xyz\", 16]\ni: 2, v: xyz\ni: 3, v: 16\ni: 0, v: [2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"]\ni: 1, v: [\"xyz\", 16]\ni: 2, v: xyz\ni: 3, v: 16\n(array)[3, 17, 2, 5, 0.6, 22.8]\n[0] (array)[0.6, 2, 3, 5, 17, 22.8]\n[1] (array)[0.6, 2, 3, 5, 17, 22.8]\nexception while sorting: TypeError: unsupported operand types for '<': 'array' and 'array'\n[0] (array)[[2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"], [\"xyz\", 16], \"xyz\", 16]\n[1] (undefined)undefined\n[0] (array)[16, [2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"], [\"xyz\", 16], \"xyz\"]\n[1] (array)[16, [2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"], [\"xyz\", 16], \"xyz\"]\n(array)[\"abc\", \"\", \"123\", \"qwer\", \"fghj\"]\n[0] (array)[\"\", \"123\", \"abc\", \"fghj\", \"qwer\"]\n[1] (array)[\"\", \"123\", \"abc\", \"fghj\", \"qwer\"]\n(array)[\"abc\", \"\", \"123\", \"qwer\", \"fghj\"]\n[0] (array)[\"123\", \"abc\", \"fghj\", \"qwer\", \"\"]\n[1] (array)[\"123\", \"abc\", \"fghj\", \"qwer\", \"\"]\n", getSeq(), "array.char")
+testByText(rs, "a: [1, 2, 3, \"abc\", 12.3]\na[2]: 3\nlength of a: 5\n(array)[1, 2, \"abc\", \"xyz\", 16, [true, [30 31]]]\nexception: IndexOutOfBoundsError: 6\n(array)[2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"]\na[1][1] = 16\na + b = [2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\", 19, 19]\n(array)[[2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"], [\"xyz\", 16], \"xyz\", 16]\n(array)[\"xyz\", 1000]\n(array)[2, 1000, \"last\"]\n(charlang.Array)charlang.Array{charlang.Object(nil), charlang.Object(nil)}\n(array)[[false, true], nil]\n(array)[1.2, 3, 56]\ni: 0, v: [2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"]\ni: 1, v: [\"xyz\", 16]\ni: 2, v: xyz\ni: 3, v: 16\ni: 0, v: [2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"]\ni: 1, v: [\"xyz\", 16]\ni: 2, v: xyz\ni: 3, v: 16\n(array)[3, 17, 2, 5, 0.6, 22.8]\n[0] (array)[0.6, 2, 3, 5, 17, 22.8]\n[1] (array)[0.6, 2, 3, 5, 17, 22.8]\nexception while sorting: TypeError: unsupported operand types for '<': 'array' and 'array'\n[0] (array)[[2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"], [\"xyz\", 16], \"xyz\", 16]\n[1] (undefined)undefined\n[0] (array)[16, [2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"], [\"xyz\", 16], \"xyz\"]\n[1] (array)[16, [2, [3.2, 16], \"abc\", \"xyz\", 1000, \"last\"], [\"xyz\", 16], \"xyz\"]\n(array)[\"abc\", \"\", \"123\", \"qwer\", \"fghj\"]\n[0] (array)[\"\", \"123\", \"abc\", \"fghj\", \"qwer\"]\n[1] (array)[\"\", \"123\", \"abc\", \"fghj\", \"qwer\"]\n(array)[\"abc\", \"\", \"123\", \"qwer\", \"fghj\"]\n[0] (array)[\"123\", \"abc\", \"fghj\", \"qwer\", \"\"]\n[1] (array)[\"123\", \"abc\", \"fghj\", \"qwer\", \"\"]\n", seqT.get(), "array.char")
 
 rs = systemCmd("char", "-gopath", "anyQueue.char")
 
-testByText(rs, "(any)(any:*tk.AnyQueue)[]\nb1: (any:*tk.AnyQueue)[]\n[-1] (any:*tk.AnyQueue)[] -- (any:*tk.AnyQueue)[]\n(charlang.Int)0\n First: error: out of index Last: error: out of index\nList: [] []\nremove 0: error: out of index: 0/0\nremove last: error: out of index: 0/0\nremove 3: error: out of index: 3/0\n[20000] (any:*tk.AnyQueue)[ 20000] (any:*tk.AnyQueue)[ 20000]\n 20000 F: 20000 L: 20000\nList: [20000] [20000]\n[20001] (any:*tk.AnyQueue)[ 20000 20001] (any:*tk.AnyQueue)[ 20000 20001]\n 20000 20001 F: 20000 L: 20001\nList: [20000, 20001] [20000, 20001]\n[20002] (any:*tk.AnyQueue)[ 20000 20001 20002] (any:*tk.AnyQueue)[ 20000 20001 20002]\n 20000 20001 20002 F: 20000 L: 20002\nList: [20000, 20001, 20002] [20000, 20001, 20002]\n[20003] (any:*tk.AnyQueue)[ 20000 20001 20002 20003] (any:*tk.AnyQueue)[ 20000 20001 20002 20003]\n 20000 20001 20002 20003 F: 20000 L: 20003\nList: [20000, 20001, 20002, 20003] [20000, 20001, 20002, 20003]\n[20004] (any:*tk.AnyQueue)[ 20000 20001 20002 20003 20004] (any:*tk.AnyQueue)[ 20000 20001 20002 20003 20004]\n 20000 20001 20002 20003 20004 F: 20000 L: 20004\nList: [20000, 20001, 20002, 20003, 20004] [20000, 20001, 20002, 20003, 20004]\n[20005] (any:*tk.AnyQueue)[ 20000 20001 20002 20003 20004 20005] (any:*tk.AnyQueue)[ 20000 20001 20002 20003 20004 20005]\n 20000 20001 20002 20003 20004 20005 F: 20000 L: 20005\nList: [20000, 20001, 20002, 20003, 20004, 20005] [20000, 20001, 20002, 20003, 20004, 20005]\n[20006] (any:*tk.AnyQueue)[ 20001 20002 20003 20004 20005 20006] (any:*tk.AnyQueue)[ 20001 20002 20003 20004 20005 20006]\n 20001 20002 20003 20004 20005 20006 F: 20001 L: 20006\nList: [20001, 20002, 20003, 20004, 20005, 20006] [20001, 20002, 20003, 20004, 20005, 20006]\n[20007] (any:*tk.AnyQueue)[ 20002 20003 20004 20005 20006 20007] (any:*tk.AnyQueue)[ 20002 20003 20004 20005 20006 20007]\n 20002 20003 20004 20005 20006 20007 F: 20002 L: 20007\nList: [20002, 20003, 20004, 20005, 20006, 20007] [20002, 20003, 20004, 20005, 20006, 20007]\n[20008] (any:*tk.AnyQueue)[ 20003 20004 20005 20006 20007 20008] (any:*tk.AnyQueue)[ 20003 20004 20005 20006 20007 20008]\n 20003 20004 20005 20006 20007 20008 F: 20003 L: 20008\nList: [20003, 20004, 20005, 20006, 20007, 20008] [20003, 20004, 20005, 20006, 20007, 20008]\n[20009] (any:*tk.AnyQueue)[ 20004 20005 20006 20007 20008 20009] (any:*tk.AnyQueue)[ 20004 20005 20006 20007 20008 20009]\n 20004 20005 20006 20007 20008 20009 F: 20004 L: 20009\nList: [20004, 20005, 20006, 20007, 20008, 20009] [20004, 20005, 20006, 20007, 20008, 20009]\n[20010] (any:*tk.AnyQueue)[ 20005 20006 20007 20008 20009 20010] (any:*tk.AnyQueue)[ 20005 20006 20007 20008 20009 20010]\n 20005 20006 20007 20008 20009 20010 F: 20005 L: 20010\nList: [20005, 20006, 20007, 20008, 20009, 20010] [20005, 20006, 20007, 20008, 20009, 20010]\n[20011] (any:*tk.AnyQueue)[ 20006 20007 20008 20009 20010 20011] (any:*tk.AnyQueue)[ 20006 20007 20008 20009 20010 20011]\n 20006 20007 20008 20009 20010 20011 F: 20006 L: 20011\nList: [20006, 20007, 20008, 20009, 20010, 20011] [20006, 20007, 20008, 20009, 20010, 20011]\n[20012] (any:*tk.AnyQueue)[ 20007 20008 20009 20010 20011 20012] (any:*tk.AnyQueue)[ 20007 20008 20009 20010 20011 20012]\n 20007 20008 20009 20010 20011 20012 F: 20007 L: 20012\nList: [20007, 20008, 20009, 20010, 20011, 20012] [20007, 20008, 20009, 20010, 20011, 20012]\n[20013] (any:*tk.AnyQueue)[ 20008 20009 20010 20011 20012 20013] (any:*tk.AnyQueue)[ 20008 20009 20010 20011 20012 20013]\n 20008 20009 20010 20011 20012 20013 F: 20008 L: 20013\nList: [20008, 20009, 20010, 20011, 20012, 20013] [20008, 20009, 20010, 20011, 20012, 20013]\n[20014] (any:*tk.AnyQueue)[ 20009 20010 20011 20012 20013 20014] (any:*tk.AnyQueue)[ 20009 20010 20011 20012 20013 20014]\n 20009 20010 20011 20012 20013 20014 F: 20009 L: 20014\nList: [20009, 20010, 20011, 20012, 20013, 20014] [20009, 20010, 20011, 20012, 20013, 20014]\n[20015] (any:*tk.AnyQueue)[ 20010 20011 20012 20013 20014 20015] (any:*tk.AnyQueue)[ 20010 20011 20012 20013 20014 20015]\n 20010 20011 20012 20013 20014 20015 F: 20010 L: 20015\nList: [20010, 20011, 20012, 20013, 20014, 20015] [20010, 20011, 20012, 20013, 20014, 20015]\n[20016] (any:*tk.AnyQueue)[ 20011 20012 20013 20014 20015 20016] (any:*tk.AnyQueue)[ 20011 20012 20013 20014 20015 20016]\n 20011 20012 20013 20014 20015 20016 F: 20011 L: 20016\nList: [20011, 20012, 20013, 20014, 20015, 20016] [20011, 20012, 20013, 20014, 20015, 20016]\n[20017] (any:*tk.AnyQueue)[ 20012 20013 20014 20015 20016 20017] (any:*tk.AnyQueue)[ 20012 20013 20014 20015 20016 20017]\n 20012 20013 20014 20015 20016 20017 F: 20012 L: 20017\nList: [20012, 20013, 20014, 20015, 20016, 20017] [20012, 20013, 20014, 20015, 20016, 20017]\n[20018] (any:*tk.AnyQueue)[ 20013 20014 20015 20016 20017 20018] (any:*tk.AnyQueue)[ 20013 20014 20015 20016 20017 20018]\n 20013 20014 20015 20016 20017 20018 F: 20013 L: 20018\nList: [20013, 20014, 20015, 20016, 20017, 20018] [20013, 20014, 20015, 20016, 20017, 20018]\n[20019] (any:*tk.AnyQueue)[ 20014 20015 20016 20017 20018 20019] (any:*tk.AnyQueue)[ 20014 20015 20016 20017 20018 20019]\n 20014 20015 20016 20017 20018 20019 F: 20014 L: 20019\nList: [20014, 20015, 20016, 20017, 20018, 20019] [20014, 20015, 20016, 20017, 20018, 20019]\n[20020] (any:*tk.AnyQueue)[ 20015 20016 20017 20018 20019 20020] (any:*tk.AnyQueue)[ 20015 20016 20017 20018 20019 20020]\n 20015 20016 20017 20018 20019 20020 F: 20015 L: 20020\nList: [20015, 20016, 20017, 20018, 20019, 20020] [20015, 20016, 20017, 20018, 20019, 20020]\n[20021] (any:*tk.AnyQueue)[ 20016 20017 20018 20019 20020 20021] (any:*tk.AnyQueue)[ 20016 20017 20018 20019 20020 20021]\n 20016 20017 20018 20019 20020 20021 F: 20016 L: 20021\nList: [20016, 20017, 20018, 20019, 20020, 20021] [20016, 20017, 20018, 20019, 20020, 20021]\n 100 20016 20017 20018 20019 20020 F: 100 L: 20020\n 100 20016 20017 103 20018 20019 F: 100 L: 20019\n 100 20016 20017 103 20018 109 F: 100 L: 109\nList: [100, 20016, 20017, 103, 20018, 109] [100, 20016, 20017, 103, 20018, 109]\n 20016 20017 103 20018 109 F: 20016 L: 109\nList: [20016, 20017, 103, 20018, 109] [20016, 20017, 103, 20018, 109]\n 20016 20017 103 20018 F: 20016 L: 20018\nList: [20016, 20017, 103, 20018] [20016, 20017, 103, 20018]\n 20016 20017 20018 F: 20016 L: 20018\nList: [20016, 20017, 20018] [20016, 20017, 20018]\ngot 20016\n[1] (any:*tk.AnyQueue)[ 20017 20018] S: 2\ngot 20017\n[2] (any:*tk.AnyQueue)[ 20018] S: 1\ngot 20018\n[3] (any:*tk.AnyQueue)[] S: 0\n", getSeq(), "anyQueue.char")
+testByText(rs, "(any)(any:*tk.AnyQueue)[]\nb1: (any:*tk.AnyQueue)[]\n[-1] (any:*tk.AnyQueue)[] -- (any:*tk.AnyQueue)[]\n(charlang.Int)0\n First: error: out of index Last: error: out of index\nList: [] []\nremove 0: error: out of index: 0/0\nremove last: error: out of index: 0/0\nremove 3: error: out of index: 3/0\n[20000] (any:*tk.AnyQueue)[ 20000] (any:*tk.AnyQueue)[ 20000]\n 20000 F: 20000 L: 20000\nList: [20000] [20000]\n[20001] (any:*tk.AnyQueue)[ 20000 20001] (any:*tk.AnyQueue)[ 20000 20001]\n 20000 20001 F: 20000 L: 20001\nList: [20000, 20001] [20000, 20001]\n[20002] (any:*tk.AnyQueue)[ 20000 20001 20002] (any:*tk.AnyQueue)[ 20000 20001 20002]\n 20000 20001 20002 F: 20000 L: 20002\nList: [20000, 20001, 20002] [20000, 20001, 20002]\n[20003] (any:*tk.AnyQueue)[ 20000 20001 20002 20003] (any:*tk.AnyQueue)[ 20000 20001 20002 20003]\n 20000 20001 20002 20003 F: 20000 L: 20003\nList: [20000, 20001, 20002, 20003] [20000, 20001, 20002, 20003]\n[20004] (any:*tk.AnyQueue)[ 20000 20001 20002 20003 20004] (any:*tk.AnyQueue)[ 20000 20001 20002 20003 20004]\n 20000 20001 20002 20003 20004 F: 20000 L: 20004\nList: [20000, 20001, 20002, 20003, 20004] [20000, 20001, 20002, 20003, 20004]\n[20005] (any:*tk.AnyQueue)[ 20000 20001 20002 20003 20004 20005] (any:*tk.AnyQueue)[ 20000 20001 20002 20003 20004 20005]\n 20000 20001 20002 20003 20004 20005 F: 20000 L: 20005\nList: [20000, 20001, 20002, 20003, 20004, 20005] [20000, 20001, 20002, 20003, 20004, 20005]\n[20006] (any:*tk.AnyQueue)[ 20001 20002 20003 20004 20005 20006] (any:*tk.AnyQueue)[ 20001 20002 20003 20004 20005 20006]\n 20001 20002 20003 20004 20005 20006 F: 20001 L: 20006\nList: [20001, 20002, 20003, 20004, 20005, 20006] [20001, 20002, 20003, 20004, 20005, 20006]\n[20007] (any:*tk.AnyQueue)[ 20002 20003 20004 20005 20006 20007] (any:*tk.AnyQueue)[ 20002 20003 20004 20005 20006 20007]\n 20002 20003 20004 20005 20006 20007 F: 20002 L: 20007\nList: [20002, 20003, 20004, 20005, 20006, 20007] [20002, 20003, 20004, 20005, 20006, 20007]\n[20008] (any:*tk.AnyQueue)[ 20003 20004 20005 20006 20007 20008] (any:*tk.AnyQueue)[ 20003 20004 20005 20006 20007 20008]\n 20003 20004 20005 20006 20007 20008 F: 20003 L: 20008\nList: [20003, 20004, 20005, 20006, 20007, 20008] [20003, 20004, 20005, 20006, 20007, 20008]\n[20009] (any:*tk.AnyQueue)[ 20004 20005 20006 20007 20008 20009] (any:*tk.AnyQueue)[ 20004 20005 20006 20007 20008 20009]\n 20004 20005 20006 20007 20008 20009 F: 20004 L: 20009\nList: [20004, 20005, 20006, 20007, 20008, 20009] [20004, 20005, 20006, 20007, 20008, 20009]\n[20010] (any:*tk.AnyQueue)[ 20005 20006 20007 20008 20009 20010] (any:*tk.AnyQueue)[ 20005 20006 20007 20008 20009 20010]\n 20005 20006 20007 20008 20009 20010 F: 20005 L: 20010\nList: [20005, 20006, 20007, 20008, 20009, 20010] [20005, 20006, 20007, 20008, 20009, 20010]\n[20011] (any:*tk.AnyQueue)[ 20006 20007 20008 20009 20010 20011] (any:*tk.AnyQueue)[ 20006 20007 20008 20009 20010 20011]\n 20006 20007 20008 20009 20010 20011 F: 20006 L: 20011\nList: [20006, 20007, 20008, 20009, 20010, 20011] [20006, 20007, 20008, 20009, 20010, 20011]\n[20012] (any:*tk.AnyQueue)[ 20007 20008 20009 20010 20011 20012] (any:*tk.AnyQueue)[ 20007 20008 20009 20010 20011 20012]\n 20007 20008 20009 20010 20011 20012 F: 20007 L: 20012\nList: [20007, 20008, 20009, 20010, 20011, 20012] [20007, 20008, 20009, 20010, 20011, 20012]\n[20013] (any:*tk.AnyQueue)[ 20008 20009 20010 20011 20012 20013] (any:*tk.AnyQueue)[ 20008 20009 20010 20011 20012 20013]\n 20008 20009 20010 20011 20012 20013 F: 20008 L: 20013\nList: [20008, 20009, 20010, 20011, 20012, 20013] [20008, 20009, 20010, 20011, 20012, 20013]\n[20014] (any:*tk.AnyQueue)[ 20009 20010 20011 20012 20013 20014] (any:*tk.AnyQueue)[ 20009 20010 20011 20012 20013 20014]\n 20009 20010 20011 20012 20013 20014 F: 20009 L: 20014\nList: [20009, 20010, 20011, 20012, 20013, 20014] [20009, 20010, 20011, 20012, 20013, 20014]\n[20015] (any:*tk.AnyQueue)[ 20010 20011 20012 20013 20014 20015] (any:*tk.AnyQueue)[ 20010 20011 20012 20013 20014 20015]\n 20010 20011 20012 20013 20014 20015 F: 20010 L: 20015\nList: [20010, 20011, 20012, 20013, 20014, 20015] [20010, 20011, 20012, 20013, 20014, 20015]\n[20016] (any:*tk.AnyQueue)[ 20011 20012 20013 20014 20015 20016] (any:*tk.AnyQueue)[ 20011 20012 20013 20014 20015 20016]\n 20011 20012 20013 20014 20015 20016 F: 20011 L: 20016\nList: [20011, 20012, 20013, 20014, 20015, 20016] [20011, 20012, 20013, 20014, 20015, 20016]\n[20017] (any:*tk.AnyQueue)[ 20012 20013 20014 20015 20016 20017] (any:*tk.AnyQueue)[ 20012 20013 20014 20015 20016 20017]\n 20012 20013 20014 20015 20016 20017 F: 20012 L: 20017\nList: [20012, 20013, 20014, 20015, 20016, 20017] [20012, 20013, 20014, 20015, 20016, 20017]\n[20018] (any:*tk.AnyQueue)[ 20013 20014 20015 20016 20017 20018] (any:*tk.AnyQueue)[ 20013 20014 20015 20016 20017 20018]\n 20013 20014 20015 20016 20017 20018 F: 20013 L: 20018\nList: [20013, 20014, 20015, 20016, 20017, 20018] [20013, 20014, 20015, 20016, 20017, 20018]\n[20019] (any:*tk.AnyQueue)[ 20014 20015 20016 20017 20018 20019] (any:*tk.AnyQueue)[ 20014 20015 20016 20017 20018 20019]\n 20014 20015 20016 20017 20018 20019 F: 20014 L: 20019\nList: [20014, 20015, 20016, 20017, 20018, 20019] [20014, 20015, 20016, 20017, 20018, 20019]\n[20020] (any:*tk.AnyQueue)[ 20015 20016 20017 20018 20019 20020] (any:*tk.AnyQueue)[ 20015 20016 20017 20018 20019 20020]\n 20015 20016 20017 20018 20019 20020 F: 20015 L: 20020\nList: [20015, 20016, 20017, 20018, 20019, 20020] [20015, 20016, 20017, 20018, 20019, 20020]\n[20021] (any:*tk.AnyQueue)[ 20016 20017 20018 20019 20020 20021] (any:*tk.AnyQueue)[ 20016 20017 20018 20019 20020 20021]\n 20016 20017 20018 20019 20020 20021 F: 20016 L: 20021\nList: [20016, 20017, 20018, 20019, 20020, 20021] [20016, 20017, 20018, 20019, 20020, 20021]\n 100 20016 20017 20018 20019 20020 F: 100 L: 20020\n 100 20016 20017 103 20018 20019 F: 100 L: 20019\n 100 20016 20017 103 20018 109 F: 100 L: 109\nList: [100, 20016, 20017, 103, 20018, 109] [100, 20016, 20017, 103, 20018, 109]\n 20016 20017 103 20018 109 F: 20016 L: 109\nList: [20016, 20017, 103, 20018, 109] [20016, 20017, 103, 20018, 109]\n 20016 20017 103 20018 F: 20016 L: 20018\nList: [20016, 20017, 103, 20018] [20016, 20017, 103, 20018]\n 20016 20017 20018 F: 20016 L: 20018\nList: [20016, 20017, 20018] [20016, 20017, 20018]\ngot 20016\n[1] (any:*tk.AnyQueue)[ 20017 20018] S: 2\ngot 20017\n[2] (any:*tk.AnyQueue)[ 20018] S: 1\ngot 20018\n[3] (any:*tk.AnyQueue)[] S: 0\n", seqT.get(), "anyQueue.char")
 
 rs = systemCmd("char", "-gopath", "urlExists.char")
 
-testByText(rs, "(error)error: Head \"http://abc.abc.abc/abc.html\": dial tcp: lookup abc.abc.abc: no such host\n(bool)true\n(bool)false\nrs1 is error: true\nrs2 is error: false\nrs1 != true: true\nrs1 != false: true\nrs1 == true: false\nrs1 == false: false\nrs3 != true: true\nrs3 != true: false\n", getSeq(), "urlExists.char")
+testByText(rs, "(error)error: Head \"http://abc.abc.abc/abc.html\": dial tcp: lookup abc.abc.abc: no such host\n(bool)true\n(bool)false\nrs1 is error: true\nrs2 is error: false\nrs1 != true: true\nrs1 != false: true\nrs1 == true: false\nrs1 == false: false\nrs3 != true: true\nrs3 != true: false\n", seqT.get(), "urlExists.char")
 
 rs = systemCmd("char", "-gopath", "gel1.char")
 
-testByText(rs, "add []\n(charlang.Int)3\nPi []\ng1.Pi: 3.1415926\nvar1 []\nunknown member: TXERROR:member/method not found: var1\ntrue\nmember/method not found: var1\nfunc1 []\nunknown func(TXERROR:member/method not found: func1): NotCallableError: string\nmul []\n(charlang.Float)28.8\n", getSeq(), "gel1.char")
+testByText(rs, "add []\n(charlang.Int)3\nPi []\ng1.Pi: 3.1415926\nvar1 []\nunknown member: TXERROR:member/method not found: var1\ntrue\nmember/method not found: var1\nfunc1 []\nunknown func(TXERROR:member/method not found: func1): NotCallableError: string\nmul []\n(charlang.Float)28.8\n", seqT.get(), "gel1.char")
 
 rs = systemCmd("char", "-gopath", "gel2.char")
 
-testByText(rs, "add []\n(charlang.Int)3\nPi []\ng1.Pi: 3.1415926\nvar1 []\nunknown member: TXERROR:member/method not found: var1\ntrue\nmember/method not found: var1\nfunc1 []\nunknown func(TXERROR:member/method not found: func1): NotCallableError: string\nmul []\n(charlang.Float)28.8\n", getSeq(), "gel2.char")
+testByText(rs, "add []\n(charlang.Int)3\nPi []\ng1.Pi: 3.1415926\nvar1 []\nunknown member: TXERROR:member/method not found: var1\ntrue\nmember/method not found: var1\nfunc1 []\nunknown func(TXERROR:member/method not found: func1): NotCallableError: string\nmul []\n(charlang.Float)28.8\n", seqT.get(), "gel2.char")
 
 rs = systemCmd("char", "-gopath", "gel3.char")
 
-testByText(rs, "error will occur since not compiled: error: not compiled\n(orderedMap){\"mul\": <compiledFunction>, \"add\": <compiledFunction>, \"Pi\": 3.1415926}\n(orderedMap){\"Pi\": 3.1415926, \"add\": <compiledFunction>, \"mul\": <compiledFunction>}\n(charlang.Int)3\nsimpleMath.Pi:  (charlang.Float)3.1415926\nunknown member: (undefined)undefined\nfalse\n\ntrue\ntrue\ntrue\nunknown func(undefined): NotCallableError: undefined\n(charlang.Float)28.8\n", getSeq(), "gel3.char")
+testByText(rs, "error will occur since not compiled: error: not compiled\n(orderedMap){\"mul\": <compiledFunction>, \"add\": <compiledFunction>, \"Pi\": 3.1415926}\n(orderedMap){\"Pi\": 3.1415926, \"add\": <compiledFunction>, \"mul\": <compiledFunction>}\n(charlang.Int)3\nsimpleMath.Pi:  (charlang.Float)3.1415926\nunknown member: (undefined)undefined\nfalse\n\ntrue\ntrue\ntrue\nunknown func(undefined): NotCallableError: undefined\n(charlang.Float)28.8\n", seqT.get(), "gel3.char")
 
 rs = systemCmd("char", "-gopath", "mutex1.char")
 
-testByText(rs, "(objectRef)<objectRef:5>\n(int)5\nresult: 15005\n", getSeq(), "mutex1.char")
+testByText(rs, "(objectRef)<objectRef:5>\n(int)5\nresult: 15005\n", seqT.get(), "mutex1.char")
 
 rs = systemCmd("char", "-gopath", "mutex2.char")
 
-testByText(rs, "(objectRef)<objectRef:5>\n(int)5\nresult: 15005\n", getSeq(), "mutex2.char")
+testByText(rs, "(objectRef)<objectRef:5>\n(int)5\nresult: 15005\n", seqT.get(), "mutex2.char")
 
 rs = systemCmd("char", "-gopath", "seq.char")
 
-testByText(rs, "(seq)0\n(int)1\n(int)2\n(seq)0\n(int)1\n(int)2\n(seq)0\n(int)1\n(int)2\n(int)3\n(int)3\n(seq)1\n(int)2\n(int)2\n", getSeq(), "seq.char")
+testByText(rs, "(seq)0\n(int)1\n(int)2\n(seq)0\n(int)1\n(int)2\n(seq)0\n(int)1\n(int)2\n(int)3\n(int)3\n(seq)1\n(int)2\n(int)2\n", seqT.get(), "seq.char")
 
 rs = systemCmd("char", "-gopath", "mutableString.char")
 
-testByText(rs, "(mutableString)abc\n(mutableString)def\n(mutableString)\n(string)ghj\n(string)klm\ns2 after f1:\n(mutableString)qwe\ns2 after f2:\n(mutableString)  rty\n(int)123\n\"  rty -- example  \"\n\"rty -- example\"\nf3 returns: true\ns2 after f3: \"y -- example\"\ntrim ple: y -- exam\ns2 now: \"y -- exam\"\n", getSeq(), "mutableString.char")
+testByText(rs, "(mutableString)abc\n(mutableString)def\n(mutableString)\n(string)ghj\n(string)klm\ns2 after f1:\n(mutableString)qwe\ns2 after f2:\n(mutableString)  rty\n(int)123\n\"  rty -- example  \"\n\"rty -- example\"\nf3 returns: true\ns2 after f3: \"y -- example\"\ntrim ple: y -- exam\ns2 now: \"y -- exam\"\n", seqT.get(), "mutableString.char")
 
 rs = systemCmd("char", "-gopath", "method1.char")
 
-testByText(rs, "(bool)true\n(bool)false\n", getSeq(), "method1.char")
+testByText(rs, "(bool)true\n(bool)false\n", seqT.get(), "method1.char")
 
 rs = systemCmd("char", "-gopath", "method2.char")
 
-testByText(rs, "(bool)true\n(bool)false\n", getSeq(), "method2.char")
+testByText(rs, "(bool)true\n(bool)false\n", seqT.get(), "method2.char")
 
 rs = systemCmd("char", "-gopath", "member.char")
 
 rs = regReplace(rs, `detail: \{0x\w+? `, "")
 
-testByText(rs, "(bool)true\nfailed to set member of b1: unsupported action(set member)\n(undefined)undefined\ntype name of buf1: stringBuilder\n(string)abc123\nstringBuilder detail: (stringBuilder)abc123\n(string)abc123\n(string)simple text\nfailed to call method(invalidFunc) of buf1: error: unknown method: invalidFunc\n", getSeq(), "member.char")
+testByText(rs, "(bool)true\nfailed to set member of b1: unsupported action(set member)\n(undefined)undefined\ntype name of buf1: stringBuilder\n(string)abc123\nstringBuilder detail: (stringBuilder)abc123\n(string)abc123\n(string)simple text\nfailed to call method(invalidFunc) of buf1: error: unknown method: invalidFunc\n", seqT.get(), "member.char")
 
 rs = systemCmd("char", "-gopath", "trace1.char")
 
-testByStartsWith(rs, "\n ----- \nBytecode\nModules:0\nConstants:\n   0: 1|int\n   1: 2.3|float\nParams:0 Variadic:false Locals:3\nInstructions:\n0000 CONSTANT        0\n0003 DEFINELOCAL     0\n0005 CONSTANT        1\n0008 DEFINELOCAL     1\n0010 GETBUILTIN", getSeq(), "trace1.char")
+testByStartsWith(rs, "\n ----- \nBytecode\nModules:0\nConstants:\n   0: 1|int\n   1: 2.3|float\nParams:0 Variadic:false Locals:3\nInstructions:\n0000 CONSTANT        0\n0003 DEFINELOCAL     0\n0005 CONSTANT        1\n0008 DEFINELOCAL     1\n0010 GETBUILTIN", seqT.get(), "trace1.char")
 
-testByContains(rs, "\"versionG\": \"", getSeq(), "trace1.char")
+testByContains(rs, "\"versionG\": \"", seqT.get(), "trace1.char")
 
-testByContains(rs, "CurFunc \n&charlang.CompiledFunction{NumParams:0, NumLocals:3, Instructions:[]uint8{", getSeq(), "trace1.char")
+testByContains(rs, "CurFunc \n&charlang.CompiledFunction{NumParams:0, NumLocals:3, Instructions:[]uint8{", seqT.get(), "trace1.char")
 
-testByEndsWith(rs, "}, Members:map[string]charlang.Object(nil)}\n ----- \nCurInstr \n\"13 2 CALL\"\n ----- \nLocals \n[1 2.3 undefined]\n ----- \n\n", getSeq(), "trace1.char")
+testByEndsWith(rs, "}, Members:map[string]charlang.Object(nil)}\n ----- \nCurInstr \n\"13 2 CALL\"\n ----- \nLocals \n[1 2.3 undefined]\n ----- \n\n", seqT.get(), "trace1.char")
 
 rs = systemCmd("char", "-gopath", "new.char")
 
-testByText(rs, "(objectRef)<objectRef:true>\n(bool)true\nb1 after f1:\n(objectRef)<objectRef:false>\n(bool)false\nb1 after f2:\n(objectRef)<objectRef:true>\n(bool)true\n(mutableString)abc\n(mutableString)def\ns1 after f3:\n(mutableString)qwe\n", getSeq(), "new.char")
+testByText(rs, "(objectRef)<objectRef:true>\n(bool)true\nb1 after f1:\n(objectRef)<objectRef:false>\n(bool)false\nb1 after f2:\n(objectRef)<objectRef:true>\n(bool)true\n(mutableString)abc\n(mutableString)def\ns1 after f3:\n(mutableString)qwe\n", seqT.get(), "new.char")
 
 rs = systemCmd("char", "-gopath", "ref.char")
 
-testByText(rs, "(string)  1.2 \n(string)  1.2 \n(mutableString)  1.2 \n(mutableString)bbb\n(array)[1, 2, \"a\"]\n(array)[1, \"cc\", \"a\"]\n{\"field1\":1,\"field2\":\"23.8\"}\n{\"field1\":true,\"field3\":\"dd\"}\n(objectRef)<objectRef:368.9>\n(float)368.9\n(objectRef)<objectRef:21.7>\n(float)21.7\n", getSeq(), "ref.char")
+testByText(rs, "(string)  1.2 \n(string)  1.2 \n(mutableString)  1.2 \n(mutableString)bbb\n(array)[1, 2, \"a\"]\n(array)[1, \"cc\", \"a\"]\n{\"field1\":1,\"field2\":\"23.8\"}\n{\"field1\":true,\"field3\":\"dd\"}\n(objectRef)<objectRef:368.9>\n(float)368.9\n(objectRef)<objectRef:21.7>\n(float)21.7\n", seqT.get(), "ref.char")
 
 rs = systemCmd("char", "-gopath", "number.char")
 
-testByText(rs, "(int)1\n(int)-5\n(uint)18446744073709551611\n(uint)5\n(uint)5\n(float)2.3\n(byte)8\n(int)69\nE\n3.0000000000000004\n3\nfalse\ntrue\n3.00000000000000044409\n(*charlang.BigFloat)&charlang.BigFloat{Value:3.0000000000000004, Members:map[string]charlang.Object(nil)}\nfalse\n3.00000000000000000000\ntrue\n", getSeq(), "number.char")
+testByText(rs, "(int)1\n(int)-5\n(uint)18446744073709551611\n(uint)5\n(uint)5\n(float)2.3\n(byte)8\n(int)69\nE\n3.0000000000000004\n3\nfalse\ntrue\n3.00000000000000044409\n(*charlang.BigFloat)&charlang.BigFloat{Value:3.0000000000000004, Members:map[string]charlang.Object(nil)}\nfalse\n3.00000000000000000000\ntrue\n", seqT.get(), "number.char")
 
 rs = systemCmd("char", "-gopath", "customMembers1.char")
 
-testByText(rs, "s1: abc\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(undefined)undefined\ns1 now: abc\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(string)a test info\n", getSeq(), "customMembers1.char")
+testByText(rs, "s1: abc\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(undefined)undefined\ns1 now: abc\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(string)a test info\n", seqT.get(), "customMembers1.char")
 
 rs = systemCmd("char", "-gopath", "customMembers2.char")
 
-testByText(rs, "s1(mutableString): \"abc1\"\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(undefined)undefined\ns1 now: \"abc2\"\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(string)a test info\n", getSeq(), "customMembers2.char")
+testByText(rs, "s1(mutableString): \"abc1\"\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(undefined)undefined\ns1 now: \"abc2\"\n(string)v1\n(string)v2\n(charlang.String)\"\"\n(string)a test info\n", seqT.get(), "customMembers2.char")
 
 rs = systemCmd("char", "-gopath", "make.char")
 
-testByText(rs, "(int)0\n(stringBuilder)(stringBuilder)\nv2: (stringBuilder)abc123.6\n(any)(any:*strings.Builder)abc123.6\n(any)(any:bool)true\n", getSeq(), "make.char")
+testByText(rs, "(int)0\n(stringBuilder)(stringBuilder)\nv2: (stringBuilder)abc123.6\n(any)(any:*strings.Builder)abc123.6\n(any)(any:bool)true\n", seqT.get(), "make.char")
 
 rs = systemCmd("char", "-gopath", "getNamedValue.char")
 
-//testByReg(rs, `(?sm)(string)\"2023-09-08 15:51:14\"\n(string)\"20230908155114\"\n`, getSeq(), "getNamedValue.char")
-// testByReg(rs, `(?sm)\(string\)\"\d{4}\-\d{2}\"\n\(string\)\"\d{14}\"\n`, getSeq(), "getNamedValue.char")
-testByReg(rs, `(?sm)\(string\)\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\n\(string\)\d{14}\n`, getSeq(), "getNamedValue.char")
+//testByReg(rs, `(?sm)(string)\"2023-09-08 15:51:14\"\n(string)\"20230908155114\"\n`, seqT.get(), "getNamedValue.char")
+// testByReg(rs, `(?sm)\(string\)\"\d{4}\-\d{2}\"\n\(string\)\"\d{14}\"\n`, seqT.get(), "getNamedValue.char")
+testByReg(rs, `(?sm)\(string\)\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\n\(string\)\d{14}\n`, seqT.get(), "getNamedValue.char")
 
 rs = systemCmd("char", "-gopath", "newEx.char")
 
-testByText(rs, "r1 type: any\nr1 type wrapped in any: *tk.StringRing\n(array)[\"abc\", \"123\"]\n", getSeq(), "newEx.char")
+testByText(rs, "r1 type: any\nr1 type wrapped in any: *tk.StringRing\n(array)[\"abc\", \"123\"]\n", seqT.get(), "newEx.char")
 
 rs = systemCmd("char", "-gopath", "var.char")
 
-testByText(rs, "1\nabc\ntrue\n", getSeq(), "var.char")
+testByText(rs, "1\nabc\ntrue\n", seqT.get(), "var.char")
 
 rs = systemCmd("char", "-gopath", "exit.char")
 
-testByText(rs, "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n", getSeq(), "exit.char")
+testByText(rs, "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n", seqT.get(), "exit.char")
 
 rs = systemCmd("char", "-gopath", "typeCodeAndName.char")
 
-testByText(rs, "typeCode of a: 107\ntypeName of a: int\ntypeCode of b: 105\ntypeName of b: string\ntypeCode of c: 131\ntypeName of c: array\ntypeCode of d: 131\ntypeName of d: array\n", getSeq(), "typeCodeAndName.char")
+testByText(rs, "typeCode of a: 107\ntypeName of a: int\ntypeCode of b: 105\ntypeName of b: string\ntypeCode of c: 131\ntypeName of c: array\ntypeCode of d: 131\ntypeName of d: array\n", seqT.get(), "typeCodeAndName.char")
 
 rs = systemCmd("char", "-gopath", "anonymousFunc.char")
 
-testByStartsWith(rs, "Hi! Nice to see you.\n3\n8\n17", getSeq(), "anonymousFunc.char")
+testByStartsWith(rs, "Hi! Nice to see you.\n3\n8\n17", seqT.get(), "anonymousFunc.char")
 
 rs = systemCmd("char", "-gopath", "param.char")
 
-testByReg(rs, `(?sm)args.*?\narg 1: param\.char.*`, getSeq(), "param.char")
+testByReg(rs, `(?sm)args.*?\narg 1: param\.char.*`, seqT.get(), "param.char")
 
 rs = systemCmd("char", "-gopath", "char.char")
 
-testByText(rs, "type of c1: char\ninternal type of c1: charlang.Char\nvalue of c1: 97\ncharacter of c1: a\n\ntype of c2: char\ninternal type of c2: charlang.Char\nvalue of c2: 22825\ncharacter of c2: 天\n", getSeq(), "char.char")
+testByText(rs, "type of c1: char\ninternal type of c1: charlang.Char\nvalue of c1: 97\ncharacter of c1: a\n\ntype of c2: char\ninternal type of c2: charlang.Char\nvalue of c2: 22825\ncharacter of c2: 天\n", seqT.get(), "char.char")
 
 rs = systemCmd("char", "-gopath", "compile1.char")
 
-testByText(rs, "r1=3.3\nv0=true\nv1=value1\nvargs=[1, 2, \"3a\"]\n(charlang.String)\"abctruevalue13.3\"\n", getSeq(), "compile1.char")
+testByText(rs, "r1=3.3\nv0=true\nv1=value1\nvargs=[1, 2, \"3a\"]\n(charlang.String)\"abctruevalue13.3\"\n", seqT.get(), "compile1.char")
 
 rs = systemCmd("char", "-gopath", "compile2.char")
 
-testByText(rs, "r1=3.3\nv0=true\nv1=value1\nvargs=[1, 2, \"3a\"]\n(charlang.String)\"abctruevalue13.3\"\n", getSeq(), "compile2.char")
+testByText(rs, "r1=3.3\nv0=true\nv1=value1\nvargs=[1, 2, \"3a\"]\n(charlang.String)\"abctruevalue13.3\"\n", seqT.get(), "compile2.char")
 
 rs = systemCmd("char", "-gopath", "funcParam.char")
 
-testByText(rs, "[1, 2, \"a\"]\n[1, \"cc\", \"a\"]\n{\"field1\":1,\"field2\":\"23.8\"}\n{\"field1\":true,\"field2\":\"23.8\",\"field3\":\"dd\"}\n", getSeq(), "funcParam.char")
+testByText(rs, "[1, 2, \"a\"]\n[1, \"cc\", \"a\"]\n{\"field1\":1,\"field2\":\"23.8\"}\n{\"field1\":true,\"field2\":\"23.8\",\"field3\":\"dd\"}\n", seqT.get(), "funcParam.char")
 
 rs = systemCmd("char", "-gopath", "json.char")
 
-testByReg(rs, `(?sm)jsonStrT: {\"name\": \"Peter\", \"age\": 19, \"身高\": 175, \"father\": .*?}\n\n---\n\nresult: .*?\nname: Peter\nage: 19\nfather: .*?\n\n---\n\nappleT: .*?\n\n---\n\nJSON: {\n  \"Color\": \"Red红的\",\n  \"Ingredients\": \[\n  {\n    \"Amount\": 0.3,\n    \"Name\": \"Protein\"\n  },\n  {\n    \"Amount\": 10.4,\n    \"Name\": \"Sugar糖分\"\n  }\n\],\n  \"Type\": \"apple\",\n  \"Weight重量\": 10,\n  \"canEat\": true\n}\n`, getSeq(), "json.char")
+testByReg(rs, `(?sm)jsonStrT: {\"name\": \"Peter\", \"age\": 19, \"身高\": 175, \"father\": .*?}\n\n---\n\nresult: .*?\nname: Peter\nage: 19\nfather: .*?\n\n---\n\nappleT: .*?\n\n---\n\nJSON: {\n  \"Color\": \"Red红的\",\n  \"Ingredients\": \[\n  {\n    \"Amount\": 0.3,\n    \"Name\": \"Protein\"\n  },\n  {\n    \"Amount\": 10.4,\n    \"Name\": \"Sugar糖分\"\n  }\n\],\n  \"Type\": \"apple\",\n  \"Weight重量\": 10,\n  \"canEat\": true\n}\n`, seqT.get(), "json.char")
 
 rs = systemCmd("char", "-gopath", "threadRun1a.char")
 
-testByText(rs, "(thread) v0=6\n(main) a=15\n(thread) v0=7\n(main) a=25\n(thread) v0=8\n(main) a=35\n(thread) v0=9\n(thread) v0=10\n(main) a=45\n(main) a=55\n", getSeq(), "threadRun1a.char")
+testByText(rs, "(thread) v0=6\n(main) a=15\n(thread) v0=7\n(main) a=25\n(thread) v0=8\n(main) a=35\n(thread) v0=9\n(thread) v0=10\n(main) a=45\n(main) a=55\n", seqT.get(), "threadRun1a.char")
 
 rs = systemCmd("char", "-gopath", "threadRun1b.char")
 
-testByText(rs, "(thread) v0=6\n(main) a=15\n(thread) v0=7\n(main) a=25\n(thread) v0=8\n(main) a=35\n(thread) v0=9\n(thread) v0=10\n(main) a=45\n(main) a=55\n", getSeq(), "threadRun1b.char")
+testByText(rs, "(thread) v0=6\n(main) a=15\n(thread) v0=7\n(main) a=25\n(thread) v0=8\n(main) a=35\n(thread) v0=9\n(thread) v0=10\n(main) a=45\n(main) a=55\n", seqT.get(), "threadRun1b.char")
 
 rs = systemCmd("char", "-gopath", "threadRun2a.char")
 
-testByEndsWith(rs, "(thread) v0=6\n(main) a=16\n(thread) v0=17\n(main) a=27\n(thread) v0=28\n(main) a=38\n(thread) v0=39\n(thread) v0=40\n(main) a=50\n(main) a=60\n", getSeq(), "threadRun2a.char")
+testByEndsWith(rs, "(thread) v0=6\n(main) a=16\n(thread) v0=17\n(main) a=27\n(thread) v0=28\n(main) a=38\n(thread) v0=39\n(thread) v0=40\n(main) a=50\n(main) a=60\n", seqT.get(), "threadRun2a.char")
 
 rs = systemCmd("char", "-gopath", "threadRun2a.char")
 
-testByEndsWith(rs, "(thread) v0=6\n(main) a=16\n(thread) v0=17\n(main) a=27\n(thread) v0=28\n(main) a=38\n(thread) v0=39\n(thread) v0=40\n(main) a=50\n(main) a=60\n", getSeq(), "threadRun2b.char")
+testByEndsWith(rs, "(thread) v0=6\n(main) a=16\n(thread) v0=17\n(main) a=27\n(thread) v0=28\n(main) a=38\n(thread) v0=39\n(thread) v0=40\n(main) a=50\n(main) a=60\n", seqT.get(), "threadRun2b.char")
 
 

@@ -10,7 +10,7 @@ codeT := charCode(sourceT)
 
 codeT.compile()
 
-rs := codeT.run("abc", 123, true, {"now": now(), "next": newObj("byteQueue")})
+rs := codeT.run("abc", 123.5, true, {"name": "Tom", "age": 16})
 
 pl("rs: %v", rs)
 

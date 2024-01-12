@@ -741,10 +741,13 @@ func (o Int) Call(_ ...Object) (Object, error) {
 }
 
 // CanIterate implements Object interface.
-func (Int) CanIterate() bool { return false }
+func (Int) CanIterate() bool { return true }
 
 // Iterate implements Object interface.
-func (Int) Iterate() Iterator { return nil }
+func (o Int) Iterate() Iterator {
+	return &IntIterator{V: o}
+	// return nil
+}
 
 // IndexSet implements Object interface.
 func (Int) IndexSet(index, value Object) error {

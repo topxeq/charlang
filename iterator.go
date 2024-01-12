@@ -267,3 +267,32 @@ func (it *MutableStringIterator) Key() Object {
 func (it *MutableStringIterator) Value() Object {
 	return Char(it.r)
 }
+
+// IntIterator represents an iterator for the Int.
+type IntIterator struct {
+	V Int
+	i int
+}
+
+var _ Iterator = (*IntIterator)(nil)
+
+// Next implements Iterator interface.
+func (it *IntIterator) Next() bool {
+	it.i++
+	return it.i-1 < int(it.V)
+}
+
+// Key implements Iterator interface.
+func (it *IntIterator) Key() Object {
+	return Int(it.i - 1)
+}
+
+// Value implements Iterator interface.
+func (it *IntIterator) Value() Object {
+	i := it.i - 1
+	if i > -1 && i < int(it.V) {
+		return Int(i)
+	}
+
+	return Undefined
+}
