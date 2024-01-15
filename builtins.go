@@ -45,6 +45,7 @@ const (
 	BuiltinClose
 	BuiltinRegSplit
 	BuiltinReadCsv
+	BuiltinWriteCsv
 	BuiltinRemovePath
 	BuiltinRemoveDir
 	BuiltinGetInput
@@ -758,7 +759,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"sshUpload": BuiltinSshUpload,
 
 	// eTable related
-	"readCsv": BuiltinReadCsv,
+	"readCsv":  BuiltinReadCsv,
+	"writeCsv": BuiltinWriteCsv,
 
 	// database related
 	"formatSQLValue": BuiltinFormatSQLValue,
@@ -2157,6 +2159,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "readCsv",
 		Value:   CallExAdapter(builtinReadCsvFunc),
 		ValueEx: builtinReadCsvFunc,
+	},
+	BuiltinWriteCsv: &BuiltinFunction{
+		Name:    "WriteCsv",
+		Value:   CallExAdapter(builtinWriteCsvFunc),
+		ValueEx: builtinWriteCsvFunc,
 	},
 
 	// database related
@@ -6714,6 +6721,81 @@ func builtinReadCsvFunc(c Call) (Object, error) {
 
 	return ConvertToObject(rowsT), nil
 
+}
+
+// writeCsv(writerA/filePathA, dataA, ...optsA)
+func builtinWriteCsvFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	vs := ObjectsToS(args[2:])
+
+	r1, ok := args[0].(*Writer)
+
+	var writerT *csv.Writer
+
+	if !ok {
+		filePathT := args[0].String()
+
+		rsT := tk.OpenFile(filePathT, vs...)
+
+		if tk.IsError(rsT) {
+			return NewCommonErrorWithPos(c, "failed to open file: %v", rsT), nil
+		}
+
+		f := rsT.(*os.File)
+
+		defer f.Close()
+
+		writerT = csv.NewWriter(f)
+
+	} else {
+		writerT = csv.NewWriter(r1.Value)
+	}
+
+	if tk.IfSwitchExists(vs, "-useCRLF") {
+		writerT.UseCRLF = true
+	} else {
+		writerT.UseCRLF = false
+	}
+
+	switch nv := args[1].(type) {
+	case Array:
+		for i, v := range nv {
+			switch nvi := v.(type) {
+			case Array:
+				strAryT := make([]string, len(nvi))
+
+				for j, jv := range nvi {
+					strAryT[j] = jv.String()
+				}
+
+				errT := writerT.Write(strAryT)
+
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "failed to write record of line(%v): %v", i, errT), nil
+				}
+
+				return Undefined, nil
+			}
+		}
+	case *Any:
+		switch nvi := nv.Value.(type) {
+		case [][]string:
+			errT := writerT.WriteAll(nvi)
+
+			if errT != nil {
+				return NewCommonErrorWithPos(c, "failed to write records: %v", errT), nil
+			}
+
+			return Undefined, nil
+		}
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported type for write csv content: %T", args[1]), nil
 }
 
 func builtinSshUploadFunc(c Call) (Object, error) {

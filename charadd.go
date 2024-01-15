@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "0.8.7"
+var VersionG = "0.8.8"
 
 var CodeTextG = ""
 
