@@ -6779,6 +6779,8 @@ func builtinWriteCsvFunc(c Call) (Object, error) {
 					return NewCommonErrorWithPos(c, "failed to write record of line(%v): %v", i, errT), nil
 				}
 
+				writerT.Flush()
+
 				return Undefined, nil
 			}
 		}
@@ -6790,6 +6792,8 @@ func builtinWriteCsvFunc(c Call) (Object, error) {
 			if errT != nil {
 				return NewCommonErrorWithPos(c, "failed to write records: %v", errT), nil
 			}
+
+			writerT.Flush()
 
 			return Undefined, nil
 		}
