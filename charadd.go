@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "0.8.8"
+var VersionG = "0.8.9"
 
 var CodeTextG = ""
 
@@ -1689,6 +1689,89 @@ var methodFuncMapG = map[int]map[string]*Function{
 				nv.Value = deleT
 
 				return nv, nil
+			},
+		},
+	},
+	1001: map[string]*Function{ // *Etable
+		"toStr": &Function{
+			Name: "toStr",
+			Value: func(args ...Object) (Object, error) {
+				return ToStringObject(fmt.Sprintf("%v", (args[0].(*Etable).Value))), nil
+			},
+		},
+		"getSheetCount": &Function{
+			Name: "getSheetCount",
+			ValueEx: func(c Call) (Object, error) {
+				objT := c.This.(*Etable)
+
+				// argsA := c.GetArgs()
+
+				// if len(argsA) < 1 {
+				// 	return NewCommonErrorWithPos(c, "not enough parameters"), nil
+				// }
+
+				return Int(objT.Value.SheetCount), nil
+				// return NewCommonErrorWithPos(c, "unsupported type: %T", arg0), nil
+
+				// return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+
+			},
+		},
+		"getSheetName": &Function{
+			Name: "getSheetName",
+			ValueEx: func(c Call) (Object, error) {
+				objT := c.This.(*Etable)
+
+				argsA := c.GetArgs()
+
+				if len(argsA) < 1 {
+					return NewCommonErrorWithPos(c, "not enough parameters"), nil
+				}
+
+				idxT := ToIntQuick(argsA[0])
+
+				return ToStringObject(objT.Value.GetSheetName(idxT)), nil
+			},
+		},
+		"getSheetNames": &Function{
+			Name: "getSheetNames",
+			ValueEx: func(c Call) (Object, error) {
+				objT := c.This.(*Etable)
+
+				return ConvertToObject(objT.Value.GetSheetList()), nil
+			},
+		},
+		"readSheet": &Function{
+			Name: "readSheet",
+			ValueEx: func(c Call) (Object, error) {
+				objT := c.This.(*Etable)
+
+				argsA := c.GetArgs()
+
+				if len(argsA) < 1 {
+					return NewCommonErrorWithPos(c, "not enough parameters"), nil
+				}
+
+				var nameT string
+
+				nv1, ok := argsA[0].(Int)
+
+				if ok {
+					nameT = objT.Value.GetSheetName(int(nv1))
+				} else {
+					nameT = argsA[0].String()
+				}
+
+				rowsT, errT := objT.Value.GetRows(nameT)
+
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "failed to get rows: %v", errT), nil
+				}
+
+				return ConvertToObject(rowsT), nil
+
+				// return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+
 			},
 		},
 	},

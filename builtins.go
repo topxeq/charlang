@@ -3852,7 +3852,7 @@ func FnASSViRLs(fn func(string, string, ...int) []string) CallableFunc {
 		intsT := make([]int, 0)
 
 		for i := 0; i < lenT; i++ {
-			intsT = append(intsT, ToGoIntQuick(args[i]))
+			intsT = append(intsT, ToIntQuick(args[i]))
 		}
 
 		rs := fn(args[0].String(), args[1].String(), intsT...)
@@ -3872,7 +3872,7 @@ func FnASSViRLsex(fn func(string, string, ...int) []string) CallableExFunc {
 		intsT := make([]int, 0)
 
 		for i := 0; i < lenT; i++ {
-			intsT = append(intsT, ToGoIntQuick(args[i]))
+			intsT = append(intsT, ToIntQuick(args[i]))
 		}
 
 		rs := fn(args[0].String(), args[1].String(), intsT...)
@@ -3957,7 +3957,7 @@ func FnASIRS(fn func(string, int) string) CallableFunc {
 			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
 		}
 
-		rs := fn(args[0].String(), ToGoIntQuick(args[1]))
+		rs := fn(args[0].String(), ToIntQuick(args[1]))
 		return ToStringObject(rs), nil
 	}
 }
@@ -3970,7 +3970,7 @@ func FnASIRSex(fn func(string, int) string) CallableExFunc {
 			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
 		}
 
-		rs := fn(args[0].String(), ToGoIntQuick(args[1]))
+		rs := fn(args[0].String(), ToIntQuick(args[1]))
 		return ToStringObject(rs), nil
 	}
 }
@@ -6292,7 +6292,7 @@ func builtinToIntFunc(c Call) (Object, error) {
 	}
 
 	if len(args) > 1 {
-		rsT := tk.ToInt(ConvertFromObject(args[0]), ToGoIntQuick(args[1]))
+		rsT := tk.ToInt(ConvertFromObject(args[0]), ToIntQuick(args[1]))
 
 		return Int(rsT), nil
 	}
@@ -9386,6 +9386,23 @@ func builtinCloseFunc(c Call) (Object, error) {
 		}
 
 		return NewCommonErrorWithPos(c, "unsupport method: close"), nil
+	} else if typeNameT == "etable" {
+		r1 := args[0].(*Etable)
+
+		rs := r1.GetMember("close")
+
+		if !IsUndefInternal(rs) {
+			f1 := rs.(*Function)
+			return (*f1).CallEx(Call{Args: []Object{}})
+		}
+
+		errT := r1.Value.Close()
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to close: %v", errT), nil
+		}
+
+		return Undefined, nil
 	} else if typeNameT == "any" {
 		vT := args[0].(*Any)
 		switch nv := vT.Value.(type) {

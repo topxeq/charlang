@@ -450,37 +450,6 @@ func ToGoInt(o Object) (v int, ok bool) {
 	return
 }
 
-func ToGoIntQuick(o Object) int {
-	switch o := o.(type) {
-	case Bool:
-		if o {
-			return 1
-		} else {
-			return 0
-		}
-	case Byte:
-		return int(o)
-	case Char:
-		return int(o)
-	case Int:
-		return int(o)
-	case Uint:
-		return int(o)
-	case Float:
-		return int(o)
-	case String:
-		if vv, err := strconv.ParseInt(o.Value, 0, 0); err == nil {
-			return int(vv)
-		}
-	case *MutableString:
-		if vv, err := strconv.ParseInt(o.Value, 0, 0); err == nil {
-			return int(vv)
-		}
-	}
-
-	return 0
-}
-
 func ToGoIntWithDefault(o Object, defaultA int) int {
 	switch o := o.(type) {
 	case Bool:
@@ -511,6 +480,37 @@ func ToGoIntWithDefault(o Object, defaultA int) int {
 
 	return defaultA
 }
+
+// func ToGoIntQuick(o Object) int {
+// 	switch o := o.(type) {
+// 	case Bool:
+// 		if o {
+// 			return 1
+// 		} else {
+// 			return 0
+// 		}
+// 	case Byte:
+// 		return int(o)
+// 	case Char:
+// 		return int(o)
+// 	case Int:
+// 		return int(o)
+// 	case Uint:
+// 		return int(o)
+// 	case Float:
+// 		return int(o)
+// 	case String:
+// 		if vv, err := strconv.ParseInt(o.Value, 0, 0); err == nil {
+// 			return int(vv)
+// 		}
+// 	case *MutableString:
+// 		if vv, err := strconv.ParseInt(o.Value, 0, 0); err == nil {
+// 			return int(vv)
+// 		}
+// 	}
+
+// 	return 0
+// }
 
 func ToIntQuick(o Object) int {
 	switch o := o.(type) {
