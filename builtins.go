@@ -164,10 +164,11 @@ const (
 	BuiltinUrlEncode
 	BuiltinUrlDecode
 	BuiltinOrderedMap
+	BuiltinExcel
 	BuiltinArrayContains
 	// BuiltinSortByFunc
-	BuiltintLimitStr
-	BuiltintStrFindDiffPos
+	BuiltinLimitStr
+	BuiltinStrFindDiffPos
 	BuiltinRemoveItems
 	BuiltinAppendList
 	BuiltinGetRandomInt
@@ -220,12 +221,12 @@ const (
 	BuiltinUnref
 	BuiltinSetValueByRef
 	BuiltinGetWeb
-	BuiltintRegFindFirstGroups
-	BuiltintReadAllStr
-	BuiltintReadAllBytes
-	BuiltintWriteStr
-	BuiltintWriteBytes
-	BuiltintStrSplitLines
+	BuiltinRegFindFirstGroups
+	BuiltinReadAllStr
+	BuiltinReadAllBytes
+	BuiltinWriteStr
+	BuiltinWriteBytes
+	BuiltinStrSplitLines
 	BuiltinNew
 	BuiltinStringBuilder
 	BuiltinStrReplace
@@ -410,6 +411,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"time":          BuiltinTime,
 	"stringBuilder": BuiltinStringBuilder,
 	"orderedMap":    BuiltinOrderedMap,
+	"excel":         BuiltinExcel,
 
 	"statusResult": BuiltinStatusResult,
 	"seq":          BuiltinSeq,
@@ -484,7 +486,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strEndsWith":   BuiltinStrEndsWith,
 	"strReplace":    BuiltinStrReplace,
 	"strSplit":      BuiltinStrSplit,
-	"strSplitLines": BuiltintStrSplitLines,
+	"strSplitLines": BuiltinStrSplitLines,
 	"strJoin":       BuiltinStrJoin,
 	"strRepeat":     BuiltinStrRepeat,
 	"strCount":      BuiltinStrCount,
@@ -492,9 +494,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"strIn": BuiltinStrIn,
 
-	"strFindDiffPos": BuiltintStrFindDiffPos, // return -1 if 2 strings are identical
+	"strFindDiffPos": BuiltinStrFindDiffPos, // return -1 if 2 strings are identical
 
-	"limitStr": BuiltintLimitStr,
+	"limitStr": BuiltinLimitStr,
 
 	"strQuote":   BuiltinStrQuote,
 	"strUnquote": BuiltinStrUnquote,
@@ -504,7 +506,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"regContains": BuiltinRegContains,
 
 	"regFindFirst":       BuiltinRegFindFirst,
-	"regFindFirstGroups": BuiltintRegFindFirstGroups, // obtain the first match of a regular expression and return a list of all matching groups, where the first item is the complete matching result and the second item is the first matching group..., usage example: result := regFindFirstGroups(str1, regex1)
+	"regFindFirstGroups": BuiltinRegFindFirstGroups, // obtain the first match of a regular expression and return a list of all matching groups, where the first item is the complete matching result and the second item is the first matching group..., usage example: result := regFindFirstGroups(str1, regex1)
 	"regFindAll":         BuiltinRegFindAll,
 	"regFindAllGroups":   BuiltinRegFindAllGroups,
 	"regQuote":           BuiltinRegQuote,
@@ -613,10 +615,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"close": BuiltinClose,
 
 	// read/write related
-	"readAllStr":   BuiltintReadAllStr,
-	"readAllBytes": BuiltintReadAllBytes,
-	"writeStr":     BuiltintWriteStr,
-	"writeBytes":   BuiltintWriteBytes,
+	"readAllStr":   BuiltinReadAllStr,
+	"readAllBytes": BuiltinReadAllBytes,
+	"writeStr":     BuiltinWriteStr,
+	"writeBytes":   BuiltinWriteBytes,
 
 	// encode/decode related
 	"md5": BuiltinMd5,
@@ -1032,6 +1034,12 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinOrderedMapFunc,
 	},
 
+	BuiltinExcel: &BuiltinFunction{
+		Name:    "excel",
+		Value:   CallExAdapter(NewExcel),
+		ValueEx: builtinExcelFunc,
+	},
+
 	BuiltinStatusResult: &BuiltinFunction{
 		Name:    "statusResult",
 		Value:   CallExAdapter(builtinStatusResultFunc),
@@ -1281,7 +1289,7 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinStrSplitFunc),
 		ValueEx: builtinStrSplitFunc,
 	},
-	BuiltintStrSplitLines: &BuiltinFunction{
+	BuiltinStrSplitLines: &BuiltinFunction{
 		Name:    "strSplitLines",
 		Value:   FnASRLs(tk.SplitLines),
 		ValueEx: FnASRLsex(tk.SplitLines),
@@ -1311,12 +1319,12 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASVsRB(tk.InStrings),
 		ValueEx: FnASVsRBex(tk.InStrings),
 	},
-	BuiltintStrFindDiffPos: &BuiltinFunction{
+	BuiltinStrFindDiffPos: &BuiltinFunction{
 		Name:    "strFindDiffPos",
 		Value:   FnASSRI(tk.FindFirstDiffIndex),
 		ValueEx: FnASSRIex(tk.FindFirstDiffIndex),
 	},
-	BuiltintLimitStr: &BuiltinFunction{
+	BuiltinLimitStr: &BuiltinFunction{
 		Name:    "limitStr",
 		Value:   FnASIVsRS(tk.LimitString),
 		ValueEx: FnASIVsRSex(tk.LimitString),
@@ -1348,7 +1356,7 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASSIRS(tk.RegFindFirstX),
 		ValueEx: FnASSIRSex(tk.RegFindFirstX),
 	},
-	BuiltintRegFindFirstGroups: &BuiltinFunction{
+	BuiltinRegFindFirstGroups: &BuiltinFunction{
 		Name:    "regFindFirstGroups",
 		Value:   FnASSRLs(tk.RegFindFirstGroupsX),
 		ValueEx: FnASSRLsex(tk.RegFindFirstGroupsX),
@@ -1707,22 +1715,22 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// read/write related
-	BuiltintReadAllStr: &BuiltinFunction{
+	BuiltinReadAllStr: &BuiltinFunction{
 		Name:    "readAllStr",
 		Value:   CallExAdapter(builtinReadAllStrFunc),
 		ValueEx: builtinReadAllStrFunc,
 	},
-	BuiltintReadAllBytes: &BuiltinFunction{
+	BuiltinReadAllBytes: &BuiltinFunction{
 		Name:    "readAllBytes",
 		Value:   CallExAdapter(builtinReadAllBytesFunc),
 		ValueEx: builtinReadAllBytesFunc,
 	},
-	BuiltintWriteStr: &BuiltinFunction{
+	BuiltinWriteStr: &BuiltinFunction{
 		Name:    "writeStr",
 		Value:   CallExAdapter(builtinWriteStrFunc),
 		ValueEx: builtinWriteStrFunc,
 	},
-	BuiltintWriteBytes: &BuiltinFunction{
+	BuiltinWriteBytes: &BuiltinFunction{
 		Name:    "writeBytes",
 		Value:   CallExAdapter(builtinWriteBytesFunc),
 		ValueEx: builtinWriteBytesFunc,
@@ -5941,6 +5949,8 @@ func builtinAnyFunc(c Call) (Object, error) {
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *OrderedMap:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *Stack:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *BigInt:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *BigFloat:
@@ -6964,6 +6974,10 @@ func builtinOrderedMapFunc(c Call) (Object, error) {
 	return NewOrderedMap(args...)
 }
 
+func builtinExcelFunc(c Call) (Object, error) {
+	return NewExcel(c)
+}
+
 func builtinBigIntFunc(c Call) (Object, error) {
 	return NewBigInt(c)
 }
@@ -7406,6 +7420,8 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return builtinTimeFunc(Call{Args: args[1:]})
 	case "stringBuilder":
 		return builtinStringBuilderFunc(Call{Args: args[1:]})
+	case "stack":
+		return NewStack(args[1:]...)
 	case "any":
 		return builtinAnyFunc(Call{Args: args[1:]})
 	case "ref", "objectRef":
@@ -7413,7 +7429,7 @@ func builtinMakeFunc(c Call) (Object, error) {
 	case "statusResult":
 		return builtinStatusResultFunc(Call{Args: args[1:]})
 	case "database":
-		return builtinStatusResultFunc(Call{Args: args[1:]})
+		return builtinDatabaseFunc(Call{Args: args[1:]})
 	case "seq":
 		return builtinSeqFunc(Call{Args: args[1:]})
 	case "mutex":
@@ -7436,8 +7452,8 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return NewImage(Call{Args: args[1:]})
 	case "delegate":
 		return NewDelegate(Call{Args: args[1:]})
-	case "etable":
-		return NewEtable(Call{Args: args[1:]})
+	case "excel":
+		return NewExcel(Call{Args: args[1:]})
 	case "reader":
 		return NewReader(Call{Args: args[1:]})
 	case "writer":
@@ -9386,8 +9402,8 @@ func builtinCloseFunc(c Call) (Object, error) {
 		}
 
 		return NewCommonErrorWithPos(c, "unsupport method: close"), nil
-	} else if typeNameT == "etable" {
-		r1 := args[0].(*Etable)
+	} else if typeNameT == "excel" {
+		r1 := args[0].(*Excel)
 
 		rs := r1.GetMember("close")
 

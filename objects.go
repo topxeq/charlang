@@ -49,7 +49,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *Etable: 1001, Any: 999
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Stack: 161, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *Any: 999, *Etable: 1001, *Excel: 1003
 
 // Object represents an object in the VM.
 type Object interface {
@@ -10918,31 +10918,31 @@ func NewExternalDelegate(funcA func(...interface{}) interface{}) Object {
 	return &Delegate{Value: funcA}
 }
 
-// Etable represents an Excel(or compatible) file and implements Object interface.
-type Etable struct {
+// Excel represents an Excel(or compatible) file and implements Object interface.
+type Excel struct {
 	// ObjectImpl
 	Value *excelize.File
 
 	Members map[string]Object `json:"-"`
 }
 
-func (*Etable) TypeCode() int {
-	return 1001
+func (*Excel) TypeCode() int {
+	return 1003
 }
 
-func (*Etable) TypeName() string {
-	return "etable"
+func (*Excel) TypeName() string {
+	return "Excel"
 }
 
-func (o *Etable) String() string {
-	return fmt.Sprintf("(etable)Value: %v", o.Value)
+func (o *Excel) String() string {
+	return fmt.Sprintf("(Excel)Value: %v", o.Value)
 }
 
-func (o *Etable) HasMemeber() bool {
+func (o *Excel) HasMemeber() bool {
 	return true
 }
 
-func (o *Etable) CallMethod(nameA string, argsA ...Object) (Object, error) {
+func (o *Excel) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
 		return o, nil
@@ -10953,13 +10953,13 @@ func (o *Etable) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
-func (o *Etable) GetValue() Object {
+func (o *Excel) GetValue() Object {
 	return o
 }
 
-func (o *Etable) SetValue(valueA Object) error {
+func (o *Excel) SetValue(valueA Object) error {
 	switch nv := valueA.(type) {
-	case *Etable:
+	case *Excel:
 		o.Value = nv.Value
 		return nil
 	}
@@ -10967,7 +10967,7 @@ func (o *Etable) SetValue(valueA Object) error {
 	return ErrNotIndexAssignable
 }
 
-func (o *Etable) GetMember(idxA string) Object {
+func (o *Excel) GetMember(idxA string) Object {
 	if o.Members == nil {
 		return Undefined
 	}
@@ -10981,7 +10981,7 @@ func (o *Etable) GetMember(idxA string) Object {
 	return v1
 }
 
-func (o *Etable) SetMember(idxA string, valueA Object) error {
+func (o *Excel) SetMember(idxA string, valueA Object) error {
 	if o.Members == nil {
 		o.Members = map[string]Object{}
 	}
@@ -10997,7 +10997,7 @@ func (o *Etable) SetMember(idxA string, valueA Object) error {
 	return nil
 }
 
-func (o *Etable) Equal(right Object) bool {
+func (o *Excel) Equal(right Object) bool {
 	// switch v := right.(type) {
 	// case *Delegate:
 	// 	return o.Value == v.Value
@@ -11006,27 +11006,27 @@ func (o *Etable) Equal(right Object) bool {
 	return false
 }
 
-func (o *Etable) IsFalsy() bool {
+func (o *Excel) IsFalsy() bool {
 	return o.Value == nil
 }
 
-func (o *Etable) CanCall() bool {
+func (o *Excel) CanCall() bool {
 	return false
 }
 
-func (o *Etable) Call(argsA ...Object) (Object, error) {
+func (o *Excel) Call(argsA ...Object) (Object, error) {
 	return nil, ErrNotCallable
 }
 
-func (*Etable) CanIterate() bool {
+func (*Excel) CanIterate() bool {
 	return false
 }
 
-func (*Etable) Iterate() Iterator {
+func (*Excel) Iterate() Iterator {
 	return nil
 }
 
-func (o *Etable) IndexSet(index, value Object) error {
+func (o *Excel) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
@@ -11041,7 +11041,7 @@ func (o *Etable) IndexSet(index, value Object) error {
 	return ErrNotIndexAssignable
 }
 
-func (o *Etable) IndexGet(index Object) (Object, error) {
+func (o *Excel) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
 		strT := v.Value
@@ -11084,22 +11084,22 @@ func (o *Etable) IndexGet(index Object) (Object, error) {
 	return nil, ErrNotIndexable
 }
 
-func (o *Etable) BinaryOp(tok token.Token, right Object) (Object, error) {
+func (o *Excel) BinaryOp(tok token.Token, right Object) (Object, error) {
 	return Undefined, NewCommonError("unsupported type: %T", right)
 }
 
-func NewEtable(c Call) (Object, error) {
+func NewExcel(c Call) (Object, error) {
 	argsA := c.GetArgs()
 
-	// if len(argsA) < 1 {
-	// 	return Undefined, NewCommonErrorWithPos(c, "%v", "not enough parameters")
-	// }
+	// // if len(argsA) < 1 {
+	// // 	return Undefined, NewCommonErrorWithPos(c, "%v", "not enough parameters")
+	// // }
 
 	pathT := strings.TrimSpace(GetSwitchFromObjects(argsA, "-path=", ""))
 
 	if pathT == "" {
 		f := excelize.NewFile()
-		return &Etable{Value: f}, nil
+		return &Excel{Value: f}, nil
 	}
 
 	f, err := excelize.OpenFile(pathT)
@@ -11107,5 +11107,215 @@ func NewEtable(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
 	}
 
-	return &Etable{Value: f}, nil
+	return &Excel{Value: f}, nil
+}
+
+// Stack represents a generic stack object and implements Object interface.
+type Stack struct {
+	ObjectImpl
+	Value *tk.SimpleStack
+
+	Members map[string]Object `json:"-"`
+}
+
+var (
+	_ Object       = &Stack{}
+	_ LengthGetter = &Stack{}
+)
+
+func (*Stack) TypeCode() int {
+	return 161
+}
+
+// TypeName implements Object interface.
+func (*Stack) TypeName() string {
+	return "stack"
+}
+
+// String implements Object interface.
+func (o *Stack) String() string {
+	return o.String()
+}
+
+func (o *Stack) HasMemeber() bool {
+	return true
+}
+
+func (o *Stack) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *Stack) GetValue() Object {
+	return o
+}
+
+// func (o *Stack) SetValue(valueA Object) error {
+// 	return ErrNotSe
+// }
+
+func (o *Stack) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Stack) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+// // Copy implements Copier interface.
+// func (o *Stack) Copy() Object {
+// 	cp, _ := NewStack()
+
+// 	cpn := cp.(*Stack)
+
+// 	lenT := o.Value.Len()
+
+// 	for i := 0; i < lenT; i++ {
+// 		v, ok := o.Value.GetByIndex(i)
+
+// 		if !ok {
+// 			continue
+// 		}
+
+// 		vv, ok := v.(Object)
+
+// 		if !ok {
+// 			continue
+// 		}
+
+// 		k, ok := o.Value.GetKeyByIndex(i)
+
+// 		if !ok {
+// 			continue
+// 		}
+
+// 		vvv, ok := vv.(Copier)
+
+// 		if ok {
+// 			cpn.Value.Set(k, vvv.Copy())
+// 		} else {
+// 			cpn.Value.Set(k, vvv)
+// 		}
+
+// 	}
+
+// 	// for _, k := range o.Value.GetStringKeys() {
+// 	// 	if vv, ok := v..(Copier); ok {
+// 	// 		cp[k] = vv.Copy()
+// 	// 	} else {
+// 	// 		cp[k] = v
+// 	// 	}
+// 	// }
+// 	return cp
+// }
+
+// IndexSet implements Object interface.
+func (o *Stack) IndexSet(index, value Object) error {
+	return o.Value.SetByIndex(ToIntQuick(index), ConvertFromObject(value))
+}
+
+// IndexGet implements Object interface.
+func (o *Stack) IndexGet(index Object) (Object, error) {
+	return ConvertToObject(o.Value.PeekLayer(ToIntQuick(index))), nil
+}
+
+// Equal implements Object interface.
+func (o *Stack) Equal(right Object) bool {
+	return false
+}
+
+// IsFalsy implements Object interface.
+func (o *Stack) IsFalsy() bool { return o.Value == nil || o.Value.Size() == 0 }
+
+// CanCall implements Object interface.
+func (*Stack) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (*Stack) Call(...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// BinaryOp implements Object interface.
+func (o *Stack) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, fmt.Errorf("unsupported action(BinaryOp)")
+}
+
+// CanIterate implements Object interface.
+func (*Stack) CanIterate() bool { return true }
+
+// Iterate implements Iterable interface.
+func (o *Stack) Iterate() Iterator {
+	// keys := make([]string, 0, o.Value.Len())
+	// for _, k := range o.Value.GetStringKeys() {
+	// 	keys = append(keys, k)
+	// }
+
+	return &StackIterator{V: o}
+}
+
+// // IndexDelete tries to delete the string value of key from the map.
+// // IndexDelete implements IndexDeleter interface.
+// func (o *Stack) IndexDelete(key Object) error {
+// 	switch nv := key.(type) {
+// 	case Int:
+// 		return o.Value.DeleteByIndex(int(nv))
+// 	case Uint:
+// 		return o.Value.DeleteByIndex(int(nv))
+// 	case Byte:
+// 		return o.Value.DeleteByIndex(int(nv))
+// 	case Char:
+// 		return o.Value.DeleteByIndex(int(nv))
+// 	}
+
+// 	o.Value.Delete(key.String())
+// 	return nil
+// }
+
+// Len implements LengthGetter interface.
+func (o *Stack) Len() int {
+	return o.Value.Size()
+}
+
+func NewStack(argsA ...Object) (Object, error) {
+	lenT := len(argsA)
+
+	rs := tk.NewSimpleStack()
+
+	if lenT < 1 {
+		return &Stack{Value: rs}, nil
+	}
+
+	for _, v := range argsA {
+		rs.Push(v)
+	}
+
+	return &Stack{Value: rs}, nil
 }

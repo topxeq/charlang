@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "0.8.9"
+var VersionG = "0.9.0"
 
 var CodeTextG = ""
 
@@ -1692,17 +1692,17 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	1001: map[string]*Function{ // *Etable
+	1003: map[string]*Function{ // *Excel
 		"toStr": &Function{
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
-				return ToStringObject(fmt.Sprintf("%v", (args[0].(*Etable).Value))), nil
+				return ToStringObject(fmt.Sprintf("%v", (args[0].(*Excel).Value))), nil
 			},
 		},
 		"getSheetCount": &Function{
 			Name: "getSheetCount",
 			ValueEx: func(c Call) (Object, error) {
-				objT := c.This.(*Etable)
+				objT := c.This.(*Excel)
 
 				// argsA := c.GetArgs()
 
@@ -1720,7 +1720,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 		"getSheetName": &Function{
 			Name: "getSheetName",
 			ValueEx: func(c Call) (Object, error) {
-				objT := c.This.(*Etable)
+				objT := c.This.(*Excel)
 
 				argsA := c.GetArgs()
 
@@ -1736,7 +1736,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 		"getSheetNames": &Function{
 			Name: "getSheetNames",
 			ValueEx: func(c Call) (Object, error) {
-				objT := c.This.(*Etable)
+				objT := c.This.(*Excel)
 
 				return ConvertToObject(objT.Value.GetSheetList()), nil
 			},
@@ -1744,7 +1744,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 		"readSheet": &Function{
 			Name: "readSheet",
 			ValueEx: func(c Call) (Object, error) {
-				objT := c.This.(*Etable)
+				objT := c.This.(*Excel)
 
 				argsA := c.GetArgs()
 
@@ -1761,6 +1761,8 @@ var methodFuncMapG = map[int]map[string]*Function{
 				} else {
 					nameT = argsA[0].String()
 				}
+
+				// tk.Pl("nameT: %#v", nameT)
 
 				rowsT, errT := objT.Value.GetRows(nameT)
 
@@ -2487,6 +2489,8 @@ func ConvertToObject(vA interface{}) Object {
 		return nv
 	case *OrderedMap:
 		return nv
+	case *tk.SimpleStack:
+		return &Stack{Value: nv}
 	case *tk.OrderedMap:
 		rs1, _ := NewOrderedMap()
 
@@ -2530,7 +2534,7 @@ func ConvertToObject(vA interface{}) Object {
 	case *tk.QuickVarDelegate:
 		return &Delegate{Value: *nv}
 	case *excelize.File:
-		return &Etable{Value: nv}
+		return &Excel{Value: nv}
 	case tk.UndefinedStruct:
 		return Undefined
 	case *tk.UndefinedStruct:
@@ -2661,6 +2665,8 @@ func ConvertFromObject(vA Object) interface{} {
 		}
 
 		return rs1
+	case *Stack:
+		return nv.Value
 	case *Database:
 		return nv.Value
 	case *BigInt:
@@ -2671,7 +2677,7 @@ func ConvertFromObject(vA Object) interface{} {
 		return nv.Value
 	case *Delegate:
 		return nv.Value
-	case *Etable:
+	case *Excel:
 		return nv.Value
 	case *Any:
 		return nv.Value

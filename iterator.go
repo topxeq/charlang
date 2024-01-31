@@ -296,3 +296,32 @@ func (it *IntIterator) Value() Object {
 
 	return Undefined
 }
+
+// StackIterator represents an iterator for the Stack.
+type StackIterator struct {
+	V *Stack
+	i int
+}
+
+var _ Iterator = (*StackIterator)(nil)
+
+// Next implements Iterator interface.
+func (it *StackIterator) Next() bool {
+	it.i++
+	return it.i-1 < it.V.Value.Size()
+}
+
+// Key implements Iterator interface.
+func (it *StackIterator) Key() Object {
+	return Int(it.i - 1)
+}
+
+// Value implements Iterator interface.
+func (it *StackIterator) Value() Object {
+	i := it.i - 1
+	if i > -1 && i < it.V.Value.Size() {
+		return it.V.Value.PeekLayer(i).(Object)
+	}
+
+	return Undefined
+}

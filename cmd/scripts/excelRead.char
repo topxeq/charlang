@@ -1,0 +1,22 @@
+global argsG
+
+filePathT := trim(getSwitch(argsG, "-file=", ""))
+
+if filePathT == "" {
+    fatalf("empty file name")
+}
+
+pl("try open %v ...", filePathT)
+
+excelT := excel("-path=" + filePathT)
+
+checkErr(excelT)
+
+rowsT := excelT.readSheet(0)
+
+checkErr(rowsT)
+
+pl("%v", toJson(rowsT, "-indent", "-sort"))
+
+close(excelT)
+
