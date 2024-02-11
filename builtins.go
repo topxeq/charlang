@@ -42,6 +42,8 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinImageToAscii
+	BuiltinLoadImageFromFile
 	BuiltinClose
 	BuiltinRegSplit
 	BuiltinReadCsv
@@ -366,32 +368,32 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// the "testBy*" functions are builtin test functions for internal use only, see testAll.char for usage examples
 
-	"testByText":        BuiltinTestByText, // usage: testByText(strToTest, strToCompare, indexInteger, scriptFileName)
-	"testByStartsWith":  BuiltinTestByStartsWith,
-	"testByEndsWith":    BuiltinTestByEndsWith,
-	"testByContains":    BuiltinTestByContains,
-	"testByReg":         BuiltinTestByReg,
-	"testByRegContains": BuiltinTestByRegContains,
+	"testByText":        BuiltinTestByText,        // definition: testByText(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
+	"testByStartsWith":  BuiltinTestByStartsWith,  // definition: testByStartsWith(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
+	"testByEndsWith":    BuiltinTestByEndsWith,    // definition: testByEndsWith(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
+	"testByContains":    BuiltinTestByContains,    // definition: testByContains(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
+	"testByReg":         BuiltinTestByReg,         // definition: testByReg(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
+	"testByRegContains": BuiltinTestByRegContains, // definition: testByRegContains(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
 
-	"dumpVar":   BuiltinDumpVar,
-	"debugInfo": BuiltinDebugInfo,
+	"dumpVar":   BuiltinDumpVar,   // for internal debug
+	"debugInfo": BuiltinDebugInfo, // for internal debug
 
 	// infrastructure related
-	"globals": BuiltinGlobals,
+	"globals": BuiltinGlobals, // show global variables, usage: pln(globals())
 
-	"len": BuiltinLen,
+	"len": BuiltinLen, // get length/size of the object, usage: a := len(array1)
 
-	":makeArray": BuiltinMakeArray,
+	":makeArray": BuiltinMakeArray, // for internal use
 
 	// data type related
-	"typeCode":  BuiltinTypeCode,
-	"typeName":  BuiltinTypeName,
-	"typeOf":    BuiltinTypeName,
-	"typeOfAny": BuiltinTypeOfAny,
+	"typeCode":  BuiltinTypeCode,  // get type code of an object
+	"typeName":  BuiltinTypeName,  // get type name of an object
+	"typeOf":    BuiltinTypeName,  // get type name of an object, the same as typeName
+	"typeOfAny": BuiltinTypeOfAny, // get type name of an object with type 'any'
 
-	"any": BuiltinAny,
+	"any": BuiltinAny, // create a value with type 'any', usage: a1 := any(),  a2 := any(object1)
 
-	"bool":  BuiltinBool,
+	"bool":  BuiltinBool, //  create a boolean value(with type 'bool'), usage: b1 := bool(),  b2 := bool(true)
 	"byte":  BuiltinByte,
 	"char":  BuiltinChar,
 	"int":   BuiltinInt,
@@ -756,6 +758,12 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"encryptData": BuiltinEncryptData,
 	"decryptData": BuiltinDecryptData,
+
+	// image related
+	"loadImageFromBytes": BuiltinLoadImageFromBytes,
+	"loadImageFromFile":  BuiltinLoadImageFromFile,
+
+	"imageToAscii": BuiltinImageToAscii,
 
 	// ssh related
 	"sshUpload": BuiltinSshUpload,
@@ -2153,6 +2161,23 @@ var BuiltinObjects = [...]Object{
 		Name:    "decryptData",
 		Value:   FnALyVsRLy(tk.DecryptDataByTXDEF),
 		ValueEx: FnALyVsRLyex(tk.DecryptDataByTXDEF),
+	},
+
+	// image related
+	BuiltinLoadImageFromBytes: &BuiltinFunction{
+		Name:    "loadImageFromBytes",
+		Value:   FnALyVsRA(tk.LoadImageFromBytes),
+		ValueEx: FnALyVsRAex(tk.LoadImageFromBytes),
+	},
+	BuiltinLoadImageFromFile: &BuiltinFunction{
+		Name:    "loadImageFromFile",
+		Value:   FnASVsRA(tk.LoadImageFromFile),
+		ValueEx: FnASVsRAex(tk.LoadImageFromFile),
+	},
+	BuiltinImageToAscii: &BuiltinFunction{
+		Name:    "imageToAscii",
+		Value:   CallExAdapter(builtinImageToAsciiFunc),
+		ValueEx: builtinImageToAsciiFunc,
 	},
 
 	// ssh related
@@ -4150,6 +4175,48 @@ func FnALyVsRLyex(fn func([]byte, ...string) []byte) CallableExFunc {
 		rs := fn([]byte(nv1), vargs...)
 
 		return Bytes(rs), nil
+	}
+}
+
+// like tk.LoadImageFromBytes
+func FnALyVsRA(fn func([]byte, ...string) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		vargs := ObjectsToS(args[1:])
+
+		rs := fn([]byte(nv1), vargs...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnALyVsRAex(fn func([]byte, ...string) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		vargs := ObjectsToS(args[1:])
+
+		rs := fn([]byte(nv1), vargs...)
+
+		return ConvertToObject(rs), nil
 	}
 }
 
@@ -9354,6 +9421,28 @@ func builtinWriteRespHeaderFunc(c Call) (Object, error) {
 	v.Value.WriteHeader(statusT)
 
 	return Undefined, nil
+}
+
+func builtinImageToAsciiFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v, ok := args[0].(*Image)
+	if !ok {
+		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	vargsT := args[1:]
+
+	widthT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-width=", "0"), 0)
+	heightT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-height=", "0"), 0)
+
+	imageT := tk.ImageToAscii(v.Value, widthT, heightT)
+
+	return ConvertToObject(imageT.([]string)), nil
 }
 
 func builtinCloseFunc(c Call) (Object, error) {

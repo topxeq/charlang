@@ -1,0 +1,9 @@
+imagePathT := joinPath(getEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "scripts", "xxlogo256.png")
+
+imageT := loadImageFromFile(imagePathT)
+
+asciiT := imageToAscii(imageT, "-width=60")
+
+for i, v in asciiT {
+	pln(v)
+}

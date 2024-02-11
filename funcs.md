@@ -4,43 +4,43 @@
 
 // the "testBy*" functions are builtin test functions for internal use only, see testAll.char for usage examples
 
-**testByText**: usage: testByText(strToTest, strToCompare, indexInteger, scriptFileName)
+**testByText**: definition: testByText(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
 
-**testByStartsWith**
+**testByStartsWith**: definition: testByStartsWith(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
 
-**testByEndsWith**
+**testByEndsWith**: definition: testByEndsWith(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
 
-**testByContains**
+**testByContains**: definition: testByContains(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
 
-**testByReg**
+**testByReg**: definition: testByReg(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
 
-**testByRegContains**
+**testByRegContains**: definition: testByRegContains(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
 
-**dumpVar**
+**dumpVar**: for internal debug
 
-**debugInfo**
+**debugInfo**: for internal debug
 
 ### --- infrastructure related ---
 
-**globals**
+**globals**: show global variables, usage: pln(globals())
 
-**len**
+**len**: get length/size of the object, usage: a := len(array1)
 
-**:makeArray**
+**:makeArray**: for internal use
 
 ### --- data type related ---
 
-**typeCode**
+**typeCode**: get type code of an object
 
-**typeName**
+**typeName**: get type name of an object
 
-**typeOf**
+**typeOf**: get type name of an object, the same as typeName
 
-**typeOfAny**
+**typeOfAny**: get type name of an object with type 'any'
 
-**any**
+**any**: create a value with type 'any', usage: a1 := any(),  a2 := any(object1)
 
-**bool**
+**bool**: create a boolean value(with type 'bool'), usage: b1 := bool(),  b2 := bool(true)
 
 **byte**
 
@@ -72,6 +72,8 @@
 
 **orderedMap**
 
+**excel**
+
 **statusResult**
 
 **seq**
@@ -82,11 +84,19 @@
 
 **httpHandler**
 
+**reader**
+
+**writer**
+
+**file**
+
 **image**
 
 **charCode**
 
 **gel**
+
+**delegate**
 
 **database**
 
@@ -162,7 +172,11 @@
 
 **toUpper**
 
+**strToUpper**
+
 **toLower**
+
+**strToLower**
 
 **strContains**
 
@@ -178,6 +192,12 @@
 
 **strJoin**
 
+**strRepeat**
+
+**strCount**
+
+**strPad**
+
 **strIn**
 
 **strFindDiffPos**: return -1 if 2 strings are identical
@@ -190,6 +210,10 @@
 
 ### --- regex related ---
 
+**regMatch**
+
+**regContains**
+
 **regFindFirst**
 
 **regFindFirstGroups**: obtain the first match of a regular expression and return a list of all matching groups, where the first item is the complete matching result and the second item is the first matching group..., usage example: result := regFindFirstGroups(str1, regex1)
@@ -201,6 +225,10 @@
 **regQuote**
 
 **regReplace**
+
+**regCount**
+
+**regSplit**
 
 ### --- math related ---
 
@@ -220,9 +248,15 @@
 
 ### --- time related ---
 
+**now**
+
 **getNowStr**
 
 **getNowStrCompact**
+
+**getNowTimeStamp**
+
+**timeToTick**
 
 ### --- binary/bytes related ---
 
@@ -243,6 +277,8 @@
 **isNilOrErr**
 
 **isUndefined**
+
+**isUndef**
 
 **isBool**
 
@@ -350,9 +386,19 @@
 
 **mtEx**
 
+### --- open/close related ---
+
+**close**
+
 ### --- read/write related ---
 
+**readAllStr**
+
+**readAllBytes**
+
 **writeStr**
+
+**writeBytes**
 
 ### --- encode/decode related ---
 
@@ -370,6 +416,10 @@
 
 **simpleDecode**
 
+**base64Encode**
+
+**base64Decode**
+
 **toJSON**
 
 **toJson**
@@ -377,6 +427,12 @@
 **fromJSON**
 
 **fromJson**
+
+### --- XML related ---
+
+**xmlEncodeStr**
+
+**xmlGetNodeStr**
 
 ### --- command-line related ---
 
@@ -442,6 +498,8 @@
 
 **getTempDir**
 
+**getInput**
+
 ### --- dir/path related ---
 
 **joinPath**: join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
@@ -472,9 +530,15 @@
 
 **removeFile**
 
+**removeDir**
+
+**removePath**
+
 **loadText**
 
 **saveText**
+
+**appendText**
 
 **loadBytes**
 
@@ -540,6 +604,12 @@
 
 **sshUpload**
 
+### --- eTable related ---
+
+**readCsv**
+
+**writeCsv**
+
 ### --- database related ---
 
 **formatSQLValue**
@@ -564,11 +634,83 @@
 
 **dbQueryString**
 
+**dbQueryStr**
+
 **dbExec**
 
 ### --- unicode related ---
 
 **toPinyin**
+
+### --- line editor related ---
+
+**leClear**
+
+**leLoadFromStr**
+
+**leAppendFromStr**
+
+**leSaveToStr**
+
+**leToStr**
+
+**leLoadFromFile**
+
+**leAppendFromFile**
+
+**leSaveToFile**
+
+**leAppendToFile**
+
+**leLoadFromClip**
+
+**leSaveToClip**
+
+**leLoadFromUrl**
+
+**leLoadFromSsh**
+
+**leSaveToSsh**
+
+**leViewAll**
+
+**leViewLine**
+
+**leViewLines**
+
+**leSort**
+
+**leConvertToUtf8**
+
+**leGetLine**
+
+**leSetLine**
+
+**leSetLines**
+
+**leInsertLine**
+
+**leAppendLine**
+
+**leRemoveLine**
+
+**leRemoveLines**
+
+**leFindLines**
+
+**leFind**
+
+**leFindAll**
+
+**leReplace**
+
+**lePrint**
+
+**leGetList**
+
+### --- 3rd party related ---
+
+**awsSign**
 
 ### --- misc related ---
 
@@ -635,4 +777,6 @@
 **sortByFuncQuick**: sort by compiled function
 
 **newFunc**: new a go function
+
+**close**: close objects that can close
 
