@@ -1,8 +1,22 @@
-imagePathT := joinPath(getEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "scripts", "xxlogo256.png")
+pln("---------------")
+
+imagePathT := joinPath(getEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "scripts", "flower01.png")
 
 imageT := loadImageFromFile(imagePathT)
 
-asciiT := imageToAscii(imageT, "-width=60")
+asciiT := imageToAscii(imageT, "-width=80")
+
+for i, v in asciiT {
+	pln(v)
+}
+
+pln("---------------")
+
+imagePathT = joinPath(getEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "scripts", "xxlogo256.png")
+
+imageT = loadImageFromFile(imagePathT)
+
+asciiT = imageToAscii(imageT, "-width=60", "-height=80")
 
 for i, v in asciiT {
 	pln(v)
