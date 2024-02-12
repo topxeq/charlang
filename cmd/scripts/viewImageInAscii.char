@@ -1,0 +1,21 @@
+global argsG
+
+imagePathT := getSwitch(argsG, "-file=", "nil")
+
+if imagePathT == "nil" {
+	fatalf("empty file path")
+}
+
+bytesT := loadBytes(imagePathT)
+
+if isEncrypted(bytesT) {
+	bytesT = decryptBytes(bytesT)
+}
+
+imageT := loadImageFromBytes(bytesT, "-type="+getSwitch(argsG, "-type=", getFileExt(imagePathT)))
+
+asciiT := imageToAscii(imageT, "-width="+getSwitch(argsG, "-width=", "0"), "-height="+getSwitch(argsG, "-height=", "0"))
+
+for i, v in asciiT {
+	pln(v)
+}

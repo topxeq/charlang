@@ -108,6 +108,7 @@ const (
 	BuiltinThumbImage
 	BuiltinBytesStartsWith
 	BuiltinBytesEndsWith
+	BuiltinIsEncrypted
 	BuiltinEncryptData
 	BuiltinDecryptData
 	BuiltinSimpleEncode
@@ -756,11 +757,15 @@ var BuiltinsMap = map[string]BuiltinType{
 	"genToken":   BuiltinGenToken,
 	"checkToken": BuiltinCheckToken,
 
+	"isEncrypted": BuiltinIsEncrypted,
+
 	"encryptText": BuiltinEncryptText,
 	"decryptText": BuiltinDecryptText,
 
-	"encryptData": BuiltinEncryptData,
-	"decryptData": BuiltinDecryptData,
+	"encryptData":  BuiltinEncryptData,
+	"encryptBytes": BuiltinEncryptData,
+	"decryptData":  BuiltinDecryptData,
+	"decryptBytes": BuiltinDecryptData,
 
 	// image related
 	"loadImageFromBytes": BuiltinLoadImageFromBytes, // usage: imageT := loadImageFromBytes(bytesT, "-type=png")
@@ -2149,6 +2154,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "checkToken",
 		Value:   FnASVsRS(tk.CheckToken),
 		ValueEx: FnASVsRSex(tk.CheckToken),
+	},
+	BuiltinIsEncrypted: &BuiltinFunction{
+		Name:    "isEncrypted",
+		Value:   CallExAdapter(builtinIsEncryptedFunc),
+		ValueEx: builtinIsEncryptedFunc,
 	},
 	BuiltinEncryptText: &BuiltinFunction{
 		Name:    "encryptText",
@@ -4276,6 +4286,44 @@ func FnALyARBex(fn func([]byte, interface{}) bool) CallableExFunc {
 		}
 
 		rs := fn([]byte(nv1), ConvertFromObject(args[1]))
+
+		return Bool(rs), nil
+	}
+}
+
+// like tk.IsDataEncryptedByTXDEF
+func FnALyRB(fn func([]byte) bool) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		rs := fn([]byte(nv1))
+
+		return Bool(rs), nil
+	}
+}
+
+func FnALyRBex(fn func([]byte) bool) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		rs := fn([]byte(nv1))
 
 		return Bool(rs), nil
 	}
@@ -7142,6 +7190,31 @@ func builtinServeFileFunc(c Call) (Object, error) {
 	http.ServeFile(v1.Value, v2.Value, v3)
 
 	return Undefined, nil
+}
+
+func builtinIsEncryptedFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	v1, ok := args[0].(Bytes)
+	if ok {
+		return Bool(tk.IsDataEncryptedByTXDEF([]byte(v1))), nil
+	}
+
+	v2, ok := args[0].(String)
+	if ok {
+		return Bool(tk.IsStringEncryptedByTXDEF(v2.Value)), nil
+	}
+
+	v3, ok := args[0].(*MutableString)
+	if ok {
+		return Bool(tk.IsStringEncryptedByTXDEF(v3.Value)), nil
+	}
+
+	return NewCommonErrorWithPos(c, "unsupport object type: %T", args[0]), nil
 }
 
 func builtinParseReqFormFunc(c Call) (Object, error) {
