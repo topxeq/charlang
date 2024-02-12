@@ -45,6 +45,10 @@ c1.threadRun(a)
 for {
 	rs := getChar()
 
+	if rs == "3+0" {
+		exit()
+	}
+
 	if strStartsWith(rs, "0+") {
 		numT := toInt(rs[2:], 0) - 97
 
