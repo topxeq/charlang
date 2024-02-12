@@ -9,7 +9,7 @@ if imagePathT == "nil" {
 bytesT := loadBytes(imagePathT)
 
 if isEncrypted(bytesT) {
-	bytesT = decryptBytes(bytesT)
+	bytesT = decryptBytes(bytesT, "-code="+getSwitch(argsG, "-code=", ""))
 }
 
 imageT := loadImageFromBytes(bytesT, "-type="+getSwitch(argsG, "-type=", getFileExt(imagePathT)))
