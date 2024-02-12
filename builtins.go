@@ -42,8 +42,11 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinResizeImage
 	BuiltinImageToAscii
 	BuiltinLoadImageFromFile
+	BuiltinSaveImageToFile
+	BuiltinSaveImageToBytes
 	BuiltinClose
 	BuiltinRegSplit
 	BuiltinReadCsv
@@ -427,7 +430,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"file": BuiltinFile,
 
-	"image": BuiltinImage,
+	"image": BuiltinImage, // new an image object, usage: imageT := image("-width=480", "-height=640", "-color=#FF0000")
 
 	"charCode": BuiltinCharCode,
 	"gel":      BuiltinGel,
@@ -760,10 +763,15 @@ var BuiltinsMap = map[string]BuiltinType{
 	"decryptData": BuiltinDecryptData,
 
 	// image related
-	"loadImageFromBytes": BuiltinLoadImageFromBytes,
-	"loadImageFromFile":  BuiltinLoadImageFromFile,
+	"loadImageFromBytes": BuiltinLoadImageFromBytes, // usage: imageT := loadImageFromBytes(bytesT, "-type=png")
+	"saveImageToBytes":   BuiltinSaveImageToBytes,   // usage: bytesT := saveImageToBytes(imageT) or bytesT := saveImageToBytes(imageT, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
 
-	"imageToAscii": BuiltinImageToAscii,
+	"loadImageFromFile": BuiltinLoadImageFromFile, // usage: imageT := loadImageFromFile(`c:\test\abc.png`) or image2T := loadImageFromFile(`c:\test\abc.jpg`, "-type=jpg")
+	"saveImageToFile":   BuiltinSaveImageToFile,   // usage: errT := saveImageToFile(imageT, `c:\test\newabc.png`) or errT := saveImageToFile(imageT, `c:\test\newabc.png`, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
+
+	"imageToAscii": BuiltinImageToAscii, // convert an image object to colorful ASCII graph(array of string), usage: asciiT := imageToAscii(imageT, "-width=60", "-height=80"), set one of width or height will keep aspect ratio
+
+	"resizeImage": BuiltinResizeImage, // get a new image by resizing an image object, usage: newImageT := resizeImage(imageT, "-width=60", "-height=80"), set one of width or height will keep aspect ratio
 
 	// ssh related
 	"sshUpload": BuiltinSshUpload,
@@ -2169,15 +2177,30 @@ var BuiltinObjects = [...]Object{
 		Value:   FnALyVsRA(tk.LoadImageFromBytes),
 		ValueEx: FnALyVsRAex(tk.LoadImageFromBytes),
 	},
+	BuiltinSaveImageToBytes: &BuiltinFunction{
+		Name:    "saveImageToBytes",
+		Value:   CallExAdapter(builtinSaveImageToBytesFunc),
+		ValueEx: builtinSaveImageToBytesFunc,
+	},
 	BuiltinLoadImageFromFile: &BuiltinFunction{
 		Name:    "loadImageFromFile",
 		Value:   FnASVsRA(tk.LoadImageFromFile),
 		ValueEx: FnASVsRAex(tk.LoadImageFromFile),
 	},
+	BuiltinSaveImageToFile: &BuiltinFunction{
+		Name:    "saveImageToFile",
+		Value:   CallExAdapter(builtinSaveImageToFileFunc),
+		ValueEx: builtinSaveImageToFileFunc,
+	},
 	BuiltinImageToAscii: &BuiltinFunction{
 		Name:    "imageToAscii",
 		Value:   CallExAdapter(builtinImageToAsciiFunc),
 		ValueEx: builtinImageToAsciiFunc,
+	},
+	BuiltinResizeImage: &BuiltinFunction{
+		Name:    "resizeImage",
+		Value:   CallExAdapter(builtinResizeImageFunc),
+		ValueEx: builtinResizeImageFunc,
 	},
 
 	// ssh related
@@ -9443,6 +9466,68 @@ func builtinImageToAsciiFunc(c Call) (Object, error) {
 	imageT := tk.ImageToAscii(v.Value, widthT, heightT)
 
 	return ConvertToObject(imageT.([]string)), nil
+}
+
+func builtinSaveImageToFileFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v, ok := args[0].(*Image)
+	if !ok {
+		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	filePathT := args[1].String()
+
+	vargsT := ObjectsToS(args[2:])
+
+	errT := tk.SaveImageToFile(v.Value, filePathT, vargsT...)
+
+	return ConvertToObject(errT), nil
+}
+
+func builtinSaveImageToBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v, ok := args[0].(*Image)
+	if !ok {
+		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	vargsT := ObjectsToS(args[1:])
+
+	rsT := tk.SaveImageToBytes(v.Value, vargsT...)
+
+	return ConvertToObject(rsT), nil
+}
+
+func builtinResizeImageFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v, ok := args[0].(*Image)
+	if !ok {
+		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	vargsT := args[1:]
+
+	widthT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-width=", "0"), 0)
+	heightT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-height=", "0"), 0)
+
+	imageT := tk.ResizeImageQuick(v.Value, widthT, heightT)
+
+	return ConvertToObject(imageT), nil
 }
 
 func builtinCloseFunc(c Call) (Object, error) {

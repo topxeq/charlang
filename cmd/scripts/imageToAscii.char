@@ -14,7 +14,9 @@ pln("---------------")
 
 imagePathT = joinPath(getEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "scripts", "xxlogo256.png")
 
-imageT = loadImageFromFile(imagePathT)
+bytesT := loadBytes(imagePathT)
+
+imageT = loadImageFromBytes(bytesT, "-type=png")
 
 asciiT = imageToAscii(imageT, "-width=60", "-height=80")
 

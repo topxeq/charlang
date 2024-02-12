@@ -1,0 +1,16 @@
+imagePathT := joinPath(getEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "scripts", "xxlogo256.png")
+
+imageT := loadImageFromFile(imagePathT)
+
+newImage1T := resizeImage(imageT, "-width=60")
+
+saveImageToFile(newImage1T, joinPath(getEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "scripts", "xxlogo256.resized1.png"))
+
+newImage2T := resizeImage(imageT, "-width=60", "-height=100")
+
+bytesT := saveImageToBytes(newImage2T)
+
+saveBytes(bytesT, joinPath(getEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "scripts", "xxlogo256.resized2.png"))
+
+
+
