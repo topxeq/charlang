@@ -1,0 +1,6 @@
+for {
+	rs := getChar()
+
+	pln(rs)
+
+}

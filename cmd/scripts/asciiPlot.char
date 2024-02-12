@@ -1,0 +1,27 @@
+// plotClear()
+
+// plot first data series
+data1T := [[1, 2.5, 3.6, 7.5, 5.8, 3.2, 2.1, 0.8]]
+
+rs1 := plotData(data1T, "-caption=chart 1")
+
+pln(rs1)
+
+pln("-------------------")
+
+// plot second data series
+data2T := [[1, 2.537, 3.6, 7.5, 5.8, 3.25, 2.1, 0.8], [2, 3, 5, 7, 8, 6, 4, 2, 1], [9.6, 6.52, 3.6, 1.58, 1.81, 3.9, 8.1, 0.5]]
+
+rs2 := plotData(data2T, "-width=60", "-height=40", "-caption=chart 2", "-captionColor=88", "-axisColor=99", "-labelColor=26", "-seriesColor=8,205,230", "-min=-1", "-max=12", "-precision=1", "-offset=10")
+
+pln(rs2)
+
+// show series colors
+pln(spr("\x1b[38;5;8mseries1 color: %v", 8))
+pln(spr("\x1b[38;5;205mseries2 color: %v", 205))
+pln(spr("\x1b[38;5;230mseries3 color: %v", 230))
+
+// set console text color back to default
+pln("\x1b[0m")
+
+

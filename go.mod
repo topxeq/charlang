@@ -5,6 +5,7 @@ go 1.15
 require github.com/stretchr/testify v1.8.2
 
 require (
+	github.com/guptarohit/asciigraph v0.5.6
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mattn/go-sqlite3 v1.14.17 // indirect
 	github.com/mholt/archiver/v3 v3.5.1

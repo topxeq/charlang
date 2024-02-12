@@ -2501,6 +2501,10 @@ func ConvertToObject(vA interface{}) Object {
 		}
 
 		return rs1n
+
+	case *tk.AnyQueue:
+		return &Queue{Value: nv}
+
 	case []*tk.OrderedMap:
 		aryT := make(Array, 0, len(nv))
 
@@ -2666,6 +2670,8 @@ func ConvertFromObject(vA Object) interface{} {
 
 		return rs1
 	case *Stack:
+		return nv.Value
+	case *Queue:
 		return nv.Value
 	case *Database:
 		return nv.Value

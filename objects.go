@@ -49,7 +49,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Stack: 161, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *Any: 999, *Etable: 1001, *Excel: 1003
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Stack: 161, *Queue: 163, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *Any: 999, *Etable: 1001, *Excel: 1003
 
 // Object represents an object in the VM.
 type Object interface {
@@ -1882,8 +1882,6 @@ func ToStringObject(argA interface{}) String {
 	switch nv := argA.(type) {
 	case String:
 		return String{Value: nv.Value}
-	case Object:
-		return String{Value: nv.String()}
 	case string:
 		return String{Value: nv}
 	case *strings.Builder:
@@ -1911,6 +1909,8 @@ func ToStringObject(argA interface{}) String {
 	case *sync.RWMutex:
 		return String{Value: fmt.Sprintf("%v", nv)}
 	case *Image:
+		return String{Value: nv.String()}
+	case Object:
 		return String{Value: nv.String()}
 	}
 
@@ -11304,7 +11304,9 @@ func (o *Stack) Len() int {
 	return o.Value.Size()
 }
 
-func NewStack(argsA ...Object) (Object, error) {
+func NewStack(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
 	lenT := len(argsA)
 
 	rs := tk.NewSimpleStack()
@@ -11318,4 +11320,213 @@ func NewStack(argsA ...Object) (Object, error) {
 	}
 
 	return &Stack{Value: rs}, nil
+}
+
+// Queue represents a generic FIFO queue object and implements Object interface.
+type Queue struct {
+	ObjectImpl
+	Value *tk.AnyQueue
+
+	Members map[string]Object `json:"-"`
+}
+
+var (
+	_ Object       = &Queue{}
+	_ LengthGetter = &Queue{}
+)
+
+func (*Queue) TypeCode() int {
+	return 163
+}
+
+// TypeName implements Object interface.
+func (*Queue) TypeName() string {
+	return "queue"
+}
+
+// String implements Object interface.
+func (o *Queue) String() string {
+	return o.String()
+}
+
+func (o *Queue) HasMemeber() bool {
+	return true
+}
+
+func (o *Queue) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *Queue) GetValue() Object {
+	return o
+}
+
+// func (o *Queue) SetValue(valueA Object) error {
+// 	return ErrNotSe
+// }
+
+func (o *Queue) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *Queue) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+// // Copy implements Copier interface.
+// func (o *Stack) Copy() Object {
+// 	cp, _ := NewStack()
+
+// 	cpn := cp.(*Stack)
+
+// 	lenT := o.Value.Len()
+
+// 	for i := 0; i < lenT; i++ {
+// 		v, ok := o.Value.GetByIndex(i)
+
+// 		if !ok {
+// 			continue
+// 		}
+
+// 		vv, ok := v.(Object)
+
+// 		if !ok {
+// 			continue
+// 		}
+
+// 		k, ok := o.Value.GetKeyByIndex(i)
+
+// 		if !ok {
+// 			continue
+// 		}
+
+// 		vvv, ok := vv.(Copier)
+
+// 		if ok {
+// 			cpn.Value.Set(k, vvv.Copy())
+// 		} else {
+// 			cpn.Value.Set(k, vvv)
+// 		}
+
+// 	}
+
+// 	// for _, k := range o.Value.GetStringKeys() {
+// 	// 	if vv, ok := v..(Copier); ok {
+// 	// 		cp[k] = vv.Copy()
+// 	// 	} else {
+// 	// 		cp[k] = v
+// 	// 	}
+// 	// }
+// 	return cp
+// }
+
+// IndexSet implements Object interface.
+func (o *Queue) IndexSet(index, value Object) error {
+	return o.Value.SetByIndex(ToIntQuick(index), ConvertFromObject(value))
+}
+
+// IndexGet implements Object interface.
+func (o *Queue) IndexGet(index Object) (Object, error) {
+	return ConvertToObject(o.Value.Get(ToIntQuick(index))), nil
+}
+
+// Equal implements Object interface.
+func (o *Stack) Queue(right Object) bool {
+	return false
+}
+
+// IsFalsy implements Object interface.
+func (o *Queue) IsFalsy() bool { return o.Value == nil || o.Value.Size() == 0 }
+
+// CanCall implements Object interface.
+func (*Queue) CanCall() bool { return false }
+
+// Call implements Object interface.
+func (*Queue) Call(...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+// BinaryOp implements Object interface.
+func (o *Queue) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, fmt.Errorf("unsupported action(BinaryOp)")
+}
+
+// CanIterate implements Object interface.
+func (*Queue) CanIterate() bool { return true }
+
+// Iterate implements Iterable interface.
+func (o *Queue) Iterate() Iterator {
+	// keys := make([]string, 0, o.Value.Len())
+	// for _, k := range o.Value.GetStringKeys() {
+	// 	keys = append(keys, k)
+	// }
+
+	return &QueueIterator{V: o}
+}
+
+// // IndexDelete tries to delete the string value of key from the map.
+// // IndexDelete implements IndexDeleter interface.
+// func (o *Stack) IndexDelete(key Object) error {
+// 	switch nv := key.(type) {
+// 	case Int:
+// 		return o.Value.DeleteByIndex(int(nv))
+// 	case Uint:
+// 		return o.Value.DeleteByIndex(int(nv))
+// 	case Byte:
+// 		return o.Value.DeleteByIndex(int(nv))
+// 	case Char:
+// 		return o.Value.DeleteByIndex(int(nv))
+// 	}
+
+// 	o.Value.Delete(key.String())
+// 	return nil
+// }
+
+// Len implements LengthGetter interface.
+func (o *Queue) Len() int {
+	return o.Value.Size()
+}
+
+func NewQueue(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	lenT := len(argsA)
+
+	if lenT > 0 {
+		rs := tk.NewAnyQueue(ToIntQuick(argsA[0]))
+		return &Queue{Value: rs}, nil
+	}
+
+	rs := tk.NewAnyQueue()
+
+	return &Queue{Value: rs}, nil
 }

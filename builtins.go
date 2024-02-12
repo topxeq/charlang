@@ -22,6 +22,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/guptarohit/asciigraph"
 	"github.com/topxeq/awsapi"
 	"github.com/topxeq/charlang/token"
 	"github.com/topxeq/sqltk"
@@ -42,6 +43,10 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinStack
+	BuiltinQueue
+	BuiltinPlotClear
+	BuiltinPlotData
 	BuiltinResizeImage
 	BuiltinImageToAscii
 	BuiltinLoadImageFromFile
@@ -54,6 +59,7 @@ const (
 	BuiltinRemovePath
 	BuiltinRemoveDir
 	BuiltinGetInput
+	BuiltinGetChar
 	BuiltinRegCount
 	BuiltinStrRepeat
 	BuiltinRegMatch
@@ -417,7 +423,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	"time":          BuiltinTime,
 	"stringBuilder": BuiltinStringBuilder,
 	"orderedMap":    BuiltinOrderedMap,
-	"excel":         BuiltinExcel,
+
+	"stack": BuiltinStack,
+	"queue": BuiltinQueue,
+
+	"excel": BuiltinExcel,
 
 	"statusResult": BuiltinStatusResult,
 	"seq":          BuiltinSeq,
@@ -690,6 +700,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getTempDir": BuiltinGetTempDir,
 
 	"getInput": BuiltinGetInput,
+	"getChar":  BuiltinGetChar,
 
 	// dir/path related
 	"joinPath": BuiltinJoinPath, // join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
@@ -777,6 +788,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"imageToAscii": BuiltinImageToAscii, // convert an image object to colorful ASCII graph(array of string), usage: asciiT := imageToAscii(imageT, "-width=60", "-height=80"), set one of width or height will keep aspect ratio
 
 	"resizeImage": BuiltinResizeImage, // get a new image by resizing an image object, usage: newImageT := resizeImage(imageT, "-width=60", "-height=80"), set one of width or height will keep aspect ratio
+
+	// plot related
+	"plotClear": BuiltinPlotClear,
+	"plotData":  BuiltinPlotData, // this function is based on github.com/guptarohit/asciigraph(thanks), for usage, see example script file asciiPlot.char
 
 	// ssh related
 	"sshUpload": BuiltinSshUpload,
@@ -1053,6 +1068,18 @@ var BuiltinObjects = [...]Object{
 		Name:    "orderedMap",
 		Value:   NewOrderedMap,
 		ValueEx: builtinOrderedMapFunc,
+	},
+
+	BuiltinStack: &BuiltinFunction{
+		Name:    "stack",
+		Value:   CallExAdapter(NewStack),
+		ValueEx: NewStack,
+	},
+
+	BuiltinQueue: &BuiltinFunction{
+		Name:    "queue",
+		Value:   CallExAdapter(NewQueue),
+		ValueEx: NewQueue,
 	},
 
 	BuiltinExcel: &BuiltinFunction{
@@ -1960,6 +1987,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASVaRS(tk.GetInputf),
 		ValueEx: FnASVaRSex(tk.GetInputf),
 	},
+	BuiltinGetChar: &BuiltinFunction{
+		Name:    "getChar",
+		Value:   FnARA(tk.GetChar),
+		ValueEx: FnARAex(tk.GetChar),
+	},
 
 	// dir/path related
 	BuiltinJoinPath: &BuiltinFunction{
@@ -2211,6 +2243,19 @@ var BuiltinObjects = [...]Object{
 		Name:    "resizeImage",
 		Value:   CallExAdapter(builtinResizeImageFunc),
 		ValueEx: builtinResizeImageFunc,
+	},
+
+	// plot related
+	BuiltinPlotClear: &BuiltinFunction{
+		Name:    "plotClear",
+		Value:   FnAR(asciigraph.Clear),
+		ValueEx: FnARex(asciigraph.Clear),
+	},
+
+	BuiltinPlotData: &BuiltinFunction{
+		Name:    "plotData",
+		Value:   CallExAdapter(builtinPlotDataFunc),
+		ValueEx: builtinPlotDataFunc,
 	},
 
 	// ssh related
@@ -3505,6 +3550,21 @@ func toArgsN(offset int, c Call) []int {
 
 // func converters
 
+// like tk.Pass
+func FnAR(fn func()) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		fn()
+		return Undefined, nil
+	}
+}
+
+func FnARex(fn func()) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		fn()
+		return Undefined, nil
+	}
+}
+
 // like tk.GetOSName
 func FnARS(fn func() string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
@@ -4130,10 +4190,32 @@ func FnAVsRSex(fn func(...string) string) CallableExFunc {
 }
 
 // like tk.GetSeq
+func FnARI(fn func() int) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		rs := fn()
+		return ToIntObject(rs), nil
+	}
+}
+
 func FnARIex(fn func() int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		rs := fn()
 		return ToIntObject(rs), nil
+	}
+}
+
+// like tk.GetChar
+func FnARA(fn func() interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		rs := fn()
+		return ToIntObject(rs), nil
+	}
+}
+
+func FnARAex(fn func() interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		rs := fn()
+		return ConvertToObject(rs), nil
 	}
 }
 
@@ -6089,6 +6171,8 @@ func builtinAnyFunc(c Call) (Object, error) {
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Stack:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *Queue:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *BigInt:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *BigFloat:
@@ -7583,8 +7667,6 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return builtinTimeFunc(Call{Args: args[1:]})
 	case "stringBuilder":
 		return builtinStringBuilderFunc(Call{Args: args[1:]})
-	case "stack":
-		return NewStack(args[1:]...)
 	case "any":
 		return builtinAnyFunc(Call{Args: args[1:]})
 	case "ref", "objectRef":
@@ -7605,6 +7687,10 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return builtinGelFunc(Call{Args: args[1:]})
 	case "orderedMap":
 		return NewOrderedMap(args[1:]...)
+	case "stack":
+		return NewStack(Call{Args: args[1:]})
+	case "queue":
+		return NewQueue(Call{Args: args[1:]})
 	case "bigInt":
 		return NewBigInt(Call{Args: args[1:]})
 	case "bigFloat":
@@ -9601,6 +9687,125 @@ func builtinResizeImageFunc(c Call) (Object, error) {
 	imageT := tk.ResizeImageQuick(v.Value, widthT, heightT)
 
 	return ConvertToObject(imageT), nil
+}
+
+func builtinPlotDataFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	nv1, ok := args[0].(Array)
+	if !ok {
+		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	vargsT := args[1:]
+
+	var optionsT []asciigraph.Option = make([]asciigraph.Option, 0)
+
+	captionT := GetSwitchFromObjects(vargsT, "-caption=", "TXERROR:nil")
+
+	if captionT != "TXERROR:nil" {
+		optionsT = append(optionsT, asciigraph.Caption(captionT))
+	}
+
+	widthT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-width=", "0"), 0)
+
+	if widthT > 0 {
+		optionsT = append(optionsT, asciigraph.Width(widthT))
+	}
+
+	heightT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-height=", "0"), 0)
+
+	if heightT > 0 {
+		optionsT = append(optionsT, asciigraph.Height(heightT))
+	}
+
+	axisColorT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-axisColor=", "0"), 0)
+
+	if axisColorT > 0 {
+		optionsT = append(optionsT, asciigraph.AxisColor(asciigraph.AnsiColor(axisColorT)))
+	}
+
+	captionColorT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-captionColor=", "0"), 0)
+
+	if captionColorT > 0 {
+		optionsT = append(optionsT, asciigraph.CaptionColor(asciigraph.AnsiColor(captionColorT)))
+	}
+
+	labelColorT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-labelColor=", "0"), 0)
+
+	if labelColorT > 0 {
+		optionsT = append(optionsT, asciigraph.LabelColor(asciigraph.AnsiColor(labelColorT)))
+	}
+
+	seriesColorStrT := strings.TrimSpace(GetSwitchFromObjects(vargsT, "-seriesColor=", ""))
+
+	if seriesColorStrT != "" {
+		listT := strings.Split(seriesColorStrT, ",")
+
+		var seriesColorAnsiT = make([]asciigraph.AnsiColor, 0, len(listT))
+
+		for _, v := range listT {
+			v = strings.TrimSpace(v)
+
+			if v != "" {
+				seriesColorAnsiT = append(seriesColorAnsiT, asciigraph.AnsiColor(tk.StrToInt(v, 0)))
+			}
+		}
+
+		if len(seriesColorAnsiT) > 0 {
+			optionsT = append(optionsT, asciigraph.SeriesColors(seriesColorAnsiT...))
+		}
+	}
+
+	minStrT := GetSwitchFromObjects(vargsT, "-min=", "TXERROR:nil")
+
+	if minStrT != "TXERROR:nil" {
+		optionsT = append(optionsT, asciigraph.LowerBound(tk.StrToFloat64(minStrT, 0)))
+	}
+
+	maxStrT := GetSwitchFromObjects(vargsT, "-max=", "TXERROR:nil")
+
+	if maxStrT != "TXERROR:nil" {
+		optionsT = append(optionsT, asciigraph.UpperBound(tk.StrToFloat64(maxStrT, 0)))
+	}
+
+	precisionT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-precision=", "0"), 0)
+
+	if precisionT > 0 {
+		optionsT = append(optionsT, asciigraph.Precision(uint(precisionT)))
+	}
+
+	OffsetStrT := GetSwitchFromObjects(vargsT, "-offset=", "TXERROR:nil")
+
+	if OffsetStrT != "TXERROR:nil" {
+		optionsT = append(optionsT, asciigraph.Offset(tk.StrToInt(OffsetStrT, 0)))
+	}
+
+	var floatsT [][]float64 = make([][]float64, 0, len(nv1))
+
+	for _, v := range nv1 {
+		nv1i, ok := v.(Array)
+
+		if !ok {
+			continue
+		}
+
+		floatsiT := make([]float64, 0, len(nv1i))
+
+		for _, jv := range nv1i {
+			floatsiT = append(floatsiT, ToFloatQuick(jv))
+		}
+
+		floatsT = append(floatsT, floatsiT)
+	}
+
+	rs := asciigraph.PlotMany(floatsT, optionsT...)
+
+	return ConvertToObject(rs), nil
 }
 
 func builtinCloseFunc(c Call) (Object, error) {

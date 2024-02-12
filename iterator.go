@@ -325,3 +325,32 @@ func (it *StackIterator) Value() Object {
 
 	return Undefined
 }
+
+// QueueIterator represents an iterator for the Queue.
+type QueueIterator struct {
+	V *Queue
+	i int
+}
+
+var _ Iterator = (*QueueIterator)(nil)
+
+// Next implements Iterator interface.
+func (it *QueueIterator) Next() bool {
+	it.i++
+	return it.i-1 < it.V.Value.Size()
+}
+
+// Key implements Iterator interface.
+func (it *QueueIterator) Key() Object {
+	return Int(it.i - 1)
+}
+
+// Value implements Iterator interface.
+func (it *QueueIterator) Value() Object {
+	i := it.i - 1
+	if i > -1 && i < it.V.Value.Size() {
+		return it.V.Value.Get(i).(Object)
+	}
+
+	return Undefined
+}
