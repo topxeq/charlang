@@ -1,0 +1,39 @@
+// load simhei and set it as default font
+plotLoadFont(`c:\windows\fonts\ARLRDBD.TTF`, "arialrbt", true)
+
+// load another font
+plotLoadFont(`c:\windows\fonts\simhei.ttf`, "simhei", false)
+
+// plot the first data series
+data1T := [[1, 2.5, 3.6, 7.5, 5.8, 3.2, 2.1, 0.8]]
+
+// plot to png format bytes
+rs1 := plotDataToImage(data1T, "-caption=chart（图表） 1", "-captionFont=simhei")
+
+// save the bytes to png file
+saveBytes(rs1, `./imagePlot1.png`)
+
+// plot the second data to svg file
+data2T := [[1, 2.5, 3.6, undefined, 5.8, 3.2, 2.1, 0.8], [3, 3, 3, 3, 3, 3, 3, 3]]
+
+plotDataToImage(data2T, "-imageType=svg", "-width=800", "-height=600", "-padding=30,50,50,50", "-showSymbol=true", "-lineStrokeWidth=5.2", "-backgroundColor=#EEEEEE", "-valueFormatter=%.01f", "-output=file", "-file=./imagePlot1a.svg", "-caption=chart 1a（图表1a）", "-captionLeft=center", "-captionTop=-20", "-captionFont=simhei", "-captionFontSize=22", "-captionColor=#0000EE", "-subCaption=\uFEFF\na demo chart\n\uFEFF\n", "-subCaptionFontSize=17", "-subCaptionColor=#555555", "-showYAxis=true", "-yAxisPos=left", "-yAxisFont=simhei", "-yAxisFontSize=12", "-yAxisColor=#990099", "-yAxisFontColor=#990099", "-showYAxisSplitLine=true", "-min=-1.2", "-max=15.0", "-showXAxis=true", "-xAxisPos=bottom", "-boundaryGap=false", "-xAxisFontSize=16", "-xAxisColor=#996633", "-xAxisFontColor=#996633", "-xAxisLabelOffset=0,0,0,0", "-xAxisData=2023,2024,2025,2026,2027,2028,2029,2030年", "-showLegend=true", "-legendLeft=right", "-legendTop=25", "-legendAlign=left", "-legendOrient=horizontal", "-legendIcon=lineDot", "-legendFontSize=9", "-legendFontColor=#999999", "-legendPadding=0,0,0,0", "-legendData=series 1,series 2")
+
+// plot the third data series
+data3T := [[1, 2.537, 3.6, 7.5, 5.8, 3.25, 2.1, 0.8], [2, 3, 5, 7, 8, 6, 4, 2, 1], [9.6, 6.52, 3.6, 1.58, 1.81, 3.9, 8.1, 0.5]]
+
+// plot to image then output ascii graph in console
+rs2 := plotDataToImage(data3T, "-output=image", "-width=400", "-height=300", "-caption=", "-showLegend=true", "-legendIcon=rect", "-legendData=auto")
+
+bytesT := saveImageToBytes(rs2, ".jpg")
+
+// save the bytes to jpg file
+saveBytes(bytesT, `./imagePlot2.jpg`)
+
+strT := imageToAscii(rs2, "-width=80", "-height=60")
+
+for i, v in strT {
+	pln(v)
+}
+
+
+

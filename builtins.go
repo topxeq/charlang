@@ -8,6 +8,7 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"image"
 	"io"
 	"math"
 	"math/big"
@@ -22,13 +23,17 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/golang/freetype/truetype"
 	"github.com/guptarohit/asciigraph"
 	"github.com/topxeq/awsapi"
 	"github.com/topxeq/charlang/token"
 	"github.com/topxeq/sqltk"
 	"github.com/topxeq/tk"
+	"github.com/wcharczuk/go-chart/v2/drawing"
 
 	"github.com/mholt/archiver/v3"
+
+	charts "github.com/vicanso/go-charts/v2"
 )
 
 var (
@@ -45,8 +50,10 @@ const (
 
 	BuiltinStack
 	BuiltinQueue
-	BuiltinPlotClear
-	BuiltinPlotData
+	BuiltinPlotClearConsole
+	BuiltinPlotDataToStr
+	BuiltinPlotDataToImage
+	BuiltinPlotLoadFont
 	BuiltinResizeImage
 	BuiltinImageToAscii
 	BuiltinLoadImageFromFile
@@ -790,8 +797,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	"resizeImage": BuiltinResizeImage, // get a new image by resizing an image object, usage: newImageT := resizeImage(imageT, "-width=60", "-height=80"), set one of width or height will keep aspect ratio
 
 	// plot related
-	"plotClear": BuiltinPlotClear,
-	"plotData":  BuiltinPlotData, // this function is based on github.com/guptarohit/asciigraph(thanks), for usage, see example script file asciiPlot.char
+	"plotClearConsole": BuiltinPlotClearConsole, // clear console for plot
+	"plotDataToStr":    BuiltinPlotDataToStr,    // this function is based on github.com/guptarohit/asciigraph(thanks), for usage, see example script file asciiPlot.char
+	"plotDataToImage":  BuiltinPlotDataToImage,  // this function is based on github.com/vicanso/go-charts(thanks), for usage, see example script file pngPlot.char and svgPlot.char
+
+	"plotLoadFont": BuiltinPlotLoadFont, // load a font file in ttf format for plot, usage: plotLoadFont("c:\windows\tahoma.ttf", "tahoma", true), the secode parameter gives the font name(default is the file name), pass true for the third parameter to set the font as default font used in plot(default is false)
 
 	// ssh related
 	"sshUpload": BuiltinSshUpload,
@@ -2246,16 +2256,28 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// plot related
-	BuiltinPlotClear: &BuiltinFunction{
-		Name:    "plotClear",
+	BuiltinPlotClearConsole: &BuiltinFunction{
+		Name:    "plotClearConsole",
 		Value:   FnAR(asciigraph.Clear),
 		ValueEx: FnARex(asciigraph.Clear),
 	},
 
-	BuiltinPlotData: &BuiltinFunction{
-		Name:    "plotData",
-		Value:   CallExAdapter(builtinPlotDataFunc),
-		ValueEx: builtinPlotDataFunc,
+	BuiltinPlotDataToStr: &BuiltinFunction{
+		Name:    "plotDataToStr",
+		Value:   CallExAdapter(builtinPlotDataToStrFunc),
+		ValueEx: builtinPlotDataToStrFunc,
+	},
+
+	BuiltinPlotDataToImage: &BuiltinFunction{
+		Name:    "plotDataToImage",
+		Value:   CallExAdapter(builtinPlotDataToImageFunc),
+		ValueEx: builtinPlotDataToImageFunc,
+	},
+
+	BuiltinPlotLoadFont: &BuiltinFunction{
+		Name:    "plotLoadFont",
+		Value:   CallExAdapter(builtinPlotLoadFontFunc),
+		ValueEx: builtinPlotLoadFontFunc,
 	},
 
 	// ssh related
@@ -9689,7 +9711,7 @@ func builtinResizeImageFunc(c Call) (Object, error) {
 	return ConvertToObject(imageT), nil
 }
 
-func builtinPlotDataFunc(c Call) (Object, error) {
+func builtinPlotDataToStrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
@@ -9701,47 +9723,47 @@ func builtinPlotDataFunc(c Call) (Object, error) {
 		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
 	}
 
-	vargsT := args[1:]
+	vargsT := ObjectsToS(args[1:])
 
 	var optionsT []asciigraph.Option = make([]asciigraph.Option, 0)
 
-	captionT := GetSwitchFromObjects(vargsT, "-caption=", "TXERROR:nil")
+	captionT := tk.GetSwitch(vargsT, "-caption=", "TXERROR:nil")
 
 	if captionT != "TXERROR:nil" {
 		optionsT = append(optionsT, asciigraph.Caption(captionT))
 	}
 
-	widthT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-width=", "0"), 0)
+	widthT := tk.StrToInt(tk.GetSwitch(vargsT, "-width=", "0"), 0)
 
 	if widthT > 0 {
 		optionsT = append(optionsT, asciigraph.Width(widthT))
 	}
 
-	heightT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-height=", "0"), 0)
+	heightT := tk.StrToInt(tk.GetSwitch(vargsT, "-height=", "0"), 0)
 
 	if heightT > 0 {
 		optionsT = append(optionsT, asciigraph.Height(heightT))
 	}
 
-	axisColorT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-axisColor=", "0"), 0)
+	axisColorT := tk.StrToInt(tk.GetSwitch(vargsT, "-axisColor=", "0"), 0)
 
 	if axisColorT > 0 {
 		optionsT = append(optionsT, asciigraph.AxisColor(asciigraph.AnsiColor(axisColorT)))
 	}
 
-	captionColorT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-captionColor=", "0"), 0)
+	captionColorT := tk.StrToInt(tk.GetSwitch(vargsT, "-captionColor=", "0"), 0)
 
 	if captionColorT > 0 {
 		optionsT = append(optionsT, asciigraph.CaptionColor(asciigraph.AnsiColor(captionColorT)))
 	}
 
-	labelColorT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-labelColor=", "0"), 0)
+	labelColorT := tk.StrToInt(tk.GetSwitch(vargsT, "-labelColor=", "0"), 0)
 
 	if labelColorT > 0 {
 		optionsT = append(optionsT, asciigraph.LabelColor(asciigraph.AnsiColor(labelColorT)))
 	}
 
-	seriesColorStrT := strings.TrimSpace(GetSwitchFromObjects(vargsT, "-seriesColor=", ""))
+	seriesColorStrT := strings.TrimSpace(tk.GetSwitch(vargsT, "-seriesColor=", ""))
 
 	if seriesColorStrT != "" {
 		listT := strings.Split(seriesColorStrT, ",")
@@ -9761,25 +9783,25 @@ func builtinPlotDataFunc(c Call) (Object, error) {
 		}
 	}
 
-	minStrT := GetSwitchFromObjects(vargsT, "-min=", "TXERROR:nil")
+	minStrT := tk.GetSwitch(vargsT, "-min=", "TXERROR:nil")
 
 	if minStrT != "TXERROR:nil" {
 		optionsT = append(optionsT, asciigraph.LowerBound(tk.StrToFloat64(minStrT, 0)))
 	}
 
-	maxStrT := GetSwitchFromObjects(vargsT, "-max=", "TXERROR:nil")
+	maxStrT := tk.GetSwitch(vargsT, "-max=", "TXERROR:nil")
 
 	if maxStrT != "TXERROR:nil" {
 		optionsT = append(optionsT, asciigraph.UpperBound(tk.StrToFloat64(maxStrT, 0)))
 	}
 
-	precisionT := tk.StrToInt(GetSwitchFromObjects(vargsT, "-precision=", "0"), 0)
+	precisionT := tk.StrToInt(tk.GetSwitch(vargsT, "-precision=", "0"), 0)
 
 	if precisionT > 0 {
 		optionsT = append(optionsT, asciigraph.Precision(uint(precisionT)))
 	}
 
-	OffsetStrT := GetSwitchFromObjects(vargsT, "-offset=", "TXERROR:nil")
+	OffsetStrT := tk.GetSwitch(vargsT, "-offset=", "TXERROR:nil")
 
 	if OffsetStrT != "TXERROR:nil" {
 		optionsT = append(optionsT, asciigraph.Offset(tk.StrToInt(OffsetStrT, 0)))
@@ -9806,6 +9828,626 @@ func builtinPlotDataFunc(c Call) (Object, error) {
 	rs := asciigraph.PlotMany(floatsT, optionsT...)
 
 	return ConvertToObject(rs), nil
+}
+
+func builtinPlotLoadFontFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	nv1 := args[0].String()
+
+	var fontFamilyT string
+
+	if len(args) > 1 {
+		fontFamilyT = args[1].String()
+	} else {
+		fontFamilyT = nv1
+	}
+
+	var setAsDefaultT bool = false
+
+	if len(args) > 2 {
+		nv2, ok := args[2].(Bool)
+
+		if ok {
+			setAsDefaultT = bool(nv2)
+		}
+	}
+
+	fontBufT := tk.LoadBytes(nv1)
+
+	if fontBufT != nil {
+		errT := charts.InstallFont(fontFamilyT, fontBufT)
+
+		if errT != nil {
+			return NewCommonError("failed to load font: %v", errT), nil
+		}
+
+		if setAsDefaultT {
+			font, _ := charts.GetFont(fontFamilyT)
+			charts.SetDefaultFont(font)
+		}
+	}
+
+	return Undefined, nil
+}
+
+func builtinPlotDataToImageFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	nv1, ok := args[0].(Array)
+	if !ok {
+		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	vargsT := ObjectsToS(args[1:])
+
+	outputT := tk.GetSwitch(vargsT, "-output=", "") // empty or bytes, file(expect fileName arg), image
+
+	var optionsT []charts.OptionFunc = make([]charts.OptionFunc, 0)
+
+	imageTypeT := tk.GetSwitch(vargsT, "-imageType=", "png")
+
+	if imageTypeT == "svg" {
+		optionsT = append(optionsT, charts.SVGTypeOption())
+	} else {
+		optionsT = append(optionsT, charts.PNGTypeOption())
+	}
+
+	// chart option
+	showSymbolFlagT := charts.FalseFlag()
+
+	if strings.ToLower(strings.TrimSpace(tk.GetSwitch(vargsT, "-showSymbol=", "true"))) == "true" {
+		showSymbolFlagT = charts.TrueFlag()
+	}
+
+	lineStrokeWidthT := tk.StrToFloat64(tk.GetSwitch(vargsT, "-lineStrokeWidth=", "1"), 1.0)
+
+	valueFormatterT := tk.GetSwitch(vargsT, "-valueFormatter=", "%.0f")
+
+	optionCollectionT := func(opt *charts.ChartOption) {
+		// opt.Legend.Padding = charts.Box{
+		// 	Top:    5,
+		// 	Bottom: 10,
+		// }
+		opt.SymbolShow = showSymbolFlagT
+		opt.LineStrokeWidth = lineStrokeWidthT
+		opt.ValueFormatter = func(f float64) string {
+			return fmt.Sprintf(valueFormatterT, f)
+		}
+	}
+
+	optionsT = append(optionsT, optionCollectionT)
+
+	// for convenient font setting, usually one chart only
+	fontStrT := tk.GetSwitch(vargsT, "-fontFile=", "TXERROR:nil")
+
+	if fontStrT != "TXERROR:nil" {
+		fontBufT := tk.LoadBytes(fontStrT)
+		if fontBufT != nil {
+			errT := charts.InstallFont(fontStrT, fontBufT)
+			if errT == nil {
+				font, _ := charts.GetFont(fontStrT)
+				charts.SetDefaultFont(font)
+			}
+		}
+	}
+
+	paddingStrT := strings.TrimSpace(tk.GetSwitch(vargsT, "-padding=", ""))
+
+	if paddingStrT != "" {
+		listT := strings.Split(paddingStrT, ",")
+
+		var paddingDataT = make([]int, 4)
+
+		for i, v := range listT {
+			// v = strings.TrimSpace(v)
+
+			paddingDataT[i] = tk.StrToInt(v, 0)
+		}
+
+		optionsT = append(optionsT, charts.PaddingOptionFunc(charts.Box{Top: paddingDataT[0], Right: paddingDataT[1], Bottom: paddingDataT[2], Left: paddingDataT[3]}))
+	}
+
+	backgroundColorStrT := strings.TrimSpace(tk.GetSwitch(vargsT, "-backgroundColor=", ""))
+
+	if backgroundColorStrT != "" {
+		backgroundColorStrT = strings.TrimPrefix(backgroundColorStrT, "#")
+
+		r1, g1, b1, a1 := tk.ParseHexColor(backgroundColorStrT)
+
+		optionsT = append(optionsT, charts.BackgroundColorOptionFunc(drawing.Color{R: uint8(r1), G: uint8(g1), B: uint8(b1), A: uint8(a1)}))
+	}
+
+	captionT := tk.GetSwitch(vargsT, "-caption=", "")
+
+	subCaptionT := tk.GetSwitch(vargsT, "-subCaption=", "")
+
+	var captionFontT *truetype.Font = nil
+
+	captionFontStrT := tk.GetSwitch(vargsT, "-captionFont=", "TXERROR:nil")
+
+	if captionFontStrT != "TXERROR:nil" {
+		fontT, errT := charts.GetFont(captionFontStrT)
+
+		if errT != nil {
+			fontT, errT = charts.GetDefaultFont()
+
+			if errT != nil {
+				fontT = nil
+			}
+		}
+
+		captionFontT = fontT
+	}
+
+	captionFontSizeT := tk.StrToFloat64(tk.GetSwitch(vargsT, "-captionFontSize=", "0"), 0)
+
+	subCaptionFontSizeT := tk.StrToFloat64(tk.GetSwitch(vargsT, "-subCaptionFontSize=", "0"), 0)
+
+	captionColorStrT := strings.TrimPrefix(strings.TrimSpace(tk.GetSwitch(vargsT, "-captionColor=", "")), "#")
+
+	var captionColorT drawing.Color = drawing.Color{}
+
+	if captionColorStrT != "" {
+		r1, g1, b1, a1 := tk.ParseHexColor(captionColorStrT)
+
+		captionColorT = drawing.Color{R: uint8(r1), G: uint8(g1), B: uint8(b1), A: uint8(a1)}
+	}
+
+	subCaptionColorStrT := strings.TrimPrefix(strings.TrimSpace(tk.GetSwitch(vargsT, "-subCaptionColor=", "")), "#")
+
+	var subCaptionColorT drawing.Color = drawing.Color{}
+
+	if subCaptionColorStrT != "" {
+		r1, g1, b1, a1 := tk.ParseHexColor(subCaptionColorStrT)
+
+		subCaptionColorT = drawing.Color{R: uint8(r1), G: uint8(g1), B: uint8(b1), A: uint8(a1)}
+	}
+
+	captionLeftT := tk.GetSwitch(vargsT, "-captionLeft=", "center")
+	captionTopT := tk.GetSwitch(vargsT, "-captionTop=", "")
+
+	titleOptionT := charts.TitleOption{
+		Text:             captionT,
+		Subtext:          subCaptionT,
+		Left:             captionLeftT,
+		Top:              captionTopT,
+		Font:             captionFontT,
+		FontSize:         captionFontSizeT,
+		FontColor:        captionColorT,
+		SubtextFontSize:  subCaptionFontSizeT,
+		SubtextFontColor: subCaptionColorT,
+		// Theme: themeT,
+	}
+
+	optionsT = append(optionsT, charts.TitleOptionFunc(titleOptionT))
+
+	widthT := tk.StrToInt(tk.GetSwitch(vargsT, "-width=", "0"), 0)
+
+	if widthT > 0 {
+		optionsT = append(optionsT, charts.WidthOptionFunc(widthT))
+	}
+
+	heightT := tk.StrToInt(tk.GetSwitch(vargsT, "-height=", "0"), 0)
+
+	if heightT > 0 {
+		optionsT = append(optionsT, charts.HeightOptionFunc(heightT))
+	}
+
+	showYAxisFlagT := charts.FalseFlag()
+
+	if strings.ToLower(strings.TrimSpace(tk.GetSwitch(vargsT, "-showYAxis=", "true"))) == "true" {
+		showYAxisFlagT = charts.TrueFlag()
+	}
+
+	yAxisPosT := strings.ToLower(strings.TrimSpace(tk.GetSwitch(vargsT, "-yAxisPos=", "left")))
+
+	showYAxisSplitLineFlagT := charts.FalseFlag()
+
+	if strings.ToLower(strings.TrimSpace(tk.GetSwitch(vargsT, "-showYAxisSplitLine=", "false"))) == "true" {
+		showYAxisSplitLineFlagT = charts.TrueFlag()
+	}
+
+	yAxisFontSizeT := tk.StrToFloat64(tk.GetSwitch(vargsT, "-yAxisFontSize=", "0"), 0)
+
+	yAxisColorStrT := strings.TrimPrefix(strings.TrimSpace(tk.GetSwitch(vargsT, "-yAxisColor=", "")), "#")
+
+	var yAxisColorT drawing.Color = drawing.Color{}
+
+	if yAxisColorStrT != "" {
+		r1, g1, b1, a1 := tk.ParseHexColor(yAxisColorStrT)
+
+		yAxisColorT = drawing.Color{R: uint8(r1), G: uint8(g1), B: uint8(b1), A: uint8(a1)}
+	}
+
+	yAxisFontColorStrT := strings.TrimPrefix(strings.TrimSpace(tk.GetSwitch(vargsT, "-yAxisFontColor=", "")), "#")
+
+	var yAxisFontColorT drawing.Color = drawing.Color{}
+
+	if yAxisFontColorStrT != "" {
+		r1, g1, b1, a1 := tk.ParseHexColor(yAxisFontColorStrT)
+
+		yAxisFontColorT = drawing.Color{R: uint8(r1), G: uint8(g1), B: uint8(b1), A: uint8(a1)}
+	}
+
+	minStrT := tk.GetSwitch(vargsT, "-min=", "TXERROR:nil")
+
+	var minValueT *float64 = nil
+
+	if minStrT != "TXERROR:nil" {
+		minValueHolderT := tk.StrToFloat64(minStrT, 0)
+		minValueT = &minValueHolderT
+	}
+
+	maxStrT := tk.GetSwitch(vargsT, "-max=", "TXERROR:nil")
+
+	var maxValueT *float64 = nil
+
+	if maxStrT != "TXERROR:nil" {
+		maxValueHolderT := tk.StrToFloat64(maxStrT, 0)
+		maxValueT = &maxValueHolderT
+	}
+
+	// themeT := charts.NewTheme("yAxis01")
+
+	// themeT.SetAxisStrokeColor(yAxisColorT)
+	// themeT.SetBackgroundColor(drawing.Color{R: uint8(5), G: uint8(200), B: uint8(20), A: uint8(80)})
+	// themeT.SetTextColor(drawing.Color{R: uint8(50), G: uint8(20), B: uint8(180), A: uint8(20)})
+
+	var yAxisFontT *truetype.Font = nil
+
+	yAxisFontStrT := tk.GetSwitch(vargsT, "-yAxisFont=", "TXERROR:nil")
+
+	if yAxisFontStrT != "TXERROR:nil" {
+		fontT, errT := charts.GetFont(yAxisFontStrT)
+
+		if errT != nil {
+			fontT, errT = charts.GetDefaultFont()
+
+			if errT != nil {
+				fontT = nil
+			}
+		}
+
+		yAxisFontT = fontT
+	}
+
+	yAxisOptionT := charts.YAxisOption{
+		Position:      yAxisPosT,
+		SplitLineShow: showYAxisSplitLineFlagT,
+		Show:          showYAxisFlagT,
+		Min:           minValueT,
+		Max:           maxValueT,
+		Color:         yAxisColorT,
+		// Theme: themeT,
+		Font:      yAxisFontT,
+		FontSize:  yAxisFontSizeT,
+		FontColor: yAxisFontColorT,
+	}
+
+	optionsT = append(optionsT, charts.YAxisOptionFunc(yAxisOptionT))
+
+	// boxStrT := strings.TrimSpace(tk.GetSwitch(vargsT, "-box=", ""))
+
+	// if boxStrT != "" {
+	// 	listT := strings.Split(boxStrT, ",")
+
+	// 	var boxDataT = make([]int, 4)
+
+	// 	for i, v := range listT {
+	// 		// v = strings.TrimSpace(v)
+
+	// 		boxDataT[i] = tk.StrToInt(v, 0)
+	// 	}
+
+	// 	optionsT = append(optionsT, charts.BoxOptionFunc(charts.Box{Top: boxDataT[0], Right: boxDataT[1], Bottom: boxDataT[2], Left: boxDataT[3]}))
+	// }
+
+	var floatsT [][]float64 = make([][]float64, 0, len(nv1))
+
+	for _, v := range nv1 {
+		nv1i, ok := v.(Array)
+
+		if !ok {
+			continue
+		}
+
+		floatsiT := make([]float64, 0, len(nv1i))
+
+		for _, jv := range nv1i {
+			if IsUndefInternal(jv) {
+				floatsiT = append(floatsiT, charts.GetNullValue())
+			} else {
+				floatsiT = append(floatsiT, ToFloatQuick(jv))
+			}
+		}
+
+		floatsT = append(floatsT, floatsiT)
+	}
+
+	// tk.Plv(floatsT)
+	// tk.Plv(optionsT)
+
+	var legendDataT []string
+
+	legendStrT := strings.TrimSpace(tk.GetSwitch(vargsT, "-legendData=", ""))
+
+	if legendStrT != "" {
+		// posStrT := ""
+		// firstListT := strings.Split(legendStrT, "|")
+
+		// if len(firstListT) > 1 {
+		// 	posStrT = firstListT[1]
+		// }
+
+		listT := strings.Split(legendStrT, ",")
+
+		legendDataT = make([]string, 0, len(listT))
+
+		if legendStrT == "auto" {
+			for i := 0; i < len(floatsT); i++ {
+				legendDataT = append(legendDataT, fmt.Sprintf("series %v", i+1))
+			}
+		} else {
+			for _, v := range listT {
+				// v = strings.TrimSpace(v)
+
+				legendDataT = append(legendDataT, v)
+			}
+		}
+
+		// if len(legendDataT) > 0 {
+		// 	optionsT = append(optionsT, charts.LegendLabelsOptionFunc(legendDataT, posStrT))
+		// }
+	}
+
+	showLegendFlagT := charts.FalseFlag()
+
+	if strings.ToLower(strings.TrimSpace(tk.GetSwitch(vargsT, "-showLegend=", "true"))) == "true" {
+		showLegendFlagT = charts.TrueFlag()
+	}
+
+	legendFontSizeT := tk.StrToFloat64(tk.GetSwitch(vargsT, "-legendFontSize=", "0"), 0)
+
+	legendFontColorStrT := strings.TrimPrefix(strings.TrimSpace(tk.GetSwitch(vargsT, "-legendFontColor=", "")), "#")
+
+	var legendFontColorT drawing.Color = drawing.Color{}
+
+	if legendFontColorStrT != "" {
+		r1, g1, b1, a1 := tk.ParseHexColor(legendFontColorStrT)
+
+		legendFontColorT = drawing.Color{R: uint8(r1), G: uint8(g1), B: uint8(b1), A: uint8(a1)}
+	}
+
+	legendLeftT := tk.GetSwitch(vargsT, "-legendLeft=", "center")
+	legendTopT := tk.GetSwitch(vargsT, "-legendTop=", "")
+
+	legendAlignT := tk.GetSwitch(vargsT, "-legendAlign=", "left")
+	legendOrientT := tk.GetSwitch(vargsT, "-legendOrient=", "horizontal")
+
+	legendIconT := tk.GetSwitch(vargsT, "-legendIcon=", "")
+
+	legendPaddingStrT := strings.TrimSpace(tk.GetSwitch(vargsT, "-legendPadding=", ""))
+
+	legendPaddingBoxT := charts.Box{}
+
+	if legendPaddingStrT != "" {
+		listT := strings.Split(legendPaddingStrT, ",")
+
+		var boxDataT = make([]int, 4)
+
+		for i, v := range listT {
+			// v = strings.TrimSpace(v)
+
+			boxDataT[i] = tk.StrToInt(v, 0)
+		}
+
+		legendPaddingBoxT = charts.Box{Top: boxDataT[0], Right: boxDataT[1], Bottom: boxDataT[2], Left: boxDataT[3]}
+	}
+
+	legendOptionT := charts.LegendOption{
+		Show:      showLegendFlagT,
+		Left:      legendLeftT,
+		Top:       legendTopT,
+		Align:     legendAlignT,
+		Orient:    legendOrientT,
+		Icon:      legendIconT,
+		FontSize:  legendFontSizeT,
+		FontColor: legendFontColorT,
+		// Theme: themeT,
+		Padding: legendPaddingBoxT,
+		Data:    legendDataT,
+	}
+
+	optionsT = append(optionsT, charts.LegendOptionFunc(legendOptionT))
+
+	showXAxisFlagT := charts.FalseFlag()
+
+	if strings.ToLower(strings.TrimSpace(tk.GetSwitch(vargsT, "-showXAxis=", "true"))) == "true" {
+		showXAxisFlagT = charts.TrueFlag()
+	}
+
+	var xAxisDataT []string
+
+	xAxisDataStrT := strings.TrimSpace(tk.GetSwitch(vargsT, "-xAxisData=", ""))
+
+	if xAxisDataStrT != "" {
+		listT := strings.Split(xAxisDataStrT, ",")
+
+		xAxisDataT = make([]string, 0, len(listT))
+
+		for _, v := range listT {
+			v = strings.TrimSpace(v)
+
+			xAxisDataT = append(xAxisDataT, v)
+		}
+
+		// if len(xAxisDataT) > 0 {
+		// 	optionsT = append(optionsT, charts.XAxisDataOptionFunc(xAxisDataT, &gapFlagT))
+		// }
+	} else if len(floatsT) > 0 {
+		maxLenT := 0
+
+		for _, v := range floatsT {
+			if len(v) > maxLenT {
+				maxLenT = len(v)
+			}
+		}
+
+		xAxisDataT = make([]string, 0, maxLenT)
+
+		for i := 0; i < maxLenT; i++ {
+			xAxisDataT = append(xAxisDataT, fmt.Sprintf("%v", i))
+		}
+
+		// if len(xAxisDataT) > 0 {
+		// 	optionsT = append(optionsT, charts.XAxisDataOptionFunc(xAxisDataT, &gapFlagT))
+		// }
+
+	}
+
+	boundaryGapT := charts.FalseFlag()
+
+	if strings.ToLower(strings.TrimSpace(tk.GetSwitch(vargsT, "-boundaryGap=", "false"))) == "true" {
+		boundaryGapT = charts.TrueFlag()
+	}
+
+	var xAxisFontT *truetype.Font = nil
+
+	xAxisFontStrT := tk.GetSwitch(vargsT, "-xAxisFont=", "TXERROR:nil")
+
+	if xAxisFontStrT != "TXERROR:nil" {
+		fontT, errT := charts.GetFont(xAxisFontStrT)
+
+		if errT != nil {
+			fontT, errT = charts.GetDefaultFont()
+
+			if errT != nil {
+				fontT = nil
+			}
+		}
+
+		xAxisFontT = fontT
+	}
+
+	xAxisPosT := strings.ToLower(strings.TrimSpace(tk.GetSwitch(vargsT, "-xAxisPos=", "bottom")))
+
+	xAxisColorStrT := strings.TrimPrefix(strings.TrimSpace(tk.GetSwitch(vargsT, "-xAxisColor=", "")), "#")
+
+	var xAxisColorT drawing.Color = drawing.Color{}
+
+	if xAxisColorStrT != "" {
+		r1, g1, b1, a1 := tk.ParseHexColor(xAxisColorStrT)
+
+		xAxisColorT = drawing.Color{R: uint8(r1), G: uint8(g1), B: uint8(b1), A: uint8(a1)}
+	}
+
+	xAxisFontSizeT := tk.StrToFloat64(tk.GetSwitch(vargsT, "-xAxisFontSize=", "0"), 0)
+
+	xAxisFontColorStrT := strings.TrimPrefix(strings.TrimSpace(tk.GetSwitch(vargsT, "-xAxisFontColor=", "")), "#")
+
+	var xAxisFontColorT drawing.Color = drawing.Color{}
+
+	if xAxisFontColorStrT != "" {
+		r1, g1, b1, a1 := tk.ParseHexColor(xAxisFontColorStrT)
+
+		xAxisFontColorT = drawing.Color{R: uint8(r1), G: uint8(g1), B: uint8(b1), A: uint8(a1)}
+	}
+
+	xAxisLabelOffsetStrT := strings.TrimSpace(tk.GetSwitch(vargsT, "-xAxisLabelOffset=", ""))
+
+	xAxisLabelOffsetBoxT := charts.Box{}
+
+	if xAxisLabelOffsetStrT != "" {
+		listT := strings.Split(xAxisLabelOffsetStrT, ",")
+
+		var boxDataT = make([]int, 4)
+
+		for i, v := range listT {
+			// v = strings.TrimSpace(v)
+
+			boxDataT[i] = tk.StrToInt(v, 0)
+		}
+
+		xAxisLabelOffsetBoxT = charts.Box{Top: boxDataT[0], Right: boxDataT[1], Bottom: boxDataT[2], Left: boxDataT[3]}
+	}
+
+	xAxisOptionT := charts.XAxisOption{
+		Show: showXAxisFlagT,
+
+		BoundaryGap: boundaryGapT,
+
+		Position: xAxisPosT,
+
+		Font: xAxisFontT,
+
+		FontSize: xAxisFontSizeT,
+
+		FontColor: xAxisFontColorT,
+
+		StrokeColor: xAxisColorT,
+
+		Data: xAxisDataT,
+
+		LabelOffset: xAxisLabelOffsetBoxT,
+	}
+
+	optionsT = append(optionsT, charts.XAxisOptionFunc(xAxisOptionT))
+
+	// render the chart
+	p, errT := charts.LineRender(floatsT, optionsT...)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	bytesT, errT := p.Bytes()
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to generate image content: %v", errT), nil
+	}
+
+	if outputT == "" || outputT == "bytes" {
+		return Bytes(bytesT), nil
+	} else if outputT == "file" {
+		filePathT := strings.TrimSpace(tk.GetSwitch(vargsT, "-file=", ""))
+
+		if filePathT == "" {
+			return NewCommonErrorWithPos(c, "file path not specified"), nil
+		}
+
+		errT := tk.SaveBytesToFileE(bytesT, filePathT)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to save file: %v", errT), nil
+		}
+
+		return Undefined, nil
+	} else if outputT == "image" {
+		if imageTypeT != "png" {
+			return NewCommonErrorWithPos(c, "image format not supported: %v", imageTypeT), nil
+		}
+
+		imageT := tk.LoadImageFromBytes(bytesT, "-type=png")
+
+		errT, ok := imageT.(error)
+
+		if ok {
+			return NewCommonErrorWithPos(c, "failed to output image: %v", errT), nil
+		}
+
+		return &Image{Value: imageT.(image.Image)}, nil
+	}
+
+	return Bytes(bytesT), nil
 }
 
 func builtinCloseFunc(c Call) (Object, error) {
