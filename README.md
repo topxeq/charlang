@@ -149,7 +149,7 @@ Examples:
 
 - Run from a source file: `char d:\scripts\test.char`
 - Run the text in clipboard as script source: `char -clip`
-- Run from the remote server: `char -remote http://example.com/script/abc.char`
+- Run from the remote server: `char -remote http://replacewithyourdomain.com/script/abc.char`
 - Run the example code: `char -example basic.char`
 - Run from Golang source directory: `char -gopath basic.char`
 - Run from local scripts directory: place a config file local.cfg in the subdirectory 'char' under the user's home directory, with text content such as `c:\scripts`, then `char -local basic.char` will run 'c:\script\basic.char'
