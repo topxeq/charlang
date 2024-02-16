@@ -1,3 +1,20 @@
+<!-- |title: The Char Language (Charlang)| -->
+
+- [The Char Language (Charlang)](#the-char-language-charlang)
+  - [Features](#features)
+  - [New Features](#new-features)
+  - [Quick Links](#quick-links)
+  - [Quick Start](#quick-start)
+  - [Documentation](#documentation)
+    - [Get the binary](#get-the-binary)
+    - [Compile from source code](#compile-from-source-code)
+    - [Start running the shell or scripts](#start-running-the-shell-or-scripts)
+    - [Various ways to run Charlang scripts](#various-ways-to-run-charlang-scripts)
+    - [Get the examples](#get-the-examples)
+    - [Quick tour](#quick-tour)
+      - [Hello world!](#hello-world)
+      - [Define variables](#define-variables)
+
 # The Char Language (Charlang)
 
 [Charlang](http://topget.org/charlang) is a fast, dynamic scripting language to embed in Go applications.
