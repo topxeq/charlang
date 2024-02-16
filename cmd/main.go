@@ -1715,6 +1715,7 @@ func runArgs(argsA ...string) interface{} {
 	ifCloudT := tk.IfSwitchExistsWhole(argsT, "-cloud")
 	sshT := tk.GetSwitchWithDefaultValue(argsT, "-ssh=", "")
 	ifViewT := tk.IfSwitchExistsWhole(argsT, "-view")
+	ifViewPageT := tk.IfSwitchExistsWhole(argsT, "-viewPage")
 	ifOpenT := tk.IfSwitchExistsWhole(argsT, "-open")
 	ifCompileT := tk.IfSwitchExistsWhole(argsT, "-compile")
 
@@ -1726,6 +1727,14 @@ func runArgs(argsA ...string) interface{} {
 	// if errT == nil {
 	// 	ifMagicT = true
 	// }
+
+	if ifViewPageT {
+		if !ifInExeT {
+			tk.RunWinFileWithSystemDefault(fmt.Sprintf("http://topget.org/dc/c/charlang/example/%v", scriptT))
+		}
+
+		return nil
+	}
 
 	var fcT string
 

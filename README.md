@@ -47,6 +47,7 @@ return fib(35)
 ## Quick Links
 
 [Go Reference](https://pkg.go.dev/github.com/topxeq/charlang)
+
 [Builtin Functions](https://pkg.go.dev/github.com/topxeq/charlang)
 
 ## Quick Start
@@ -151,6 +152,8 @@ Examples:
 - Run from the remote server: `char -remote http://example.com/script/abc.char`
 - Run the example code: `char -example basic.char`
 - Run from Golang source directory: `char -gopath basic.char`
+- Run from local scripts directory: place a config file local.cfg in the subdirectory 'char' under the user's home directory, with text content such as `c:\scripts`, then `char -local basic.char` will run 'c:\script\basic.char'
+- Run from cloud/network: place a config file cloud.cfg in the subdirectory 'char' under the user's home directory, with text content such as `http://script.my.com/`, then `char -cloud basic.char` will be the same as `char -remote http://script.my.com/basic.char`
 
 ### Get the examples
 
@@ -172,7 +175,9 @@ C:\Users\Administrator>char -example basic.char
 C:\Users\Administrator>
 ```
 
-You can browse to `http://topget.org/dc/c/charlang/example/basic.char` to view the source code in an online text editor as well.
+You can browse to `http://topget.org/dc/c/charlang/example/basic.char` to view the source code in an online text editor.
+
+Using command-line switch '-viewPage' with '-example' will show the online code page in system-default browser as well.
 
 ### Quick tour
 

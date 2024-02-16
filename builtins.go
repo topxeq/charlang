@@ -48,6 +48,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinLeSshInfo
 	BuiltinStack
 	BuiltinQueue
 	BuiltinPlotClearConsole
@@ -846,6 +847,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"leLoadFromUrl":    BuiltinLeLoadFromUrl,
 	"leLoadFromSsh":    BuiltinLeLoadFromSsh,
 	"leSaveToSsh":      BuiltinLeSaveToSsh,
+	"leSshInfo":        BuiltinLeSshInfo,
 	"leViewAll":        BuiltinLeViewAll,
 	"leViewLine":       BuiltinLeViewLine,
 	"leViewLines":      BuiltinLeViewLines,
@@ -2428,6 +2430,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "leSaveToSsh",
 		Value:   CallExAdapter(builtinLeSaveToSshFunc),
 		ValueEx: builtinLeSaveToSshFunc,
+	},
+	BuiltinLeSshInfo: &BuiltinFunction{
+		Name:    "leSshInfo",
+		Value:   CallExAdapter(builtinLeSshInfoFunc),
+		ValueEx: builtinLeSshInfoFunc,
 	},
 	BuiltinLeViewAll: &BuiltinFunction{
 		Name:    "leViewAll",
@@ -7127,7 +7134,7 @@ func builtinSshUploadFunc(c Call) (Object, error) {
 		return ConvertToObject(errT), nil
 	}
 
-	return ConvertToObject(errT), nil
+	return Undefined, nil
 }
 
 func builtinStringBuilderFunc(c Call) (Object, error) {
@@ -8329,6 +8336,16 @@ func builtinLeLoadFromUrlFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
+func builtinLeSshInfoFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	return ToStringObject(fmt.Sprintf("%v", vmT.LeSshInfo)), nil
+}
+
 func builtinLeLoadFromSshFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -8389,9 +8406,14 @@ func builtinLeLoadFromSshFunc(c Call) (Object, error) {
 	vmT.LeSshInfo["Password"] = v4
 	vmT.LeSshInfo["Path"] = v5
 
-	_, errT = builtinLeLoadFromStrFunc(Call{Args: []Object{String{Value: string(bufT)}}})
+	rsT, errT := builtinLeLoadFromStrFunc(Call{Vm: vmT, Args: []Object{String{Value: string(bufT)}}})
+
 	if errT != nil {
 		return NewCommonErrorWithPos(c, "failed to load file content into le buffer: %v", errT), nil
+	}
+
+	if tk.IsError(rsT) {
+		return NewCommonErrorWithPos(c, "failed to load file content into le buffer: %v", rsT), nil
 	}
 
 	return Undefined, nil
@@ -8414,9 +8436,9 @@ func builtinLeSaveToSshFunc(c Call) (Object, error) {
 
 	args := c.GetArgs()
 
-	if len(args) < 5 {
-		return NewCommonError("not enough parameters"), nil
-	}
+	// if len(args) < 0 {
+	// 	return NewCommonError("not enough parameters"), nil
+	// }
 
 	pa := ObjectsToS(args)
 
@@ -8445,10 +8467,10 @@ func builtinLeSaveToSshFunc(c Call) (Object, error) {
 
 	defer sshT.Close()
 
-	errT = sshT.UploadFileContent([]byte(tk.JoinLines(vmT.LeBuf, "\n")), v5)
+	errT = sshT.UploadFileContent([]byte(tk.JoinLines(vmT.LeBuf, "\n")), v5, pa...)
 
 	if errT != nil {
-		return NewCommonErrorWithPos(c, "failed to get file content from server: %v", errT), nil
+		return NewCommonErrorWithPos(c, "failed to upload file content from server: %v", errT), nil
 	}
 
 	vmT.LeSshInfo["Host"] = v1
