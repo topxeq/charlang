@@ -296,8 +296,10 @@ file: [example004.char](http://topget.org/dc/c/charlang/example/example004.char)
 
 a := 3 // assign an integer(int) value to variable 'a'
 
-// function 'pl' is equivalent to the printf function in other languages, followed by an additional newline character "\n"
-// and the conversion characters are the same as Golang, '%T' is used to output the value's type, '%v' is the general output format for any value
+// function 'pl' is equivalent to the printf function in other languages, 
+// followed by an additional newline character "\n"
+// and the conversion characters are the same as Golang, 
+// '%T' is used to output the value's type, '%v' is the general output format for any value
 pl("[%T] %v", a, a)
 
 // Instead of using '%T', which will output the native type in Golang(in which Charlang is written)
