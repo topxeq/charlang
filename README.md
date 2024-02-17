@@ -6,15 +6,17 @@
   - [Quick Links](#quick-links)
   - [Quick Start](#quick-start)
   - [Documentation](#documentation)
-    - [Get the binary](#get-the-binary)
-    - [Compile from source code](#compile-from-source-code)
-    - [Start running the shell or scripts](#start-running-the-shell-or-scripts)
-    - [Various ways to run Charlang scripts](#various-ways-to-run-charlang-scripts)
-    - [Get the examples](#get-the-examples)
-    - [Quick tour](#quick-tour)
-      - [Hello world!](#hello-world)
+    - [Get the Binary](#get-the-binary)
+    - [Compile from Source Code](#compile-from-source-code)
+    - [Start Running the Shell or Scripts](#start-running-the-shell-or-scripts)
+    - [Various Ways to Run Charlang Scripts](#various-ways-to-run-charlang-scripts)
+    - [Get the Examples](#get-the-examples)
+    - [Quick Tour](#quick-tour)
+      - [Hello World!](#hello-world)
       - [Comments](#comments)
-      - [Define variables](#define-variables)
+      - [Define Variables](#define-variables)
+      - [Data Type Name](#data-type-name)
+      - [Boolean Data Type](#boolean-data-type)
 
 # The Char Language (Charlang)
 
@@ -145,17 +147,17 @@ return v
 
 ## Documentation
 
-### Get the binary
+### Get the Binary
 
 Download the binary release files according to your OS from the website: [Charlang Homepage](http://topget.org/charlang).
 
-### Compile from source code
+### Compile from Source Code
 
 ```shell
 go get -u github.com/topxeq/charlang
 ```
 
-### Start running the shell or scripts
+### Start Running the Shell or Scripts
 
 After download, extract the executable from the zip file, put it into a directory, better in the system path.
 
@@ -163,7 +165,7 @@ Then type 'char' in the terminal/console to start the interactive command-line s
 
 Using command-line switch '-view' will show the source code of the script instead of run it.
 
-### Various ways to run Charlang scripts
+### Various Ways to Run Charlang Scripts
 
 Examples:
 
@@ -175,7 +177,7 @@ Examples:
 - Run from local scripts directory: place a config file local.cfg in the subdirectory 'char' under the user's home directory, with text content such as `c:\scripts`, then `char -local basic.char` will run 'c:\script\basic.char'
 - Run from cloud/network: place a config file cloud.cfg in the subdirectory 'char' under the user's home directory, with text content such as `http://script.my.com/`, then `char -cloud basic.char` will be the same as `char -remote http://script.my.com/basic.char`
 
-### Get the examples
+### Get the Examples
 
 All the source code examples marked by file names in the document can be retrieved or run by the command line like:
 
@@ -199,9 +201,9 @@ You can browse to `http://topget.org/dc/c/charlang/example/basic.char` to view t
 
 Using command-line switch '-viewPage' with '-example' will show the online code page in system-default browser as well.
 
-### Quick tour
+### Quick Tour
 
-#### Hello world!
+#### Hello World!
 
 file: [example001.char](http://topget.org/dc/c/charlang/example/example001.char)
 
@@ -252,7 +254,7 @@ a: 8
 
 ```
 
-#### Define variables
+#### Define Variables
 
 file: [example003.char](http://topget.org/dc/c/charlang/example/example003.char)
 
@@ -286,4 +288,76 @@ true
 
 ```
 
+#### Data Type Name
+
+file: [example004.char](http://topget.org/dc/c/charlang/example/example004.char)
+
+```go
+
+a := 3 // assign an integer(int) value to variable 'a'
+
+// function 'pl' is equivalent to the printf function in other languages, followed by an additional newline character "\n"
+// and the conversion characters are the same as Golang, '%T' is used to output the value's type, '%v' is the general output format for any value
+pl("[%T] %v", a, a)
+
+// Instead of using '%T', which will output the native type in Golang(in which Charlang is written)
+// function 'typeOf' is often used to get the type name of a variable in Charlang
+pl("[%v] %v", typeOf(a), a)
+
+```
+
+The output:
+
+```shell
+C:\Users\Administrator>char -example example004.char
+[charlang.Int] 3
+[int] 3
+
+```
+
+#### Boolean Data Type
+
+file: [example005.char](http://topget.org/dc/c/charlang/example/example005.char)
+
+```go
+
+// Boolean values
+
+b := true
+
+// function 'prf' is the same as 'printf' in C/C++/Golang
+prf("[%v] %v\n", typeOf(b), b)
+
+c := false
+
+prf("[%T] %v\n", c, c)
+
+prf("!b = %v\n", !b) // the operators are the same as Golang and many other languages
+
+prf("b == c: %v\n", b == c)
+
+prf("1 > 14: %v\n", 1 > 14)
+
+prf("b == true: %v\n", b == true)
+
+prf("b && c: %v\n", b && c)
+
+prf("b || c: %v\n", b || c)
+
+```
+
+The output:
+
+```shell
+C:\Users\Administrator>char -example example005.char
+[bool] true
+[charlang.Bool] false
+!b = false
+b == c: false
+1 > 14: false
+b == true: true
+b && c: false
+b || c: true
+
+```
 

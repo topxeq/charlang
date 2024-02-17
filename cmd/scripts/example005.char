@@ -1,0 +1,23 @@
+// Boolean values
+
+b := true
+
+// function 'prf' is the same as 'printf' in C/C++/Golang
+prf("[%v] %v\n", typeOf(b), b)
+
+c := false
+
+prf("[%T] %v\n", c, c)
+
+prf("!b = %v\n", !b) // the operators are the same as Golang and many other languages
+
+prf("b == c: %v\n", b == c)
+
+prf("1 > 14: %v\n", 1 > 14)
+
+prf("b == true: %v\n", b == true)
+
+prf("b && c: %v\n", b && c)
+
+prf("b || c: %v\n", b || c)
+
