@@ -65,7 +65,7 @@ return fib(35)
 
 [Go Reference](https://pkg.go.dev/github.com/topxeq/charlang)
 
-[Builtin Functions](https://pkg.go.dev/github.com/topxeq/charlang)
+[Builtin Functions](http://topget.org/dc/charlang/funcs)
 
 ## Quick Start
 
