@@ -1,6 +1,6 @@
 sourceT := `param ...vargs
 
-pln(vargs)
+pln(toJson(vargs, "-sort"))
 
 return vargs[2]
 

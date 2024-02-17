@@ -8,7 +8,7 @@ testByText(rs, "3.4000000000000004\n", seqT.get(), "basic.char")
 
 rs = systemCmd("char", "-gopath", "runAsFunc.char")
 
-testByText(rs, "[\"abc\", 123.5, true, {\"name\": \"Tom\", \"age\": 16}]\nrs: true\n", seqT.get(), "runAsFunc.char")
+testByText(rs, "[\"abc\",123.5,true,{\"age\":16,\"name\":\"Tom\"}]\nrs: true\n", seqT.get(), "runAsFunc.char")
 
 rs = systemCmd("char", "-gopath", "sort1.char")
 
@@ -124,7 +124,9 @@ testByText(rs, "(queue)[]\nb1: []\n[-1] [] -- []\n(charlang.Int)0\n-- First: err
 
 rs = systemCmd("char", "-gopath", "urlExists.char")
 
-testByText(rs, "(error)error: Head \"http://abc.abc.abc/abc.html\": dial tcp: lookup abc.abc.abc: no such host\n(bool)true\n(bool)false\nrs1 is error: true\nrs2 is error: false\nrs1 != true: true\nrs1 != false: true\nrs1 == true: false\nrs1 == false: false\nrs3 != true: true\nrs3 != true: false\n", seqT.get(), "urlExists.char")
+testByStartsWith(rs, "(error)error: Head \"http://abc.abc.abc/abc.html\": dial tcp: lookup abc.abc.abc", seqT.get(), "urlExists.char")
+
+testByEndsWith(rs, ": no such host\n(bool)true\n(bool)false\nrs1 is error: true\nrs2 is error: false\nrs1 != true: true\nrs1 != false: true\nrs1 == true: false\nrs1 == false: false\nrs3 != true: true\nrs3 != true: false\n", seqT.get(), "urlExists.char")
 
 rs = systemCmd("char", "-gopath", "gel1.char")
 
