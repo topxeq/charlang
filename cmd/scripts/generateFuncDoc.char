@@ -30,6 +30,8 @@ linesT := strSplitLines(docBodyT)
 
 bufT := stringBuilder()
 
+writeStr(bufT, "<!-- |title: The Builtin Functions of Charlang| -->\n\n")
+
 // plt(bufT)
 
 // bufT.writeStr("## Charlang Builtin Function Reference\n\n")

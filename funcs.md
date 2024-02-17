@@ -1,3 +1,5 @@
+<!-- |title: The Builtin Functions of Charlang| -->
+
 ## Charlang Builtin Function Reference
 
 ### --- internal & debug related ---
@@ -72,6 +74,10 @@
 
 **orderedMap**
 
+**stack**
+
+**queue**
+
 **excel**
 
 **statusResult**
@@ -90,7 +96,7 @@
 
 **file**
 
-**image**
+**image**: new an image object, usage: imageT := image("-width=480", "-height=640", "-color=#FF0000")
 
 **charCode**
 
@@ -500,6 +506,8 @@
 
 **getInput**
 
+**getChar**
+
 ### --- dir/path related ---
 
 **joinPath**: join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
@@ -592,13 +600,43 @@
 
 **checkToken**
 
+**isEncrypted**
+
 **encryptText**
 
 **decryptText**
 
 **encryptData**
 
+**encryptBytes**
+
 **decryptData**
+
+**decryptBytes**
+
+### --- image related ---
+
+**loadImageFromBytes**: usage: imageT := loadImageFromBytes(bytesT, "-type=png")
+
+**saveImageToBytes**: usage: bytesT := saveImageToBytes(imageT) or bytesT := saveImageToBytes(imageT, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
+
+**loadImageFromFile**: usage: imageT := loadImageFromFile(`c:\test\abc.png`) or image2T := loadImageFromFile(`c:\test\abc.jpg`, "-type=jpg")
+
+**saveImageToFile**: usage: errT := saveImageToFile(imageT, `c:\test\newabc.png`) or errT := saveImageToFile(imageT, `c:\test\newabc.png`, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
+
+**imageToAscii**: convert an image object to colorful ASCII graph(array of string), usage: asciiT := imageToAscii(imageT, "-width=60", "-height=80"), set one of width or height will keep aspect ratio
+
+**resizeImage**: get a new image by resizing an image object, usage: newImageT := resizeImage(imageT, "-width=60", "-height=80"), set one of width or height will keep aspect ratio
+
+### --- plot related ---
+
+**plotClearConsole**: clear console for plot
+
+**plotDataToStr**: this function is based on github.com/guptarohit/asciigraph(thanks), for usage, see example script file asciiPlot.char
+
+**plotDataToImage**: this function is based on github.com/vicanso/go-charts(thanks), for usage, see example script file pngPlot.char and svgPlot.char
+
+**plotLoadFont**: load a font file in ttf format for plot, usage: plotLoadFont("c:\windows\tahoma.ttf", "tahoma", true), the secode parameter gives the font name(default is the file name), pass true for the third parameter to set the font as default font used in plot(default is false)
 
 ### --- ssh related ---
 
@@ -671,6 +709,8 @@
 **leLoadFromSsh**
 
 **leSaveToSsh**
+
+**leSshInfo**
 
 **leViewAll**
 
