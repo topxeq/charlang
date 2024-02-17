@@ -1,0 +1,10 @@
+/*
+  multi-line block comments - 1
+  multi-line block comments - 2
+  multi-line block comments - 3
+*/
+
+a := 8 // line comments
+
+// line comments at the start of a new line
+pln("a:", a)

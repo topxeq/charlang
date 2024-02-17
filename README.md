@@ -13,6 +13,7 @@
     - [Get the examples](#get-the-examples)
     - [Quick tour](#quick-tour)
       - [Hello world!](#hello-world)
+      - [Comments](#comments)
       - [Define variables](#define-variables)
 
 # The Char Language (Charlang)
@@ -62,6 +63,8 @@ return fib(35)
 ```
 
 ## Quick Links
+
+[Charlang Home](http://topget.org/charlang)
 
 [Go Reference](https://pkg.go.dev/github.com/topxeq/charlang)
 
@@ -200,28 +203,58 @@ Using command-line switch '-viewPage' with '-example' will show the online code 
 
 #### Hello world!
 
-file: [helloWorld.char](http://topget.org/dc/c/charlang/example/helloWorld.char)
+file: [example001.char](http://topget.org/dc/c/charlang/example/example001.char)
 
 ```go
+// function 'pln' is the same as 'println' in other languages
 pln("Hello world!")
 
 ```
 
-The function 'pln' is the same as 'println' in other languages. pln formats using the default formats for its operands and writes to standard output.
+The function 'pln' is the same as 'println' in other languages. pln formats using the default formats for its arguments and writes to standard output.
 
-The result output:
+And in Charlang, comments are supported. You can use `//` or `/* ... */` to guide the comments. 
+
+The resulting output of the script:
 
 ```shell
-C:\Users\Administrator>char -example helloWorld.char
+C:\Users\Administrator>char -example example001.char
 Hello world!
 
 C:\Users\Administrator>
 
 ```
+#### Comments
+
+file: [example002.char](http://topget.org/dc/c/charlang/example/example002.char)
+
+As mentioned above, like Golang, Charlang supports line comments (//...) and block comments (/* ... */). Comments in the code will be ignored by the compiler and virtual machine. You can use Ctrl+/key combination in many text or source code editors to switch whether the line is commented or not.
+
+```go
+/*
+  multi-line block comments - 1
+  multi-line block comments - 2
+  multi-line block comments - 3
+*/
+
+a := 8    // line comments
+
+// line comments at the start of a new line
+pln("a:", a)
+
+```
+
+The output:
+
+```shell
+C:\Users\Administrator>char -example example002.char
+a: 8
+
+```
 
 #### Define variables
 
-file: [var.char](http://topget.org/dc/c/charlang/example/var.char)
+file: [example003.char](http://topget.org/dc/c/charlang/example/example003.char)
 
 ```go
 // define a variable before using it
@@ -246,7 +279,7 @@ pln(b)
 The result:
 
 ```shell
-C:\Users\Administrator>char -example var.char
+C:\Users\Administrator>char -example example003.char
 1
 abc
 true

@@ -1,0 +1,16 @@
+// define a variable before using it
+var a
+
+a = 1
+
+pln(a)
+
+// assign a value of another type to a
+a = "abc"
+
+pln(a)
+
+// define and assign in one step
+b := true
+
+pln(b)
