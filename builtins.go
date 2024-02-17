@@ -2606,6 +2606,7 @@ var BuiltinObjects = [...]Object{
 	// 	Value:   CallExAdapter(builtinSortByFuncFunc),
 	// 	ValueEx: builtinSortByFuncFunc,
 	// },
+
 	// char add end
 
 	BuiltinWrongNumArgumentsError:  ErrWrongNumArguments,
@@ -3050,20 +3051,36 @@ func builtinSortReverseFunc(arg Object) (Object, error) {
 // func builtinSortByFuncFunc(c Call) (ret Object, err error) {
 // 	args := c.GetArgs()
 
+// 	if len(args) < 2 {
+// 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+// 	}
+
 // 	arg0 := args[0]
 
-// 	arg1, ok := args[0].(*CompiledFunction)
+// 	nv1, ok := args[1].(*CharCode)
 
 // 	if !ok {
-// 		return NewCommonErrorWithPos(c, "invalid type: (%T)%v", args[0], args[0]), nil
+// 		nv2 := args[1].String()
+
+// 		nv3, errT := builtinCharCodeFunc(Call{Vm: c.VM(), Args: []Object{String{Value: nv2}}})
+
+// 		if errT != nil {
+// 			return NewCommonErrorWithPos(c, "failed to compile function: (%T)%v", args[1], errT), nil
+// 		}
+
+// 		if tk.IsError(nv3) {
+// 			return NewCommonErrorWithPos(c, "failed to compile function: (%T)%v", args[1], nv3), nil
+// 		}
+
+// 		nv1 = nv3.(*CharCode)
 // 	}
 
 // 	switch obj := arg0.(type) {
 // 	case Array:
 // 		sort.Slice(obj, func(i, j int) bool {
-// 			retT, errT := NewInvoker(c.VM(), arg1).Invoke(obj[i], obj[j])
+// 			retT := nv1.RunAsFunc(obj[i], obj[j])
 
-// 			if errT != nil {
+// 			if tk.IsError(retT) {
 // 				return false
 // 			}
 
@@ -3080,9 +3097,9 @@ func builtinSortReverseFunc(arg Object) (Object, error) {
 // 	case String:
 // 		s := []rune(obj.String())
 // 		sort.Slice(s, func(i, j int) bool {
-// 			retT, errT := NewInvoker(c.VM(), arg1).Invoke(ToStringObject(obj.Value[i]), ToStringObject(obj.Value[j]))
+// 			retT := nv1.RunAsFunc(ToStringObject(obj.Value[i]), ToStringObject(obj.Value[j]))
 
-// 			if errT != nil {
+// 			if tk.IsError(retT) {
 // 				return false
 // 			}
 
@@ -3099,9 +3116,9 @@ func builtinSortReverseFunc(arg Object) (Object, error) {
 // 	case *MutableString:
 // 		s := []rune(obj.String())
 // 		sort.Slice(s, func(i, j int) bool {
-// 			retT, errT := NewInvoker(c.VM(), arg1).Invoke(ToStringObject(obj.Value[i]), ToStringObject(obj.Value[j]))
+// 			retT := nv1.RunAsFunc(ToStringObject(obj.Value[i]), ToStringObject(obj.Value[j]))
 
-// 			if errT != nil {
+// 			if tk.IsError(retT) {
 // 				return false
 // 			}
 
@@ -3117,9 +3134,9 @@ func builtinSortReverseFunc(arg Object) (Object, error) {
 // 		ret = ToMutableStringObject(s)
 // 	case Bytes:
 // 		sort.Slice(obj, func(i, j int) bool {
-// 			retT, errT := NewInvoker(c.VM(), arg1).Invoke(ToStringObject(obj[i]), ToStringObject(obj[j]))
+// 			retT := nv1.RunAsFunc(ToStringObject(obj.Value[i]), ToStringObject(obj.Value[j]))
 
-// 			if errT != nil {
+// 			if tk.IsError(retT) {
 // 				return false
 // 			}
 
@@ -3647,7 +3664,7 @@ func FnATRSex(fn func(time.Time) string) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
 
 		nv, ok := args[0].(*Time)
@@ -7189,7 +7206,7 @@ func builtinCharCodeFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
 	var compilerOptionsT *CompilerOptions
@@ -7208,6 +7225,8 @@ func builtinCharCodeFunc(c Call) (Object, error) {
 
 	return NewCharCode(args[0].String(), compilerOptionsT), nil
 }
+
+var BuiltinCharCodeFunc = builtinCharCodeFunc
 
 func builtinGelFunc(c Call) (Object, error) {
 	args := c.GetArgs()

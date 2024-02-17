@@ -1,14 +1,17 @@
+// module 'ex' contains the sortByFuncQuick and sortByFunc functions we needed here
 ex := import("ex")
 
+// sort array 'a' by ascending order
 a := [1, 3, 2.5, 435, "abc", "zbds123", "0123a", "2.33", 2.33]
 
-b := ex.sortByFuncQuick(a, func(i, j) {
+b1 := ex.sortByFuncQuick(a, func(i, j) {
 	// pl("i: %v, j: %v", i, j)
 	return toStr(a[i]) < toStr(a[j])
 })
 
-plv(b)
+plv(b1)
 
+// sort array 'm' by Name(ascending) and then (if names are equal) Age
 m := [{"Name": "Tom", "Age": 18}, {"Name": "Jerry", "Age": 22}, {"Name": "Jerry", "Age": 18}, {"Name": "Peter", "Age": 8}]
 
 sort1 := func(dataA, i, j) {
@@ -26,4 +29,33 @@ sort1 := func(dataA, i, j) {
 m1 := ex.sortByFunc(m, sort1)
 
 pln(toJson(m1, "-sort"))
+
+// sort functions could be defined in source code
+// these functions will run in a new VM context, and the object to sort, the first index to compare, the second index to compare will be passed as paramters in order 
+m2 := ex.sortByFunc(m, `
+	param (dataA, i, j)
+
+	if dataA[i].Name > dataA[j].Name {
+		return true
+	}
+
+	if dataA[i].Name == dataA[j].Name {
+		return dataA[i].Age > dataA[j].Age
+	}
+
+	return false
+`)
+
+pln(toJson(m2, "-sort"))
+
+// sort functions could also be compiled code
+code1 := charCode(`param (a, i, j)
+	return toStr(a[i]) > toStr(a[j])
+`).compile()
+
+b2 := ex.sortByFunc(a, code1)
+
+plv(b2)
+
+
 

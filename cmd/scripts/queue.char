@@ -1,0 +1,183 @@
+// This example demonstrates the use of the object 'queue', it's a FIFO(first in first out) queue which can have a size(total amount of items could be stored) limit
+global argsG
+
+verboseT := ifSwitchExists(argsG, "-verbose")
+
+// new a queue with size 6(to store max 6 objects, then when a new object will be stored, the first object will be droped)
+b1 := queue(6)
+
+if verboseT {
+	plo(b1)
+}
+
+// output the empty queue for reference
+plt(b1)
+
+pl("b1: %v", b1)
+
+pl("[%v] %v -- %v", -1, b1, b1)
+
+plo(b1.Size())
+
+for j := 0; j < b1.Size(); j++ {
+	item1 := b1.Get(j)
+	prf(" %v", item1)
+}
+
+pl("-- First: %v, Last: %v", b1.Get(), b1.Get(-1))
+
+pl("List: %v", b1.GetList())
+
+pln("remove 0:", b1.Remove(0))
+
+pln("remove last:", b1.Remove(b1.Size()))
+
+pln("remove 3:", b1.Remove(3))
+
+for i := 20000; i < 20022; i++ {
+	b1.Push(int(i))
+
+	pl("[%v] %v", i, b1)
+
+	for j := 0; j < b1.Size(); j++ {
+		item1 := b1.Get(j)
+		prf(" %v", item1)
+	}
+
+	pl("\n-- F: %v, L: %v", b1.Get(), b1.Get(-1))
+
+	pl("List: %v", b1.GetList())
+
+}
+
+// insert at queue head, the last item in the queue will be dropped
+b1.Insert(0, byte(100))
+
+if verboseT {
+	pl("-1 [%v] %v %v", 999, b1, b1.GetInfo())
+}
+
+for j := 0; j < b1.Size(); j++ {
+	item1 := b1.Get(j)
+	prf(" %v", item1)
+}
+
+pl(" F: %v, L: %v", b1.Get(), b1.Get(-1))
+
+// insert at index 3
+b1.Insert(3, float(103))
+
+if verboseT {
+	pl("-2 [%v] %v %v", 999, b1, b1.GetInfo())
+}
+
+for j := 0; j < b1.Size(); j++ {
+	item1 := b1.Get(j)
+	prf(" %v", item1)
+}
+
+pl(" F: %v, L: %v", b1.Get(), b1.Get(-1))
+
+// insert at last
+b1.Insert(b1.Size()-1, byte(109))
+
+if verboseT {
+	pl("-3 [%v] %v %v", 999, b1, b1.GetInfo())
+}
+
+for j := 0; j < b1.Size(); j++ {
+	item1 := b1.Get(j)
+	prf(" %v", item1)
+}
+
+pl(" F: %v, L: %v", b1.Get(), b1.Get(-1))
+
+pl("List: %v", b1.GetList())
+
+// insert with index out of range will be ignored
+b1.Insert(-1, byte(121))
+b1.Insert(b1.Size(), byte(122))
+
+if verboseT {
+	pl("-3a [%v] %v %v", 999, b1, b1.GetInfo())
+}
+
+for j := 0; j < b1.Size(); j++ {
+	item1 := b1.Get(j)
+	prf(" %v", item1)
+}
+
+pl(" F: %v, L: %v", b1.Get(), b1.Get(-1))
+
+pl("List: %v", b1.GetList())
+
+// remove the first(with index 0) item
+b1.Remove(0)
+
+if verboseT {
+	pl("remove0 [%v] %v %v", 999, b1, b1.GetInfo())
+}
+
+for j := 0; j < b1.Size(); j++ {
+	item1 := b1.Get(j)
+	prf(" %v", item1)
+}
+
+pl(" F: %v, L: %v", b1.Get(), b1.Get(-1))
+
+pl("List: %v", b1.GetList())
+
+// remove the last item
+b1.Remove(b1.Size() - 1)
+
+if verboseT {
+	pl("removeLast [%v] %v %v", 999, b1, b1.GetInfo())
+}
+
+for j := 0; j < b1.Size(); j++ {
+	item1 := b1.Get(j)
+	prf(" %v", item1)
+}
+
+pl(" F: %v, L: %v", b1.Get(), b1.Get(-1))
+
+pl("List: %v", b1.GetList())
+
+// remove the 2nd item
+b1.Remove(2)
+
+if verboseT {
+	pl("remove2 [%v] %v %v", 999, b1, b1.GetInfo())
+}
+
+for j := 0; j < b1.Size(); j++ {
+	item1 := b1.Get(j)
+	prf(" %v", item1)
+}
+
+pl(" F: %v, L: %v", b1.Get(), b1.Get(-1))
+
+pl("List: %v", b1.GetList())
+
+// pick(from the queue head each time) the first item from the queue until the queue is empty
+cnt1 := 0
+
+for {
+	a1 := b1.Pick()
+
+	if isErr(a1) { // break if not items
+		break
+	}
+
+	cnt1++
+
+	pl("got %v", a1)
+
+	pl("[%v] %v S: %v", cnt1, b1, b1.Size())
+
+}
+
+// pick from an empty queue will return error
+a1 := b1.Pick()
+
+plt(a1)

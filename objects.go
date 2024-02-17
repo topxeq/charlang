@@ -9081,6 +9081,21 @@ func (o *CharCode) BinaryOp(tok token.Token, right Object) (Object, error) {
 		right.TypeName())
 }
 
+// func (o *CharCode) RunAsFunc(argsA ...Object) Object {
+// 	var globalsA map[string]interface{} = nil
+// 	// var additionsA []Object = nil
+
+// 	envT := NewBaseEnv(globalsA) // Map{}
+
+// 	retT, errT := NewVM(o.Value).Run(envT, argsA...)
+
+// 	if errT != nil {
+// 		return NewCommonError("%v", errT)
+// 	}
+
+// 	return retT
+// }
+
 func NewCharCode(srcA string, optsA ...*CompilerOptions) *CharCode {
 	// byteCodeT := QuickCompile(srcA, optsA...) // quickCompile(tk.ToStr(argsA[0])) //
 
@@ -11346,7 +11361,7 @@ func (*Queue) TypeName() string {
 
 // String implements Object interface.
 func (o *Queue) String() string {
-	return o.String()
+	return o.Value.String()
 }
 
 func (o *Queue) HasMemeber() bool {
@@ -11456,6 +11471,73 @@ func (o *Queue) IndexSet(index, value Object) error {
 
 // IndexGet implements Object interface.
 func (o *Queue) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		rs1, errT := GetObjectMethodFunc(o, strT)
+
+		if errT == nil && !tk.IsError(rs1) {
+			return rs1, nil
+		}
+
+		rs5 := tk.ReflectGetMember(o.Value, strT)
+
+		if !tk.IsError(rs5) {
+			rs6 := ConvertToObject(rs5)
+			// tk.Plo(rs6)
+			if nv, ok := rs6.(*Any); ok {
+				if strings.HasPrefix(nv.OriginalType, "func(") {
+					rs2 := &Function{
+						Name: strT,
+						ValueEx: func(c Call) (Object, error) {
+							rs3 := tk.ReflectCallMethodCompact(o.Value, strT, ObjectsToI(c.GetArgs())...)
+
+							return ConvertToObject(rs3), nil
+						},
+					}
+
+					o.SetMember(strT, rs2)
+
+					return rs2, nil
+
+				}
+			}
+			o.SetMember(strT, rs6)
+			return rs6, nil
+		}
+
+		if errT != nil {
+			if tk.ReflectHasMethod(o.Value, strT) {
+				rs2 := &Function{
+					Name: strT,
+					ValueEx: func(c Call) (Object, error) {
+						rs3 := tk.ReflectCallMethodCompact(o.Value, strT, ObjectsToI(c.GetArgs())...)
+
+						return ConvertToObject(rs3), nil
+					},
+				}
+
+				o.SetMember(strT, rs2)
+
+				return rs2, nil
+			}
+		}
+
+		return rs1, errT
+		// // return nil, ErrIndexOutOfBounds
+	}
+
 	return ConvertToObject(o.Value.Get(ToIntQuick(index))), nil
 }
 

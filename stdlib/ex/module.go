@@ -251,7 +251,65 @@ func builtinSortByFuncFunc(c charlang.Call) (ret charlang.Object, err error) {
 	arg1, ok := args[1].(*charlang.CompiledFunction)
 
 	if !ok {
-		return charlang.NewCommonErrorWithPos(c, "invalid type: (%T)%v", args[0], args[0]), nil
+		nv1, ok := args[1].(*charlang.CharCode)
+
+		if !ok {
+			nv2 := args[1].String()
+
+			nv3, errT := charlang.BuiltinCharCodeFunc(charlang.Call{Vm: c.VM(), Args: []charlang.Object{charlang.String{Value: nv2}}})
+
+			if errT != nil {
+				return charlang.NewCommonErrorWithPos(c, "failed to compile function: (%T)%v", args[1], errT), nil
+			}
+
+			if tk.IsError(nv3) {
+				return charlang.NewCommonErrorWithPos(c, "failed to compile function: (%T)%v", args[1], nv3), nil
+			}
+
+			nv1 = nv3.(*charlang.CharCode)
+
+			byteCodeT := charlang.QuickCompile(nv1.Source, nv1.CompilerOptions) // quickCompile(tk.ToStr(argsA[0])) //
+
+			if tk.IsError(byteCodeT) {
+				nv1.LastError = fmt.Sprintf("%v", byteCodeT)
+				return charlang.NewCommonError("%v", byteCodeT), nil
+			}
+
+			nv1.Value = byteCodeT.(*charlang.Bytecode)
+		}
+
+		// var globalsA map[string]interface{} = nil
+		// // var additionsA []Object = nil
+
+		// envT := charlang.NewBaseEnv(globalsA) // Map{}
+
+		argsT := []charlang.Object{arg0, charlang.Int(0), charlang.Int(0)}
+
+		sort.SliceStable(arg0, func(i, j int) bool {
+			argsT[1] = charlang.Int(i)
+			argsT[2] = charlang.Int(j)
+
+			retT, errT := charlang.NewVM(nv1.Value).Run(nil, argsT...)
+
+			// tk.Plv(retT, errT)
+
+			if errT != nil {
+				return false
+			}
+
+			nv5, ok := retT.(charlang.Bool)
+
+			if !ok {
+				return false
+			}
+
+			return bool(nv5)
+		})
+
+		ret = arg0
+		err = nil
+
+		return
 	}
 
 	sort.SliceStable(arg0, func(i, j int) bool {
