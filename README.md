@@ -288,6 +288,8 @@ true
 
 ```
 
+Note that unlike Golang, a variable can be assigned a value of different types.
+
 #### Data Type Name
 
 file: [example004.char](http://topget.org/dc/c/charlang/example/example004.char)
