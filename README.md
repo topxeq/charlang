@@ -17,6 +17,9 @@
       - [Define Variables](#define-variables)
       - [Data Type Name](#data-type-name)
       - [Boolean Data Type](#boolean-data-type)
+      - [Integer Data Type](#integer-data-type)
+      - [Float Data Type](#float-data-type)
+      - [String/Bytes/Chars Data Type](#stringbyteschars-data-type)
 
 # The Char Language (Charlang)
 
@@ -362,6 +365,214 @@ b == c: false
 b == true: true
 b && c: false
 b || c: true
+
+```
+
+#### Integer Data Type
+
+file: [example006.char](http://topget.org/dc/c/charlang/example/example006.char)
+
+```go
+
+// Integer
+
+c1 := 19
+
+c2 := 18
+
+pln(c1 + c2/3)
+
+pl("%v, %v", typeOf(c1), c1)
+
+pl("%T, %v", c1+c2, c1+c2)
+pl("%v, %v", typeOf(c2/3), c2/3)
+pl("%v, %v", typeOf(c1+c2/3), c1+c2/3)
+pl("%T, %v", (c1+c2/3)*6, (c1+c2/3)*6)
+
+```
+
+The output:
+
+```shell
+C:\Users\Administrator>char -example example006.char
+25
+int, 19
+charlang.Int, 37
+int, 6
+int, 25
+charlang.Int, 150
+
+```
+
+#### Float Data Type
+
+file: [example007.char](http://topget.org/dc/c/charlang/example/example007.char)
+
+```go
+
+// Float
+
+f1 := 1.32
+
+pl("%v, %v", typeOf(f1), f1)
+
+previus_f1 := f1
+
+f1 = f1 * 0.8
+
+// function 'pr' is the same as 'print' in other languages
+pr(previus_f1, "*", 0.8, "=", f1)
+
+pln()
+
+f2 := 0.93
+f2 /= 0.3
+
+pr(0.93, "/", 0.3, "=", f2, "\n")
+
+```
+
+The output:
+
+```shell
+C:\Users\Administrator>char -example example007.char
+float, 1.32
+1.32*0.8=1.056
+0.93/0.3=3.1
+
+```
+
+#### String/Bytes/Chars Data Type
+
+file: [example008.char](http://topget.org/dc/c/charlang/example/example008.char)
+
+```go
+
+// String, Bytes and Chars
+
+s1 := "abc"
+
+// concatenate strings
+s2 := s1 + "3"
+
+// function 'plt' will output the value with its Charlang type
+plt(s2)
+
+pln(s1, "+", "3", "=", s2)
+
+s5 := "上善若水"
+
+// function 'plt' will output the value with its internal(Golang) type
+plo(s5)
+
+s6 := bytes(s5)
+
+// s6 will be a bytes array
+pln("s6:", s6)
+
+// t will be a utf-8 character(rune in Golang)
+t := char(5)
+
+plo(t)
+
+// s7 will be array of chars
+// in this example, will be 4 unicode characters, each has 3 bytes
+s7 := chars(s5)
+
+plt(s7)
+
+// slice of s5(string) will be a string with only one ASCII(0-255) character
+pl("s5[1:2] = %v(%#v)", s5[1:2], s5[1:2])
+
+// slice of s6(bytes, i.e. array of byte) will be a byte array contains only one item
+pl("s6[1:2] = %v(%#v)", s6[1:2], s6[1:2])
+
+// slice of s7(chars, i.e. array of char) will be a char array contains only one item
+pl("s7[1:2] = %v(%#v)", s7[1:2], s7[1:2])
+
+// covert utf-8 chars to string
+pl("string(s7[1:3]) = %v(%#v)", string(s7[1:3]), string(s7[1:3]))
+
+// covert utf-8 chars to bytes, then to string, has the same effect as above
+pl("string(bytes(string(s7[1:3]))) = %v(%#v)", string(bytes(string(s7[1:3]))), string(bytes(string(s7[1:3]))))
+
+// output the first item of string, bytes and chars, as a single character
+pl("%c", s5[1])
+pl("%c", s6[1])
+pl("%c", s7[1])
+
+// output the first item of string, bytes and chars, with its value and type
+pl("%T, %#v", s5[1], s5[1])
+pl("%v, %#v", typeOf(s6[1]), s6[1])
+pl("%T, %#v", s7[1], s7[1])
+
+// iterate the string using 'for' loop
+for i := 0; i < len(s5); i++ {
+	pl("%v: %v, %v", i, typeOf(s5[i]), s5[i])
+}
+
+// iterate the string using 'for-in' loop
+for i, v in s5 {
+	pl("%v: %v, %v", i, typeOf(v), v)
+}
+
+// iterate the chars
+for i, v in s7 {
+	// function 'typeName' is equivalent to 'typeOf'
+	pl("%v: %v, %v", i, typeName(v), v)
+}
+
+```
+
+The output:
+
+```shell
+C:\Users\Administrator>char -example example008.char
+(string)abc3
+abc + 3 = abc3
+(charlang.String)"上善若水"
+s6: [228 184 138 229 150 132 232 139 165 230 176 180]
+(charlang.Char)5
+(chars)[19978 21892 33509 27700]
+s5[1:2] = �("\xb8")
+s6[1:2] = [184]([]byte{0xb8})
+s7[1:2] = [21892]([]int32{21892})
+string(s7[1:3]) = 善若("善若")
+string(bytes(string(s7[1:3]))) = 善若("善若")
+¸
+¸
+善
+charlang.Int, 184
+int, 184
+charlang.Char, 21892
+0: int, 228
+1: int, 184
+2: int, 138
+3: int, 229
+4: int, 150
+5: int, 132
+6: int, 232
+7: int, 139
+8: int, 165
+9: int, 230
+10: int, 176
+11: int, 180
+0: byte, 228
+1: byte, 184
+2: byte, 138
+3: byte, 229
+4: byte, 150
+5: byte, 132
+6: byte, 232
+7: byte, 139
+8: byte, 165
+9: byte, 230
+10: byte, 176
+11: byte, 180
+0: char, 19978
+1: char, 21892
+2: char, 33509
+3: char, 27700
 
 ```
 

@@ -1,0 +1,73 @@
+// String, Bytes and Chars
+
+s1 := "abc"
+
+// concatenate strings
+s2 := s1 + "3"
+
+// function 'plt' will output the value with its Charlang type
+plt(s2)
+
+pln(s1, "+", "3", "=", s2)
+
+s5 := "上善若水"
+
+// function 'plt' will output the value with its internal(Golang) type
+plo(s5)
+
+s6 := bytes(s5)
+
+// s6 will be a bytes array
+pln("s6:", s6)
+
+// t will be a utf-8 character(rune in Golang)
+t := char(5)
+
+plo(t)
+
+// s7 will be array of chars
+// in this example, will be 4 unicode characters, each has 3 bytes
+s7 := chars(s5)
+
+plt(s7)
+
+// slice of s5(string) will be a string with only one ASCII(0-255) character
+pl("s5[1:2] = %v(%#v)", s5[1:2], s5[1:2])
+
+// slice of s6(bytes, i.e. array of byte) will be a byte array contains only one item
+pl("s6[1:2] = %v(%#v)", s6[1:2], s6[1:2])
+
+// slice of s7(chars, i.e. array of char) will be a char array contains only one item
+pl("s7[1:2] = %v(%#v)", s7[1:2], s7[1:2])
+
+// covert utf-8 chars to string
+pl("string(s7[1:3]) = %v(%#v)", string(s7[1:3]), string(s7[1:3]))
+
+// covert utf-8 chars to bytes, then to string, has the same effect as above
+pl("string(bytes(string(s7[1:3]))) = %v(%#v)", string(bytes(string(s7[1:3]))), string(bytes(string(s7[1:3]))))
+
+// output the first item of string, bytes and chars, as a single character
+pl("%c", s5[1])
+pl("%c", s6[1])
+pl("%c", s7[1])
+
+// output the first item of string, bytes and chars, with its value and type
+pl("%T, %#v", s5[1], s5[1])
+pl("%v, %#v", typeOf(s6[1]), s6[1])
+pl("%T, %#v", s7[1], s7[1])
+
+// iterate the string using 'for' loop
+for i := 0; i < len(s5); i++ {
+	pl("%v: %v, %v", i, typeOf(s5[i]), s5[i])
+}
+
+// iterate the string using 'for-in' loop
+for i, v in s5 {
+	pl("%v: %v, %v", i, typeOf(v), v)
+}
+
+// iterate the chars
+for i, v in s7 {
+	// function 'typeName' is equivalent to 'typeOf'
+	pl("%v: %v, %v", i, typeName(v), v)
+}

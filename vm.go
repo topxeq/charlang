@@ -1427,6 +1427,7 @@ func (vm *VM) xOpSliceIndex() error {
 
 	var objlen int
 	var isbytes bool
+	var ischars bool
 
 	switch obj := obj.(type) {
 	case Array:
@@ -1436,6 +1437,9 @@ func (vm *VM) xOpSliceIndex() error {
 	case Bytes:
 		isbytes = true
 		objlen = len(obj)
+	case Chars:
+		ischars = true
+		objlen = len(obj)
 	default:
 		return ErrType.NewError(obj.TypeName(), "cannot be sliced")
 	}
@@ -1444,6 +1448,8 @@ func (vm *VM) xOpSliceIndex() error {
 	switch v := left.(type) {
 	case *UndefinedType:
 		low = 0
+	case Byte:
+		low = int(v)
 	case Int:
 		low = int(v)
 	case Uint:
@@ -1458,6 +1464,8 @@ func (vm *VM) xOpSliceIndex() error {
 	switch v := right.(type) {
 	case *UndefinedType:
 		high = objlen
+	case Byte:
+		high = int(v)
 	case Int:
 		high = int(v)
 	case Uint:
@@ -1473,7 +1481,10 @@ func (vm *VM) xOpSliceIndex() error {
 	}
 	if isbytes {
 		objlen = cap(obj.(Bytes))
+	} else if ischars {
+		objlen = cap(obj.(Chars))
 	}
+
 	if low < 0 || high < 0 || high > objlen {
 		return ErrIndexOutOfBounds.NewError(fmt.Sprintf("[%d:%d]", low, high))
 	}
@@ -1484,6 +1495,8 @@ func (vm *VM) xOpSliceIndex() error {
 	case String:
 		vm.stack[vm.sp] = ToStringObject(obj.Value[low:high])
 	case Bytes:
+		vm.stack[vm.sp] = obj[low:high]
+	case Chars:
 		vm.stack[vm.sp] = obj[low:high]
 	}
 

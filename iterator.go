@@ -2,7 +2,6 @@ package charlang
 
 import (
 	"sync"
-	"unicode/utf8"
 )
 
 // Iterator wraps the methods required to iterate Objects in VM.
@@ -76,7 +75,7 @@ func (it *BytesIterator) Key() Object {
 func (it *BytesIterator) Value() Object {
 	i := it.i - 1
 	if i > -1 && i < len(it.V) {
-		return Int(it.V[i])
+		return Byte(it.V[i])
 	}
 	return Undefined
 }
@@ -104,7 +103,7 @@ func (it *CharsIterator) Key() Object {
 func (it *CharsIterator) Value() Object {
 	i := it.i - 1
 	if i > -1 && i < len(it.V) {
-		return Int(it.V[i])
+		return Char(it.V[i])
 	}
 	return Undefined
 }
@@ -198,8 +197,8 @@ func (it *SyncIterator) Value() Object {
 type StringIterator struct {
 	V String
 	i int
-	k int
-	r rune
+	// k int
+	// r rune
 }
 
 var _ Iterator = (*StringIterator)(nil)
@@ -210,33 +209,41 @@ func (it *StringIterator) Next() bool {
 		return false
 	}
 
-	r, s := utf8.DecodeRuneInString(it.V.Value[it.i:])
-	if r == utf8.RuneError || s == 0 {
-		return false
-	}
+	// r, s := utf8.DecodeRuneInString(it.V.Value[it.i:])
+	// if r == utf8.RuneError || s == 0 {
+	// 	return false
+	// }
 
-	it.k = it.i
-	it.r = r
-	it.i += s
+	// it.k = it.i
+	// it.r = r
+	// it.i += s
+	it.i++
 	return true
 }
 
 // Key implements Iterator interface.
 func (it *StringIterator) Key() Object {
-	return Int(it.k)
+	// return Int(it.k)
+	return Int(it.i - 1)
 }
 
 // Value implements Iterator interface.
 func (it *StringIterator) Value() Object {
-	return Char(it.r)
+	// return Char(it.r)
+	i := it.i - 1
+	if i > -1 && i < len(it.V.Value) {
+		return Byte(it.V.Value[i])
+	}
+
+	return Undefined
 }
 
 // MutableStringIterator represents an iterator for the string.
 type MutableStringIterator struct {
 	V *MutableString
 	i int
-	k int
-	r rune
+	// k int
+	// r rune
 }
 
 var _ Iterator = (*MutableStringIterator)(nil)
@@ -247,25 +254,31 @@ func (it *MutableStringIterator) Next() bool {
 		return false
 	}
 
-	r, s := utf8.DecodeRuneInString(it.V.Value[it.i:])
-	if r == utf8.RuneError || s == 0 {
-		return false
-	}
+	// r, s := utf8.DecodeRuneInString(it.V.Value[it.i:])
+	// if r == utf8.RuneError || s == 0 {
+	// 	return false
+	// }
 
-	it.k = it.i
-	it.r = r
-	it.i += s
+	// it.k = it.i
+	// it.r = r
+	// it.i += s
+	it.i++
 	return true
 }
 
 // Key implements Iterator interface.
 func (it *MutableStringIterator) Key() Object {
-	return Int(it.k)
+	return Int(it.i - 1)
 }
 
 // Value implements Iterator interface.
 func (it *MutableStringIterator) Value() Object {
-	return Char(it.r)
+	i := it.i - 1
+	if i > -1 && i < len(it.V.Value) {
+		return Byte(it.V.Value[i])
+	}
+
+	return Undefined
 }
 
 // IntIterator represents an iterator for the Int.

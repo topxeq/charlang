@@ -309,6 +309,7 @@ const (
 	BuiltinTypeCode
 	BuiltinTypeName
 	BuiltinPl
+	BuiltinPr
 	BuiltinPrf
 	BuiltinPln
 	BuiltinPlv
@@ -602,6 +603,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"errStrf": BuiltinErrStrf,
 
 	// output/print related
+	"pr":     BuiltinPr,
 	"prf":    BuiltinPrf,
 	"pl":     BuiltinPl,
 	"pln":    BuiltinPln,
@@ -1663,6 +1665,11 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// output/print related
+	BuiltinPr: &BuiltinFunction{
+		Name:    "pr", // usage: the same as print
+		Value:   FnAVaRIE(fmt.Print),
+		ValueEx: FnAVaRIEex(fmt.Print),
+	},
 	BuiltinPrf: &BuiltinFunction{
 		Name:    "prf", // usage: the same as printf
 		Value:   FnASVaR(tk.Printf),
@@ -3326,7 +3333,7 @@ func builtinCharsFunc(arg Object) (ret Object, err error) {
 	switch obj := arg.(type) {
 	case String:
 		s := obj.Value
-		ret = make(Array, 0, utf8.RuneCountInString(s))
+		ret = make(Chars, 0, utf8.RuneCountInString(s))
 		sz := len(obj.Value)
 		i := 0
 
@@ -3335,12 +3342,12 @@ func builtinCharsFunc(arg Object) (ret Object, err error) {
 			if r == utf8.RuneError {
 				return Undefined, nil
 			}
-			ret = append(ret.(Array), Char(r))
+			ret = append(ret.(Chars), r)
 			i += w
 		}
 	case *MutableString:
 		s := obj.Value
-		ret = make(Array, 0, utf8.RuneCountInString(s))
+		ret = make(Chars, 0, utf8.RuneCountInString(s))
 		sz := len(obj.Value)
 		i := 0
 
@@ -3349,11 +3356,11 @@ func builtinCharsFunc(arg Object) (ret Object, err error) {
 			if r == utf8.RuneError {
 				return Undefined, nil
 			}
-			ret = append(ret.(Array), Char(r))
+			ret = append(ret.(Chars), r)
 			i += w
 		}
 	case Bytes:
-		ret = make(Array, 0, utf8.RuneCount(obj))
+		ret = make(Chars, 0, utf8.RuneCount(obj))
 		sz := len(obj)
 		i := 0
 
@@ -3362,7 +3369,7 @@ func builtinCharsFunc(arg Object) (ret Object, err error) {
 			if r == utf8.RuneError {
 				return Undefined, nil
 			}
-			ret = append(ret.(Array), Char(r))
+			ret = append(ret.(Chars), r)
 			i += w
 		}
 	default:
@@ -5003,6 +5010,36 @@ func FnAVaRex(fn func(...interface{})) CallableExFunc {
 		vargs := toArgsA(0, c)
 		fn(vargs...)
 		return nil, nil
+	}
+}
+
+// like fmt.Print
+func FnAVaRIE(fn func(...interface{}) (int, error)) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		vargs := ObjectsToI(args)
+		n, errT := fn(vargs...)
+
+		if errT != nil {
+			return NewCommonError("%v", errT), nil
+		}
+
+		return Int(n), nil
+	}
+}
+
+func FnAVaRIEex(fn func(...interface{}) (int, error)) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		vargs := ObjectsToI(args)
+
+		n, errT := fn(vargs...)
+
+		if errT != nil {
+			return NewCommonError("%v", errT), nil
+		}
+
+		return Int(n), nil
 	}
 }
 

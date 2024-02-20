@@ -1,0 +1,14 @@
+// Integer
+
+c1 := 19
+
+c2 := 18
+
+pln(c1 + c2/3)
+
+pl("%v, %v", typeOf(c1), c1)
+
+pl("%T, %v", c1+c2, c1+c2)
+pl("%v, %v", typeOf(c2/3), c2/3)
+pl("%v, %v", typeOf(c1+c2/3), c1+c2/3)
+pl("%T, %v", (c1+c2/3)*6, (c1+c2/3)*6)

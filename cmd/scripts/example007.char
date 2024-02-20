@@ -1,0 +1,19 @@
+// Float
+
+f1 := 1.32
+
+pl("%v, %v", typeOf(f1), f1)
+
+previus_f1 := f1
+
+f1 = f1 * 0.8
+
+// function 'pr' is the same as 'print' in other languages
+pr(previus_f1, "*", 0.8, "=", f1)
+
+pln()
+
+f2 := 0.93
+f2 /= 0.3
+
+pr(0.93, "/", 0.3, "=", f2, "\n")
