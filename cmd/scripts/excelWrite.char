@@ -1,0 +1,17 @@
+global argsG
+
+filePathT := trim(getSwitch(argsG, "-file=", `./excel1.xlsx`))
+
+pl("try create file: %v ...", filePathT)
+
+// create a new file
+excelT := excel()
+
+rowsT := [["title1","title2","title3"],["value1","value2","value3"],["value4","value5","value6"]]
+
+checkErr(rowsT)
+
+pl("%v", toJson(rowsT, "-indent", "-sort"))
+
+close(excelT)
+

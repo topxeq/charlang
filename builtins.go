@@ -30,6 +30,7 @@ import (
 	"github.com/topxeq/sqltk"
 	"github.com/topxeq/tk"
 	"github.com/wcharczuk/go-chart/v2/drawing"
+	"github.com/xuri/excelize/v2"
 
 	"github.com/mholt/archiver/v3"
 
@@ -48,6 +49,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinGetTextSimilarity
 	BuiltinLeSshInfo
 	BuiltinStack
 	BuiltinQueue
@@ -63,6 +65,7 @@ const (
 	BuiltinClose
 	BuiltinRegSplit
 	BuiltinReadCsv
+	BuiltinExcelReadSheet
 	BuiltinWriteCsv
 	BuiltinRemovePath
 	BuiltinRemoveDir
@@ -526,6 +529,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strQuote":   BuiltinStrQuote,
 	"strUnquote": BuiltinStrUnquote,
 
+	"getTextSimilarity": BuiltinGetTextSimilarity,
+
 	// regex related
 	"regMatch":    BuiltinRegMatch,
 	"regContains": BuiltinRegContains,
@@ -812,6 +817,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	// eTable related
 	"readCsv":  BuiltinReadCsv,
 	"writeCsv": BuiltinWriteCsv,
+
+	"excelReadSheet": BuiltinExcelReadSheet,
 
 	// database related
 	"formatSQLValue": BuiltinFormatSQLValue,
@@ -1400,6 +1407,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strUnquote",
 		Value:   CallExAdapter(builtintStrUnquoteFunc),
 		ValueEx: builtintStrUnquoteFunc,
+	},
+	BuiltinGetTextSimilarity: &BuiltinFunction{
+		Name:    "getTextSimilarity",
+		Value:   FnASSVIRF(tk.GetTextSimilarity),
+		ValueEx: FnASSVIRFex(tk.GetTextSimilarity),
 	},
 
 	// regex related
@@ -2306,6 +2318,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "WriteCsv",
 		Value:   CallExAdapter(builtinWriteCsvFunc),
 		ValueEx: builtinWriteCsvFunc,
+	},
+	BuiltinExcelReadSheet: &BuiltinFunction{
+		Name:    "excelReadSheet",
+		Value:   CallExAdapter(builtinExcelReadSheetFunc),
+		ValueEx: builtinExcelReadSheetFunc,
 	},
 
 	// database related
@@ -4126,6 +4143,60 @@ func FnASSRSex(fn func(string, string) string) CallableExFunc {
 
 		rs := fn(c.Get(0).String(), c.Get(1).String())
 		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.CalTextSimilarity
+func FnASSRF(fn func(string, string) float64) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return Float(rs), nil
+	}
+}
+
+func FnASSRFex(fn func(string, string) float64) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return Float(rs), nil
+	}
+}
+
+// like tk.GetTextSimilarity
+func FnASSVIRF(fn func(string, string, ...int) float64) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		vargs := ObjectsToN(args[2:])
+
+		rs := fn(args[0].String(), args[1].String(), vargs...)
+		return Float(rs), nil
+	}
+}
+
+func FnASSVIRFex(fn func(string, string, ...int) float64) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		vargs := ObjectsToN(args[2:])
+
+		rs := fn(args[0].String(), args[1].String(), vargs...)
+		return Float(rs), nil
 	}
 }
 
@@ -7032,6 +7103,67 @@ func builtinReadCsvFunc(c Call) (Object, error) {
 	rowsT, err := readerT.ReadAll()
 	if err != nil {
 		return NewCommonErrorWithPos(c, "failed to read file content: %v", err), nil
+	}
+
+	return ConvertToObject(rowsT), nil
+
+}
+
+func builtinExcelReadSheetFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	r1, ok := args[0].(*Reader)
+
+	var f *excelize.File
+	var err error
+
+	if !ok {
+		filePathT := args[0].String()
+
+		f, err = excelize.OpenFile(filePathT)
+
+		if err != nil {
+			return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+		}
+
+		defer f.Close()
+
+	} else {
+		f, err = excelize.OpenReader(r1.Value)
+
+		if err != nil {
+			return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+		}
+
+		defer f.Close()
+	}
+
+	var indexT Object = Int(0)
+
+	if len(args) > 1 {
+		indexT = args[1]
+	}
+
+	var nameT string
+
+	nv1, ok := indexT.(Int)
+
+	if ok {
+		nameT = f.GetSheetName(int(nv1))
+	} else {
+		nameT = indexT.String()
+	}
+
+	// tk.Pl("nameT: %#v", nameT)
+
+	rowsT, errT := f.GetRows(nameT)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to get rows: %v", errT), nil
 	}
 
 	return ConvertToObject(rowsT), nil

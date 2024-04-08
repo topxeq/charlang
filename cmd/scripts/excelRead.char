@@ -8,15 +8,27 @@ if filePathT == "" {
 
 pl("try open %v ...", filePathT)
 
+// use -path parameter to open an existing file, otherwise to create a new one
 excelT := excel("-path=" + filePathT)
 
 checkErr(excelT)
 
-rowsT := excelT.readSheet(0)
+try {
+    rowsT := excelT.readSheet(0)
 
-checkErr(rowsT)
+    // checkErr(rowsT)
+        
+    pl("%v", toJson(rowsT, "-indent", "-sort"))
+} finally {
+    close(excelT)
+}
 
-pl("%v", toJson(rowsT, "-indent", "-sort"))
 
-close(excelT)
+// another way to read data from a sheet
+
+// the first paramter could be a file path, or a reader
+// the second parameter can be the sheet name or the sheet index
+rows2T := excelReadSheet(filePathT, 0) 
+
+pl("%v", toJson(rows2T, "-indent", "-sort"))
 
