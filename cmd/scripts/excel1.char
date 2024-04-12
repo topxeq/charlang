@@ -1,13 +1,4 @@
-// r1 := char('A')
-
-// plv(r1)
-
-// for i in 10 {
-// 	r2 := chars(r1+i)
-// 	pl("%v %#v %T %#v %#v", i, r2, r2, string(r2), toStr(r2))
-// }
-
-// return
+pathT := joinPath(getHomeDir(), "excel1.xlsx")
 
 excel1 := excelNew()
 
@@ -39,11 +30,11 @@ for i, v in rowsT {
 	}
 }
 
-rs = excelSaveAs(excel1, `d:\downtemp\excel1.xlsx`)
+rs = excelSaveAs(excel1, pathT)
 
 checkErr(rs)
 
-writer1 := writer(`d:\downtemp\excel1a.xlsx`, "-file", "-create", "-truncate")
+writer1 := writer(pathT, "-file", "-create", "-truncate")
 
 rs = excelWriteTo(excel1, writer1)
 

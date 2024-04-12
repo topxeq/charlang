@@ -1,4 +1,4 @@
-excel1 := excelOpen(`d:\downtemp\excel1.xlsx`)
+excel1 := excelOpen(joinPath(getHomeDir(), `excel1.xlsx`))
 
 rows1T := excelReadSheet(excel1, 0)
 
