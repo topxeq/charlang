@@ -1,0 +1,13 @@
+writer1 := writer(`d:\downtemp\text1.txt`, "-file", "-create", "-truncate")
+
+writeStr(writer1, "abc123天气好")
+
+close(writer1)
+
+writer2 := writer(`d:\downtemp\text1.txt`, "-file", "-append")
+
+writeStr(writer2, "XYZ")
+
+close(writer2)
+
+

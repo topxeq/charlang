@@ -1,0 +1,54 @@
+// r1 := char('A')
+
+// plv(r1)
+
+// for i in 10 {
+// 	r2 := chars(r1+i)
+// 	pl("%v %#v %T %#v %#v", i, r2, r2, string(r2), toStr(r2))
+// }
+
+// return
+
+excel1 := excelNew()
+
+rowsT := [["title1","title2","title3"],["value1",2.3,"value3"],["value4",6,"value6"]]
+
+rs := excelWriteSheet(excel1, 0, rowsT)
+
+checkErr(rs)
+
+indexT := excelNewSheet(excel1, "Sheet2")
+
+checkErr(indexT)
+
+rs = excelWriteSheet(excel1, indexT, rowsT, "-row")
+
+checkErr(rs)
+
+indexT = excelNewSheet(excel1, "Sheet3")
+
+checkErr(indexT)
+
+r1 := char('A')
+
+for i, v in rowsT {
+	for j, jv in v {
+		rs = excelWriteCell(excel1, indexT, string(chars(r1+j))+(i+1), jv)
+
+		checkErr(rs)
+	}
+}
+
+rs = excelSaveAs(excel1, `d:\downtemp\excel1.xlsx`)
+
+checkErr(rs)
+
+writer1 := writer(`d:\downtemp\excel1a.xlsx`, "-file", "-create", "-truncate")
+
+rs = excelWriteTo(excel1, writer1)
+
+checkErr(rs)
+
+close(writer1)
+
+excelClose(excel1)

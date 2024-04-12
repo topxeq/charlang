@@ -1,0 +1,27 @@
+excel1 := excelOpen(`d:\downtemp\excel1.xlsx`)
+
+rows1T := excelReadSheet(excel1, 0)
+
+checkErr(rows1T)
+
+pl("rows1: %v", rows1T)
+
+cell1T := excelReadCell(excel1, 0, "C2")
+
+checkErr(cell1T)
+
+pl("cell C2: %v", cell1T)
+
+rows2T := excelReadSheet(excel1, 1)
+
+checkErr(rows2T)
+
+pl("rows2: %v", rows2T)
+
+rows3T := excelReadSheet(excel1, 2)
+
+checkErr(rows2T)
+
+pl("rows3: %v", rows3T)
+
+excelClose(excel1)

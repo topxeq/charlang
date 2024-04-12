@@ -8705,12 +8705,18 @@ func NewWriter(c Call) (Object, error) {
 
 	if ok {
 		if tk.IfSwitchExists(optsT, "-file") {
-			flagT := 0
+			flagT := os.O_RDWR
 
 			if tk.IfSwitchExists(optsT, "-create") {
-				flagT = os.O_RDWR | os.O_CREATE
-			} else {
-				flagT = os.O_RDWR | os.O_CREATE | os.O_APPEND
+				flagT = flagT | os.O_CREATE
+			}
+
+			if tk.IfSwitchExists(optsT, "-append") {
+				flagT = flagT | os.O_APPEND
+			}
+
+			if tk.IfSwitchExists(optsT, "-truncate") {
+				flagT = flagT | os.O_TRUNC
 			}
 
 			f, err := os.OpenFile(s1.String(), flagT, os.FileMode(tk.OctetToInt(tk.GetSwitch(optsT, "-perm=", "0777"), 0777)))
