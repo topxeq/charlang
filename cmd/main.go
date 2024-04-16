@@ -1594,6 +1594,21 @@ func runArgs(argsA ...string) interface{} {
 		return nil
 	}
 
+	// if tk.IfSwitchExistsWhole(argsT, "-pipe") {
+	// 	// gox.InitQLVM()
+
+	// 	// var guiHandlerG tk.TXDelegate = guiHandler
+
+	// 	// gox.QlVMG.SetVar("argsG", argsT)
+	// 	// gox.QlVMG.SetVar("guiG", guiHandlerG)
+
+	// 	runInteractiveShell()
+
+	// 	// tk.Pl("not enough parameters")
+
+	// 	return nil
+	// }
+
 	if tk.IfSwitchExistsWhole(argsT, "-server") {
 
 		// gox.InitQLVM()
@@ -1610,7 +1625,9 @@ func runArgs(argsA ...string) interface{} {
 		scriptT = "CMD"
 	}
 
-	if scriptT == "" && (!ifClipT) && (!ifEmbedT) && (!ifInExeT) {
+	ifPipeT := tk.IfSwitchExistsWhole(argsT, "-pipe")
+
+	if scriptT == "" && (!ifClipT) && (!ifEmbedT) && (!ifInExeT) && (!ifPipeT) {
 
 		// autoPathT := filepath.Join(tk.GetApplicationPath(), "auto.gox")
 		// autoGxbPathT := filepath.Join(tk.GetApplicationPath(), "auto.gxb")
@@ -1776,6 +1793,22 @@ func runArgs(argsA ...string) interface{} {
 		fcT = tk.GetClipText()
 
 		scriptPathT = ""
+	} else if ifPipeT {
+		// fmt.Println("pipe")
+		bufT := bufio.NewReader(os.Stdin)
+
+		b, err := io.ReadAll(bufT)
+		if err != nil {
+			return tk.Errf("failed to load script from stdin: %v", tk.GetErrorString(fcT))
+		}
+
+		// Prints the data in buffer
+		// fmt.Println("s1T", string(b))
+
+		scriptPathT = "#PIPE"
+
+		fcT = string(b)
+
 	} else if ifEmbedT {
 		fcT = charlang.CodeTextG
 
