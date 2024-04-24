@@ -118,6 +118,7 @@ const (
 	BuiltinAwsSign
 	BuiltinNow
 	BuiltinTimeToTick
+	BuiltinFormatTime
 	BuiltinGetNowTimeStamp
 	BuiltinBase64Encode
 	BuiltinBase64Decode
@@ -222,6 +223,7 @@ const (
 	BuiltinGenJSONResp
 	BuiltinUrlExists
 	BuiltinErrStrf
+	BuiltinErrf
 	BuiltinCharCode
 	BuiltinGel
 	BuiltinDelegate
@@ -336,6 +338,7 @@ const (
 	BuiltinPass
 
 	BuiltinDelete
+	BuiltinGetArrayItem
 	BuiltinCopy
 	BuiltinRepeat
 	BuiltinContains
@@ -488,6 +491,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"appendSlice": BuiltinAppendList,
 	"delete":      BuiltinDelete,
 
+	"getArrayItem": BuiltinGetArrayItem,
+
 	"removeItems": BuiltinRemoveItems, // inclusive
 
 	"arrayContains": BuiltinArrayContains,
@@ -571,6 +576,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getNowTimeStamp":  BuiltinGetNowTimeStamp,
 	"timeToTick":       BuiltinTimeToTick,
 
+	"formatTime": BuiltinFormatTime,
+
 	// binary/bytes related
 	"bytesStartsWith": BuiltinBytesStartsWith,
 	"bytesEndsWith":   BuiltinBytesEndsWith,
@@ -615,6 +622,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"checkErr":  BuiltinCheckErrX,
 
 	"errStrf": BuiltinErrStrf,
+	"errf":    BuiltinErrf,
 
 	// output/print related
 	"pr":     BuiltinPr,
@@ -1240,6 +1248,11 @@ var BuiltinObjects = [...]Object{
 		Value:   funcPOsRe(builtinDeleteFunc),
 		ValueEx: funcPOsReEx(builtinDeleteFunc),
 	},
+	BuiltinGetArrayItem: &BuiltinFunction{
+		Name:    "getArrayItem",
+		Value:   CallExAdapter(builtinGetArrayItemFunc),
+		ValueEx: builtinGetArrayItemFunc,
+	},
 	BuiltinRemoveItems: &BuiltinFunction{
 		Name:    "removeItems",
 		Value:   CallExAdapter(builtinRemoveItemsFunc),
@@ -1286,8 +1299,8 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinToTime: &BuiltinFunction{
 		Name:    "toTime", // new a Time object
-		Value:   CallExAdapter(builtinTimeFunc),
-		ValueEx: builtinTimeFunc,
+		Value:   CallExAdapter(builtinToTimeFunc),
+		ValueEx: builtinToTimeFunc,
 	},
 	BuiltinToHex: &BuiltinFunction{
 		Name:    "toHex",
@@ -1534,6 +1547,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnATRS(tk.GetTimeStampMid),
 		ValueEx: FnATRSex(tk.GetTimeStampMid),
 	},
+	BuiltinFormatTime: &BuiltinFunction{
+		Name:    "formatTime",
+		Value:   FnATVsRS(tk.FormatTime),
+		ValueEx: FnATVsRSex(tk.FormatTime),
+	},
 	BuiltinGetNowTimeStamp: &BuiltinFunction{
 		Name:    "getNowTimeStamp",
 		Value:   CallExAdapter(builtinGetNowTimeStampFunc),
@@ -1692,6 +1710,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "errStrf",
 		Value:   FnASVaRS(tk.ErrStrf),
 		ValueEx: FnASVaRSex(tk.ErrStrf),
+	},
+	BuiltinErrf: &BuiltinFunction{
+		Name:    "errf",
+		Value:   FnASVaRE(tk.Errf),
+		ValueEx: FnASVaREex(tk.Errf),
 	},
 
 	// output/print related
@@ -2926,6 +2949,38 @@ func builtinDeleteFunc(arg Object, key string) (err error) {
 	return
 }
 
+func builtinGetArrayItemFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	defaultT := Undefined
+
+	if len(args) < 2 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	if len(args) > 2 {
+		defaultT = args[2]
+	}
+
+	lenT := 0
+
+	target, ok := args[0].(LengthGetter)
+
+	if ok {
+		lenT = target.Len()
+	} else {
+		return defaultT, NewCommonErrorWithPos(c, "unable to get length")
+	}
+
+	idxT := ToIntQuick(args[1])
+
+	if idxT < 0 || idxT >= lenT {
+		return defaultT, nil
+	}
+
+	return args[0].IndexGet(Int(idxT))
+}
+
 func builtinCopyFunc(arg Object) Object {
 	if v, ok := arg.(Copier); ok {
 		return v.Copy()
@@ -3779,6 +3834,47 @@ func FnATRSex(fn func(time.Time) string) CallableExFunc {
 		}
 
 		rs := fn(nv.Value)
+		return String{Value: rs}, nil
+	}
+}
+
+// like tk.FormatTime
+func FnATVsRS(fn func(time.Time, ...string) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv, ok := args[0].(*Time)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		vs := ObjectsToS(args[1:])
+
+		rs := fn(nv.Value, vs...)
+		return String{Value: rs}, nil
+	}
+}
+
+func FnATVsRSex(fn func(time.Time, ...string) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv, ok := args[0].(*Time)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		vs := ObjectsToS(args[1:])
+
+		rs := fn(nv.Value, vs...)
 		return String{Value: rs}, nil
 	}
 }
@@ -4789,6 +4885,35 @@ func FnASVaRSex(fn func(string, ...interface{}) string) CallableExFunc {
 
 		rs := fn(args[0].String(), vargs...)
 		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.Errf
+func FnASVaRE(fn func(string, ...interface{}) error) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToI(args[1:])
+
+		rs := fn(args[0].String(), vargs...)
+		return &Error{Name: "error", Message: rs.Error()}, nil
+	}
+}
+
+func FnASVaREex(fn func(string, ...interface{}) error) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToI(args[1:])
+
+		rs := fn(args[0].String(), vargs...)
+		return &Error{Name: "error", Message: rs.Error()}, nil
 	}
 }
 
@@ -6169,6 +6294,39 @@ func builtinTimeFunc(c Call) (Object, error) {
 		return &Time{Value: rsT.(time.Time)}, nil
 	default:
 		return Undefined, NewCommonErrorWithPos(c, "failed to convert time")
+	}
+}
+
+func builtinToTimeFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return &Time{Value: time.Now()}, nil
+	}
+
+	switch obj := args[0].(type) {
+	case Int:
+		return &Time{Value: tk.GetTimeFromUnixTimeStampMid(obj.String())}, nil
+	// case Float:
+	// 	return DateTime{Value: float64(obj)}, nil
+	case *Time:
+		return &Time{Value: obj.Value}, nil
+	case String:
+		rsT := tk.ToTime(obj.Value, ObjectsToI(args[1:])...)
+
+		if tk.IsError(rsT) {
+			return NewCommonErrorWithPos(c, "failed to convert time: %v", rsT), nil
+		}
+		return &Time{Value: rsT.(time.Time)}, nil
+	case *MutableString:
+		rsT := tk.ToTime(obj.Value, ObjectsToI(args[1:])...)
+
+		if tk.IsError(rsT) {
+			return NewCommonErrorWithPos(c, "failed to convert time: %v", rsT), nil
+		}
+		return &Time{Value: rsT.(time.Time)}, nil
+	default:
+		return NewCommonErrorWithPos(c, "failed to convert time"), nil
 	}
 }
 
