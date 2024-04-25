@@ -8465,7 +8465,7 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return &SyncMap{Value: make(Map)}, nil
 	case "time":
 		return builtinTimeFunc(Call{Args: args[1:]})
-	case "stringBuilder":
+	case "stringBuilder", "stringBuffer":
 		return builtinStringBuilderFunc(Call{Args: args[1:]})
 	case "any":
 		return builtinAnyFunc(Call{Args: args[1:]})
