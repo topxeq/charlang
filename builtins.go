@@ -176,6 +176,7 @@ const (
 	BuiltinTryRLock
 	BuiltinToKMG
 	BuiltinGetFileList
+	BuiltinMathAbs
 	BuiltinMathSqrt
 	BuiltinAdjustFloat
 	BuiltinBigInt
@@ -561,6 +562,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	// math related
 	"adjustFloat": BuiltinAdjustFloat,
 
+	"mathAbs":  BuiltinMathAbs,
 	"mathSqrt": BuiltinMathSqrt,
 
 	// random related
@@ -1502,6 +1504,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "adjustFloat",
 		Value:   CallExAdapter(builtinAdjustFloatFunc),
 		ValueEx: builtinAdjustFloatFunc,
+	},
+	BuiltinMathAbs: &BuiltinFunction{
+		Name:    "mathAbs",
+		Value:   CallExAdapter(builtinMathAbsFunc),
+		ValueEx: builtinMathAbsFunc,
 	},
 	BuiltinMathSqrt: &BuiltinFunction{
 		Name:    "mathSqrt",
@@ -10356,6 +10363,61 @@ func builtinMathSqrtFunc(c Call) (Object, error) {
 		return &BigFloat{Value: big.NewFloat(0).Sqrt(big.NewFloat(0).SetInt(nv.Value))}, nil
 	case *BigFloat:
 		return &BigFloat{Value: big.NewFloat(0).Sqrt(nv.Value)}, nil
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
+}
+
+func builtinMathAbsFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	switch nv := args[0].(type) {
+	case Byte:
+		if nv < 0 {
+			return -nv, nil
+		}
+
+		return nv, nil
+	case Char:
+		if nv < 0 {
+			return -nv, nil
+		}
+
+		return nv, nil
+	case Int:
+		if nv < 0 {
+			return -nv, nil
+		}
+
+		return nv, nil
+	case Uint:
+		if nv < 0 {
+			return -nv, nil
+		}
+
+		return nv, nil
+	case Float:
+		if nv < 0 {
+			return -nv, nil
+		}
+
+		return nv, nil
+	case *BigInt:
+		if nv.Value.Cmp(big.NewInt(int64(0))) < 0 {
+			return &BigInt{Value: big.NewInt(int64(0)).Sub(big.NewInt(int64(0)), nv.Value)}, nil
+		}
+
+		return nv, nil
+	case *BigFloat:
+		if nv.Value.Cmp(big.NewFloat(0.0)) < 0 {
+			return &BigFloat{Value: big.NewFloat(0.0).Sub(big.NewFloat(0.0), nv.Value)}, nil
+		}
+
+		return nv, nil
 	}
 
 	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
