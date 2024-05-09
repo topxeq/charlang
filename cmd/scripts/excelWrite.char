@@ -13,5 +13,13 @@ checkErr(rowsT)
 
 pl("%v", toJson(rowsT, "-indent", "-sort"))
 
+rs := excelWriteSheet(excelT, 0, rowsT)
+
+checkErr(rs)
+
+rs = excelSaveAs(excelT, filePathT)
+
+checkErr(rs)
+
 close(excelT)
 

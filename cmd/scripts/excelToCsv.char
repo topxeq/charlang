@@ -1,0 +1,31 @@
+global argsG
+
+filePathT := trim(getSwitch(argsG, "-file=", ""))
+
+if filePathT == "" {
+    fatalf("empty file name")
+}
+
+pl("try open %v ...", filePathT)
+
+// open an existing file
+excelT := excelOpen(filePathT)
+
+checkErr(excelT)
+
+var rowsT
+
+try {
+    rowsT = excelT.readSheet(0)
+
+    checkErr(rowsT)
+        
+    pl("%v", toJson(rowsT, "-indent", "-sort"))
+} finally {
+    close(excelT)
+}
+
+rs := writeCsv(rowsT, filePathT + ".csv", "-create", "-truncate")
+
+checkErr(rs)
+

@@ -505,13 +505,14 @@ var BuiltinsMap = map[string]BuiltinType{
 	"setValueByRef": BuiltinSetValueByRef,
 
 	// convert related
-	"toStr":   BuiltinToStr,
-	"toInt":   BuiltinToInt,
-	"toFloat": BuiltinToFloat,
-	"toTime":  BuiltinToTime,
-	"toHex":   BuiltinToHex,
-	"unhex":   BuiltinUnhex,
-	"toKMG":   BuiltinToKMG,
+	"toStr":     BuiltinToStr,
+	"toInt":     BuiltinToInt,
+	"toFloat":   BuiltinToFloat,
+	"toTime":    BuiltinToTime,
+	"toHex":     BuiltinToHex,
+	"unhex":     BuiltinUnhex,
+	"hexDecode": BuiltinUnhex,
+	"toKMG":     BuiltinToKMG,
 
 	// string related
 	"trim":          BuiltinTrim,
@@ -7770,12 +7771,12 @@ func builtinWriteCsvFunc(c Call) (Object, error) {
 
 	vs := ObjectsToS(args[2:])
 
-	r1, ok := args[0].(*Writer)
+	r1, ok := args[1].(*Writer)
 
 	var writerT *csv.Writer
 
 	if !ok {
-		filePathT := args[0].String()
+		filePathT := args[1].String()
 
 		rsT := tk.OpenFile(filePathT, vs...)
 
@@ -7799,7 +7800,7 @@ func builtinWriteCsvFunc(c Call) (Object, error) {
 		writerT.UseCRLF = false
 	}
 
-	switch nv := args[1].(type) {
+	switch nv := args[0].(type) {
 	case Array:
 		for i, v := range nv {
 			switch nvi := v.(type) {
@@ -7818,6 +7819,9 @@ func builtinWriteCsvFunc(c Call) (Object, error) {
 
 				writerT.Flush()
 
+				return Undefined, nil
+			default:
+				tk.Pl("unsupported line type: %T", args[1])
 				return Undefined, nil
 			}
 		}
