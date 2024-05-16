@@ -29,32 +29,10 @@ htmlT := `
 <meta charset="utf-8">
 <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<script src="http://topget.org/js/jquery.min.js"></script>
-<link href="http://topget.org/css/codemirror.css" rel="stylesheet">
-<script src="http://topget.org/js/codemirror.js"></script>
-<script src="http://topget.org/js/mode/go/go.js"></script>
-<script src="http://topget.org/js/sweetalert2.all.min.js"></script>
-<style>
-	.CodeMirror {
-		border: 1px solid #eee;
-		// height: auto;
-		height: 90vh;
-        font-size: 20px;
-	}
-
-</style>
 <script>
-    var myCodeMirrorG;
-
 	window.onload = function (){
-		myCodeMirrorG = CodeMirror.fromTextArea(document.getElementById("mainTextID"), {
-			lineNumbers: true,
-			lineWrapping: true,
-			viewportMargin: Infinity,
-			mode: "go"
-		});
 
-		$("#mainTextID")[0].dispatchEvent(new Event('input'));
+		document.getElementById('mainTextID').dispatchEvent(new Event('input'));
 
 		document.onkeydown = function(e) {
 			if (e.ctrlKey) {
@@ -86,12 +64,12 @@ htmlT := `
 					return;
 				}
 
-                alertx(res.substr(8));
+                alert(res.substr(8));
                 return;
             }
 
-            myCodeMirrorG.setValue(res);
-			$("#mainTextID")[0].dispatchEvent(new Event('input'));
+            document.getElementById('mainTextID').value = res;
+			document.getElementById('mainTextID').dispatchEvent(new Event('input'));
             document.getElementById("mainTextID").focus();
 		});
 
@@ -99,85 +77,26 @@ htmlT := `
 
 	};
 
-	function infox(titleA, msgA, typeA) {
-		if (!titleA) {
-			titleA = "Info";
-			msgA = "";
-			typeA = "success";
-		} else if (!msgA) {
-			msgA = titleA;
-			titleA = "Info";
-		} else if (!typeA) {
-			typeA = "success";
-		}
-
-		if (typeof(msgA) != "string") {
-			msgA = msgA.toString();
-		}
-
-		Swal.fire({title: titleA, text: msgA, icon: typeA});
-	}
-
-	function alertx(titleA, msgA, typeA) {
-		if (!titleA) {
-			titleA = "Alert";
-			msgA = "";
-			typeA = "success";
-		} else if (!msgA) {
-			msgA = titleA;
-			titleA = "Alert";
-		} else if (!typeA) {
-			typeA = "error";
-		}
-
-		if (typeof(msgA) != "string") {
-			msgA = msgA.toString();
-		}
-
-		Swal.fire({title: titleA, text: msgA, icon: typeA});
-	}
-
 	function copyIt() {
-		delegateDo("setClipText", myCodeMirrorG.getValue());
+		delegateDo("setClipText", document.getElementById('mainTextID').value);
 	}
 
 	function saveIt() {
-		var rs = delegateDo("saveText", myCodeMirrorG.getValue());
+		var rs = delegateDo("saveText", document.getElementById('mainTextID').value);
 
 		rs.then(res => {
-			infox("save result: " + res);
+			alert("save result: " + res);
 		});
 
 	}
 
 	function quickRunIt() {
-		var rs = delegateDo("quickRun", myCodeMirrorG.getValue());
+		var rs = delegateDo("quickRun", document.getElementById('mainTextID').value);
 
 		rs.then(res => {
             if (!(!res)) {
-                infox("quick run result: " + JSON.stringify(res));
+                alert("quick run result: " + JSON.stringify(res));
             }
-		});
-
-	}
-
-	function runIt() {
-		var rs = quickDelegateDo("run", myCodeMirrorG.getValue());
-
-        rs.then(res => {
-            console.log("res:", res)
-            if (!(!res)) {
-                infox("run result: " + JSON.stringify(res));
-            }
-		});
-
-	}
-
-	function setParamIt() {
-		var rs = quickDelegateDo("setParam", myCodeMirrorG.getValue());
-
-		rs.then(res => {
-			infox("setParam result: " + JSON.stringify(res));
 		});
 
 	}
@@ -187,12 +106,12 @@ htmlT := `
 
 		rs.then(res => {
 			if (res.indexOf("TXERROR:") == 0) {
-				alertx(res.substring(8));
+				alert(res.substring(8));
 				return;
 			}
 
-            myCodeMirrorG.setValue(res);
-			$("#mainTextID")[0].dispatchEvent(new Event('input'));
+            document.getElementById('mainTextID').value = res;
+			document.getElementById('mainTextID').dispatchEvent(new Event('input'));
             document.getElementById("mainTextID").focus();
 		});
 
@@ -202,29 +121,29 @@ htmlT := `
         var rs = delegateDo("getClipText");
 
 		rs.then(res => {
-            myCodeMirrorG.setValue(res);
-			$("#mainTextID")[0].dispatchEvent(new Event('input'));
+            document.getElementById('mainTextID').value = res;
+			document.getElementById('mainTextID').dispatchEvent(new Event('input'));
             document.getElementById("mainTextID").focus();
 		});
 	}
 
 	function clearIt() {
-		myCodeMirrorG.setValue("");
+		document.getElementById('mainTextID').value = "";
 	}
 
 	function checkJSON() {
-		var codeT = myCodeMirrorG.getValue();
+		var codeT = document.getElementById('mainTextID').value;
 
 		var objT;
 
 		try {
 			objT = JSON.parse(codeT);    
 		} catch (error) {
-			alertx(error);
+			alert(error);
 			return;
 		}
 
-		infox("check passed");
+		alert("check passed");
 	}
 
 </script>
