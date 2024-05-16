@@ -161,7 +161,9 @@ htmlT := `
 	<button onclick="javascript:setParamIt();" style="display: none;">Param</button>
 </div>
 <div id="div3" style="margin-top: 10px; text-align: left;">
-<textarea id="mainTextID" style="width: 90%; height: 92vh; font-size: 16px; text-align: left;"></textarea>
+<div style="text-align: center;">
+	<textarea id="mainTextID" style="width: 96%; height: 92vh; font-size: 16px; text-align: left;"></textarea>
+</div>
 </div>
 </body>
 </html>
