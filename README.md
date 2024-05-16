@@ -20,6 +20,7 @@
       - [Integer Data Type](#integer-data-type)
       - [Float Data Type](#float-data-type)
       - [String/Bytes/Chars Data Type](#stringbyteschars-data-type)
+      - [Anonymous Function](#anonymous-function)
 
 # The Char Language (Charlang)
 
@@ -580,4 +581,8 @@ charlang.Char, 21892
 3: char, 27700
 
 ```
+
+#### Anonymous Function
+
+file: [anonymousFunc.char](http://topget.org/dc/c/charlang/example/anonymousFunc.char)
 

@@ -1,0 +1,395 @@
+global argsG
+global inputG
+global guiG
+
+fileNameT := trim(getSwitch(argsG, "-fromFile=", ""))
+
+fromClipT := ifSwitchExists(argsG, "-fromClip")
+
+fromInputT := ifSwitchExists(argsG, "-fromInput")
+
+fromUrlT := trim(getSwitch(argsG, "-fromUrl=", ""))
+
+fcT := "TXERROR:empty"
+
+if fromClipT {
+	fcT = getClipText()
+} else if fileNameT != "" {
+	fcT = loadText(fileNameT)
+} else if fromUrlT != "" {
+	fcT = getWeb(fromUrlT)
+} else if fromInputT {
+	fcT = spr("%v", inputG)
+}
+
+htmlT := `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script src="http://topget.org/js/jquery.min.js"></script>
+<link href="http://topget.org/css/codemirror.css" rel="stylesheet">
+<script src="http://topget.org/js/codemirror.js"></script>
+<script src="http://topget.org/js/mode/go/go.js"></script>
+<script src="http://topget.org/js/sweetalert2.all.min.js"></script>
+<style>
+	.CodeMirror {
+		border: 1px solid #eee;
+		// height: auto;
+		height: 90vh;
+        font-size: 20px;
+	}
+
+</style>
+<script>
+    var myCodeMirrorG;
+
+	window.onload = function (){
+		myCodeMirrorG = CodeMirror.fromTextArea(document.getElementById("mainTextID"), {
+			lineNumbers: true,
+			lineWrapping: true,
+			viewportMargin: Infinity,
+			mode: "go"
+		});
+
+		$("#mainTextID")[0].dispatchEvent(new Event('input'));
+
+		document.onkeydown = function(e) {
+			if (e.ctrlKey) {
+				if (e.keyCode == 83) {
+					console.log("ctrl-s");
+					saveIt();
+					// e.stopPropagation(); 
+					e.preventDefault(); 
+					e.returnValue = false;
+
+					return false;
+				}
+
+				return true;
+			} 
+
+			return true;
+		};  
+
+        var rs;
+
+        rs = delegateDo("initContent");
+
+		rs.then(res => {
+            console.log("res: ", res);
+
+            if (res.startsWith("TXERROR:")) {
+				if (res == "TXERROR:empty") {
+					return;
+				}
+
+                alertx(res.substr(8));
+                return;
+            }
+
+            myCodeMirrorG.setValue(res);
+			$("#mainTextID")[0].dispatchEvent(new Event('input'));
+            document.getElementById("mainTextID").focus();
+		});
+
+        document.getElementById("mainTextID").focus();
+
+	};
+
+	function infox(titleA, msgA, typeA) {
+		if (!titleA) {
+			titleA = "Info";
+			msgA = "";
+			typeA = "success";
+		} else if (!msgA) {
+			msgA = titleA;
+			titleA = "Info";
+		} else if (!typeA) {
+			typeA = "success";
+		}
+
+		if (typeof(msgA) != "string") {
+			msgA = msgA.toString();
+		}
+
+		Swal.fire({title: titleA, text: msgA, icon: typeA});
+	}
+
+	function alertx(titleA, msgA, typeA) {
+		if (!titleA) {
+			titleA = "Alert";
+			msgA = "";
+			typeA = "success";
+		} else if (!msgA) {
+			msgA = titleA;
+			titleA = "Alert";
+		} else if (!typeA) {
+			typeA = "error";
+		}
+
+		if (typeof(msgA) != "string") {
+			msgA = msgA.toString();
+		}
+
+		Swal.fire({title: titleA, text: msgA, icon: typeA});
+	}
+
+	function copyIt() {
+		delegateDo("setClipText", myCodeMirrorG.getValue());
+	}
+
+	function saveIt() {
+		var rs = delegateDo("saveText", myCodeMirrorG.getValue());
+
+		rs.then(res => {
+			infox("save result: " + res);
+		});
+
+	}
+
+	function quickRunIt() {
+		var rs = delegateDo("quickRun", myCodeMirrorG.getValue());
+
+		rs.then(res => {
+            if (!(!res)) {
+                infox("quick run result: " + JSON.stringify(res));
+            }
+		});
+
+	}
+
+	function runIt() {
+		var rs = quickDelegateDo("run", myCodeMirrorG.getValue());
+
+        rs.then(res => {
+            console.log("res:", res)
+            if (!(!res)) {
+                infox("run result: " + JSON.stringify(res));
+            }
+		});
+
+	}
+
+	function setParamIt() {
+		var rs = quickDelegateDo("setParam", myCodeMirrorG.getValue());
+
+		rs.then(res => {
+			infox("setParam result: " + JSON.stringify(res));
+		});
+
+	}
+
+	function loadIt() {
+		var rs = delegateDo("loadText");
+
+		rs.then(res => {
+			if (res.indexOf("TXERROR:") == 0) {
+				alertx(res.substring(8));
+				return;
+			}
+
+            myCodeMirrorG.setValue(res);
+			$("#mainTextID")[0].dispatchEvent(new Event('input'));
+            document.getElementById("mainTextID").focus();
+		});
+
+	}
+
+	function pasteIt() {
+        var rs = delegateDo("getClipText");
+
+		rs.then(res => {
+            myCodeMirrorG.setValue(res);
+			$("#mainTextID")[0].dispatchEvent(new Event('input'));
+            document.getElementById("mainTextID").focus();
+		});
+	}
+
+	function clearIt() {
+		myCodeMirrorG.setValue("");
+	}
+
+	function checkJSON() {
+		var codeT = myCodeMirrorG.getValue();
+
+		var objT;
+
+		try {
+			objT = JSON.parse(codeT);    
+		} catch (error) {
+			alertx(error);
+			return;
+		}
+
+		infox("check passed");
+	}
+
+</script>
+</head>
+<body style="font-size: 16px;">
+<div id="div1" style="height: 20px;">
+	<button onclick="javascript:clearIt();">Clear</button>
+	<button onclick="javascript:copyIt();">Copy</button>
+	<button onclick="javascript:pasteIt();">Paste</button>
+	<button onclick="javascript:checkJSON();">Check JSON</button>
+	<button onclick="javascript:loadIt();">Load</button>
+	<button onclick="javascript:saveIt();">Save</button>
+	<button onclick="javascript:quickRunIt();">Quick Run</button>
+	<button onclick="javascript:runIt();" style="display: none;">Run</button>
+	<button onclick="javascript:setParamIt();" style="display: none;">Param</button>
+</div>
+<div id="div3" style="margin-top: 10px; text-align: left;">
+<textarea id="mainTextID" style="width: 90%; height: 92vh; font-size: 16px; text-align: left;"></textarea>
+</div>
+</body>
+</html>
+`
+
+windowT := guiG.newWindow("-title=Tmp Editor", "-width=1280", "-height=928", "-center", "-debug")
+
+// plo(windowT)
+
+dele1 := delegate(strReplace(`
+	param ...vargs
+	
+	global inputG
+
+	pln(vargs)
+
+	// pl("inputG: %#v", inputG)
+
+	guiG := inputG[1]
+
+	fcT := inputG[2]
+
+	cmdT := vargs[0]
+
+    if cmdT == "showResult" {
+		idT := trim(vargs[1])
+		pl("id: %v", idT)
+
+		return idT
+	} else if cmdT == "closeWindow" {
+		pl("close window")
+
+		windowT := inputG[0]
+
+		windowT("close")
+
+		return cmdT
+	} else if cmdT == "initContent" {
+		pl("initContent")
+
+		return fcT
+	} else if cmdT == "getClipText" {
+		pl("getClipText")
+
+		return getClipText()
+	} else if cmdT == "setClipText" {
+		pl("setClipText")
+
+		v1 := trim(vargs[1])
+
+		setClipText(toStr(v1))
+
+		return ""
+	} else if cmdT == "loadText" {
+		pl("loadText")
+
+		rs1 := guiG.selectFile("-title=Select file...", ~~~-filter=[{"Patterns": ["*.*"]}]~~~)
+
+		if isErr(rs1) {
+			return spr("TXERROR:failed to select file: %v", rs1)
+		}
+		
+		if !rs1 {
+			return spr("TXERROR:no file selected")
+		}
+
+		rs2 := loadText(rs1)
+
+		if isErr(rs2) {
+			return spr("TXERROR:%v", rs2)
+		}
+		
+		return rs2
+	} else if cmdT == "saveText" {
+		pl("saveText")
+
+		v1 := trim(vargs[1])
+
+		rs1 := guiG.selectFileToSave("-confirmOverwrite", "-title=Save file to...")
+
+		if isErr(rs1) {
+			return spr("TXERROR:failed to select file: %v", rs1)
+		}
+		
+		if !rs1 {
+			return spr("TXERROR:no file selected")
+		}
+
+		rs2 := saveText(v1, rs1)
+
+		if isErr(rs2) {
+			return spr("TXERROR:%v", rs2)
+		}
+		
+		return ""
+	} else if cmdT == "quickRun" {
+		pl("quickRun")
+
+		v1 := trim(vargs[1])
+
+		pl("code: %v", v1)
+
+		c1 := charCode(v1)
+
+		if isErr(c1) {
+			return spr("TXERROR:failed to create charCode: %v", c1)
+		}
+
+		crs := c1.compile()
+
+		if isErr(crs) {
+			return spr("TXERROR:failed to compile code: %v", crs)
+		}
+
+		plv(c1)
+
+		rs := c1.run(...(vargs[2:]))
+		
+		plv(rs)
+
+		return toStr(rs)
+	}
+	
+    pl("cmd: %v", cmdT)
+
+    return cmdT
+`, "~~~", "`"))
+
+checkErr(dele1)
+
+rs := dele1.compile(windowT, guiG, fcT)
+
+checkErr(rs)
+
+rs = windowT.setDelegate(dele1)
+
+checkErr(rs)
+
+rs = windowT.setHtml(htmlT)
+
+checkErr(rs)
+
+rs = windowT("show")
+
+checkErr(rs)
+
+rs = windowT("close")
+
+checkErr(rs)
+
