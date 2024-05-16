@@ -14,3 +14,7 @@ pln(a)
 b := true
 
 pln(b)
+
+// can not use := again for the same variable
+// the next line will cause error
+// b := 1.1

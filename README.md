@@ -229,6 +229,7 @@ Hello world!
 C:\Users\Administrator>
 
 ```
+
 #### Comments
 
 file: [example002.char](http://topget.org/dc/c/charlang/example/example002.char)
@@ -278,6 +279,10 @@ pln(a)
 b := true
 
 pln(b)
+
+// can not use := again for the same variable
+// the next line will cause error
+// b := 1.1
 
 ```
 
