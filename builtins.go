@@ -447,6 +447,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"time":          BuiltinTime,
 	"stringBuilder": BuiltinStringBuilder,
+	"stringBuffer":  BuiltinStringBuilder,
 	"orderedMap":    BuiltinOrderedMap,
 
 	"stack": BuiltinStack,
@@ -3120,6 +3121,28 @@ func builtinSortFunc(arg Object) (ret Object, err error) {
 			return false
 		})
 		ret = arg
+	case Map:
+		rs := tk.NewOrderedMap()
+
+		for k, v := range obj {
+			rs.Set(k, v)
+		}
+
+		errT := rs.SortStringKeys()
+
+		if errT != nil {
+			return NewCommonError("failed to sort: %v", errT), nil
+		}
+
+		return &OrderedMap{Value: rs}, nil
+	case *OrderedMap:
+		errT := obj.Value.SortStringKeys()
+
+		if errT != nil {
+			return NewCommonError("failed to sort: %v", errT), nil
+		}
+
+		ret = arg
 	case String:
 		s := []rune(obj.String())
 		sort.Slice(s, func(i, j int) bool {
@@ -3169,6 +3192,28 @@ func builtinSortReverseFunc(arg Object) (Object, error) {
 		if err != nil {
 			return nil, err
 		}
+		return obj, nil
+	case Map:
+		rs := tk.NewOrderedMap()
+
+		for k, v := range obj {
+			rs.Set(k, v)
+		}
+
+		errT := rs.SortStringKeys("-desc")
+
+		if errT != nil {
+			return NewCommonError("failed to sort: %v", errT), nil
+		}
+
+		return &OrderedMap{Value: rs}, nil
+	case *OrderedMap:
+		errT := obj.Value.SortStringKeys("-desc")
+
+		if errT != nil {
+			return NewCommonError("failed to sort: %v", errT), nil
+		}
+
 		return obj, nil
 	case String:
 		s := []rune(obj.String())
