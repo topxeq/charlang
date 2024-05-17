@@ -1,17 +1,17 @@
 <!-- |title: The Char Language (Charlang)| -->
 
 - [The Char Language (Charlang)](#the-char-language-charlang)
-  - [Features](#features)
-  - [New Features](#new-features)
-  - [Quick Links](#quick-links)
-  - [Quick Start](#quick-start)
-  - [Documentation](#documentation)
-    - [Get the Binary](#get-the-binary)
-    - [Compile from Source Code](#compile-from-source-code)
-    - [Start Running the Shell or Scripts](#start-running-the-shell-or-scripts)
-    - [Various Ways to Run Charlang Scripts](#various-ways-to-run-charlang-scripts)
-    - [Get the Examples](#get-the-examples)
-    - [Quick Tour](#quick-tour)
+  - [1. Features](#1-features)
+  - [2. New Features](#2-new-features)
+  - [3. Quick Links](#3-quick-links)
+  - [4. Quick Start](#4-quick-start)
+  - [5. Documentation](#5-documentation)
+    - [5.1 Get the Binary](#51-get-the-binary)
+    - [5.2 Compile from Source Code](#52-compile-from-source-code)
+    - [5.3 Start Running the Shell or Scripts](#53-start-running-the-shell-or-scripts)
+    - [5.4 Various Ways to Run Charlang Scripts](#54-various-ways-to-run-charlang-scripts)
+    - [5.5 Get the Examples](#55-get-the-examples)
+    - [5.6 Quick Tour](#56-quick-tour)
       - [Hello World!](#hello-world)
       - [Comments](#comments)
       - [Define Variables](#define-variables)
@@ -20,7 +20,11 @@
       - [Integer Data Type](#integer-data-type)
       - [Float Data Type](#float-data-type)
       - [String/Bytes/Chars Data Type](#stringbyteschars-data-type)
+      - [Array](#array)
+      - [For Loop](#for-loop)
+    - [5.7 More Examples](#57-more-examples)
       - [Anonymous Function](#anonymous-function)
+      - [A Simple Text Editor](#a-simple-text-editor)
 
 # The Char Language (Charlang)
 
@@ -30,7 +34,7 @@ in native Go. Charlang has a more-common runtime error handling(try-catch-finall
 
 Charlang is inspired by and based on awesome script language [uGo](https://github.com/ozanh/ugo). A special thanks to uGo's creater([ozanh](https://github.com/ozanh)) and contributors.
 
-## Features
+## 1. Features
 
 * Written in native Go (no cgo).
 * `if else` statements.
@@ -41,7 +45,7 @@ Charlang is inspired by and based on awesome script language [uGo](https://githu
 * Module support.
 * Go like syntax with additions.
 
-## New Features
+## 2. New Features
 
 - New types such as Byte, Any...
 - New functions: NewCommonError, NewError and more...
@@ -68,7 +72,7 @@ return fib(35)
 
 ```
 
-## Quick Links
+## 3. Quick Links
 
 [Charlang Home](http://topget.org/charlang)
 
@@ -76,7 +80,7 @@ return fib(35)
 
 [Builtin Functions](http://topget.org/dc/charlang/funcs)
 
-## Quick Start
+## 4. Quick Start
 
 `go get -u github.com/topxeq/charlang`
 
@@ -149,19 +153,19 @@ return v
 }
 ```
 
-## Documentation
+## 5. Documentation
 
-### Get the Binary
+### 5.1 Get the Binary
 
 Download the binary release files according to your OS from the website: [Charlang Homepage](http://topget.org/charlang).
 
-### Compile from Source Code
+### 5.2 Compile from Source Code
 
 ```shell
 go get -u github.com/topxeq/charlang
 ```
 
-### Start Running the Shell or Scripts
+### 5.3 Start Running the Shell or Scripts
 
 After download, extract the executable from the zip file, put it into a directory, better in the system path.
 
@@ -169,7 +173,7 @@ Then type 'char' in the terminal/console to start the interactive command-line s
 
 Using command-line switch '-view' will show the source code of the script instead of run it.
 
-### Various Ways to Run Charlang Scripts
+### 5.4 Various Ways to Run Charlang Scripts
 
 Examples:
 
@@ -181,7 +185,7 @@ Examples:
 - Run from local scripts directory: place a config file local.cfg in the subdirectory 'char' under the user's home directory, with text content such as `c:\scripts`, then `char -local basic.char` will run 'c:\script\basic.char'
 - Run from cloud/network: place a config file cloud.cfg in the subdirectory 'char' under the user's home directory, with text content such as `http://script.my.com/`, then `char -cloud basic.char` will be the same as `char -remote http://script.my.com/basic.char`
 
-### Get the Examples
+### 5.5 Get the Examples
 
 All the source code examples marked by file names in the document can be retrieved or run by the command line like:
 
@@ -205,7 +209,7 @@ You can browse to `http://topget.org/dc/c/charlang/example/basic.char` to view t
 
 Using command-line switch '-viewPage' with '-example' will show the online code page in system-default browser as well.
 
-### Quick Tour
+### 5.6 Quick Tour
 
 #### Hello World!
 
@@ -582,7 +586,61 @@ charlang.Char, 21892
 
 ```
 
+#### Array
+
+```go
+// declare an array
+a := [1, 2, 3, "abc", 12.3]
+
+println("a:", a)
+
+println("a[2]:", a[2])
+
+println("length of a:", len(a))
+
+// reassign the array variable
+a = [1, 2]
+
+// append values
+a = append(a, "abc")
+
+// array item can be any type, even another array
+b := ["xyz", 16, a]
+
+pln("b:", b)
+
+```
+
+output:
+
+```shell
+a: [1, 2, 3, "abc", 12.3]
+a[2]: 3
+length of a: 5
+b: ["xyz", 16, [1, 2, "abc"]]
+```
+
+#### For Loop
+
+```go
+c1 := 0
+
+for i := 0; i < 1000; i++ {
+	c1 += i
+}
+
+pln(c1 * 3)
+```
+
+### 5.7 More Examples
+
 #### Anonymous Function
 
 file: [anonymousFunc.char](http://topget.org/dc/c/charlang/example/anonymousFunc.char)
+
+#### A Simple Text Editor
+
+file: [editFile.char](http://topget.org/dc/c/charlang/example/editFile.char)
+
+A simple text editor with file load/save, JSON validate, code running features.
 
