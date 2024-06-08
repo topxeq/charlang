@@ -256,6 +256,7 @@ const (
 	BuiltinUnref
 	BuiltinSetValueByRef
 	BuiltinGetWeb
+	BuiltinGetWebBytes
 	BuiltinRegFindFirstGroups
 	BuiltinReadAllStr
 	BuiltinReadAllBytes
@@ -774,7 +775,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"archiveFilesToZip": BuiltinArchiveFilesToZip, // Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
 
 	// network/web related
-	"getWeb": BuiltinGetWeb,
+	"getWeb":      BuiltinGetWeb,
+	"getWebBytes": BuiltinGetWebBytes,
 
 	"postRequest": BuiltinPostRequest,
 
@@ -2183,6 +2185,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getWeb",
 		Value:   FnASVaRA(tk.GetWeb),
 		ValueEx: FnASVaRAex(tk.GetWeb),
+	},
+	BuiltinGetWebBytes: &BuiltinFunction{
+		Name:    "getWebBytes",
+		Value:   CallExAdapter(builtinGetWebBytesFunc),
+		ValueEx: builtinGetWebBytesFunc,
 	},
 	BuiltinPostRequest: &BuiltinFunction{
 		Name:    "postRequest",
@@ -7293,6 +7300,34 @@ func builtinRemovePathFunc(c Call) (Object, error) {
 	}
 
 	return Undefined, nil
+}
+
+func builtinGetWebBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	urlT := args[0].String()
+
+	vs := ObjectsToI(args[1:])
+
+	vs = append(vs, "-bytes")
+
+	rsT := tk.GetWeb(urlT, vs...)
+
+	if tk.IsErrX(rsT) {
+		return NewCommonErrorWithPos(c, "%v", rsT), nil
+	}
+
+	nv, ok := rsT.([]byte)
+
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupported return type"), nil
+	}
+
+	return Bytes(nv), nil
 }
 
 func builtinArchiveFilesToZipFunc(c Call) (Object, error) {
