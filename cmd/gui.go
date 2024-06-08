@@ -117,6 +117,17 @@ func newWindowWebView2(paramsA []interface{}) interface{} {
 			}
 
 			return nil
+		case "setTitle":
+			len1T := len(paramsA)
+			if len1T < 1 {
+				return fmt.Errorf("not enough parameters")
+			}
+
+			if len1T > 0 {
+				w.SetTitle(tk.ToStr(paramsA[0]))
+			}
+
+			return nil
 		case "setHtml":
 			len1T := len(paramsA)
 			if len1T < 1 {
