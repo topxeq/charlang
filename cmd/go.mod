@@ -17,7 +17,7 @@ require (
 	github.com/ncruces/zenity v0.10.10
 	github.com/sijms/go-ora/v2 v2.7.17
 	github.com/topxeq/charlang v0.0.0
-	github.com/topxeq/tkc v0.0.0-20240618010942-dee68c50edd5
+	github.com/topxeq/tkc v0.0.0
 
 )
 
@@ -99,8 +99,8 @@ require (
 	golang.org/x/text v0.16.0 // indirect
 )
 
-// replace github.com/topxeq/tk v1.0.6 => ../../tk
+replace github.com/topxeq/tkc v0.0.0 => ../../tkc
 
 // replace github.com/topxeq/sqltk v0.0.0 => ../../sqltk
 
-replace github.com/topxeq/charlang v0.0.0 => ../../charlang
+replace github.com/topxeq/charlang v0.0.0 => ../
