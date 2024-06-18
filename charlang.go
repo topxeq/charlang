@@ -8,7 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/topxeq/charlang/registry"
-	"github.com/topxeq/tk"
+	tk "github.com/topxeq/tkc"
 )
 
 const (

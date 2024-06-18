@@ -10,7 +10,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/ncruces/zenity"
 
-	"github.com/topxeq/tk"
+	tk "github.com/topxeq/tkc"
 
 	"github.com/kbinani/screenshot"
 

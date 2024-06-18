@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/topxeq/charlang"
-	"github.com/topxeq/tk"
+	tk "github.com/topxeq/tkc"
 )
 
 func main() {

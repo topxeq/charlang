@@ -28,7 +28,7 @@ import (
 	// ugostrings "github.com/topxeq/charlang/stdlib/strings"
 	charex "github.com/topxeq/charlang/stdlib/ex"
 	// charfmt "github.com/topxeq/charlang/stdlib/fmt"
-	"github.com/topxeq/tk"
+	tk "github.com/topxeq/tkc"
 
 	"github.com/kardianos/service"
 

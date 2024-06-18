@@ -9,7 +9,7 @@ import (
 	"sort"
 
 	"github.com/topxeq/charlang"
-	"github.com/topxeq/tk"
+	tk "github.com/topxeq/tkc"
 )
 
 // func quickCompile(codeA string) interface{} {

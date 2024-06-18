@@ -20,7 +20,7 @@ import (
 	"github.com/topxeq/charlang/parser"
 	"github.com/topxeq/charlang/token"
 	"github.com/topxeq/sqltk"
-	"github.com/topxeq/tk"
+	tk "github.com/topxeq/tkc"
 
 	"github.com/xuri/excelize/v2"
 )

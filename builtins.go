@@ -28,7 +28,7 @@ import (
 	"github.com/topxeq/awsapi"
 	"github.com/topxeq/charlang/token"
 	"github.com/topxeq/sqltk"
-	"github.com/topxeq/tk"
+	tk "github.com/topxeq/tkc"
 	"github.com/wcharczuk/go-chart/v2/drawing"
 	"github.com/xuri/excelize/v2"
 

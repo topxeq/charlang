@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/topxeq/tk"
+	tk "github.com/topxeq/tkc"
 	"github.com/xuri/excelize/v2"
 	// _ "github.com/denisenkom/go-mssqldb"
 	// _ "github.com/sijms/go-ora/v2"
@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "0.9.8"
+var VersionG = "0.9.9"
 
 var CodeTextG = ""
 
