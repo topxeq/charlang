@@ -1,7 +1,34 @@
 c1 := 0
 
-for i := 0; i < 1000; i++ {
+// classic for loop
+for i := 0; i < 5; i++ {
 	c1 += i
 }
 
 pln(c1 * 3)
+
+// for loop with condition only
+i := 0
+
+for i < 5 {
+	pl("i: %v", i)
+
+	i = i + 1
+}
+
+// infinite loop(if no break)
+
+c := 5
+for {
+	c = c + 5
+
+	if c < 10 {
+		continue
+	}
+
+	if c > 30 {
+		break
+	}
+}
+
+pln("c:", c)

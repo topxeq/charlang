@@ -1,0 +1,27 @@
+var a
+
+if !a {
+	pln("!a")
+}
+
+pln("!a", !a)
+
+if a {
+	pln("a =", a)
+} else {
+	pln("a is not initialized")
+}
+
+b := 1
+
+if b {
+	pln("b =", b)
+} else {
+	pln("b is not initialized")
+}
+
+pln("!b", !b)
+
+var c = "abc"
+
+pln("!c", !c)

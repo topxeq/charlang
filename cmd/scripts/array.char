@@ -75,6 +75,10 @@ g := [1.2, 3, 56]
 
 plt(g)
 
+// if array contains some items
+pln(arrayContains(g, 56))
+pln(arrayContains(g, "abc"))
+
 // iterate
 for i, v in c {
 	pl("i: %v, v: %v", i, v)

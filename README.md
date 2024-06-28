@@ -22,8 +22,10 @@
       - [String/Bytes/Chars Data Type](#stringbyteschars-data-type)
       - [Array](#array)
       - [For Loop](#for-loop)
+      - [If Statement](#if-statement)
     - [5.7 More Examples](#57-more-examples)
       - [Anonymous Function](#anonymous-function)
+      - [More About Array](#more-about-array)
       - [A Simple Text Editor](#a-simple-text-editor)
 
 # The Char Language (Charlang)
@@ -625,11 +627,95 @@ b: ["xyz", 16, [1, 2, "abc"]]
 ```go
 c1 := 0
 
-for i := 0; i < 1000; i++ {
+// classic for loop
+for i := 0; i < 5; i++ {
 	c1 += i
 }
 
 pln(c1 * 3)
+
+// for loop with condition only
+i := 0
+
+for i < 5 {
+	pl("i: %v", i)
+
+	i = i + 1
+}
+
+// infinite loop(if no break)
+
+c := 5
+for {
+	c = c + 5
+
+	if c < 10 {
+		continue
+	}
+
+	if c > 30 {
+		break
+	}
+}
+
+pln("c:", c)
+
+```
+
+Output:
+
+```shell
+30
+i: 0
+i: 1
+i: 2
+i: 3
+i: 4
+c: 35
+```
+
+#### If Statement
+
+```go
+var a
+
+if !a {
+	pln("!a")
+}
+
+pln("!a", !a)
+
+if a {
+	pln("a =", a)
+} else {
+	pln("a is not initialized")
+}
+
+b := 1
+
+if b {
+	pln("b =", b)
+} else {
+	pln("b is not initialized")
+}
+
+pln("!b", !b)
+
+var c = "abc"
+
+pln("!c", !c)
+
+```
+
+Output:
+
+```shell
+!a
+!a true
+a is not initialized
+b = 1
+!b false
+!c false
 ```
 
 ### 5.7 More Examples
@@ -637,6 +723,10 @@ pln(c1 * 3)
 #### Anonymous Function
 
 file: [anonymousFunc.char](http://topget.org/dc/c/charlang/example/anonymousFunc.char)
+
+#### More About Array
+
+file: [array.char](http://topget.org/dc/c/charlang/example/array.char)
 
 #### A Simple Text Editor
 

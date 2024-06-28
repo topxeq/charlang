@@ -72,6 +72,8 @@
 
 **stringBuilder**
 
+**stringBuffer**
+
 **orderedMap**
 
 **stack**
@@ -134,6 +136,8 @@
 
 **delete**
 
+**getArrayItem**
+
 **removeItems**: inclusive
 
 **arrayContains**
@@ -159,6 +163,8 @@
 **toHex**
 
 **unhex**
+
+**hexDecode**
 
 **toKMG**
 
@@ -214,6 +220,8 @@
 
 **strUnquote**
 
+**getTextSimilarity**
+
 ### --- regex related ---
 
 **regMatch**
@@ -240,6 +248,8 @@
 
 **adjustFloat**
 
+**mathAbs**
+
 **mathSqrt**
 
 ### --- random related ---
@@ -263,6 +273,8 @@
 **getNowTimeStamp**
 
 **timeToTick**
+
+**formatTime**
 
 ### --- binary/bytes related ---
 
@@ -337,6 +349,8 @@
 **checkErr**
 
 **errStrf**
+
+**errf**
 
 ### --- output/print related ---
 
@@ -562,6 +576,8 @@
 
 **getWeb**
 
+**getWebBytes**
+
 **postRequest**
 
 **urlExists**
@@ -649,6 +665,26 @@
 **readCsv**
 
 **writeCsv**
+
+**excelNew**
+
+**excelOpen**
+
+**excelSaveAs**
+
+**excelWriteTo**
+
+**excelClose**
+
+**excelNewSheet**
+
+**excelReadSheet**
+
+**excelWriteSheet**
+
+**excelReadCell**
+
+**excelWriteCell**
 
 ### --- database related ---
 
