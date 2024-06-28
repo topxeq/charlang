@@ -622,6 +622,8 @@ length of a: 5
 b: ["xyz", 16, [1, 2, "abc"]]
 ```
 
+Refer to the array example in More Examples section for more information about array type.
+
 #### For Loop
 
 ```go
