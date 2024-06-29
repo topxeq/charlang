@@ -1,11 +1,11 @@
 module github.com/topxeq/charlang
 
-go 1.22.4
+go 1.22.3
 
 require (
 	github.com/stretchr/testify v1.8.4
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff
-	github.com/topxeq/sqltk v0.0.0-20240618014733-99f9a3c3eefb
+	github.com/topxeq/sqltk v0.0.0-20240629061205-d42826b0e386
 	github.com/topxeq/tkc v0.0.0
 )
 
@@ -79,7 +79,7 @@ require (
 	github.com/vicanso/go-charts/v2 v2.6.4
 	github.com/wcharczuk/go-chart/v2 v2.1.0
 	github.com/xuri/excelize/v2 v2.8.0
-	golang.org/x/image v0.17.0 // indirect
+	golang.org/x/image v0.18.0 // indirect
 )
 
 replace github.com/topxeq/tkc v0.0.0 => ../tkc
