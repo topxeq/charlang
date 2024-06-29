@@ -224,6 +224,12 @@ func QuickRunChar(codeA string, scriptPathA string, argsA ...string) interface{}
 		// f, l := QlVMG.Code.Line(QlVMG.Code.Reserve().Next())
 		// tk.Pl("Next line: %v, %v", f, l)
 
+		logFileT := tk.GetSwitch(argsA, "-logFile=", "")
+
+		if logFileT != "nil" {
+			tk.AppendStringToFile(fmt.Sprintf("\n[%v] %v %v\n", tk.GetNowTimeString(), scriptPathA, errT), logFileT)
+		}
+
 		return tk.Errf("failed to execute script(%v) error: %v\n", scriptPathA, errT)
 	}
 
@@ -311,6 +317,33 @@ func Svc() {
 	}
 
 	go runAutoRemoveTask()
+
+	runThreadTask := func() {
+		taskFileListT := tk.GetFileList(basePathG, "-pattern=threadTask*.char", "-sort=asc", "-sortKey=Name")
+
+		if len(taskFileListT) > 0 {
+			for i, v := range taskFileListT {
+
+				fcT := tk.LoadStringFromFile(v["Abs"])
+
+				if tk.IsErrX(fcT) {
+					tk.LogWithTimeCompact("failed to load thread task - [%v] %v: %v", i, v["Abs"], tk.GetErrStrX(fcT))
+					continue
+				}
+
+				tk.LogWithTimeCompact("running thread task: %v ...", v["Abs"])
+
+				scriptPathG = v["Abs"]
+
+				go QuickRunChar(fcT, scriptPathG, "-logFile="+filepath.Join(basePathG, "runThreadTask.log"))
+			}
+		}
+
+		tk.Sleep(5.0)
+
+	}
+
+	go runThreadTask()
 
 	taskFileListT := tk.GetFileList(basePathG, "-pattern=task*.char", "-sort=asc", "-sortKey=Name")
 
