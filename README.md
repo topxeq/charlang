@@ -769,6 +769,8 @@ The task code can refer to examples such as task001.char, threadTask001.char, au
 
 - One-time-task Example
 
+file: [task001.char](http://topget.org/dc/c/charlang/example/task001.char)
+
 ```go
 global basePathG
 
@@ -782,6 +784,8 @@ return "task001 returns some result 000"
 
 - Thread-task Example
 
+file: [threadTask001.char](http://topget.org/dc/c/charlang/example/threadTask001.char)
+
 ```go
 for {
 	saveText(getNowStr(), `c:\char\task1.txt`)
@@ -792,7 +796,23 @@ for {
 
 It will be a continous loop which will write the current time string in the file every 60 seconds.
 
+The following is the thread-task to run Frpc client when system started,
+
+file: [threadTaskFrpc.char](http://topget.org/dc/c/charlang/example/threadTaskFrpc.char)
+
+```go
+appendText(spr("\n[%v] %v %v\n", getNowStr(), "threadTaskFrpc", "starting..."), `c:\logs\frpcTask.log`)
+
+rs := systemCmd(`c:\tools\frp\frpc.exe`, `-c`, `c:\tools\frp\frpc.ini`)
+
+appendText(spr("\n[%v] %v %v\n", getNowStr(), "threadTaskFrpc", rs), `c:\logs\frpcTask.log`)
+
+
+```
+
 - Auto-remove-task Example
+
+file: [autoRemoveTask001.char](http://topget.org/dc/c/charlang/example/autoRemoveTask001.char)
 
 ```go
 global basePathG
