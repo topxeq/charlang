@@ -23,6 +23,8 @@
       - [Array](#array)
       - [For Loop](#for-loop)
       - [If Statement](#if-statement)
+      - [Predefined Global Variables](#predefined-global-variables)
+      - [Charlang as System Service](#charlang-as-system-service)
     - [5.7 More Examples](#57-more-examples)
       - [Anonymous Function](#anonymous-function)
       - [More About Array](#more-about-array)
@@ -719,6 +721,88 @@ b = 1
 !b false
 !c false
 ```
+
+#### Predefined Global Variables
+
+There are some prefined global variables in Charlang, which can be refered by 'global' keyword. The following code will show the command-line arguments in order,
+
+```go
+global argsG
+
+for i, v in argsG {
+    pl("[%v] %v")
+}
+```
+
+The global predefined variable 'argsG' holds the command-line parameters while running the Charlang's main program. The data type of argsG is array, so we could use it instantly without other declaration.
+
+If using Charlang as a library in Golang, we can pass other global variables other than the predefined ones.
+
+The common global predefined variables include:
+
+- versionG: the current version of Charlang;
+- basePathG: the base path of Charlang, will be the current user's home directory such as c:\Users\Administrator or the service root directory(c:\char in Windows and /char in Linux);
+- argsG: the array typed variable holds the command-line parameters;
+- scriptPathG: the path of the script file running currently;
+- runModeG: running mode of Charlang(script, repl, service, charms, chp, chardc, ...)
+
+And while runnin as a WEB/Application/Micro-service server, there are additional predefined global variables:
+
+- requestG: the HTTP request object, holds the request information;
+- responseG: the HTTP respone object that could write response to, or set response settings;
+- reqUriG: the route of the request, such as 'static/images/img001.png'
+- paraMapG: holds the GET/POST form values, in a map object, such as `{"auth": "xxxxx", "input1": "value1"}`
+
+#### Charlang as System Service
+
+Charlang can be started as a system service and supports operating systems such as Windows and Linux. As long as you add the command line parameter '-reinstallService' to run the Charlang main program, you can install a system service called charService in the system (which can be seen using the service management module in computer management under Windows). Note that installing services in the operating system generally requires administrator privileges. Under Windows, you need to open the CMD window as an administrator to execute this command, while under Linux, you need to execute it as root or with the sudo command.
+
+After the service is started, a log will be recorded in the file charService.log in the service root directory (c:\char in Windows and /char in Linux). When the service starts for the first time, it will search for all files with names similar to taskXXX.char in the service root directory (such as task001.char, taskAbc.char, etc.) and run them one by one, and output their execution results (returned value) to the log. This type of code file is called a one-time-run task file, and is generally used in situations where it needs to be started and run once. It can also be manually run the command 'char -restartService' to restart the service and achieve the goal of task re-execution.
+
+There are another kind of one-time-run task files which will be run in a seperated thread called 'thread tasks', their file name similar to threadTaskXXX.char in the service root directory (such as threadTask001.char, threadTaskAbc.char, etc.). These tasks is for those tasks need running continously, such as WEB servers, FRP server or client, ... If some error occur while running thread-tasks, the information will be logged in file 'runThreadTask.log' in service root directory.
+
+In addition, during operation, the charService service checks the service root directory every 5 seconds. If there are files with names similar to autoRemoveTaskXXX.char (such as autoRemoveTask001.char, autoRemoveTaskAbc.char, etc.), the code in these files will be immediately executed and then deleted. This mechanism is similar to a task queue, allowing us to add tasks to the queue (placed in the service root directory) at any time, and Charlang service will execute these tasks at any time. And since the task will be deleted immediately after execution, it will not be executed repeatedly.
+
+The command line parameters related to service installation, removal, start, stop, and restart of the Charlang main program also include '-installService', '-removeService', '-startService', '-stopService', '-restartService', and so on.
+
+The task code can refer to examples such as task001.char, threadTask001.char, autoRemoveTask001.char, etc.
+
+- One-time-task Example
+
+```go
+global basePathG
+
+logPathT := joinPath(basePathG, "charService.log")
+
+rs := appendText("\ntask001.char\n", logPathT)
+
+return "task001 returns some result 000"
+
+```
+
+- Thread-task Example
+
+```go
+for {
+	saveText(getNowStr(), `c:\char\task1.txt`)
+
+	sleep(60.0)
+}
+```
+
+It will be a continous loop which will write the current time string in the file every 60 seconds.
+
+- Auto-remove-task Example
+
+```go
+global basePathG
+
+logPathT := joinPath(basePathG, "charService.log")
+
+rs := appendText("\nautoRemoveTask001.char\n", logPathT)
+
+```
+
 
 ### 5.7 More Examples
 

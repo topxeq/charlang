@@ -1,0 +1,5 @@
+for {
+	saveText(getNowStr(), `c:\char\task1.txt`)
+
+	sleep(60.0)
+}

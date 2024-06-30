@@ -1,0 +1,6 @@
+appendText(spr("\n[%v] %v %v\n", getNowStr(), "threadTaskFrpc", "starting..."), `c:\logs\frpcTask.log`)
+
+rs := systemCmd(`c:\tools\frp\frpc.exe`, `-c`, `c:\tools\frp\frpc.ini`)
+
+appendText(spr("\n[%v] %v %v\n", getNowStr(), "threadTaskFrpc", rs), `c:\logs\frpcTask.log`)
+

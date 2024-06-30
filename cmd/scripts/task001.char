@@ -1,0 +1,8 @@
+global basePathG
+
+logPathT := joinPath(basePathG, "charService.log")
+
+rs := appendText("\ntask001.char\n", logPathT)
+
+return "task001 returns some result 000"
+

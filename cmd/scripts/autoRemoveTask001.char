@@ -1,0 +1,6 @@
+global basePathG
+
+logPathT := joinPath(basePathG, "charService.log")
+
+rs := appendText("\nautoRemoveTask001.char\n", logPathT)
+
