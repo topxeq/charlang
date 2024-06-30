@@ -697,6 +697,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// command-line related
 	"ifSwitchExists": BuiltinIfSwitchExists,
+	"switchExists":   BuiltinIfSwitchExists,
 	"getSwitch":      BuiltinGetSwitch,
 	"getIntSwitch":   BuiltinGetIntSwitch,
 	"getSwitches":    BuiltinGetSwitches,
