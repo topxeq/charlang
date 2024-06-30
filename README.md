@@ -730,7 +730,7 @@ There are some prefined global variables in Charlang, which can be refered by 'g
 global argsG
 
 for i, v in argsG {
-    pl("[%v] %v")
+    pl("[%v] %v", i, v)
 }
 ```
 
