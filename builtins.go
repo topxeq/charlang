@@ -8978,7 +8978,21 @@ func builtinDatabaseFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "invalid paramter 2"), nil
 	}
 
-	rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
+	v1 := nv0.Value
+	v2 := nv1.Value
+
+	if v1 == "godror" {
+		matchesT := tk.RegFindFirstGroupsX(v2, `^(.*?)/(.*?)@(.*?)$`)
+
+		if matchesT != nil {
+			v1 = "oracle"
+			v2 = "oracle://" + matchesT[1] + ":" + matchesT[2] + "@" + matchesT[3]
+		}
+	} else if v1 == "sqlite3" {
+		v1 = "sqlite"
+	}
+
+	rsT := sqltk.ConnectDBX(v1, v2)
 	if tk.IsError(rsT) {
 		return NewFromError(rsT.(error)), nil
 	}

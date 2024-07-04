@@ -8,12 +8,12 @@ go 1.22.3
 
 require (
 	github.com/denisenkom/go-mssqldb v0.12.3
+	github.com/glebarez/go-sqlite v1.22.0
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/jchv/go-webview2 v0.0.0-20221223143126-dc24628cff85
 	github.com/json-iterator/go v1.1.12
 	github.com/kardianos/service v1.2.2
 	github.com/kbinani/screenshot v0.0.0-20230812210009-b87d31814237
-	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/ncruces/zenity v0.10.10
 	github.com/sijms/go-ora/v2 v2.7.17
 	github.com/topxeq/charlang v0.0.0
@@ -44,6 +44,7 @@ require (
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/google/uuid v1.5.0 // indirect
 	github.com/guptarohit/asciigraph v0.5.6 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 // indirect
 	github.com/jchv/go-winloader v0.0.0-20200815041850-dec1ee9a7fd5 // indirect
@@ -55,6 +56,7 @@ require (
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/lxn/win v0.0.0-20210218163916-a377121e959e // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mholt/archiver/v3 v3.5.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -67,6 +69,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/sftp v1.13.4 // indirect
 	github.com/randall77/makefat v0.0.0-20210315173500-7ddd0e42c844 // indirect
+	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/richardlehane/mscfb v1.0.4 // indirect
 	github.com/richardlehane/msoleps v1.0.3 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
@@ -97,6 +100,10 @@ require (
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/term v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
+	modernc.org/libc v1.37.6 // indirect
+	modernc.org/mathutil v1.6.0 // indirect
+	modernc.org/memory v1.7.2 // indirect
+	modernc.org/sqlite v1.28.0 // indirect
 )
 
 replace github.com/topxeq/tkc v0.0.0 => ../../tkc
