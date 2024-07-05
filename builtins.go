@@ -337,6 +337,7 @@ const (
 	BuiltinTestByRegContains
 	BuiltinTestByReg
 	BuiltinGetSeq
+	BuiltinGetUuid
 	BuiltinPass
 
 	BuiltinDelete
@@ -913,7 +914,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"awsSign": BuiltinAwsSign,
 
 	// misc related
-	"getSeq": BuiltinGetSeq,
+	"getSeq":  BuiltinGetSeq,
+	"getUuid": BuiltinGetUuid,
+	"genUuid": BuiltinGetUuid,
 
 	"renderMarkdown": BuiltinRenderMarkdown,
 
@@ -2669,6 +2672,11 @@ var BuiltinObjects = [...]Object{
 			return FnARIex(tk.GetSeq)(NewCall(nil, args))
 		},
 		ValueEx: FnARIex(tk.GetSeq),
+	},
+	BuiltinGetUuid: &BuiltinFunction{
+		Name:    "getUuid",
+		Value:   FnARS(tk.GetUUID),
+		ValueEx: FnARSex(tk.GetUUID),
 	},
 	BuiltinRenderMarkdown: &BuiltinFunction{
 		Name:    "renderMarkdown",
