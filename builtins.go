@@ -8997,7 +8997,7 @@ func builtinDatabaseFunc(c Call) (Object, error) {
 		return NewFromError(rsT.(error)), nil
 	}
 
-	return &Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
+	return &Database{DBType: v1, DBConnectString: v2, Value: rsT.(*sql.DB)}, nil
 }
 
 // func builtinGetErrStrXFunc(c Call) (Object, error) {

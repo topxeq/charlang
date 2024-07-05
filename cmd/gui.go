@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"runtime"
+	"strings"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/ncruces/zenity"
@@ -354,6 +355,18 @@ func guiHandler(argsA ...interface{}) interface{} {
 		return getConfirmGUI(tk.ToStr(paramsA[0]), tk.InterfaceToStringArray(paramsA[1:])...)
 	case "getInput":
 		return getInputGUI(tk.InterfaceToStringArray(paramsA)...)
+	case "selectList":
+		if len(paramsA) < 2 {
+			return fmt.Errorf("not enough parameters")
+		}
+
+		return selectListGUI(tk.ToStr(paramsA[0]), tk.JSONToStringArray(tk.ToJSONX(paramsA[1])), tk.InterfaceToStringArray(paramsA[2:])...)
+	case "selectListMulti":
+		if len(paramsA) < 2 {
+			return fmt.Errorf("not enough parameters")
+		}
+
+		return selectListMultiGUI(tk.ToStr(paramsA[0]), tk.JSONToStringArray(tk.ToJSONX(paramsA[1])), tk.InterfaceToStringArray(paramsA[2:])...)
 	case "selectFile":
 		return selectFileGUI(tk.InterfaceToStringArray(paramsA)...)
 	case "selectFileToSave":
@@ -454,7 +467,7 @@ func initGUI() error {
 func showInfoGUI(msgA string, optsA ...string) interface{} {
 	optionsT := []zenity.Option{}
 
-	titleT := tk.GetSwitch(optsA, "-title=", "")
+	titleT := tk.GetSwitch(optsA, "-title=", " ")
 
 	if titleT != "" {
 		optionsT = append(optionsT, zenity.Title(titleT))
@@ -621,6 +634,116 @@ func selectFileToSaveGUI(argsA ...string) interface{} {
 	if errT != nil {
 		if errT == zenity.ErrCanceled {
 			return nil
+		}
+
+		return errT
+	}
+
+	return rs
+}
+
+func selectListGUI(textA string, itemsA []string, argsA ...string) interface{} {
+	optionsT := []zenity.Option{}
+
+	titleT := tk.GetSwitch(argsA, "-title=", "")
+
+	if titleT != "" {
+		optionsT = append(optionsT, zenity.Title(titleT))
+	}
+
+	okLabelT := tk.GetSwitch(argsA, "-okLabel=", "")
+
+	if okLabelT != "" {
+		optionsT = append(optionsT, zenity.OKLabel(okLabelT))
+	}
+
+	cancelLabelT := tk.GetSwitch(argsA, "-cancelLabel=", "")
+
+	if cancelLabelT != "" {
+		optionsT = append(optionsT, zenity.CancelLabel(cancelLabelT))
+	}
+
+	extraButtonT := tk.GetSwitch(argsA, "-extraButton=", "")
+
+	if extraButtonT != "" {
+		optionsT = append(optionsT, zenity.ExtraButton(extraButtonT))
+	}
+
+	defaultT := tk.GetSwitch(argsA, "-default=", "")
+
+	if defaultT != "" {
+		defaultListT := strings.Split(defaultT, "|")
+		optionsT = append(optionsT, zenity.DefaultItems(defaultListT...))
+	}
+
+	if tk.IfSwitchExistsWhole(argsA, "-disallowEmpty") {
+		optionsT = append(optionsT, zenity.DisallowEmpty())
+	}
+
+	rs, errT := zenity.List(textA, itemsA, optionsT...)
+
+	if errT != nil {
+		if errT == zenity.ErrCanceled {
+			return nil
+		}
+
+		if errT == zenity.ErrExtraButton {
+			return fmt.Errorf("extraButton")
+		}
+
+		return errT
+	}
+
+	return rs
+}
+
+func selectListMultiGUI(textA string, itemsA []string, argsA ...string) interface{} {
+	optionsT := []zenity.Option{}
+
+	titleT := tk.GetSwitch(argsA, "-title=", "")
+
+	if titleT != "" {
+		optionsT = append(optionsT, zenity.Title(titleT))
+	}
+
+	okLabelT := tk.GetSwitch(argsA, "-okLabel=", "")
+
+	if okLabelT != "" {
+		optionsT = append(optionsT, zenity.OKLabel(okLabelT))
+	}
+
+	cancelLabelT := tk.GetSwitch(argsA, "-cancelLabel=", "")
+
+	if cancelLabelT != "" {
+		optionsT = append(optionsT, zenity.CancelLabel(cancelLabelT))
+	}
+
+	extraButtonT := tk.GetSwitch(argsA, "-extraButton=", "")
+
+	if extraButtonT != "" {
+		optionsT = append(optionsT, zenity.ExtraButton(extraButtonT))
+	}
+
+	defaultT := tk.GetSwitch(argsA, "-default=", "")
+
+	if defaultT != "" {
+		defaultListT := strings.Split(defaultT, "|")
+		optionsT = append(optionsT, zenity.DefaultItems(defaultListT...))
+	}
+
+	if tk.IfSwitchExistsWhole(argsA, "-disallowEmpty") {
+		optionsT = append(optionsT, zenity.DisallowEmpty())
+	}
+
+	rs, errT := zenity.ListMultiple(textA, itemsA, optionsT...)
+
+	if errT != nil {
+		if errT == zenity.ErrCanceled {
+			return nil
+		}
+
+		if errT == zenity.ErrExtraButton {
+			return fmt.Errorf("extraButton")
 		}
 
 		return errT

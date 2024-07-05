@@ -1072,7 +1072,7 @@ func chpHandler(strA string, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	evalT := charlang.NewEvalQuick(map[string]interface{}{"versionG": charlang.VersionG, "argsG": []string{}, "scriptPathG": "", "runModeG": "chp", "paraMapG": paraMapT, "requestG": r, "responseG": w, "reqUriG": r.RequestURI}, charlang.MainCompilerOptions)
+	evalT := charlang.NewEvalQuick(map[string]interface{}{"versionG": charlang.VersionG, "argsG": []string{}, "scriptPathG": "", "runModeG": "chp", "paraMapG": paraMapT, "requestG": r, "responseG": w, "reqUriG": r.RequestURI, "reqNameG": r.RequestURI}, charlang.MainCompilerOptions)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

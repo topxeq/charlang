@@ -1,0 +1,6 @@
+global guiG
+
+rs := guiG.selectList("Please select...", ["item1", "item2", "item3"], "-title=Title", "-disallowEmpty", "-default=item1")
+
+plt(rs)
+
