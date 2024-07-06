@@ -150,6 +150,8 @@ const (
 	BuiltinEnsureMakeDirs
 	BuiltinExtractFileDir
 	BuiltinCheckToken
+	BuiltinGetOtpCode
+	BuiltinCheckOtpCode
 	BuiltinEncryptText
 	BuiltinDecryptText
 	BuiltinHtmlEncode
@@ -736,6 +738,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getAppDir":  BuiltinGetAppDir,
 	"getCurDir":  BuiltinGetCurDir,
 	"getHomeDir": BuiltinGetHomeDir,
+	"getUserDir": BuiltinGetHomeDir,
 	"getTempDir": BuiltinGetTempDir,
 
 	"getInput": BuiltinGetInput,
@@ -807,6 +810,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	// security related
 	"genToken":   BuiltinGenToken,
 	"checkToken": BuiltinCheckToken,
+
+	"getOtpCode":   BuiltinGetOtpCode,
+	"genOtpCode":   BuiltinGetOtpCode,
+	"checkOtpCode": BuiltinCheckOtpCode,
 
 	"isEncrypted": BuiltinIsEncrypted,
 
@@ -2278,6 +2285,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "checkToken",
 		Value:   FnASVsRS(tk.CheckToken),
 		ValueEx: FnASVsRSex(tk.CheckToken),
+	},
+	BuiltinGetOtpCode: &BuiltinFunction{
+		Name:    "getOtpCode",
+		Value:   FnASVsRS(tk.GenerateOtpCode),
+		ValueEx: FnASVsRSex(tk.GenerateOtpCode),
+	},
+	BuiltinCheckOtpCode: &BuiltinFunction{
+		Name:    "checkOtpCode",
+		Value:   FnASSVsRB(tk.ValidateOtpCode),
+		ValueEx: FnASSVsRBex(tk.ValidateOtpCode),
 	},
 	BuiltinIsEncrypted: &BuiltinFunction{
 		Name:    "isEncrypted",
@@ -4866,6 +4883,32 @@ func FnASVsRBex(fn func(string, ...string) bool) CallableExFunc {
 
 		vargs := ObjectsToS(args[1:])
 		rs := fn(args[0].String(), vargs...)
+		return Bool(rs), nil
+	}
+}
+
+// like tk.ValidateOtpCode
+func FnASSVsRB(fn func(string, string, ...string) bool) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToS(args[2:])
+		rs := fn(args[0].String(), args[1].String(), vargs...)
+		return Bool(rs), nil
+	}
+}
+
+func FnASSVsRBex(fn func(string, string, ...string) bool) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToS(args[2:])
+		rs := fn(args[0].String(), args[1].String(), vargs...)
 		return Bool(rs), nil
 	}
 }
