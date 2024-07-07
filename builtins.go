@@ -161,6 +161,10 @@ const (
 	BuiltinGetFileRel
 	BuiltinGetFileExt
 	BuiltinGetMimeType
+	BuiltinStartSocksServer
+	BuiltinStartSocksClient
+	BuiltinStartTransparentProxy
+	BuiltinStartTransparentProxyEx
 	BuiltinRenderMarkdown
 	BuiltinIsDir
 	BuiltinStrStartsWith
@@ -806,6 +810,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	"serveFile": BuiltinServeFile,
 
 	"getMimeType": BuiltinGetMimeType,
+
+	"startSocksServer":        BuiltinStartSocksServer,
+	"startSocksClient":        BuiltinStartSocksClient,
+	"startTransparentProxy":   BuiltinStartTransparentProxy,
+	"startTransparentProxyEx": BuiltinStartTransparentProxyEx,
 
 	// security related
 	"genToken":   BuiltinGenToken,
@@ -2273,6 +2282,26 @@ var BuiltinObjects = [...]Object{
 		Name:    "getMimeType",
 		Value:   FnASRS(tk.GetMimeTypeByExt),
 		ValueEx: FnASRSex(tk.GetMimeTypeByExt),
+	},
+	BuiltinStartSocksServer: &BuiltinFunction{
+		Name:    "startSocksServer",
+		Value:   FnAVsRE(tk.StartSocksServer),
+		ValueEx: FnAVsREex(tk.StartSocksServer),
+	},
+	BuiltinStartSocksClient: &BuiltinFunction{
+		Name:    "startSocksClient",
+		Value:   FnAVsRE(tk.StartSocksClient),
+		ValueEx: FnAVsREex(tk.StartSocksClient),
+	},
+	BuiltinStartTransparentProxy: &BuiltinFunction{
+		Name:    "startTransparentProxy",
+		Value:   FnASSVsRE(tk.StartTransparentProxy),
+		ValueEx: FnASSVsREex(tk.StartTransparentProxy),
+	},
+	BuiltinStartTransparentProxyEx: &BuiltinFunction{
+		Name:    "startTransparentProxyEx",
+		Value:   FnASSVsRE(tk.StartTransparentProxy2),
+		ValueEx: FnASSVsREex(tk.StartTransparentProxy2),
 	},
 
 	// security related
@@ -4573,6 +4602,23 @@ func FnAVsRSex(fn func(...string) string) CallableExFunc {
 
 		rs := fn(ObjectsToS(args)...)
 		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.StartSocksServer
+func FnAVsRE(fn func(...string) error) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		rs := fn(ObjectsToS(args)...)
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnAVsREex(fn func(...string) error) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		rs := fn(ObjectsToS(args)...)
+		return ConvertToObject(rs), nil
 	}
 }
 
