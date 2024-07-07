@@ -149,6 +149,7 @@ const (
 	BuiltinStrIn
 	BuiltinEnsureMakeDirs
 	BuiltinExtractFileDir
+	BuiltinExtractFileName
 	BuiltinCheckToken
 	BuiltinGetOtpCode
 	BuiltinCheckOtpCode
@@ -766,7 +767,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getFileExt": BuiltinGetFileExt,
 	"getFileRel": BuiltinGetFileRel,
 
-	"extractFileDir": BuiltinExtractFileDir,
+	"extractFileDir":  BuiltinExtractFileDir,
+	"extractFileName": BuiltinExtractFileName,
 
 	"renameFile": BuiltinRenameFile,
 	"removeFile": BuiltinRemoveFile,
@@ -2143,6 +2145,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "extractFileDir",
 		Value:   FnASRS(filepath.Dir),
 		ValueEx: FnASRSex(filepath.Dir),
+	},
+	BuiltinExtractFileName: &BuiltinFunction{
+		Name:    "extractFileName",
+		Value:   FnASRS(filepath.Base),
+		ValueEx: FnASRSex(filepath.Base),
 	},
 	BuiltinRenameFile: &BuiltinFunction{
 		Name:    "renameFile",
