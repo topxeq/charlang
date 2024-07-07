@@ -574,6 +574,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"adjustFloat": BuiltinAdjustFloat,
 
 	"mathAbs":  BuiltinMathAbs,
+	"abs":      BuiltinMathAbs,
 	"mathSqrt": BuiltinMathSqrt,
 
 	// random related
