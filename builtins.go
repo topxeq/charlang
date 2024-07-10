@@ -142,6 +142,7 @@ const (
 	BuiltinSimpleDecode
 	BuiltinToPinyin
 	BuiltinIsHttps
+	BuiltinCopyFile
 	BuiltinRenameFile
 	BuiltinStrJoin
 	BuiltinStrCount
@@ -771,7 +772,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"extractFileDir":  BuiltinExtractFileDir,
 	"extractFileName": BuiltinExtractFileName,
 
+	"copyFile":   BuiltinCopyFile,
 	"renameFile": BuiltinRenameFile,
+	"moveFile":   BuiltinRenameFile,
 	"removeFile": BuiltinRemoveFile,
 	"removeDir":  BuiltinRemoveDir,
 	"removePath": BuiltinRemovePath,
@@ -2151,6 +2154,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "extractFileName",
 		Value:   FnASRS(filepath.Base),
 		ValueEx: FnASRSex(filepath.Base),
+	},
+	BuiltinCopyFile: &BuiltinFunction{
+		Name:    "copyFile",
+		Value:   FnASSVsRE(tk.CopyFile),
+		ValueEx: FnASSVsREex(tk.CopyFile),
 	},
 	BuiltinRenameFile: &BuiltinFunction{
 		Name:    "renameFile",
