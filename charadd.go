@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "1.0.7"
+var VersionG = "1.0.8"
 
 var CodeTextG = ""
 
@@ -2097,7 +2097,11 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 		tk.Pl("Starting...")
 	}
 
-	if tk.StartsWith(codeA, "//TXDEF#") {
+	if strings.HasPrefix(codeA, "//INROUTE:") {
+		codeA = tk.TrimEx(tk.GetVar(codeA[10:]))
+	}
+
+	if strings.HasPrefix(codeA, "//TXDEF#") {
 		sCodeT := "topxeq"
 
 		msSecretCodeT := tk.TrimEx(tk.GetVar("msSecretCodeG"))

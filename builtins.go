@@ -309,6 +309,9 @@ const (
 	BuiltinToStr
 	BuiltinCallNamedFunc
 	BuiltinCallInternalFunc
+	BuiltinGetProcessVar
+	BuiltinSetProcessVar
+	BuiltinDeleteProcessVar
 	BuiltinGetNamedValue
 	BuiltinNewEx
 	BuiltinCallMethodEx
@@ -653,6 +656,11 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// scan related
 	"sscanf": BuiltinSscanf,
+
+	// process related
+	"getProcessVar":    BuiltinGetProcessVar,    // set a process wide global variable value, usage: v1 := getProcessVar("key1", "defaultValue")
+	"setProcessVar":    BuiltinSetProcessVar,    // get a process wide global variable value
+	"deleteProcessVar": BuiltinDeleteProcessVar, // delete a process wide global variable value
 
 	// resource related
 	"getNamedValue": BuiltinGetNamedValue,
@@ -1813,6 +1821,23 @@ var BuiltinObjects = [...]Object{
 		Name:    "sscanf",
 		Value:   CallExAdapter(builtinSscanfFunc),
 		ValueEx: builtinSscanfFunc,
+	},
+
+	// process related
+	BuiltinGetProcessVar: &BuiltinFunction{
+		Name:    "getProcessVar",
+		Value:   FnASVaRA(tk.GetVarEx),
+		ValueEx: FnASVaRAex(tk.GetVarEx),
+	},
+	BuiltinSetProcessVar: &BuiltinFunction{
+		Name:    "setProcessVar",
+		Value:   FnASAR(tk.SetVar),
+		ValueEx: FnASARex(tk.SetVar),
+	},
+	BuiltinDeleteProcessVar: &BuiltinFunction{
+		Name:    "deleteProcessVar",
+		Value:   FnASR(tk.DeleteVar),
+		ValueEx: FnASRex(tk.DeleteVar),
 	},
 
 	// resource related
@@ -4138,6 +4163,56 @@ func FnASSRBex(fn func(string, string) bool) CallableExFunc {
 
 		rs := fn(args[0].String(), args[1].String())
 		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.SetVar
+func FnASAR(fn func(string, interface{})) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		fn(args[0].String(), ConvertFromObject(args[1]))
+		return Undefined, nil
+	}
+}
+
+func FnASARex(fn func(string, interface{})) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		fn(args[0].String(), ConvertFromObject(args[1]))
+		return Undefined, nil
+	}
+}
+
+// like tk.DeleteVar
+func FnASR(fn func(string)) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		fn(args[0].String())
+		return Undefined, nil
+	}
+}
+
+func FnASRex(fn func(string)) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		fn(args[0].String())
+		return Undefined, nil
 	}
 }
 
