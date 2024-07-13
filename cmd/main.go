@@ -192,6 +192,10 @@ func QuickRunChar(codeA string, scriptPathA string, argsA ...string) interface{}
 
 	}
 
+	if tk.StartsWith(codeA, "//TXDEF#") {
+		codeA = tk.DecryptStringByTXDEF(codeA, "char")
+	}
+
 	// tk.Pln(2.1)
 	bytecodeT, errT := charlang.Compile([]byte(codeA), charlang.MainCompilerOptions) // charlang.DefaultCompilerOptions)
 	if errT != nil {
