@@ -144,7 +144,8 @@ const (
 	BuiltinSimpleEncode
 	BuiltinSimpleDecode
 	BuiltinToPinYin
-	// BuiltinKanaToRomaji
+	BuiltinKanjiToKana
+	BuiltinKanaToRomaji
 	BuiltinKanjiToRomaji
 	BuiltinIsHttps
 	BuiltinCopyFile
@@ -910,7 +911,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	// unicode related
 	"toPinYin": BuiltinToPinYin,
 
-	// "kanaToRomaji":  BuiltinKanaToRomaji,
+	"kanjiToKana":   BuiltinKanjiToKana,
+	"kanaToRomaji":  BuiltinKanaToRomaji,
 	"kanjiToRomaji": BuiltinKanjiToRomaji,
 
 	// line editor related
@@ -2589,11 +2591,16 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASVsRA(tk.ToPinYin),
 		ValueEx: FnASVsRAex(tk.ToPinYin),
 	},
-	// BuiltinKanaToRomaji: &BuiltinFunction{
-	// 	Name:    "kanaToRomaji",
-	// 	Value:   FnASRS(kana.KanaToRomaji),
-	// 	ValueEx: FnASRSex(kana.KanaToRomaji),
-	// },
+	BuiltinKanjiToKana: &BuiltinFunction{
+		Name:    "kanjiToKana",
+		Value:   FnASRSE(kanjikana.ConvertKanjiToKana),
+		ValueEx: FnASRSEex(kanjikana.ConvertKanjiToKana),
+	},
+	BuiltinKanaToRomaji: &BuiltinFunction{
+		Name:    "kanaToRomaji",
+		Value:   FnASRS(kanjikana.ConvertKanaToRomaji),
+		ValueEx: FnASRSex(kanjikana.ConvertKanaToRomaji),
+	},
 	BuiltinKanjiToRomaji: &BuiltinFunction{
 		Name:    "kanjiToRomaji",
 		Value:   FnASRSE(kanjikana.ConvertKanjiToRomaji),
