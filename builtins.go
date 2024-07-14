@@ -35,6 +35,9 @@ import (
 	"github.com/mholt/archiver/v3"
 
 	charts "github.com/vicanso/go-charts/v2"
+
+	// "github.com/gojp/kana"
+	"github.com/jtclarkjr/kanjikana"
 )
 
 var (
@@ -140,7 +143,9 @@ const (
 	BuiltinDecryptData
 	BuiltinSimpleEncode
 	BuiltinSimpleDecode
-	BuiltinToPinyin
+	BuiltinToPinYin
+	// BuiltinKanaToRomaji
+	BuiltinKanjiToRomaji
 	BuiltinIsHttps
 	BuiltinCopyFile
 	BuiltinRenameFile
@@ -903,7 +908,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"dbExec": BuiltinDbExec,
 
 	// unicode related
-	"toPinyin": BuiltinToPinyin,
+	"toPinYin": BuiltinToPinYin,
+
+	// "kanaToRomaji":  BuiltinKanaToRomaji,
+	"kanjiToRomaji": BuiltinKanjiToRomaji,
 
 	// line editor related
 	"leClear":          BuiltinLeClear,
@@ -2576,10 +2584,20 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// unicode related
-	BuiltinToPinyin: &BuiltinFunction{
-		Name:    "toPinyin",
+	BuiltinToPinYin: &BuiltinFunction{
+		Name:    "toPinYin",
 		Value:   FnASVsRA(tk.ToPinYin),
 		ValueEx: FnASVsRAex(tk.ToPinYin),
+	},
+	// BuiltinKanaToRomaji: &BuiltinFunction{
+	// 	Name:    "kanaToRomaji",
+	// 	Value:   FnASRS(kana.KanaToRomaji),
+	// 	ValueEx: FnASRSex(kana.KanaToRomaji),
+	// },
+	BuiltinKanjiToRomaji: &BuiltinFunction{
+		Name:    "kanjiToRomaji",
+		Value:   FnASRSE(kanjikana.ConvertKanjiToRomaji),
+		ValueEx: FnASRSEex(kanjikana.ConvertKanjiToRomaji),
 	},
 
 	// line editor related
@@ -4132,6 +4150,41 @@ func FnASSRSEex(fn func(string, string) (string, error)) CallableExFunc {
 		}
 
 		rs, errT := fn(args[0].String(), args[1].String())
+
+		if errT != nil {
+			return NewCommonError(errT.Error()), nil
+		}
+
+		return ToStringObject(rs), nil
+	}
+}
+
+// like kanjikana.ConvertKanjiToRomaji
+func FnASRSE(fn func(string) (string, error)) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		rs, errT := fn(args[0].String())
+
+		if errT != nil {
+			return NewCommonError(errT.Error()), nil
+		}
+
+		return ToStringObject(rs), nil
+	}
+}
+
+func FnASRSEex(fn func(string) (string, error)) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		rs, errT := fn(args[0].String())
 
 		if errT != nil {
 			return NewCommonError(errT.Error()), nil

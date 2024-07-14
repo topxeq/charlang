@@ -3,6 +3,7 @@ module github.com/topxeq/charlang
 go 1.22.3
 
 require (
+	github.com/jtclarkjr/kanjikana v0.1.0
 	github.com/stretchr/testify v1.8.4
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff
 	github.com/topxeq/sqltk v0.0.0-20240629061205-d42826b0e386
@@ -25,7 +26,11 @@ require (
 	github.com/eiannone/keyboard v0.0.0-20220611211555-0d226195f203 // indirect
 	github.com/expr-lang/expr v1.16.9 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
+	github.com/gojp/kana v0.1.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/ikawaha/kagome-dict v1.0.10 // indirect
+	github.com/ikawaha/kagome-dict/ipa v1.0.11 // indirect
+	github.com/ikawaha/kagome/v2 v2.9.8 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 // indirect
 	github.com/jhillyerd/enmime v1.2.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

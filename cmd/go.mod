@@ -40,17 +40,22 @@ require (
 	github.com/expr-lang/expr v1.16.9 // indirect
 	github.com/gen2brain/shm v0.0.0-20230802011745-f2460f5984f7 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
+	github.com/gojp/kana v0.1.0 // indirect
 	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/guptarohit/asciigraph v0.5.6 // indirect
+	github.com/ikawaha/kagome-dict v1.0.10 // indirect
+	github.com/ikawaha/kagome-dict/ipa v1.0.11 // indirect
+	github.com/ikawaha/kagome/v2 v2.9.8 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 // indirect
 	github.com/jchv/go-winloader v0.0.0-20200815041850-dec1ee9a7fd5 // indirect
 	github.com/jezek/xgb v1.1.0 // indirect
 	github.com/jhillyerd/enmime v1.2.0 // indirect
 	github.com/josephspurrier/goversioninfo v1.4.0 // indirect
+	github.com/jtclarkjr/kanjikana v0.1.0 // indirect
 	github.com/klauspost/compress v1.14.4 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/fs v0.1.0 // indirect
