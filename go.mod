@@ -3,6 +3,7 @@ module github.com/topxeq/charlang
 go 1.22.3
 
 require (
+	github.com/domodwyer/mailyak v3.1.1+incompatible
 	github.com/jtclarkjr/kanjikana v0.1.0
 	github.com/stretchr/testify v1.8.4
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff

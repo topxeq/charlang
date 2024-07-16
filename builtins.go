@@ -23,6 +23,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/domodwyer/mailyak"
 	"github.com/golang/freetype/truetype"
 	"github.com/guptarohit/asciigraph"
 	"github.com/topxeq/awsapi"
@@ -52,6 +53,8 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinGetMapItem
+	BuiltinSendMail
 	BuiltinGetTextSimilarity
 	BuiltinLeSshInfo
 	BuiltinStack
@@ -520,6 +523,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"arrayContains": BuiltinArrayContains,
 
+	"getMapItem": BuiltinGetMapItem,
+
 	"toOrderedMap": BuiltinToOrderedMap,
 
 	// ref/pointer related
@@ -956,6 +961,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"lePrint":          BuiltinLePrint,
 	"leGetList":        BuiltinLeGetList,
 
+	// mail related
+	"sendMail": BuiltinSendMail,
+
 	// 3rd party related
 	"awsSign": BuiltinAwsSign,
 
@@ -1318,6 +1326,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "arrayContains",
 		Value:   CallExAdapter(builtinArrayContainsFunc),
 		ValueEx: builtinArrayContainsFunc,
+	},
+	BuiltinGetMapItem: &BuiltinFunction{
+		Name:    "getMapItem",
+		Value:   CallExAdapter(builtinGetMapItemFunc),
+		ValueEx: builtinGetMapItemFunc,
 	},
 	BuiltinToOrderedMap: &BuiltinFunction{
 		Name:    "toOrderedMap",
@@ -2785,6 +2798,14 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinLeGetListFunc,
 	},
 
+	// mail related
+
+	BuiltinSendMail: &BuiltinFunction{
+		Name:    "sendMail",
+		Value:   CallExAdapter(builtinSendMailFunc),
+		ValueEx: builtinSendMailFunc,
+	},
+
 	// 3rd party related
 
 	BuiltinAwsSign: &BuiltinFunction{
@@ -3132,6 +3153,34 @@ func builtinGetArrayItemFunc(c Call) (Object, error) {
 	}
 
 	return args[0].IndexGet(Int(idxT))
+}
+
+func builtinGetMapItemFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	defaultT := Undefined
+
+	if len(args) < 2 {
+		return defaultT, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	if len(args) > 2 {
+		defaultT = args[2]
+	}
+
+	valueT, errT := args[0].IndexGet(args[1])
+
+	if errT != nil {
+		return defaultT, nil
+	}
+
+	b := isErrX(valueT)
+
+	if b {
+		return defaultT, nil
+	}
+
+	return valueT, nil
 }
 
 func builtinCopyFunc(arg Object) Object {
@@ -6330,14 +6379,59 @@ func builtinIsErrXFunc(c Call) (Object, error) {
 			if strings.HasPrefix(s1, "TXERROR:") {
 				return True, nil
 			}
-
-			return True, nil
 		}
 
 		return False, nil
 	}
 
 	return False, nil
+}
+
+func isErrX(objA Object) bool {
+	switch objA.TypeCode() {
+	case 153: // *Error
+		nv1 := objA.(*Error)
+		if nv1 != nil {
+			return true
+		}
+	case 155: // *RuntimeError
+		nv1 := objA.(*RuntimeError)
+
+		if nv1 != nil {
+			return true
+		}
+
+	case 105: //String
+		if strings.HasPrefix(objA.String(), "TXERROR:") {
+			return true
+		}
+	case 106: // *MutableString
+		if strings.HasPrefix(objA.String(), "TXERROR:") {
+			return true
+		}
+	case 999: // *Any
+		nv := objA.(*Any)
+
+		nv1, ok := nv.Value.(error)
+
+		if ok {
+			if nv1 != nil {
+				return true
+			}
+		}
+
+		s1, ok := nv.Value.(string)
+
+		if ok {
+			if strings.HasPrefix(s1, "TXERROR:") {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	return false
 }
 
 func builtinGetNowTimeStampFunc(c Call) (Object, error) {
@@ -10457,6 +10551,141 @@ func builtinAwsSignFunc(c Call) (Object, error) {
 	rsT := awsapi.Sign(postDataT, nv2)
 
 	return String{Value: rsT}, nil
+}
+
+func builtinSendMailFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 6 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	vs := ObjectsToS(args)
+
+	hostT := strings.TrimSpace(tk.GetSwitch(vs, "-host=", ""))
+
+	if hostT == "" {
+		return NewCommonError("host empty"), nil
+	}
+
+	portT := tk.ToInt(strings.TrimSpace(tk.GetSwitch(vs, "-port=", "25")), -1)
+
+	if portT < 1 {
+		return NewCommonError("invalid or empty port number"), nil
+	}
+
+	userT := strings.TrimSpace(tk.GetSwitch(vs, "-user=", ""))
+
+	if userT == "" {
+		return NewCommonError("user empty"), nil
+	}
+
+	passwordT := strings.TrimSpace(tk.GetSwitch(vs, "-password=", ""))
+
+	if passwordT == "" {
+		return NewCommonError("password empty"), nil
+	}
+
+	if strings.HasPrefix(passwordT, "740404") {
+		passwordT = strings.TrimSpace(tk.DecryptStringByTXDEF(passwordT))
+	}
+
+	subjectT := strings.TrimSpace(tk.GetSwitch(vs, "-subject=", ""))
+
+	if subjectT == "" {
+		return NewCommonError("subject empty"), nil
+	}
+
+	bodyT := strings.TrimSpace(tk.GetSwitch(vs, "-body=", ""))
+
+	if bodyT == "" {
+		return NewCommonError("body empty"), nil
+	}
+
+	toT := strings.TrimSpace(tk.GetSwitch(vs, "-to=", ""))
+
+	ccT := strings.TrimSpace(tk.GetSwitch(vs, "-cc=", ""))
+
+	bccT := strings.TrimSpace(tk.GetSwitch(vs, "-bcc=", ""))
+
+	if toT+ccT+bccT == "" {
+		return NewCommonError("no receiver"), nil
+	}
+
+	fromT := strings.TrimSpace(tk.GetSwitch(vs, "-from=", ""))
+
+	if fromT == "" {
+		if tk.RegMatchX(userT, `.+@.+`) {
+			fromT = userT
+		}
+	}
+
+	fromNameT := strings.TrimSpace(tk.GetSwitch(vs, "-fromName=", ""))
+
+	attachFilesT := strings.TrimSpace(tk.GetSwitch(vs, "-attachFiles=", ""))
+
+	mail := mailyak.New(fmt.Sprintf("%v:%v", hostT, portT), tk.GetLoginAuth(userT, passwordT))
+
+	if toT != "" {
+		mail.To(strings.Split(strings.ReplaceAll(toT, ";", ","), ",")...)
+	}
+
+	if ccT != "" {
+		mail.Cc(strings.Split(strings.ReplaceAll(ccT, ";", ","), ",")...)
+	}
+
+	if bccT != "" {
+		mail.Bcc(strings.Split(strings.ReplaceAll(bccT, ";", ","), ",")...)
+	}
+
+	mail.From(fromT)
+	mail.FromName(fromNameT)
+
+	mail.Subject(subjectT)
+
+	mail.HTML().Set(bodyT)
+
+	attachListT := strings.Split(strings.ReplaceAll(attachFilesT, ";", ","), ",")
+
+	for i, v := range attachListT {
+		v = strings.TrimSpace(v)
+
+		if v == "" {
+			continue
+		}
+
+		lineListT := strings.Split(v, ":")
+
+		if len(lineListT) < 2 {
+			return NewCommonError("invalid attach file format(should be in form NAME:FILE_PATH): %v", v), nil
+		}
+
+		frsT := tk.LoadBytesFromFile(strings.TrimSpace(lineListT[1]))
+
+		if tk.IsErrX(frsT) {
+			return NewCommonError("failed to attach file #%v: %v", i, frsT), nil
+		}
+
+		bufT := bytes.NewBuffer(frsT.([]byte))
+
+		mail.Attach(lineListT[0], bufT)
+	}
+
+	// _, errT = io.WriteString(mail.HTML(), mailBodyHtml)
+
+	// if errT != nil {
+	// 	wResp("fail", errStrf("邮件格式解析错误：%v", errT))
+	// 	return
+	// }
+
+	mail.Plain().Set(bodyT)
+
+	errT := mail.Send()
+	if errT != nil {
+		return NewCommonError("failed to send mail: %v", errT), nil
+	}
+
+	return Undefined, nil
 }
 
 func builtinArrayContainsFunc(c Call) (Object, error) {

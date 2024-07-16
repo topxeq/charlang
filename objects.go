@@ -49,7 +49,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Stack: 161, *Queue: 163, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *Any: 999, *Etable: 1001, *Excel: 1003
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, *MutableString: 106, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Stack: 161, *Queue: 163, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *Any: 999, *Etable: 1001, *Excel: 1003
 
 // Object represents an object in the VM.
 type Object interface {
