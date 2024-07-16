@@ -162,6 +162,8 @@ const (
 	BuiltinCheckOtpCode
 	BuiltinEncryptText
 	BuiltinDecryptText
+	BuiltinEncryptTextByTXTE
+	BuiltinDecryptTextByTXTE
 	BuiltinHtmlEncode
 	BuiltinHtmlDecode
 	BuiltinServeFile
@@ -849,6 +851,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"encryptText": BuiltinEncryptText,
 	"decryptText": BuiltinDecryptText,
+
+	"encryptTextByTXTE": BuiltinEncryptTextByTXTE,
+	"decryptTextByTXTE": BuiltinDecryptTextByTXTE,
 
 	"encryptData":  BuiltinEncryptData,
 	"encryptBytes": BuiltinEncryptData,
@@ -2391,6 +2396,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "decryptText",
 		Value:   FnASVsRS(tk.DecryptStringByTXDEF),
 		ValueEx: FnASVsRSex(tk.DecryptStringByTXDEF),
+	},
+	BuiltinEncryptTextByTXTE: &BuiltinFunction{
+		Name:    "encryptTextByTXTE",
+		Value:   FnASSRS(tk.EncryptStringByTXTE),
+		ValueEx: FnASSRSex(tk.EncryptStringByTXTE),
+	},
+	BuiltinDecryptTextByTXTE: &BuiltinFunction{
+		Name:    "decryptTextByTXTE",
+		Value:   FnASSRS(tk.DecryptStringByTXTE),
+		ValueEx: FnASSRSex(tk.DecryptStringByTXTE),
 	},
 	BuiltinEncryptData: &BuiltinFunction{
 		Name:    "encryptData",
