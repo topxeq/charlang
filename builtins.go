@@ -73,10 +73,14 @@ const (
 	BuiltinReadCsv
 	BuiltinExcelNew
 	BuiltinExcelOpen
+	BuiltinExcelOpenFile
 	BuiltinExcelSaveAs
 	BuiltinExcelWriteTo
 	BuiltinExcelClose
 	BuiltinExcelNewSheet
+	BuiltinExcelGetSheetCount
+	BuiltinExcelGetSheetList
+	BuiltinExcelGetSheetName
 	BuiltinExcelReadSheet
 	BuiltinExcelReadCell
 	BuiltinExcelWriteSheet
@@ -890,16 +894,20 @@ var BuiltinsMap = map[string]BuiltinType{
 	"readCsv":  BuiltinReadCsv,
 	"writeCsv": BuiltinWriteCsv,
 
-	"excelNew":        BuiltinExcelNew,
-	"excelOpen":       BuiltinExcelOpen,
-	"excelSaveAs":     BuiltinExcelSaveAs,
-	"excelWriteTo":    BuiltinExcelWriteTo,
-	"excelClose":      BuiltinExcelClose,
-	"excelNewSheet":   BuiltinExcelNewSheet,
-	"excelReadSheet":  BuiltinExcelReadSheet,
-	"excelWriteSheet": BuiltinExcelWriteSheet,
-	"excelReadCell":   BuiltinExcelReadCell,
-	"excelWriteCell":  BuiltinExcelWriteCell,
+	"excelNew":           BuiltinExcelNew,
+	"excelOpen":          BuiltinExcelOpen,
+	"excelOpenFile":      BuiltinExcelOpenFile,
+	"excelSaveAs":        BuiltinExcelSaveAs,
+	"excelWriteTo":       BuiltinExcelWriteTo,
+	"excelClose":         BuiltinExcelClose,
+	"excelNewSheet":      BuiltinExcelNewSheet,
+	"excelGetSheetCount": BuiltinExcelGetSheetCount,
+	"excelGetSheetList":  BuiltinExcelGetSheetList,
+	"excelGetSheetName":  BuiltinExcelGetSheetName,
+	"excelReadSheet":     BuiltinExcelReadSheet,
+	"excelWriteSheet":    BuiltinExcelWriteSheet,
+	"excelReadCell":      BuiltinExcelReadCell,
+	"excelWriteCell":     BuiltinExcelWriteCell,
 
 	// database related
 	"formatSQLValue": BuiltinFormatSQLValue,
@@ -2516,6 +2524,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinExcelOpenFunc),
 		ValueEx: builtinExcelOpenFunc,
 	},
+	BuiltinExcelOpenFile: &BuiltinFunction{
+		Name:    "excelOpenFile",
+		Value:   CallExAdapter(builtinExcelOpenFileFunc),
+		ValueEx: builtinExcelOpenFileFunc,
+	},
 	BuiltinExcelSaveAs: &BuiltinFunction{
 		Name:    "excelSaveAs",
 		Value:   CallExAdapter(builtinExcelSaveAsFunc),
@@ -2535,6 +2548,21 @@ var BuiltinObjects = [...]Object{
 		Name:    "excelNewSheet",
 		Value:   CallExAdapter(builtinExcelNewSheetFunc),
 		ValueEx: builtinExcelNewSheetFunc,
+	},
+	BuiltinExcelGetSheetCount: &BuiltinFunction{
+		Name:    "excelGetSheetCount",
+		Value:   CallExAdapter(builtinExcelGetSheetCountFunc),
+		ValueEx: builtinExcelGetSheetCountFunc,
+	},
+	BuiltinExcelGetSheetList: &BuiltinFunction{
+		Name:    "excelGetSheetList",
+		Value:   CallExAdapter(builtinExcelGetSheetListFunc),
+		ValueEx: builtinExcelGetSheetListFunc,
+	},
+	BuiltinExcelGetSheetName: &BuiltinFunction{
+		Name:    "excelGetSheetName",
+		Value:   CallExAdapter(builtinExcelGetSheetNameFunc),
+		ValueEx: builtinExcelGetSheetNameFunc,
 	},
 	BuiltinExcelReadSheet: &BuiltinFunction{
 		Name:    "excelReadSheet",
@@ -7802,6 +7830,35 @@ func builtinExcelOpenFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
+	var f *excelize.File
+	var err error
+
+	r1, ok := args[0].(*Reader)
+
+	if !ok {
+		f, err = excelize.OpenReader(r1.Value)
+
+		if err != nil {
+			return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+		}
+
+	} else {
+		f, err = excelize.OpenFile(args[0].String())
+		if err != nil {
+			return NewCommonErrorWithPos(c, "failed to open excel file: %v", err), nil
+		}
+	}
+
+	return &Excel{Value: f}, nil
+}
+
+func builtinExcelOpenFileFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
 	f, err := excelize.OpenFile(args[0].String())
 	if err != nil {
 		return NewCommonErrorWithPos(c, "failed to open excel file: %v", err), nil
@@ -7965,6 +8022,147 @@ func builtinExcelReadSheetFunc(c Call) (Object, error) {
 
 	return ConvertToObject(rowsT), nil
 
+}
+
+func builtinExcelGetSheetNameFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	var f *excelize.File
+	var err error
+
+	r0, ok := args[0].(*Excel)
+
+	if !ok {
+		r1, ok := args[0].(*Reader)
+
+		if !ok {
+			filePathT := args[0].String()
+
+			f, err = excelize.OpenFile(filePathT)
+
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+			}
+
+			defer f.Close()
+
+		} else {
+			f, err = excelize.OpenReader(r1.Value)
+
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+			}
+
+			defer f.Close()
+		}
+
+	} else {
+		f = r0.Value
+	}
+
+	var indexT Object = Int(0)
+
+	if len(args) > 1 {
+		indexT = args[1]
+	}
+
+	return ConvertToObject(f.GetSheetName(ToGoIntWithDefault(indexT, 0))), nil
+
+}
+
+func builtinExcelGetSheetCountFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	var f *excelize.File
+	var err error
+
+	r0, ok := args[0].(*Excel)
+
+	if !ok {
+		r1, ok := args[0].(*Reader)
+
+		if !ok {
+			filePathT := args[0].String()
+
+			f, err = excelize.OpenFile(filePathT)
+
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+			}
+
+			defer f.Close()
+
+		} else {
+			f, err = excelize.OpenReader(r1.Value)
+
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+			}
+
+			defer f.Close()
+		}
+
+	} else {
+		f = r0.Value
+	}
+
+	listT := f.GetSheetList()
+
+	return Int(len(listT)), nil
+
+}
+
+func builtinExcelGetSheetListFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	var f *excelize.File
+	var err error
+
+	r0, ok := args[0].(*Excel)
+
+	if !ok {
+		r1, ok := args[0].(*Reader)
+
+		if !ok {
+			filePathT := args[0].String()
+
+			f, err = excelize.OpenFile(filePathT)
+
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+			}
+
+			defer f.Close()
+
+		} else {
+			f, err = excelize.OpenReader(r1.Value)
+
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+			}
+
+			defer f.Close()
+		}
+
+	} else {
+		f = r0.Value
+	}
+
+	listT := f.GetSheetList()
+
+	return ConvertToObject(listT), nil
 }
 
 func builtinExcelReadCellFunc(c Call) (Object, error) {
