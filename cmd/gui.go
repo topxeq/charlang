@@ -371,6 +371,14 @@ func guiHandler(argsA ...interface{}) interface{} {
 		return selectFileGUI(tk.InterfaceToStringArray(paramsA)...)
 	case "selectFileToSave":
 		return selectFileToSaveGUI(tk.InterfaceToStringArray(paramsA)...)
+	case "selectDir":
+		paramsT := tk.InterfaceToStringArray(paramsA)
+		paramsT = append(paramsT, "-dir")
+		return selectFileGUI(paramsT...)
+	case "selectDirectory":
+		paramsT := tk.InterfaceToStringArray(paramsA)
+		paramsT = append(paramsT, "-dir")
+		return selectFileGUI(paramsT...)
 	case "getActiveDisplayCount":
 		return screenshot.NumActiveDisplays()
 	case "getScreenResolution":
@@ -761,6 +769,12 @@ func selectFileGUI(argsA ...string) interface{} {
 
 	if titleT != "" {
 		optionsT = append(optionsT, zenity.Title(titleT))
+	}
+
+	ifDirT := tk.IfSwitchExists(argsA, "-dir")
+
+	if ifDirT {
+		optionsT = append(optionsT, zenity.Directory())
 	}
 
 	defaultT := tk.GetSwitch(argsA, "-default=", "")
