@@ -10845,6 +10845,8 @@ func builtinSendMailFunc(c Call) (Object, error) {
 
 	attachListT := strings.Split(strings.ReplaceAll(attachFilesT, ";", ","), ",")
 
+	// tk.Plv(attachListT)
+
 	for i, v := range attachListT {
 		v = strings.TrimSpace(v)
 
