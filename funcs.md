@@ -142,6 +142,8 @@
 
 **arrayContains**
 
+**getMapItem**
+
 **toOrderedMap**
 
 ### --- ref/pointer related ---
@@ -161,6 +163,8 @@
 **toTime**
 
 **toHex**
+
+**hexEncode**
 
 **unhex**
 
@@ -249,6 +253,8 @@
 **adjustFloat**
 
 **mathAbs**
+
+**abs**
 
 **mathSqrt**
 
@@ -378,6 +384,14 @@
 
 **sscanf**
 
+### --- process related ---
+
+**getProcessVar**: set a process wide global variable value, usage: v1 := getProcessVar("key1", "defaultValue")
+
+**setProcessVar**: get a process wide global variable value
+
+**deleteProcessVar**: delete a process wide global variable value
+
 ### --- resource related ---
 
 **getNamedValue**
@@ -460,6 +474,8 @@
 
 **ifSwitchExists**
 
+**switchExists**
+
 **getSwitch**
 
 **getIntSwitch**
@@ -518,6 +534,8 @@
 
 **getHomeDir**
 
+**getUserDir**
+
 **getTempDir**
 
 **getInput**
@@ -550,7 +568,13 @@
 
 **extractFileDir**
 
+**extractFileName**
+
+**copyFile**
+
 **renameFile**
+
+**moveFile**
 
 **removeFile**
 
@@ -612,17 +636,35 @@
 
 **getMimeType**
 
+**startSocksServer**
+
+**startSocksClient**
+
+**startTransparentProxy**
+
+**startTransparentProxyEx**
+
 ### --- security related ---
 
 **genToken**
 
 **checkToken**
 
+**getOtpCode**
+
+**genOtpCode**
+
+**checkOtpCode**
+
 **isEncrypted**
 
 **encryptText**
 
 **decryptText**
+
+**encryptTextByTXTE**
+
+**decryptTextByTXTE**
 
 **encryptData**
 
@@ -670,6 +712,8 @@
 
 **excelOpen**
 
+**excelOpenFile**
+
 **excelSaveAs**
 
 **excelWriteTo**
@@ -677,6 +721,12 @@
 **excelClose**
 
 **excelNewSheet**
+
+**excelGetSheetCount**
+
+**excelGetSheetList**
+
+**excelGetSheetName**
 
 **excelReadSheet**
 
@@ -716,7 +766,13 @@
 
 ### --- unicode related ---
 
-**toPinyin**
+**toPinYin**
+
+**kanjiToKana**
+
+**kanaToRomaji**
+
+**kanjiToRomaji**
 
 ### --- line editor related ---
 
@@ -786,6 +842,10 @@
 
 **leGetList**
 
+### --- mail related ---
+
+**sendMail**
+
 ### --- 3rd party related ---
 
 **awsSign**
@@ -793,6 +853,10 @@
 ### --- misc related ---
 
 **getSeq**
+
+**getUuid**
+
+**genUuid**
 
 **renderMarkdown**
 
@@ -847,6 +911,8 @@
 **runCompiled**: run compiled code
 
 **threadRunCompiled**: run compiled code in a new thread
+
+**threadRunFunc**: run compiled function in a new thread
 
 **loadGel**: compile a piece of code and turn it to Gel
 
