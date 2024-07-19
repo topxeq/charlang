@@ -1,0 +1,16 @@
+sum := func (...args) {
+	plv(args)
+	
+	var result = 0;
+
+	for i, v in args {
+		result += v
+	}
+
+	return result
+}
+
+sumResult := sum.run(1, 2, 3.5)
+
+pl("sumResult: %v", sumResult)
+
