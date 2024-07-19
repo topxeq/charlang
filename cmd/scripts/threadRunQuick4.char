@@ -1,0 +1,39 @@
+ex := import("ex")
+
+roundsT := 1000
+
+mutex1 := mutex()
+
+func1 := func(v0) {
+
+	for i := 0; i < roundsT; i++ {
+		lock(mutex1)
+
+		setValueByRef(v0, unref(v0)+1)
+
+		unlock(mutex1)
+
+		pl("(thread) *v0=%v", unref(v0))
+
+		sleep(0.05)
+	}
+}
+
+a := new("int", 5)
+
+ex.threadRunFunc(func1, a)
+
+sleep(0.15)
+
+for i := 0; i < roundsT; i++ {
+	lock(mutex1)
+
+	setValueByRef(a, unref(a)+10)
+
+	unlock(mutex1)
+
+	pl("(main) *a=%v", unref(a))
+
+	sleep(0.065)
+}
+

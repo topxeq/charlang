@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "1.1.1"
+var VersionG = "1.1.2"
 
 var CodeTextG = ""
 
@@ -599,6 +599,32 @@ var methodFuncMapG = map[int]map[string]*Function{
 				}
 
 				return retT, nil
+			},
+		},
+		"threadRun": &Function{
+			Name: "threadRun",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*CompiledFunction)
+
+				if !ok {
+					return NewCommonError("invalid type: %#v", c.This), nil
+				}
+
+				if nv.Instructions == nil {
+					return NewCommonError("code not compiled"), nil
+				}
+
+				if c.VM() == nil {
+					return NewCommonError("no VM specified"), nil
+				}
+
+				argsT := c.GetArgs()
+
+				go func() {
+					NewInvoker(c.VM(), nv).Invoke(argsT...)
+				}()
+
+				return Undefined, nil
 			},
 		},
 	},

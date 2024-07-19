@@ -1,5 +1,5 @@
 sum := func (...args) {
-	plv(args)
+	plt(args)
 	
 	var result = 0;
 
@@ -10,7 +10,13 @@ sum := func (...args) {
 	return result
 }
 
-sumResult := sum.run(1, 2, 3.5)
+pl("type of sum: %v", typeOf(sum))
 
-pl("sumResult: %v", sumResult)
+sumResult1 := sum(1, 2, 3.5)
+
+pl("sumResult1: %v", sumResult1)
+
+sumResult2 := sum.run(1, 2, 3.5)
+
+pl("sumResult2: %v", sumResult2)
 

@@ -2558,7 +2558,20 @@ func (*CompiledFunction) CanIterate() bool { return false }
 func (*CompiledFunction) Iterate() Iterator { return nil }
 
 // IndexGet represents string values and implements Object interface.
-func (*CompiledFunction) IndexGet(index Object) (Object, error) {
+func (o *CompiledFunction) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		return GetObjectMethodFunc(o, strT)
+	}
+
 	return nil, ErrNotIndexable
 }
 

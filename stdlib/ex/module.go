@@ -195,6 +195,38 @@ func threadRunCompiledFunc(argsA ...charlang.Object) (charlang.Object, error) {
 	return nil, nil
 }
 
+func threadRunFuncFunc(c charlang.Call) (charlang.Object, error) {
+	argsA := c.GetArgs()
+
+	lenT := len(argsA)
+
+	if lenT < 1 {
+		return charlang.NewCommonError("not enough parameters"), nil
+	}
+
+	nv, ok := argsA[0].(*charlang.CompiledFunction)
+
+	if !ok {
+		return charlang.NewCommonError("invalid type: %#v", argsA[0]), nil
+	}
+
+	if nv.Instructions == nil {
+		return charlang.NewCommonError("code not compiled"), nil
+	}
+
+	if c.VM() == nil {
+		return charlang.NewCommonError("no VM specified"), nil
+	}
+
+	argsT := argsA[1:]
+
+	go func() {
+		charlang.NewInvoker(c.VM(), nv).Invoke(argsT...)
+	}()
+
+	return charlang.Undefined, nil
+}
+
 func builtinSortByFuncQuickFunc(c charlang.Call) (ret charlang.Object, err error) {
 	defer func() {
 		if r1 := recover(); r1 != nil {
@@ -625,10 +657,11 @@ var Module = map[string]charlang.Object{
 		Name:  "threadRunCompiled", // run compiled code in a new thread
 		Value: threadRunCompiledFunc,
 	},
-	// "threadRunCompiled": &charlang.Function{
-	// 	Name:  "threadRunCompiled", // run compiled code in a new thread
-	// 	Value: threadRunCompiledFunc,
-	// },
+	"threadRunFunc": &charlang.Function{
+		Name:    "threadRunFunc", // run compiled function in a new thread
+		Value:   charlang.CallExAdapter(threadRunFuncFunc),
+		ValueEx: threadRunFuncFunc,
+	},
 	"loadGel": &charlang.Function{
 		Name:    "loadGel", // compile a piece of code and turn it to Gel
 		Value:   charlang.CallExAdapter(quickCompileGelFunc),

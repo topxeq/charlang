@@ -1,0 +1,24 @@
+func1 := func(v0) {
+	for i := 0; i < 5; i++ {
+		v0++
+
+		pl("(thread) v0=%v", v0)
+
+		sleep(1.0)
+	}
+}
+
+a := 5
+
+func1.threadRun(a)
+
+sleep(0.15)
+
+for i := 0; i < 5; i++ {
+	a += 10
+
+	pl("(main) a=%v", a)
+
+	sleep(1.3)
+}
+
