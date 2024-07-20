@@ -7487,7 +7487,11 @@ func builtinCheckErrXFunc(c Call) (Object, error) {
 	objT := ConvertFromObject(args[0])
 
 	if tk.IsErrX(objT) {
-		fmt.Printf("Error: %v\n", tk.GetErrStrX(objT))
+		vs := ObjectsToS(args[1:])
+
+		formatT := tk.GetSwitch(vs, "-format=", "Error: %v\n")
+
+		fmt.Printf(formatT, tk.GetErrStrX(objT))
 		os.Exit(0)
 	}
 
