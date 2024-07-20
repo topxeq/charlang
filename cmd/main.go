@@ -2244,16 +2244,16 @@ func main() {
 	argsT := os.Args
 
 	if tk.IfSwitchExistsWhole(argsT, "-help") {
-		textT := tk.GetWeb(`http://topget.org/dc/c/charlang/intro.md`)
+		textT := tk.GetWeb(`http://topget.org/dc/t/charlang/intro.md`)
 
-		tk.Pl("%v", tk.DecodeHTML(tk.ToStr(textT)))
+		tk.Pl("%v", tk.ToStr(textT))
 		return
 	}
 
 	if tk.IfSwitchExistsWhole(argsT, "-helpFuncs") {
-		textT := tk.GetWeb(`http://topget.org/dc/c/charlang/funcs.md`)
+		textT := tk.GetWeb(`http://topget.org/dc/t/charlang/funcs.md`)
 
-		tk.Pl("%v", tk.DecodeHTML(tk.ToStr(textT)))
+		tk.Pl("%v", tk.ToStr(textT))
 		return
 	}
 
