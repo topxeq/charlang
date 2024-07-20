@@ -2,6 +2,13 @@ global argsG
 global inputG
 global guiG
 
+guiStatusT := guiG.init()
+
+if isErr(guiStatusT) {
+	pl("GUI mode not supported")
+	return 
+}
+
 fileNameT := trim(getSwitch(argsG, "-fromFile=", ""))
 
 fromClipT := ifSwitchExists(argsG, "-fromClip")
