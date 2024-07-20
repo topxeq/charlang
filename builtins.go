@@ -89,6 +89,7 @@ const (
 	BuiltinRemovePath
 	BuiltinRemoveDir
 	BuiltinGetInput
+	BuiltinGetInputf
 	BuiltinGetChar
 	BuiltinRegCount
 	BuiltinStrRepeat
@@ -774,8 +775,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getUserDir": BuiltinGetHomeDir,
 	"getTempDir": BuiltinGetTempDir,
 
-	"getInput": BuiltinGetInput,
-	"getChar":  BuiltinGetChar,
+	"getInput":  BuiltinGetInput,
+	"getInputf": BuiltinGetInputf,
+	"getChar":   BuiltinGetChar,
 
 	// dir/path related
 	"joinPath": BuiltinJoinPath, // join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
@@ -2155,6 +2157,11 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinGetInput: &BuiltinFunction{
 		Name:    "getInput",
+		Value:   FnAVsRS(tk.GetInput),
+		ValueEx: FnAVsRSex(tk.GetInput),
+	},
+	BuiltinGetInputf: &BuiltinFunction{
+		Name:    "getInputf",
 		Value:   FnASVaRS(tk.GetInputf),
 		ValueEx: FnASVaRSex(tk.GetInputf),
 	},

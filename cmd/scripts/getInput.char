@@ -1,0 +1,3 @@
+rs := getInput("-prompt=Please input: ", "-default=none")
+
+pl("result: %#v", rs)
