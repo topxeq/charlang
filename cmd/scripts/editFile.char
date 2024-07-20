@@ -14,12 +14,16 @@ fcT := "TXERROR:empty"
 
 if fromClipT {
 	fcT = getClipText()
-} else if fileNameT != "" {
-	fcT = loadText(fileNameT)
-} else if fromUrlT != "" {
+} else if fromUrlT != "" { 
 	fcT = getWeb(fromUrlT)
 } else if fromInputT {
 	fcT = spr("%v", inputG)
+} else if fileNameT != "" {
+	fileNameT = getFileAbs(fileNameT)
+
+	fcT = loadText(fileNameT)
+
+	setProcessVar("editFileNameG", fileNameT)
 }
 
 htmlT := `
@@ -85,7 +89,15 @@ htmlT := `
 		var rs = delegateDo("saveText", document.getElementById('mainTextID').value);
 
 		rs.then(res => {
-			alert("save result: " + res);
+			if (res.trim() == "") {
+				alert("Successfully saved.")
+			} else {
+			 	if (res.indexOf("TXERROR:") == 0) {
+					res = res.substring(8);
+				}
+
+				alert("failed to save: " + res);
+			}
 		});
 
 	}
@@ -106,7 +118,7 @@ htmlT := `
 
 		rs.then(res => {
 			if (res.indexOf("TXERROR:") == 0) {
-				alert(res.substring(8));
+				alert("failed to load: " + res.substring(8));
 				return;
 			}
 
@@ -169,7 +181,7 @@ htmlT := `
 </html>
 `
 
-windowT := guiG.newWindow("-title=Tmp Editor", "-width=1280", "-height=928", "-center", "-debug")
+windowT := guiG.newWindow("-title=Tmp Editor - " + fileNameT, "-width=1280", "-height=928", "-center", "-debug")
 
 // plo(windowT)
 
@@ -178,7 +190,7 @@ dele1 := delegate(strReplace(`
 	
 	global inputG
 
-	pln(vargs)
+	// pln(vargs)
 
 	// pl("inputG: %#v", inputG)
 
@@ -194,33 +206,23 @@ dele1 := delegate(strReplace(`
 
 		return idT
 	} else if cmdT == "closeWindow" {
-		pl("close window")
-
 		windowT := inputG[0]
 
 		windowT("close")
 
 		return cmdT
 	} else if cmdT == "initContent" {
-		pl("initContent")
-
 		return fcT
 	} else if cmdT == "getClipText" {
-		pl("getClipText")
-
 		return getClipText()
 	} else if cmdT == "setClipText" {
-		pl("setClipText")
-
 		v1 := trim(vargs[1])
 
 		setClipText(toStr(v1))
 
 		return ""
 	} else if cmdT == "loadText" {
-		pl("loadText")
-
-		rs1 := guiG.selectFile("-title=Select file...", ~~~-filter=[{"Patterns": ["*.*"]}]~~~)
+		rs1 := guiG.selectFile("-title=Select file...", ~~~-filter=[{"Name": "Charlang Script Files", "Patterns": ["*.char"], "CaseFold": false}, {"Name": "Plain Text Files", "Patterns": ["*.txt"], "CaseFold": false}, {"Name": "All Files", "Patterns": ["*"], "CaseFold": false}]~~~)
 
 		if isErr(rs1) {
 			return spr("TXERROR:failed to select file: %v", rs1)
@@ -236,13 +238,18 @@ dele1 := delegate(strReplace(`
 			return spr("TXERROR:%v", rs2)
 		}
 		
+		windowT := inputG[0]
+
+		setProcessVar("editFileNameG", getFileAbs(rs1))
+
+		windowT("setTitle", "Tmp Editor - " + trim(getProcessVar("editFileNameG")))
+
 		return rs2
 	} else if cmdT == "saveText" {
-		pl("saveText")
-
 		v1 := trim(vargs[1])
+		// pl("current file path: %v", getProcessVar("editFileNameG"))
 
-		rs1 := guiG.selectFileToSave("-confirmOverwrite", "-title=Save file to...")
+		rs1 := guiG.selectFileToSave("-confirmOverwrite", "-title=Save file to...", "-default="+trim(getProcessVar("editFileNameG")))
 
 		if isErr(rs1) {
 			return spr("TXERROR:failed to select file: %v", rs1)
@@ -258,13 +265,17 @@ dele1 := delegate(strReplace(`
 			return spr("TXERROR:%v", rs2)
 		}
 		
+		windowT := inputG[0]
+
+		setProcessVar("editFileNameG", getFileAbs(rs1))
+
+		windowT("setTitle", "Tmp Editor - " + trim(getProcessVar("editFileNameG")))
+
 		return ""
 	} else if cmdT == "quickRun" {
-		pl("quickRun")
-
 		v1 := trim(vargs[1])
 
-		pl("code: %v", v1)
+		// pl("code: %v", v1)
 
 		c1 := charCode(v1)
 
@@ -278,11 +289,11 @@ dele1 := delegate(strReplace(`
 			return spr("TXERROR:failed to compile code: %v", crs)
 		}
 
-		plv(c1)
+		// plv(c1)
 
 		rs := c1.run(...(vargs[2:]))
 		
-		plv(rs)
+		// plv(rs)
 
 		return toStr(rs)
 	}

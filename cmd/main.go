@@ -1582,6 +1582,9 @@ func runArgs(argsA ...string) interface{} {
 	// ifXieT := tk.IfSwitchExistsWhole(argsT, "-xie")
 	ifClipT := tk.IfSwitchExistsWhole(argsT, "-clip")
 	ifEmbedT := (charlang.CodeTextG != "") && (!tk.IfSwitchExistsWhole(argsT, "-noembed"))
+	ifSelectScriptT := tk.IfSwitchExistsWhole(argsT, "-selectScript")
+	ifEditT := tk.IfSwitchExistsWhole(argsT, "-edit")
+	ifExampleT := tk.IfSwitchExistsWhole(argsT, "-example")
 
 	ifInExeT := false
 	inExeCodeT := ""
@@ -1666,7 +1669,18 @@ func runArgs(argsA ...string) interface{} {
 
 	ifPipeT := tk.IfSwitchExistsWhole(argsT, "-pipe")
 
-	if scriptT == "" && (!ifClipT) && (!ifEmbedT) && (!ifInExeT) && (!ifPipeT) {
+	if ifEditT {
+		if !ifInExeT {
+			ifExampleT = true
+			if strings.TrimSpace(scriptT) != "" {
+				argsT = append(argsT, "-fromFile="+scriptT)
+			}
+
+			scriptT = "editFile.char"
+		}
+	}
+
+	if scriptT == "" && (!ifClipT) && (!ifSelectScriptT) && (!ifEditT) && (!ifEmbedT) && (!ifInExeT) && (!ifPipeT) {
 
 		// autoPathT := filepath.Join(tk.GetApplicationPath(), "auto.gox")
 		// autoGxbPathT := filepath.Join(tk.GetApplicationPath(), "auto.gxb")
@@ -1758,12 +1772,11 @@ func runArgs(argsA ...string) interface{} {
 		}
 	}
 
-	ifBinT := tk.IfSwitchExistsWhole(argsT, "-bin")
-	if ifBinT {
-	}
+	// ifBinT := tk.IfSwitchExistsWhole(argsT, "-bin")
+	// if ifBinT {
+	// }
 
 	ifRunT := tk.IfSwitchExistsWhole(argsT, "-run")
-	ifExampleT := tk.IfSwitchExistsWhole(argsT, "-example")
 	ifGoPathT := tk.IfSwitchExistsWhole(argsT, "-gopath")
 	ifLocalT := tk.IfSwitchExistsWhole(argsT, "-local")
 	ifAppPathT := tk.IfSwitchExistsWhole(argsT, "-apppath")
@@ -1794,14 +1807,14 @@ func runArgs(argsA ...string) interface{} {
 
 	var fcT string
 
-	if ifInExeT && inExeCodeT != "" && !tk.IfSwitchExistsWhole(os.Args, "-noin") {
+	if ifInExeT && inExeCodeT != "" && !tk.IfSwitchExistsWhole(argsT, "-noin") {
 		fcT = inExeCodeT
 
 		scriptPathT = ""
 	} else if cmdT != "" {
 		fcT = cmdT
 
-		if tk.IfSwitchExistsWhole(os.Args, "-urlDecode") {
+		if tk.IfSwitchExistsWhole(argsT, "-urlDecode") {
 			fcT = tk.UrlDecode(fcT)
 		}
 
@@ -1811,7 +1824,7 @@ func runArgs(argsA ...string) interface{} {
 
 		// 	scriptPathT = ""
 	} else if ifRunT {
-		if tk.IfSwitchExistsWhole(os.Args, "-urlDecode") {
+		if tk.IfSwitchExistsWhole(argsT, "-urlDecode") {
 			fcT = tk.UrlDecode(scriptT)
 		} else {
 			fcT = scriptT
@@ -1822,6 +1835,19 @@ func runArgs(argsA ...string) interface{} {
 	} else if ifRemoteT {
 		scriptPathT = scriptT
 		fcT = tk.DownloadPageUTF8(scriptT, nil, "", 30)
+
+	} else if ifSelectScriptT {
+		scriptPathT = strings.TrimSpace(SelectScript())
+
+		if scriptPathT == "" {
+			return tk.Errf("no script selected: %v", scriptPathT)
+		}
+
+		if tk.IsErrX(scriptPathT) {
+			return tk.Errf("failed to select script: %v", tk.GetErrStrX(scriptPathT))
+		}
+
+		fcT = tk.LoadStringFromFile(scriptPathT)
 
 	} else if ifExampleT {
 		scriptPathT = "http://topget.org/dc/t/charlang/example/" + scriptT
@@ -1951,7 +1977,7 @@ func runArgs(argsA ...string) interface{} {
 		appPathT, errT := os.Executable()
 		tk.CheckError(errT)
 
-		outputT := tk.Trim(tk.GetSwitch(os.Args, "-output=", "output.exe"))
+		outputT := tk.Trim(tk.GetSwitch(argsT, "-output=", "output.exe"))
 
 		if fcT == "" {
 			tk.Fatalf("code empty")
@@ -2164,7 +2190,7 @@ func runArgs(argsA ...string) interface{} {
 	envT := charlang.Map{}
 
 	// envT["tk"] = charlang.TkFunction
-	envT["argsG"] = charlang.ConvertToObject(os.Args)
+	envT["argsG"] = charlang.ConvertToObject(argsT)
 	envT["versionG"] = charlang.ToStringObject(charlang.VersionG)
 	envT["scriptPathG"] = charlang.ToStringObject(scriptPathT)
 	envT["runModeG"] = charlang.ToStringObject("script")
@@ -2216,6 +2242,20 @@ func main() {
 	// service route
 
 	argsT := os.Args
+
+	if tk.IfSwitchExistsWhole(argsT, "-help") {
+		textT := tk.GetWeb(`http://topget.org/dc/c/charlang/intro.md`)
+
+		tk.Pl("%v", tk.DecodeHTML(tk.ToStr(textT)))
+		return
+	}
+
+	if tk.IfSwitchExistsWhole(argsT, "-helpFuncs") {
+		textT := tk.GetWeb(`http://topget.org/dc/c/charlang/funcs.md`)
+
+		tk.Pl("%v", tk.DecodeHTML(tk.ToStr(textT)))
+		return
+	}
 
 	if tk.IfSwitchExistsWhole(argsT, "-service") {
 		tk.Pl("%v V%v is running in service(server) mode. Running the application with argument \"-service\" will cause it running in service mode.\n", serviceNameG, charlang.VersionG)
@@ -2412,7 +2452,7 @@ func main() {
 	}
 
 	// rs := runArgs(os.Args[1:]...)
-	rs := runArgs(os.Args...)
+	rs := runArgs(argsT...)
 
 	if rs != nil {
 		valueT, ok := rs.(error)

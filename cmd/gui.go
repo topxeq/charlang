@@ -783,6 +783,7 @@ func selectFileGUI(argsA ...string) interface{} {
 		optionsT = append(optionsT, zenity.Filename(defaultT))
 	}
 
+	// `-filter=[{"Name": "Charlang Script Files", "Patterns": ["*.char"], "CaseFold": false}, {"Name": "Plain Text Files", "Patterns": ["*.txt"], "CaseFold": false}, {"Name": "All Files", "Patterns": ["*"], "CaseFold": false}]`
 	filterStrT := tk.GetSwitch(argsA, "-filter=", "")
 
 	var filtersT zenity.FileFilters
@@ -873,4 +874,18 @@ func getInputGUI(argsA ...string) interface{} {
 	}
 
 	return rs
+}
+
+func SelectScript() string {
+	rsT := selectFileGUI("-title=Please select the script...", `-filter=[{"Name": "Charlang Script Files", "Patterns": ["*.char"], "CaseFold": false}, {"Name": "Plain Text Files", "Patterns": ["*.txt"], "CaseFold": false}, {"Name": "All Files", "Patterns": ["*"], "CaseFold": false}]`)
+
+	if rsT == nil {
+		return "TXERROR:"
+	}
+
+	if tk.IsError(rsT) {
+		return tk.ErrorToString(rsT.(error))
+	}
+
+	return tk.ToStr(rsT)
 }

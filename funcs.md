@@ -366,7 +366,7 @@
 
 **pl**
 
-**pln**
+**pln**: the same as 'println' in other languages. pln formats using the default formats for its arguments and writes to standard output. Usage: pln("the name is", str1)
 
 **plv**
 
