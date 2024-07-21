@@ -799,6 +799,8 @@ func selectFileGUI(argsA ...string) interface{} {
 		optionsT = append(optionsT, filtersT)
 	}
 
+	// fmt.Printf("optionsT: %v\n", optionsT)
+
 	rs, errT := zenity.SelectFile(optionsT...)
 
 	if errT != nil {

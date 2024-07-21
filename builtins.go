@@ -149,6 +149,8 @@ const (
 	BuiltinIsEncrypted
 	BuiltinEncryptData
 	BuiltinDecryptData
+	BuiltinEncryptStream
+	BuiltinDecryptStream
 	BuiltinSimpleEncode
 	BuiltinSimpleDecode
 	BuiltinToPinYin
@@ -219,6 +221,8 @@ const (
 	BuiltinCompareBytes
 	BuiltinLoadBytes
 	BuiltinSaveBytes
+	BuiltinCompressData
+	BuiltinCompressStr
 	BuiltinUrlEncode
 	BuiltinUrlDecode
 	BuiltinOrderedMap
@@ -815,6 +819,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"saveBytes": BuiltinSaveBytes,
 
 	// compress/zip related
+	"compressData":      BuiltinCompressData,
+	"compressStr":       BuiltinCompressStr,
 	"archiveFilesToZip": BuiltinArchiveFilesToZip, // Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
 
 	// network/web related
@@ -870,6 +876,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"encryptBytes": BuiltinEncryptData,
 	"decryptData":  BuiltinDecryptData,
 	"decryptBytes": BuiltinDecryptData,
+
+	"encryptStream": BuiltinEncryptStream,
+	"decryptStream": BuiltinDecryptStream,
 
 	// image related
 	"loadImageFromBytes": BuiltinLoadImageFromBytes, // usage: imageT := loadImageFromBytes(bytesT, "-type=png")
@@ -2279,6 +2288,16 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// compress/zip related
+	BuiltinCompressData: &BuiltinFunction{
+		Name:    "compressData",
+		Value:   FnAAVaRA(tk.Compress),
+		ValueEx: FnAAVaRAex(tk.Compress),
+	},
+	BuiltinCompressStr: &BuiltinFunction{
+		Name:    "compressStr",
+		Value:   FnASRS(tk.CompressText),
+		ValueEx: FnASRSex(tk.CompressText),
+	},
 	BuiltinArchiveFilesToZip: &BuiltinFunction{
 		Name:    "archiveFilesToZip",
 		Value:   CallExAdapter(builtinArchiveFilesToZipFunc),
@@ -2444,6 +2463,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "decryptData",
 		Value:   FnALyVsRLy(tk.DecryptDataByTXDEF),
 		ValueEx: FnALyVsRLyex(tk.DecryptDataByTXDEF),
+	},
+	BuiltinEncryptStream: &BuiltinFunction{
+		Name:    "encryptStream",
+		Value:   FnARSWRE(tk.EncryptStreamByTXDEF),
+		ValueEx: FnARSWREex(tk.EncryptStreamByTXDEF),
+	},
+	BuiltinDecryptStream: &BuiltinFunction{
+		Name:    "decryptStream",
+		Value:   FnARSWRE(tk.DecryptStreamByTXDEF),
+		ValueEx: FnARSWREex(tk.DecryptStreamByTXDEF),
 	},
 
 	// image related
@@ -4689,6 +4718,65 @@ func FnASSRSex(fn func(string, string) string) CallableExFunc {
 	}
 }
 
+// like tk.EncryptStreamByTXDEF
+func FnARSWRE(fn func(io.Reader, string, io.Writer) error) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 3 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(*Reader)
+
+		if !ok {
+			// bufT, errT := io.ReadAll(nv1.Value)
+			return NewCommonError("invalid type of parameter 1: %v", nv1.TypeName()), nil
+		}
+
+		nv2 := args[1].String()
+
+		nv3, ok := args[0].(*Writer)
+
+		if !ok {
+			// bufT, errT := io.ReadAll(nv1.Value)
+			return NewCommonError("invalid type of parameter 3: %v", nv1.TypeName()), nil
+		}
+
+		rs := fn(nv1.Value, nv2, nv3.Value)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnARSWREex(fn func(io.Reader, string, io.Writer) error) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 3 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(*Reader)
+
+		if !ok {
+			// bufT, errT := io.ReadAll(nv1.Value)
+			return NewCommonErrorWithPos(c, "invalid type of parameter 1: %v", nv1.TypeName()), nil
+		}
+
+		nv2 := args[1].String()
+
+		nv3, ok := args[0].(*Writer)
+
+		if !ok {
+			// bufT, errT := io.ReadAll(nv1.Value)
+			return NewCommonErrorWithPos(c, "invalid type of parameter 3: %v", nv1.TypeName()), nil
+		}
+
+		rs := fn(nv1.Value, nv2, nv3.Value)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
 // like tk.CalTextSimilarity
 func FnASSRF(fn func(string, string) float64) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
@@ -5352,6 +5440,35 @@ func FnAAVaRSex(fn func(interface{}, ...interface{}) string) CallableExFunc {
 
 		rs := fn(ConvertFromObject(args[0]), vargs...)
 		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.Compress
+func FnAAVaRA(fn func(interface{}, ...interface{}) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToI(args[1:])
+
+		rs := fn(ConvertFromObject(args[0]), vargs...)
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnAAVaRAex(fn func(interface{}, ...interface{}) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToI(args[1:])
+
+		rs := fn(ConvertFromObject(args[0]), vargs...)
+		return ConvertToObject(rs), nil
 	}
 }
 
@@ -10865,7 +10982,7 @@ func builtinSendMailFunc(c Call) (Object, error) {
 			continue
 		}
 
-		lineListT := strings.Split(v, ":")
+		lineListT := strings.SplitN(v, ":", 2)
 
 		if len(lineListT) < 2 {
 			return NewCommonError("invalid attach file format(should be in form NAME:FILE_PATH): %v", v), nil

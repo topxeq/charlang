@@ -1946,6 +1946,18 @@ func runArgs(argsA ...string) interface{} {
 		return tk.Errf("failed to load script from %v: %v", scriptT, tk.GetErrorString(fcT))
 	}
 
+	if strings.HasPrefix(fcT, "//TXRR#") {
+		fcT = fcT[7:]
+
+		if strings.HasPrefix(fcT, "//TXDEF#") {
+			fcT = tk.DecryptStringByTXDEF(strings.TrimSpace(fcT[8:]), "char")
+		}
+
+		if strings.HasPrefix(fcT, "http") {
+			fcT = tk.ToStr(tk.GetWeb(strings.TrimSpace(fcT)))
+		}
+	}
+
 	if tk.StartsWith(fcT, "//TXDEF#") {
 		if decryptRunCodeT == "" {
 			tmps := tk.DecryptStringByTXDEF(fcT, "char")

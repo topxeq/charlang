@@ -8,19 +8,16 @@ go 1.22.3
 
 require (
 	github.com/denisenkom/go-mssqldb v0.12.3
-	github.com/eiannone/keyboard v0.0.0-20220611211555-0d226195f203
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/go-sql-driver/mysql v1.7.1
-	github.com/inancgumus/screen v0.0.0-20190314163918-06e984b86ed3
 	github.com/jchv/go-webview2 v0.0.0-20221223143126-dc24628cff85
 	github.com/json-iterator/go v1.1.12
 	github.com/kardianos/service v1.2.2
 	github.com/kbinani/screenshot v0.0.0-20230812210009-b87d31814237
-	github.com/ncruces/zenity v0.10.10
+	github.com/ncruces/zenity v0.10.13
 	github.com/sijms/go-ora/v2 v2.7.17
 	github.com/topxeq/charlang v0.0.0
 	github.com/topxeq/tkc v0.0.0
-	golang.org/x/sys v0.21.0
 
 )
 
@@ -40,6 +37,7 @@ require (
 	github.com/domodwyer/mailyak v3.1.1+incompatible // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/eiannone/keyboard v0.0.0-20220611211555-0d226195f203 // indirect
 	github.com/expr-lang/expr v1.16.9 // indirect
 	github.com/gen2brain/shm v0.0.0-20230802011745-f2460f5984f7 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
@@ -106,6 +104,7 @@ require (
 	golang.org/x/crypto v0.24.0 // indirect
 	golang.org/x/image v0.18.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
+	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/term v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	modernc.org/libc v1.37.6 // indirect
