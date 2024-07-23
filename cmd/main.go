@@ -81,6 +81,8 @@ var serviceModeG = false
 var currentOSG = ""
 var scriptPathG = "" // for service only
 
+var CurrentVM *charlang.VM = nil
+
 type program struct {
 	BasePath string
 }
@@ -2010,9 +2012,9 @@ func runArgs(argsA ...string) interface{} {
 		text2T := tk.Trim("690415")
 		text3T := tk.Trim("040626")
 
-		tk.SaveBytesToFile(buf1, `d:\tmpx\tmpbytes.exe`)
+		// tk.SaveBytesToFile(buf1, `d:\tmpx\tmpbytes.exe`)
 
-		tk.SaveBytesToFile([]byte(codeG), `d:\tmpx\tmpbytes2.txt`)
+		// tk.SaveBytesToFile([]byte(codeG), `d:\tmpx\tmpbytes2.txt`)
 
 		re := regexp.MustCompile(text1T + text2T + text3T + `(.*)` + text3T + text2T + text1T)
 		matchT := re.FindSubmatchIndex(buf1)
@@ -2209,6 +2211,8 @@ func runArgs(argsA ...string) interface{} {
 	envT["guiG"] = charlang.NewExternalDelegate(guiHandler)
 
 	vmT := charlang.NewVM(bytecodeT)
+
+	CurrentVM = vmT
 
 	retT, errT := vmT.Run(envT) // inParasT,
 

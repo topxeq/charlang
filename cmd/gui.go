@@ -193,6 +193,69 @@ func newWindowWebView2(paramsA []interface{}) interface{} {
 
 			return errT
 
+		case "setFunc":
+			len1T := len(paramsA)
+			if len1T < 2 {
+				return fmt.Errorf("not enough parameters")
+			}
+			// tk.Pl("----")
+			// tk.Plo(paramsA)
+			// tk.Pl("----")
+			// tk.Pl("paramsA: %#v", paramsA)
+
+			var funcNameT = tk.ToStr(paramsA[0])
+
+			// tk.Plv(paramsA[1])
+
+			var fnT = paramsA[1]
+
+			var deleT tk.QuickVarDelegate
+			var ok bool
+
+			deleT, ok = fnT.(tk.QuickVarDelegate)
+			if ok {
+				errT := w.Bind("delegateDo", deleT)
+				return errT
+			}
+
+			nv, ok := fnT.(*charlang.CompiledFunction)
+
+			if !ok {
+				return fmt.Errorf("invalid parameter 1")
+			}
+
+			vs := paramsA[2:]
+
+			lenVsT := len(vs)
+
+			deleT = func(argsA ...interface{}) interface{} {
+				lenT := len(argsA)
+
+				var argObjectsT []charlang.Object = make([]charlang.Object, 0, lenVsT+lenT)
+
+				for i := 0; i < lenVsT; i++ {
+					argObjectsT = append(argObjectsT, charlang.ConvertToObject(vs[i]))
+				}
+
+				for i := 0; i < lenT; i++ {
+					argObjectsT = append(argObjectsT, charlang.ConvertToObject(argsA[i]))
+				}
+
+				retT, errT := charlang.NewInvoker(CurrentVM, nv).Invoke(argObjectsT...)
+
+				if errT != nil {
+					return fmt.Errorf("failed to run compiled function: %v", errT)
+				}
+
+				return charlang.ConvertFromObject(retT)
+
+			}
+
+			// tk.Pl("here: %#v", deleT)
+			errT := w.Bind(funcNameT, deleT)
+
+			return errT
+
 		// case "setGoDelegate":
 		// 	var codeT string = tk.ToStr(paramsA[0])
 

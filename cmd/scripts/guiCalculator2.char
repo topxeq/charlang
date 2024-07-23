@@ -1,0 +1,98 @@
+global guiG
+
+htmlT := `
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Calculator</title>
+</head>
+<body>
+	<div style="margin-top: 10px; margin-bottom: 10px;">
+		<span>Please enter the expression:</span>
+	</div>
+	<div style="margin-top: 10px; margin-bottom: 10px;">
+		<input id="mainInputID" type=text />
+	</div>
+	<div>
+		<button id="btnCal">Calculate</button>
+		<button id="btnClose" onclick="javascript:closeWindowClick();">Close</button>
+	</div>
+
+    <script>
+        document.getElementById("btnCal").addEventListener("click", function() {
+			var result;
+			
+			var rs = dele("showResult", document.getElementById("mainInputID").value);
+
+			rs.then(res => {
+				console.log("res: ", res);
+
+				console.log(res);
+
+				document.getElementById("mainInputID").value = res;
+            });
+
+        });
+
+        function closeWindowClick() {
+            dele("closeWindow");
+        }
+ 
+        window.onload = function() {
+        };
+ 
+    </script>
+</body>
+</html>
+`
+
+windowT := guiG.newWindow("-title=Simple Calculator", "-width=640", "-height=480", "-center", "-debug")
+
+// plo(windowT)
+
+dele1 := func(...vargs) {
+	// pln(vargs)
+
+	windowT := vargs[0]
+
+	cmdT := vargs[1]
+
+    if cmdT == "showResult" {
+		result := flexEval(vargs[2])
+		pl("result: %v", result)
+
+		return result
+	} else if cmdT == "closeWindow" {
+		pl("close window")
+
+		windowT("close")
+
+		return ""
+	}
+	
+    pl("cmd: %v", cmdT)
+
+    return "TXERROR:unknown command: " + cmdT
+}
+
+checkErr(dele1)
+
+rs := windowT.setFunc("dele", dele1, windowT)
+
+checkErr(rs)
+
+rs = windowT.setHtml(htmlT)
+
+checkErr(rs)
+
+rs = windowT("show")
+
+checkErr(rs)
+
+rs = windowT("close")
+
+checkErr(rs)
+
+

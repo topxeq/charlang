@@ -204,6 +204,7 @@ const (
 	BuiltinGetFileList
 	BuiltinMathAbs
 	BuiltinMathSqrt
+	BuiltinFlexEval
 	BuiltinAdjustFloat
 	BuiltinBigInt
 	BuiltinBigFloat
@@ -603,6 +604,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mathAbs":  BuiltinMathAbs,
 	"abs":      BuiltinMathAbs,
 	"mathSqrt": BuiltinMathSqrt,
+
+	"flexEval": BuiltinFlexEval,
 
 	// random related
 	"getRandomInt":   BuiltinGetRandomInt,
@@ -1600,6 +1603,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "mathSqrt",
 		Value:   CallExAdapter(builtinMathSqrtFunc),
 		ValueEx: builtinMathSqrtFunc,
+	},
+	BuiltinFlexEval: &BuiltinFunction{
+		Name:    "flexEval",
+		Value:   FnASVaRA(tk.FlexEval),
+		ValueEx: FnASVaRAex(tk.FlexEval),
 	},
 
 	// random related
