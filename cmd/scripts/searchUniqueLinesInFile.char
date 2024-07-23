@@ -1,0 +1,51 @@
+global argsG
+global guiG
+
+filePathT := trim(getSwitch(argsG, "-file=", ``))
+
+if filePathT == "" {
+	filePathT = guiG.selectFile("-title=Select the file...")
+}
+
+if filePathT == "" {
+	fatalf("no file selected")
+}
+
+pl("file selected: %v", filePathT)
+
+patternT := trim(getSwitch(argsG, "-pattern=", ``))
+
+if patternT == "" {
+	patternT = guiG.getInput("-title=Input Dialog", "-text=Please enter the pattern...")
+}
+
+fcT := loadText(filePathT)
+
+checkErr(fcT)
+
+linesT := strSplitLines(fcT)
+
+foundLinesT := []
+foundLinesMapT := {}
+
+for i, v in linesT {
+	if regContains(v, patternT) {
+		foundLinesMapT[v] = 1
+	}
+}
+
+for k, v in foundLinesMapT {
+	foundLinesT = append(foundLinesT, k)
+}
+
+sort(foundLinesT)
+
+for i, v in foundLinesT {
+	pl("%v", v)
+}
+
+
+
+
+
+
