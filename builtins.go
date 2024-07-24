@@ -67,6 +67,7 @@ const (
 	BuiltinImageToAscii
 	BuiltinLoadImageFromFile
 	BuiltinSaveImageToFile
+	BuiltinGetImageInfo
 	BuiltinSaveImageToBytes
 	BuiltinClose
 	BuiltinRegSplit
@@ -889,6 +890,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"loadImageFromFile": BuiltinLoadImageFromFile, // usage: imageT := loadImageFromFile(`c:\test\abc.png`) or image2T := loadImageFromFile(`c:\test\abc.jpg`, "-type=jpg")
 	"saveImageToFile":   BuiltinSaveImageToFile,   // usage: errT := saveImageToFile(imageT, `c:\test\newabc.png`) or errT := saveImageToFile(imageT, `c:\test\newabc.png`, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
+
+	"getImageInfo": BuiltinGetImageInfo,
 
 	"imageToAscii": BuiltinImageToAscii, // convert an image object to colorful ASCII graph(array of string), usage: asciiT := imageToAscii(imageT, "-width=60", "-height=80"), set one of width or height will keep aspect ratio
 
@@ -2503,6 +2506,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "saveImageToFile",
 		Value:   CallExAdapter(builtinSaveImageToFileFunc),
 		ValueEx: builtinSaveImageToFileFunc,
+	},
+	BuiltinGetImageInfo: &BuiltinFunction{
+		Name:    "getImageInfo",
+		Value:   CallExAdapter(builtinGetImageInfoFunc),
+		ValueEx: builtinGetImageInfoFunc,
 	},
 	BuiltinImageToAscii: &BuiltinFunction{
 		Name:    "imageToAscii",
@@ -11430,6 +11438,28 @@ func builtinImageToAsciiFunc(c Call) (Object, error) {
 	imageT := tk.ImageToAscii(v.Value, widthT, heightT)
 
 	return ConvertToObject(imageT.([]string)), nil
+}
+
+func builtinGetImageInfoFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v, ok := args[0].(*Image)
+	if !ok {
+		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	// vs := args[1:]
+
+	rsT := make(Map)
+
+	rsT["width"] = ToIntObject(v.Value.Bounds().Max.X - v.Value.Bounds().Min.X)
+	rsT["height"] = ToIntObject(v.Value.Bounds().Max.Y - v.Value.Bounds().Min.Y)
+
+	return rsT, nil
 }
 
 func builtinSaveImageToFileFunc(c Call) (Object, error) {
