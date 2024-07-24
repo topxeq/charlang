@@ -6762,6 +6762,21 @@ func (o *BytesBuffer) Copy() Object {
 	return rsT
 }
 
+func NewBytesBuffer(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	if len(argsA) > 0 {
+		nv, ok := argsA[0].(Bytes)
+		if !ok {
+			return NewCommonError("unsupport type: %T", argsA[0]), nil
+		}
+
+		return &BytesBuffer{Value: bytes.NewBuffer([]byte(nv))}, nil
+	}
+
+	return &BytesBuffer{Value: new(bytes.Buffer)}, nil
+}
+
 // ObjectRef represents a reference variable.
 // always refer to an Object(i.e. *Object)
 type ObjectRef struct {
@@ -8702,6 +8717,24 @@ func NewWriter(c Call) (Object, error) {
 		return &Writer{Value: r1.Value}, nil
 	}
 
+	nv2, ok := argsA[0].(*BytesBuffer)
+
+	if ok {
+		return &Writer{Value: nv2.Value}, nil
+	}
+
+	nv3, ok := argsA[0].(*StringBuilder)
+
+	if ok {
+		return &Writer{Value: nv3.Value}, nil
+	}
+
+	nv4, ok := argsA[0].(*File)
+
+	if ok {
+		return &Writer{Value: nv4.Value}, nil
+	}
+
 	nv1, ok := argsA[0].(io.Writer)
 
 	if ok {
@@ -8742,20 +8775,14 @@ func NewWriter(c Call) (Object, error) {
 
 			return rs, nil
 		}
-
-		var sb strings.Builder
-
-		sb.WriteString(s1.Value)
-
-		return &Writer{Value: &sb}, nil
 	}
 
-	var sb strings.Builder
+	// var sb strings.Builder
 
-	// sb.WriteString(s1.Value)
+	// // sb.WriteString(s1.Value)
 
-	return &Writer{Value: &sb}, nil
-	// return NewCommonError("unsupported type: %T", argsA[0]), nil
+	// return &Writer{Value: &sb}, nil
+	return NewCommonError("unsupported type: %T", argsA[0]), nil
 }
 
 // File object is used for represent os.File type value

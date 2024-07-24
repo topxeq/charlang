@@ -4,6 +4,7 @@ go 1.22.3
 
 require (
 	github.com/domodwyer/mailyak v3.1.1+incompatible
+	github.com/fogleman/gg v1.3.0
 	github.com/jtclarkjr/kanjikana v0.1.0
 	github.com/stretchr/testify v1.8.4
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff
@@ -86,7 +87,7 @@ require (
 	github.com/vicanso/go-charts/v2 v2.6.4
 	github.com/wcharczuk/go-chart/v2 v2.1.0
 	github.com/xuri/excelize/v2 v2.8.0
-	golang.org/x/image v0.18.0 // indirect
+	golang.org/x/image v0.18.0
 )
 
 replace github.com/topxeq/tkc v0.0.0 => ../tkc

@@ -1,0 +1,15 @@
+global argsG
+
+filePathT := trim(getSwitch(argsG, "-file=", ""))
+
+if filePathT == "" {
+	fatalf("empty file path")
+}
+
+plv(filePathT)
+
+imageT := loadImageFromFile(filePathT)
+
+rs := getImageInfo(imageT)
+
+pl("%#v", rs)

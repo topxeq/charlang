@@ -967,6 +967,12 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(((*bytes.Buffer)(args[0].(*BytesBuffer).Value)).String()), nil
 			},
 		},
+		"bytes": &Function{
+			Name: "bytes",
+			Value: func(args ...Object) (Object, error) {
+				return Bytes(((*bytes.Buffer)(args[0].(*BytesBuffer).Value)).Bytes()), nil
+			},
+		},
 		"write": &Function{
 			Name: "write",
 			Value: func(args ...Object) (Object, error) {

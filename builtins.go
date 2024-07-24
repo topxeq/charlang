@@ -9,6 +9,9 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/gif"
+	"image/jpeg"
+	"image/png"
 	"io"
 	"math"
 	"math/big"
@@ -24,6 +27,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/domodwyer/mailyak"
+	"github.com/fogleman/gg"
 	"github.com/golang/freetype/truetype"
 	"github.com/guptarohit/asciigraph"
 	"github.com/topxeq/awsapi"
@@ -32,6 +36,7 @@ import (
 	tk "github.com/topxeq/tkc"
 	"github.com/wcharczuk/go-chart/v2/drawing"
 	"github.com/xuri/excelize/v2"
+	"golang.org/x/image/bmp"
 
 	"github.com/mholt/archiver/v3"
 
@@ -68,6 +73,10 @@ const (
 	BuiltinLoadImageFromFile
 	BuiltinSaveImageToFile
 	BuiltinGetImageInfo
+	BuiltinEncodeImage
+	BuiltinDrawImageOnImage
+	BuiltinDrawTextWrappedOnImage
+	BuiltinGenQr
 	BuiltinSaveImageToBytes
 	BuiltinClose
 	BuiltinRegSplit
@@ -142,6 +151,7 @@ const (
 	BuiltinReader
 	BuiltinWriter
 	BuiltinFile
+	BuiltinBytesBuffer
 	BuiltinImage
 	BuiltinLoadImageFromBytes
 	BuiltinThumbImage
@@ -223,6 +233,8 @@ const (
 	BuiltinCompareBytes
 	BuiltinLoadBytes
 	BuiltinSaveBytes
+	BuiltinOpenFile
+	BuiltinCloseFile
 	BuiltinCompressData
 	BuiltinCompressStr
 	BuiltinUrlEncode
@@ -477,6 +489,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mutableString": BuiltinMutableString,
 	"bytes":         BuiltinBytes,
 	"chars":         BuiltinChars,
+
+	"bytesBuffer": BuiltinBytesBuffer,
 
 	"error": BuiltinError,
 
@@ -822,6 +836,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"loadBytes": BuiltinLoadBytes,
 	"saveBytes": BuiltinSaveBytes,
 
+	"openFile":  BuiltinOpenFile,
+	"closeFile": BuiltinCloseFile,
+
 	// compress/zip related
 	"compressData":      BuiltinCompressData,
 	"compressStr":       BuiltinCompressStr,
@@ -892,6 +909,13 @@ var BuiltinsMap = map[string]BuiltinType{
 	"saveImageToFile":   BuiltinSaveImageToFile,   // usage: errT := saveImageToFile(imageT, `c:\test\newabc.png`) or errT := saveImageToFile(imageT, `c:\test\newabc.png`, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
 
 	"getImageInfo": BuiltinGetImageInfo,
+
+	"encodeImage": BuiltinEncodeImage,
+
+	"drawImageOnImage":       BuiltinDrawImageOnImage,
+	"drawTextWrappedOnImage": BuiltinDrawTextWrappedOnImage,
+
+	"genQr": BuiltinGenQr,
 
 	"imageToAscii": BuiltinImageToAscii, // convert an image object to colorful ASCII graph(array of string), usage: asciiT := imageToAscii(imageT, "-width=60", "-height=80"), set one of width or height will keep aspect ratio
 
@@ -1180,6 +1204,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "chars",
 		Value:   funcPOROe(builtinCharsFunc),
 		ValueEx: funcPOROeEx(builtinCharsFunc),
+	},
+	BuiltinBytesBuffer: &BuiltinFunction{
+		Name:    "bytesBuffer",
+		Value:   CallExAdapter(NewBytesBuffer),
+		ValueEx: NewBytesBuffer,
 	},
 
 	BuiltinError: &BuiltinFunction{
@@ -2297,6 +2326,16 @@ var BuiltinObjects = [...]Object{
 		ValueEx: FnALbySREex(tk.SaveBytesToFileE),
 		Remark:  `save bytes to file, usage: saveBytes(bytesT, "file.bin"), return error if failed`,
 	},
+	BuiltinOpenFile: &BuiltinFunction{
+		Name:    "openFile",
+		Value:   CallExAdapter(builtinOpenFileFunc),
+		ValueEx: builtinOpenFileFunc,
+	},
+	BuiltinCloseFile: &BuiltinFunction{
+		Name:    "closeFile",
+		Value:   CallExAdapter(builtinCloseFileFunc),
+		ValueEx: builtinCloseFileFunc,
+	},
 
 	// compress/zip related
 	BuiltinCompressData: &BuiltinFunction{
@@ -2511,6 +2550,26 @@ var BuiltinObjects = [...]Object{
 		Name:    "getImageInfo",
 		Value:   CallExAdapter(builtinGetImageInfoFunc),
 		ValueEx: builtinGetImageInfoFunc,
+	},
+	BuiltinEncodeImage: &BuiltinFunction{
+		Name:    "encodeImage",
+		Value:   CallExAdapter(builtinEncodeImageFunc),
+		ValueEx: builtinEncodeImageFunc,
+	},
+	BuiltinDrawImageOnImage: &BuiltinFunction{
+		Name:    "drawImageOnImage",
+		Value:   CallExAdapter(builtinDrawImageOnImageFunc),
+		ValueEx: builtinDrawImageOnImageFunc,
+	},
+	BuiltinDrawTextWrappedOnImage: &BuiltinFunction{
+		Name:    "drawTextWrappedOnImage",
+		Value:   CallExAdapter(builtinDrawTextWrappedOnImageFunc),
+		ValueEx: builtinDrawTextWrappedOnImageFunc,
+	},
+	BuiltinGenQr: &BuiltinFunction{
+		Name:    "genQr",
+		Value:   CallExAdapter(builtinGenQrFunc),
+		ValueEx: builtinGenQrFunc,
 	},
 	BuiltinImageToAscii: &BuiltinFunction{
 		Name:    "imageToAscii",
@@ -7861,6 +7920,45 @@ func builtinGetWebBytesFunc(c Call) (Object, error) {
 	return Bytes(nv), nil
 }
 
+func builtinOpenFileFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	pathT := args[0].String()
+
+	vs := ObjectsToS(args[1:])
+
+	rsT := tk.OpenFile(pathT, vs...)
+
+	if tk.IsErrX(rsT) {
+		return NewCommonErrorWithPos(c, "%v", rsT), nil
+	}
+
+	return &File{Value: rsT.(*os.File)}, nil
+}
+
+func builtinCloseFileFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	r1 := args[0].(*File)
+
+	errT := r1.Value.Close()
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to close file: %v", errT), nil
+	}
+
+	return Undefined, nil
+
+}
+
 func builtinArchiveFilesToZipFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11462,6 +11560,189 @@ func builtinGetImageInfoFunc(c Call) (Object, error) {
 	return rsT, nil
 }
 
+func builtinEncodeImageFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v1, ok := args[0].(*Image)
+	if !ok {
+		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	var writerT io.Writer
+
+	switch v2 := args[1].(type) {
+	case *Writer:
+		writerT = v2.Value
+	case *File:
+		writerT = v2.Value
+	case *StringBuilder:
+		writerT = v2.Value
+	case *BytesBuffer:
+		writerT = v2.Value
+	default:
+		return NewCommonError("invalid parameter 2 type: (%T)%v", args[1], args[1]), nil
+	}
+
+	vs := ObjectsToS(args[2:])
+
+	var formatT string = strings.TrimSpace(tk.GetSwitch(vs, "-type=", ".png"))
+
+	if len(formatT) < 1 {
+		formatT = ".png"
+	} else {
+		formatT = strings.ToLower(formatT)
+	}
+
+	var errT error
+
+	formatT = strings.Trim(formatT, ".")
+
+	switch formatT {
+	case "", "png":
+		errT = png.Encode(writerT, v1.Value)
+	case "jpg", "jpeg":
+		errT = jpeg.Encode(writerT, v1.Value, nil)
+	case "gif":
+		errT = gif.Encode(writerT, v1.Value, nil)
+	case "bmp":
+		errT = bmp.Encode(writerT, v1.Value)
+	default:
+		errT = png.Encode(writerT, v1.Value)
+	}
+
+	if errT != nil {
+		return NewCommonError("invalid parameter 2 type: (%T)%v", args[1], args[1]), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinDrawImageOnImageFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v1, ok := args[0].(*Image)
+	if !ok {
+		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	v2, ok := args[1].(*Image)
+	if !ok {
+		return NewCommonError("invalid parameter 2 type: (%T)%v", args[1], args[1]), nil
+	}
+
+	widthT := v2.Value.Bounds().Max.X - v2.Value.Bounds().Min.X
+	height := v2.Value.Bounds().Max.Y - v2.Value.Bounds().Min.Y
+
+	dc := gg.NewContext(widthT, height)
+
+	// if err := dc.LoadFontFace(`C:\Windows\Fonts\simsun.ttc`, 48); err != nil {
+	// 	panic(err)
+	// }
+
+	dc.DrawImage(v2.Value, 0, 0)
+
+	dc.DrawImage(v1.Value, 0, 0)
+
+	// if errT != nil {
+	// 	return NewCommonError("invalid parameter 2 type: (%T)%v", args[1], args[1]), nil
+	// }
+
+	return &Image{Value: dc.Image()}, nil
+}
+
+func builtinDrawTextWrappedOnImageFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v1 := args[0].String()
+
+	v2, ok := args[1].(*Image)
+	if !ok {
+		return NewCommonError("invalid parameter 2 type: (%T)%v", args[1], args[1]), nil
+	}
+
+	vs := ObjectsToS(args[2:])
+
+	widthT := v2.Value.Bounds().Max.X - v2.Value.Bounds().Min.X
+	height := v2.Value.Bounds().Max.Y - v2.Value.Bounds().Min.Y
+
+	dc := gg.NewContext(widthT, height)
+
+	// if err := dc.LoadFontFace(`C:\Windows\Fonts\simsun.ttc`, 48); err != nil {
+	// 	panic(err)
+	// }
+
+	dc.DrawImage(v2.Value, 0, 0)
+
+	x := tk.ToFloat(tk.GetSwitch(vs, "-x=", "0"), 0.0)
+	y := tk.ToFloat(tk.GetSwitch(vs, "-y=", "0"), 0.0)
+	ax := tk.ToFloat(tk.GetSwitch(vs, "-ax=", "0.5"), 0.0)
+	ay := tk.ToFloat(tk.GetSwitch(vs, "-ay=", "0.5"), 0.0)
+
+	textWidthT := tk.ToFloat(tk.GetSwitch(vs, "-width=", tk.ToStr(widthT)), 0.0)
+
+	lineSpacingT := tk.ToFloat(tk.GetSwitch(vs, "-lineSpacing=", "0.0"), 0.0)
+
+	alignStrT := strings.TrimSpace(tk.GetSwitch(vs, "-align=", "center"))
+
+	fontPathT := tk.GetSwitch(vs, "-font=", `C:\Windows\Fonts\simsun.ttc`)
+
+	fontSizeT := tk.ToFloat(tk.GetSwitch(vs, "-fontSize=", `16`), 0.0)
+
+	errT := dc.LoadFontFace(fontPathT, fontSizeT)
+
+	if errT != nil {
+		return NewCommonError("failed to load font: %v", errT), nil
+	}
+
+	var alignT = gg.AlignCenter
+
+	if alignStrT == "left" {
+		alignT = gg.AlignLeft
+	} else if alignStrT == "right" {
+		alignT = gg.AlignRight
+	}
+
+	dc.DrawStringWrapped(v1, x, y, ax, ay, textWidthT, lineSpacingT, alignT)
+
+	// if errT != nil {
+	// 	return NewCommonError("invalid parameter 2 type: (%T)%v", args[1], args[1]), nil
+	// }
+
+	return &Image{Value: dc.Image()}, nil
+}
+
+func builtinGenQrFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v1 := args[0].String()
+
+	vs := ObjectsToS(args[1:])
+
+	qrCodeT, errT := tk.GenerateQR(v1, vs...)
+
+	if errT != nil {
+		return NewCommonError("failed to generate QR code: %v", errT), nil
+	}
+
+	return &Image{Value: qrCodeT}, nil
+}
+
 func builtinSaveImageToFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12309,6 +12590,16 @@ func builtinCloseFunc(c Call) (Object, error) {
 		}
 
 		return NewCommonErrorWithPos(c, "unsupport method: close"), nil
+	} else if typeNameT == "file" {
+		r1 := args[0].(*File)
+
+		errT := r1.Value.Close()
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to close file: %v", errT), nil
+		}
+
+		return Undefined, nil
 	} else if typeNameT == "excel" {
 		r1 := args[0].(*Excel)
 
