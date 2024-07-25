@@ -1948,7 +1948,11 @@ func runArgs(argsA ...string) interface{} {
 		return tk.Errf("failed to load script from %v: %v", scriptT, tk.GetErrorString(fcT))
 	}
 
+	rrStrT := ""
+
 	if strings.HasPrefix(fcT, "//TXRR#") {
+		rrStrT = fcT
+
 		fcT = fcT[7:]
 
 		if strings.HasPrefix(fcT, "//TXDEF#") {
@@ -2002,6 +2006,10 @@ func runArgs(argsA ...string) interface{} {
 			tk.Fatalf("loading bin failed: %v", errT)
 		}
 
+		if rrStrT != "" {
+			fcT = rrStrT
+		}
+
 		encTextT := tk.EncryptStringByTXDEF(fcT, "topxeq")
 
 		encBytesT := []byte(encTextT)
@@ -2019,7 +2027,7 @@ func runArgs(argsA ...string) interface{} {
 		re := regexp.MustCompile(text1T + text2T + text3T + `(.*)` + text3T + text2T + text1T)
 		matchT := re.FindSubmatchIndex(buf1)
 		if matchT == nil {
-			tk.Fatalf("invald bin")
+			tk.Fatalf("invalid bin: %v", appPathT)
 		}
 
 		bufCodeLenT := matchT[3] - matchT[2]

@@ -73,6 +73,7 @@ const (
 	BuiltinLoadImageFromFile
 	BuiltinSaveImageToFile
 	BuiltinGetImageInfo
+	BuiltinStrToRgba
 	BuiltinEncodeImage
 	BuiltinDrawImageOnImage
 	BuiltinDrawTextWrappedOnImage
@@ -909,6 +910,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"saveImageToFile":   BuiltinSaveImageToFile,   // usage: errT := saveImageToFile(imageT, `c:\test\newabc.png`) or errT := saveImageToFile(imageT, `c:\test\newabc.png`, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
 
 	"getImageInfo": BuiltinGetImageInfo,
+
+	"strToRgba": BuiltinStrToRgba,
 
 	"encodeImage": BuiltinEncodeImage,
 
@@ -2550,6 +2553,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getImageInfo",
 		Value:   CallExAdapter(builtinGetImageInfoFunc),
 		ValueEx: builtinGetImageInfoFunc,
+	},
+	BuiltinStrToRgba: &BuiltinFunction{
+		Name:    "strToRgba",
+		Value:   CallExAdapter(builtinStrToRgbaFunc),
+		ValueEx: builtinStrToRgbaFunc,
 	},
 	BuiltinEncodeImage: &BuiltinFunction{
 		Name:    "encodeImage",
@@ -6527,6 +6535,8 @@ func builtinBase64EncodeFunc(c Call) (Object, error) {
 		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
+	vs := ObjectsToS(args[1:])
+
 	switch nv := args[0].(type) {
 	case String:
 		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv.Value))}, nil
@@ -6536,6 +6546,17 @@ func builtinBase64EncodeFunc(c Call) (Object, error) {
 		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv.String()))}, nil
 	case *BytesBuffer:
 		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv.Value.Bytes()))}, nil
+	case *Image:
+		formatT := strings.TrimSpace(tk.GetSwitch(vs, "-format=", ".png"))
+		bytesT := tk.SaveImageToBytes(nv.Value, formatT)
+
+		tmps := base64.StdEncoding.EncodeToString(bytesT)
+
+		if tk.IfSwitchExists(vs, "-addHead") {
+			tmps = "data:image/" + strings.Trim(formatT, ".") + ";base64," + tmps
+		}
+
+		return String{Value: tmps}, nil
 	default:
 		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv.String()))}, nil
 	}
@@ -11560,6 +11581,27 @@ func builtinGetImageInfoFunc(c Call) (Object, error) {
 	return rsT, nil
 }
 
+func builtinStrToRgbaFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v1 := args[0].String()
+
+	r, g, b, a := tk.ParseHexColor(v1)
+
+	rsT := make(Map)
+
+	rsT["r"] = ToIntObject(r)
+	rsT["g"] = ToIntObject(g)
+	rsT["b"] = ToIntObject(b)
+	rsT["a"] = ToIntObject(a)
+
+	return rsT, nil
+}
+
 func builtinEncodeImageFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11649,7 +11691,12 @@ func builtinDrawImageOnImageFunc(c Call) (Object, error) {
 
 	dc.DrawImage(v2.Value, 0, 0)
 
-	dc.DrawImage(v1.Value, 0, 0)
+	vs := ObjectsToS(args[2:])
+
+	x := tk.ToInt(tk.GetSwitch(vs, "-x=", "0"), 0)
+	y := tk.ToInt(tk.GetSwitch(vs, "-y=", "0"), 0)
+
+	dc.DrawImage(v1.Value, x, y)
 
 	// if errT != nil {
 	// 	return NewCommonError("invalid parameter 2 type: (%T)%v", args[1], args[1]), nil
@@ -11696,6 +11743,12 @@ func builtinDrawTextWrappedOnImageFunc(c Call) (Object, error) {
 
 	alignStrT := strings.TrimSpace(tk.GetSwitch(vs, "-align=", "center"))
 
+	colorT := strings.TrimSpace(tk.GetSwitch(vs, "-color=", `#000000`))
+
+	r, g, b, a := tk.ParseHexColor(colorT)
+
+	dc.SetRGBA255(r, g, b, a)
+
 	fontPathT := tk.GetSwitch(vs, "-font=", `C:\Windows\Fonts\simsun.ttc`)
 
 	fontSizeT := tk.ToFloat(tk.GetSwitch(vs, "-fontSize=", `16`), 0.0)
@@ -11713,6 +11766,8 @@ func builtinDrawTextWrappedOnImageFunc(c Call) (Object, error) {
 	} else if alignStrT == "right" {
 		alignT = gg.AlignRight
 	}
+
+	// tk.Pln(v1, x, y, ax, ay, textWidthT, lineSpacingT, 	alignT)
 
 	dc.DrawStringWrapped(v1, x, y, ax, ay, textWidthT, lineSpacingT, alignT)
 
@@ -12598,7 +12653,6 @@ func builtinCloseFunc(c Call) (Object, error) {
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to close file: %v", errT), nil
 		}
-
 		return Undefined, nil
 	} else if typeNameT == "excel" {
 		r1 := args[0].(*Excel)
