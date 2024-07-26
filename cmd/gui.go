@@ -432,16 +432,26 @@ func guiHandler(argsA ...interface{}) interface{} {
 		return selectListMultiGUI(tk.ToStr(paramsA[0]), tk.JSONToStringArray(tk.ToJSONX(paramsA[1])), tk.InterfaceToStringArray(paramsA[2:])...)
 	case "selectFile":
 		return selectFileGUI(tk.InterfaceToStringArray(paramsA)...)
+	case "selectFileMultiple":
+		return selectFileMultipleGUI(tk.InterfaceToStringArray(paramsA)...)
 	case "selectFileToSave":
 		return selectFileToSaveGUI(tk.InterfaceToStringArray(paramsA)...)
 	case "selectDir":
 		paramsT := tk.InterfaceToStringArray(paramsA)
 		paramsT = append(paramsT, "-dir")
 		return selectFileGUI(paramsT...)
+	case "selectDirMultiple":
+		paramsT := tk.InterfaceToStringArray(paramsA)
+		paramsT = append(paramsT, "-dir")
+		return selectFileMultipleGUI(paramsT...)
 	case "selectDirectory":
 		paramsT := tk.InterfaceToStringArray(paramsA)
 		paramsT = append(paramsT, "-dir")
 		return selectFileGUI(paramsT...)
+	case "selectDirectoryMultiple":
+		paramsT := tk.InterfaceToStringArray(paramsA)
+		paramsT = append(paramsT, "-dir")
+		return selectFileMultipleGUI(paramsT...)
 	case "getActiveDisplayCount":
 		return screenshot.NumActiveDisplays()
 	case "getScreenResolution":
@@ -865,6 +875,60 @@ func selectFileGUI(argsA ...string) interface{} {
 	// fmt.Printf("optionsT: %v\n", optionsT)
 
 	rs, errT := zenity.SelectFile(optionsT...)
+
+	if errT != nil {
+		if errT == zenity.ErrCanceled {
+			return nil
+		}
+
+		return errT
+	}
+
+	return rs
+}
+
+func selectFileMultipleGUI(argsA ...string) interface{} {
+	optionsT := []zenity.Option{}
+
+	optionsT = append(optionsT, zenity.ShowHidden())
+
+	titleT := tk.GetSwitch(argsA, "-title=", "")
+
+	if titleT != "" {
+		optionsT = append(optionsT, zenity.Title(titleT))
+	}
+
+	ifDirT := tk.IfSwitchExists(argsA, "-dir")
+
+	if ifDirT {
+		optionsT = append(optionsT, zenity.Directory())
+	}
+
+	defaultT := tk.GetSwitch(argsA, "-default=", "")
+
+	if defaultT != "" {
+		optionsT = append(optionsT, zenity.Filename(defaultT))
+	}
+
+	// `-filter=[{"Name": "Charlang Script Files", "Patterns": ["*.char"], "CaseFold": false}, {"Name": "Plain Text Files", "Patterns": ["*.txt"], "CaseFold": false}, {"Name": "All Files", "Patterns": ["*"], "CaseFold": false}]`
+	filterStrT := tk.GetSwitch(argsA, "-filter=", "")
+
+	var filtersT zenity.FileFilters
+
+	if filterStrT != "" {
+
+		errT := jsoniter.Unmarshal([]byte(filterStrT), &filtersT)
+
+		if errT != nil {
+			return errT
+		}
+
+		optionsT = append(optionsT, filtersT)
+	}
+
+	// fmt.Printf("optionsT: %v\n", optionsT)
+
+	rs, errT := zenity.SelectFileMultiple(optionsT...)
 
 	if errT != nil {
 		if errT == zenity.ErrCanceled {

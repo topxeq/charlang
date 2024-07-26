@@ -9160,6 +9160,22 @@ func NewCharCode(srcA string, optsA ...*CompilerOptions) *CharCode {
 		}
 	}
 
+	if strings.HasPrefix(srcA, "//TXRR#") {
+		srcA = srcA[7:]
+
+		if strings.HasPrefix(srcA, "//TXDEF#") {
+			srcA = tk.DecryptStringByTXDEF(strings.TrimSpace(srcA[8:]), "char")
+		}
+
+		if strings.HasPrefix(srcA, "http") {
+			srcA = tk.ToStr(tk.GetWeb(strings.TrimSpace(srcA)))
+		}
+	}
+
+	if strings.HasPrefix(srcA, "//TXDEF#") {
+		srcA = tk.DecryptStringByTXDEF(strings.TrimSpace(srcA[8:]), "char")
+	}
+
 	return &CharCode{Source: srcA, Value: nil, CompilerOptions: compilerOptionsT}
 
 	// objT := &CharCode{Source: srcA, Value: nil, CompilerOptions: compilerOptionsT}
