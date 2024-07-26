@@ -7550,6 +7550,8 @@ func builtinDebugInfoFunc(c Call) (Object, error) {
 	bufT.WriteString("Locals \n")
 	bufT.WriteString(fmt.Sprintf("%v", c.VM().GetLocalsQuick()))
 	bufT.WriteString("\n ----- \n")
+	// bufT.WriteString(fmt.Sprintf("codeG: %v", tk.LimitString(codeG, 50)))
+	// bufT.WriteString("\n ----- \n")
 
 	return ToStringObject(bufT), nil
 }

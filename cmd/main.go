@@ -50,6 +50,8 @@ var webPathG = "."
 var certPathG = "."
 var verboseG = false
 
+var dummyG string
+
 // global variables
 var logo = `
 Charlang V` + charlang.VersionG + `
@@ -2237,8 +2239,10 @@ func runArgs(argsA ...string) interface{} {
 	return retT
 }
 
-func test() {
-
+func test(vA int) {
+	if vA == 10000 {
+		dummyG = fmt.Sprintf("codeG: %v\n", tk.LimitString(codeG, 50))
+	}
 }
 
 func main() {
@@ -2252,7 +2256,7 @@ func main() {
 		}
 	}()
 
-	test()
+	test(12)
 
 	// errT := bluetoothAdapter.Enable()
 
