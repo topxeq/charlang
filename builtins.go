@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -319,6 +320,7 @@ const (
 	BuiltinGetCurDir
 	BuiltinGetHomeDir
 	BuiltinGetTempDir
+	BuiltinLookPath
 	BuiltinGetClipText
 	BuiltinSetClipText
 	BuiltinRegQuote
@@ -797,6 +799,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getHomeDir": BuiltinGetHomeDir,
 	"getUserDir": BuiltinGetHomeDir,
 	"getTempDir": BuiltinGetTempDir,
+
+	"lookPath": BuiltinLookPath,
 
 	"getInput":  BuiltinGetInput,
 	"getInputf": BuiltinGetInputf,
@@ -2206,6 +2210,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getTempDir",
 		Value:   FnARS(os.TempDir),
 		ValueEx: FnARSex(os.TempDir),
+	},
+	BuiltinLookPath: &BuiltinFunction{
+		Name:    "lookPath",
+		Value:   FnASRSE(exec.LookPath),
+		ValueEx: FnASRSEex(exec.LookPath),
 	},
 	BuiltinGetInput: &BuiltinFunction{
 		Name:    "getInput",
