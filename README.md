@@ -31,6 +31,9 @@
       - [More About Array](#more-about-array)
       - [More About Map](#more-about-map)
       - [A Simple Text Editor](#a-simple-text-editor)
+    - [5.8 Advance Topics](#58-advance-topics)
+      - [Run script from command line](#run-script-from-command-line)
+      - [Run script from command line](#run-script-from-command-line-1)
 
 # The Char Language (Charlang)
 
@@ -956,4 +959,53 @@ file: [map.char](http://topget.org/dc/c/charlang/example/map.char)
 file: [editFile.char](http://topget.org/dc/c/charlang/example/editFile.char)
 
 A simple text editor with file load/save, JSON validate, code running features.
+
+### 5.8 Advance Topics
+
+#### Run script from command line
+
+- One line
+
+```shell
+D:\tmp>char -cmd=pln(1+3)
+4
+```
+
+- Multiple lines and/or with spaces
+
+Original code:
+
+```
+a := 3
+pln(a * 12)
+```
+
+Command-line after url-encode the parameter:
+
+```
+D:\tmp>char -cmd=a%20:=3%0Apln(a%20*%2012) -urlDecode
+36
+```
+
+- Multiple lines and/or with spaces(alternative way)
+
+Encrypt the script first:
+
+```
+D:\tmp>char
+Charlang 1.2.2 by TopXeQ
+> encryptText("a := 12\npln(a * 5)", "char") 
+694B9F86EB4B1024390E25200A6264602C571C20282F29
+>
+```
+
+Then prefix the string `//TXDEF#` before the parameter,
+
+```shell
+D:\tmp>char -cmd=//TXDEF#694B9F86EB4B1024390E25200A6264602C571C20282F29
+60
+```
+
+
+#### Run script from command line
 
