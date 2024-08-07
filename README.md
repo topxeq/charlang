@@ -32,8 +32,8 @@
       - [More About Map](#more-about-map)
       - [A Simple Text Editor](#a-simple-text-editor)
     - [5.8 Advance Topics](#58-advance-topics)
-      - [Run script from command line](#run-script-from-command-line)
-      - [Run script from command line](#run-script-from-command-line-1)
+      - [Run Script from Command Line](#run-script-from-command-line)
+      - [Show Environment Information of Charlang](#show-environment-information-of-charlang)
 
 # The Char Language (Charlang)
 
@@ -963,7 +963,7 @@ A simple text editor with file load/save, JSON validate, code running features.
 
 ### 5.8 Advance Topics
 
-#### Run script from command line
+#### Run Script from Command Line
 
 - One line
 
@@ -1008,5 +1008,13 @@ D:\tmp>char -cmd=//TXDEF#694B9F86EB4B1024390E25200A6264602C571C20282F29
 ```
 
 
-#### Run script from command line
+#### Show Environment Information of Charlang
+
+```shell
+D:\tmp>char -env
+Charlang by TopXeQ V1.2.3
+basePath: C:\Users\Administrator\char
+localPath: d:\scripts
+cloudPath: https://script.example.com/scripts/
+```
 

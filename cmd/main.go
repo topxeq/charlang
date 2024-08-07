@@ -1517,6 +1517,20 @@ func runArgs(argsA ...string) interface{} {
 		return nil
 	}
 
+	if tk.IfSwitchExistsWhole(argsT, "-env") {
+		tk.Pl("Charlang by TopXeQ V%v", charlang.VersionG)
+
+		basePathT := tk.EnsureBasePathInHome("char")
+
+		tk.Pl("basePath: %v", basePathT)
+
+		tk.Pl("localPath: %v", charlang.GetCfgString("localScriptPath.cfg"))
+
+		tk.Pl("cloudPath: %v", charlang.GetCfgString("cloud.cfg"))
+
+		return nil
+	}
+
 	scriptT := tk.GetParameterByIndexWithDefaultValue(argsT, 1, "")
 
 	scriptPathT := ""
