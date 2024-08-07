@@ -57,7 +57,7 @@ require (
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/topxeq/countingwriter v0.0.0-20230115115152-84660be6de09 // indirect
 	github.com/topxeq/gods v0.0.0-20220125023913-b5718bb0c704 // indirect
-	github.com/topxeq/goph v0.0.0-20230116054750-120b087d86fb // indirect
+	github.com/topxeq/goph v0.0.0-20240807052241-2e088ab61555 // indirect
 	github.com/topxeq/mahonia v0.0.0-20190828060648-12b0599ddd1a // indirect
 	github.com/topxeq/regexpx v0.0.0-20230721063247-f118dbe089d7 // indirect
 	github.com/topxeq/socks v0.0.0-20230721063359-4740c5e460e9 // indirect
