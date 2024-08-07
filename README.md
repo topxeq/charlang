@@ -21,6 +21,7 @@
       - [Float Data Type](#float-data-type)
       - [String/Bytes/Chars Data Type](#stringbyteschars-data-type)
       - [Array](#array)
+      - [Map](#map)
       - [For Loop](#for-loop)
       - [If Statement](#if-statement)
       - [Predefined Global Variables](#predefined-global-variables)
@@ -28,6 +29,7 @@
     - [5.7 More Examples](#57-more-examples)
       - [Anonymous Function](#anonymous-function)
       - [More About Array](#more-about-array)
+      - [More About Map](#more-about-map)
       - [A Simple Text Editor](#a-simple-text-editor)
 
 # The Char Language (Charlang)
@@ -626,6 +628,117 @@ b: ["xyz", 16, [1, 2, "abc"]]
 
 Refer to the array example in More Examples section for more information about array type.
 
+#### Map
+
+In Charlang, map is a set of key-value pairs where key is string and the value is
+of any value types. Value of a map can be accessed using indexer `[]` or
+selector '.' operators.
+
+```go
+// declare an empty map
+a := {}
+
+// all keys will be converted to string type, values keep their original types
+a["Num"] = 3
+a[5] = "abc"
+a[-1] = true
+a["ary"] = [1, "xyz", false]
+a[false] = "not true"
+a.Item1 = "item 1"
+
+pln(a)
+
+// length is the number of key-value pairs in the map
+pl("length of a: %v", len(a))
+
+// index by dot
+pl("a.Num: %v", a.Num)
+
+// index by square brackets
+a["Num"]++
+pln(a["Num"])
+
+// slice
+pln(a[5][2:3])
+
+a[5] = a[5] + a[5]
+
+// slice to end
+a[5] = a[5][1:]
+pl("a[5]: %v", a[5])
+
+// slice from begining
+pln(a[5][:2])
+
+// iterate
+for k, v in a {
+	println("[", k, "]:", v)
+}
+  
+pln("---")
+
+// declare map with initial values
+b := {"intItem": 12, "floatItem": 5.6, "boolItem": true, "stringItem": "str1", "arrayItem": ["array", "in", "map"], "mapItem": {"map": 1, "in": "map"}}
+
+plt(b)
+
+pln("---")
+
+c := {}
+
+// all keys will be converted to string type
+c[3] = "3"
+c[18] = "abc"
+c[-198] = "true"
+
+pl("c: %v", c)
+
+v1 := c[18]
+
+if v1 == undefined {
+	println("v1:", v1)
+}
+
+// index with non-existent key
+v2 := c[19]
+
+if v2 == undefined {
+	println("v2:", v2)
+}
+
+// remove key-value pair
+delete(c, 18)
+
+println("c:", c)
+
+```  
+
+output:
+
+```shell
+{"Num": 3, "5": "abc", "-1": true, "ary": [1, "xyz", false], "false": "not true", "Item1": "item 1"}
+length of a: 6
+a.Num: 3
+4
+c
+a[5]: bcabc
+bc
+[ Num ]: 4
+[ 5 ]: bcabc
+[ -1 ]: true
+[ ary ]: [1, "xyz", false]
+[ false ]: not true
+[ Item1 ]: item 1
+---
+(map){"intItem": 12, "floatItem": 5.6, "boolItem": true, "stringItem": "str1", "arrayItem": ["array", "in", "map"], "mapItem": {"map": 1, "in": "map"}}
+---
+c: {"3": "3", "18": "abc", "-198": "true"}
+v2: undefined
+c: {"3": "3", "-198": "true"}
+```
+
+Refer to the map example in More Examples section for more information about map type.
+
 #### For Loop
 
 ```go
@@ -833,6 +946,10 @@ file: [anonymousFunc.char](http://topget.org/dc/c/charlang/example/anonymousFunc
 #### More About Array
 
 file: [array.char](http://topget.org/dc/c/charlang/example/array.char)
+
+#### More About Map
+
+file: [map.char](http://topget.org/dc/c/charlang/example/map.char)
 
 #### A Simple Text Editor
 
