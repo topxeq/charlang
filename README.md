@@ -193,6 +193,7 @@ Examples:
 - Run from Golang source directory: `char -gopath basic.char`
 - Run from local scripts directory: place a config file local.cfg in the subdirectory 'char' under the user's home directory, with text content such as `c:\scripts`, then `char -local basic.char` will run 'c:\script\basic.char'
 - Run from cloud/network: place a config file cloud.cfg in the subdirectory 'char' under the user's home directory, with text content such as `http://script.my.com/`, then `char -cloud basic.char` will be the same as `char -remote http://script.my.com/basic.char`
+- Select the script(or input the script file path in console mode) to run: `char -selectScript`
 
 ### 5.5 Get the Examples
 
