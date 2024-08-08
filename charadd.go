@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "1.2.5"
+var VersionG = "1.2.6"
 
 var CodeTextG = ""
 
@@ -557,6 +557,64 @@ var methodFuncMapG = map[int]map[string]*Function{
 				}
 
 				return String{Value: nv.Value.Dump()}, nil
+			},
+		},
+	},
+	181: map[string]*Function{ // *Function
+		"toStr": &Function{
+			Name: "toStr",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*Function)
+
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				return ToStringObject(nv.String()), nil
+			},
+		},
+		"run": &Function{
+			Name: "run",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*Function)
+
+				if !ok {
+					return NewCommonError("invalid type: %#v", c.This), nil
+				}
+
+				argsT := c.GetArgs()
+
+				if nv.ValueEx != nil {
+					return (*nv).CallEx(Call{This: nv, Args: argsT})
+				}
+
+				if nv.Value == nil {
+					return nil, NewCommonError("unknown method: %v", "run")
+				}
+
+				return (*nv).Call(append([]Object{nv}, argsT...)...)
+			},
+		},
+		"threadRun": &Function{
+			Name: "threadRun",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*Function)
+
+				if !ok {
+					return NewCommonError("invalid type: %#v", c.This), nil
+				}
+
+				if c.VM() == nil {
+					return NewCommonError("no VM specified"), nil
+				}
+
+				argsT := c.GetArgs()
+
+				go func() {
+					NewInvoker(c.VM(), nv).Invoke(argsT...)
+				}()
+
+				return Undefined, nil
 			},
 		},
 	},

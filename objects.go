@@ -9114,10 +9114,38 @@ func (o *CharCode) Equal(right Object) bool {
 
 func (o *CharCode) IsFalsy() bool { return o.Value == nil }
 
-func (o *CharCode) CanCall() bool { return false }
+func (o *CharCode) CanCall() bool { return true }
 
-func (o *CharCode) Call(_ ...Object) (Object, error) {
-	return nil, ErrNotCallable
+func (o *CharCode) Call(argsA ...Object) (Object, error) {
+	rs := o.GetMember("run")
+
+	var errT error
+
+	if !IsUndefInternal(rs) {
+		return rs, nil
+	} else {
+		rs, errT = GetObjectMethodFunc(o, "run")
+
+		if errT != nil {
+			return Undefined, errT
+		}
+	}
+
+	nv1, ok := rs.(*Function)
+
+	if !ok {
+		return Undefined, NewCommonError("no valid function type")
+	}
+
+	if nv1.ValueEx != nil {
+		return nv1.ValueEx(Call{Args: argsA})
+	}
+
+	return nv1.Value(argsA...)
+
+	// return nil, ErrIndexOutOfBounds
+
+	// return nil, ErrNotCallable
 }
 
 func (o *CharCode) BinaryOp(tok token.Token, right Object) (Object, error) {

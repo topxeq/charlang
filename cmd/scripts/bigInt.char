@@ -7,15 +7,9 @@ pl("n1: %v, n2: %v, r1: %v", n1, n2, r1)
 
 bigN1 := bigInt(n1)
 
-// plo(bigN1)
-
 bigN2 := bigInt(n2)
 
-// plo(bigN2)
-
 bigR1 := bigN1 * bigN2
-
-// plo(bigR1)
 
 pl("bigN1: %v, bigN2: %v, bigR1: %v", bigN1, bigN2, bigR1)
 

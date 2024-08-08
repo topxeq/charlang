@@ -42,8 +42,9 @@ htmlT := `
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <script>
 	window.onload = function (){
+		var mainTextAreaT = document.getElementById('mainTextID');
 
-		document.getElementById('mainTextID').dispatchEvent(new Event('input'));
+		mainTextAreaT.dispatchEvent(new Event('input'));
 
 		document.onkeydown = function(e) {
 			if (e.ctrlKey) {
@@ -62,6 +63,31 @@ htmlT := `
 
 			return true;
 		};  
+
+		mainTextAreaT.addEventListener("keydown", function (e) {
+			if (e.key === "Tab" || e.code === "Tab") {
+				e.preventDefault();
+
+				const textT = mainTextAreaT.value;
+				const cursorPos = e.target.selectionStart;
+
+				if (e.shiftKey === true && (cursorPos - 1) > -1) {
+					const precChar = textT.substr(cursorPos - 1, 1)
+
+					if (precChar === "\t" || precChar === " ") {
+						const textFinalT = textT.substr(0, cursorPos - 1) + textT.substr(cursorPos, textT.length)
+						mainTextAreaT.value = textFinalT;
+						e.target.selectionEnd = cursorPos - 1;
+					}
+				}
+				else {
+					const textFinalT = textT.substr(0, cursorPos) + "\t" + textT.substr(cursorPos, textT.length);
+
+					mainTextAreaT.value = textFinalT;
+					e.target.selectionEnd = cursorPos + 1;
+				}
+			}
+		});
 
         var rs;
 

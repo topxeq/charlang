@@ -1,0 +1,14 @@
+sourceT := `
+param (v1, v2)
+
+return v1 + v2
+`
+
+codeT := charCode(sourceT)
+
+codeT.compile()
+
+resultT := codeT.run(12, 8.5)
+
+pl("result: %v", resultT)
+

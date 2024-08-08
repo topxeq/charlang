@@ -1602,7 +1602,7 @@ func runArgs(argsA ...string) interface{} {
 	ifEmbedT := (charlang.CodeTextG != "") && (!tk.IfSwitchExistsWhole(argsT, "-noembed"))
 	ifSelectScriptT := tk.IfSwitchExistsWhole(argsT, "-selectScript")
 	ifEditT := tk.IfSwitchExistsWhole(argsT, "-edit")
-	ifExampleT := tk.IfSwitchExistsWhole(argsT, "-example")
+	ifExampleT := tk.IfSwitchExistsWhole(argsT, "-exam") || tk.IfSwitchExistsWhole(argsT, "-example")
 
 	ifInExeT := false
 	inExeCodeT := ""

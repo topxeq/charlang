@@ -25,12 +25,16 @@
       - [For Loop](#for-loop)
       - [If Statement](#if-statement)
       - [Predefined Global Variables](#predefined-global-variables)
+      - [Run Charlang Script/Code](#run-charlang-scriptcode)
       - [Charlang as System Service](#charlang-as-system-service)
     - [5.7 More Examples](#57-more-examples)
       - [Anonymous Function](#anonymous-function)
       - [More About Array](#more-about-array)
       - [More About Map](#more-about-map)
       - [A Simple Text Editor](#a-simple-text-editor)
+      - [Base64 Encoding of Images](#base64-encoding-of-images)
+      - [Plot Data Graph in Console](#plot-data-graph-in-console)
+      - [Plot Data Graph in Console with Realtime Data Update](#plot-data-graph-in-console-with-realtime-data-update)
     - [5.8 Advance Topics](#58-advance-topics)
       - [Run Script from Command Line](#run-script-from-command-line)
       - [Show Environment Information of Charlang](#show-environment-information-of-charlang)
@@ -870,6 +874,84 @@ And while runnin as a WEB/Application/Micro-service server, there are additional
 - reqUriG: the route of the request, such as 'static/images/img001.png'
 - paraMapG: holds the GET/POST form values, in a map object, such as `{"auth": "xxxxx", "input1": "value1"}`
 
+#### Run Charlang Script/Code
+
+- Run a piece of Charlang code(in format as string),
+
+```go
+sourceT := `
+param (v1, v2)
+
+return v1 + v2
+`
+
+codeT := charCode(sourceT)
+
+codeT.compile()
+
+resultT := codeT.run(12, 8.5)
+
+pl("result: %v", resultT)
+
+
+```
+
+charCode is the object type to hold Charlang code to run, compile the source code before run it. Various parameters could be passed to the code object.
+
+The output:
+
+```shell
+D:\tmp>char -exam runCode.char
+result: 20.5
+```
+
+- Passing various length paramters,
+
+```go
+sourceT := `
+param ...vargs
+
+pln(toJson(vargs, "-sort"))
+
+return vargs[2]
+
+`
+
+codeT := charCode(sourceT)
+
+codeT.compile()
+
+rs := codeT.run("abc", 123.5, true, {"name": "Tom", "age": 16})
+
+pl("rs: %v", rs)
+
+```
+
+- Run code like a function call, and the fix part of parameters with various length paramters,
+
+```go
+sourceT := `
+param (v1, v2, ...vargs)
+
+pln("input:", v1, v2, ...vargs)
+
+sum := v1 + v2
+
+for i, v in vargs {
+	sum += v
+}
+
+return sum
+`
+
+addAll := charCode(sourceT).compile()
+
+resultT := addAll(12, 8.5, 2, 3, 16)
+
+pl("result: %v", resultT)
+
+```
+
 #### Charlang as System Service
 
 Charlang can be started as a system service and supports operating systems such as Windows and Linux. As long as you add the command line parameter '-reinstallService' to run the Charlang main program, you can install a system service called charService in the system (which can be seen using the service management module in computer management under Windows). Note that installing services in the operating system generally requires administrator privileges. Under Windows, you need to open the CMD window as an administrator to execute this command, while under Linux, you need to execute it as root or with the sudo command.
@@ -960,6 +1042,29 @@ file: [map.char](http://topget.org/dc/c/charlang/example/map.char)
 file: [editFile.char](http://topget.org/dc/c/charlang/example/editFile.char)
 
 A simple text editor with file load/save, JSON validate, code running features.
+
+#### Base64 Encoding of Images
+
+file: [base64EncodeImage.char](http://topget.org/dc/c/charlang/example/base64EncodeImage.char)
+
+Encode an image file to Base64 code to use in img tag in HTML, for example,
+
+```shell
+D:\tmp>char -exam base64EncodeImage.char -file=d:\downtemp\curtain-2757815_960_720.png
+data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA8AAAAHECAYAAAD22EOkAAABeGlDQ1BJQ0MgUHJvZmlsZQAAeJx1kL9LAmEcxh+1sB+GQRINDTdIQyiEDTWWDUKIiBlktdyddxqcetydRDQ2tDq4VLRk0X9QW/QPBEFQTUHU3FAQQcj1nCcood/jve+H5/0+7733AN60JpfMgTmgVLaMTCIubOQ2Bf8rhjGOSYSwIMqmvpxOJ9G3vh/hcfpD1Dmr/1zPGs0rpgx4hsiLsm5Y5CVyatfSHa6RQ3JRzJPPyRGDFyTfO7rk8rvDBZd/HDaymRXAGyALhS6WulguGiVyhBwuaVW5fR/nTwJKeX2Nfbq1TGSQQBwCJFSxAw0WouxlZt...
+```
+
+#### Plot Data Graph in Console
+
+file: [asciiPlot.char](http://topget.org/dc/c/charlang/example/asciiPlot.char)
+
+![Snapshot](http://topget.org/dc/s/images/pic3873474424.png)
+
+#### Plot Data Graph in Console with Realtime Data Update
+
+file: [asciiPlotRealTime.char](http://topget.org/dc/c/charlang/example/asciiPlotRealTime.char)
+
+Demonstrate multi-thread, update one area of console...
 
 ### 5.8 Advance Topics
 

@@ -1,0 +1,20 @@
+sourceT := `
+param (v1, v2, ...vargs)
+
+pln("input:", v1, v2, ...vargs)
+
+sum := v1 + v2
+
+for i, v in vargs {
+	sum += v
+}
+
+return sum
+`
+
+addAll := charCode(sourceT).compile()
+
+resultT := addAll(12, 8.5, 2, 3, 16)
+
+pl("result: %v", resultT)
+
