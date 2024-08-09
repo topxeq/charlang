@@ -4424,6 +4424,8 @@ func (o *Time) HasMemeber() bool {
 }
 
 func (o *Time) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	tk.Pl("*Time CallMethod: %v", nameA)
+
 	switch nameA {
 	case "value":
 		return o, nil
@@ -4431,9 +4433,12 @@ func (o *Time) CallMethod(nameA string, argsA ...Object) (Object, error) {
 		return ToStringObject(o), nil
 	}
 
-	fn, ok := methodTableForTime[strings.ToLower(nameA)]
+	fn, ok := methodTableForTime[nameA]
 	if !ok {
-		return CallObjectMethodFunc(o, nameA, argsA...)
+		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(argsA)...)
+
+		return ConvertToObject(rs3), nil
+		// return CallObjectMethodFunc(o, nameA, argsA...)
 		// return Undefined, ErrInvalidIndex.NewError(nameA)
 	}
 
@@ -4657,7 +4662,7 @@ func (o *Time) IndexGet(index Object) (Object, error) {
 	switch v.Value {
 	case "Date", "Clock", "UTC", "Unix", "UnixNano", "Year", "Month", "Day",
 		"Hour", "Minute", "Second", "Nanosecond", "IsZero", "Local", "Location",
-		"YearDay", "Weekday", "ISOWeek", "Zone":
+		"YearDay", "Weekday", "ISOWeek", "Zone", "AddDate":
 		return o.CallName(v.Value, Call{})
 	case "value":
 		return o, nil
@@ -4719,10 +4724,15 @@ func (o *Time) IndexGet(index Object) (Object, error) {
 func (o *Time) CallName(name string, c Call) (Object, error) {
 	// tk.Pl("Time CallName: %v", name)
 
-	fn, ok := methodTableForTime[strings.ToLower(name)]
+	fn, ok := methodTableForTime[name]
 	if !ok {
-		return Undefined, ErrInvalidIndex.NewError(name)
+		rs3 := tk.ReflectCallMethodCompact(o.Value, name, ObjectsToI(c.GetArgs())...)
+
+		return ConvertToObject(rs3), nil
+
+		// return Undefined, ErrInvalidIndex.NewError(name)
 	}
+
 	return fn(o, &c)
 }
 
@@ -4747,7 +4757,7 @@ var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
 		}
 		return timeSub(o, t2), nil
 	},
-	"adddate": func(o *Time, c *Call) (Object, error) {
+	"addDate": func(o *Time, c *Call) (Object, error) {
 		if err := c.CheckLen(3); err != nil {
 			return Undefined, err
 		}
@@ -4803,7 +4813,7 @@ var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
 
 		return timeFormat(o, format), nil
 	},
-	"appendformat": func(o *Time, c *Call) (Object, error) {
+	"appendFormat": func(o *Time, c *Call) (Object, error) {
 		if err := c.CheckLen(2); err != nil {
 			return Undefined, err
 		}
@@ -4865,7 +4875,7 @@ var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
 		return Map{"year": Int(y), "month": Int(m),
 			"day": Int(d)}, nil
 	},
-	"getinfo": func(o *Time, c *Call) (Object, error) {
+	"getInfo": func(o *Time, c *Call) (Object, error) {
 		if err := c.CheckLen(0); err != nil {
 			return Undefined, err
 		}
@@ -4892,7 +4902,7 @@ var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
 		}
 		return Int(o.Value.Unix()), nil
 	},
-	"unixnano": func(o *Time, c *Call) (Object, error) {
+	"unixNano": func(o *Time, c *Call) (Object, error) {
 		if err := c.CheckLen(0); err != nil {
 			return Undefined, err
 		}
@@ -4934,13 +4944,13 @@ var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
 		}
 		return Int(o.Value.Second()), nil
 	},
-	"nanosecond": func(o *Time, c *Call) (Object, error) {
+	"nanoSecond": func(o *Time, c *Call) (Object, error) {
 		if err := c.CheckLen(0); err != nil {
 			return Undefined, err
 		}
 		return Int(o.Value.Nanosecond()), nil
 	},
-	"iszero": func(o *Time, c *Call) (Object, error) {
+	"isZero": func(o *Time, c *Call) (Object, error) {
 		if err := c.CheckLen(0); err != nil {
 			return Undefined, err
 		}
@@ -4958,19 +4968,19 @@ var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
 		}
 		return &Location{Value: o.Value.Location()}, nil
 	},
-	"yearday": func(o *Time, c *Call) (Object, error) {
+	"yearDay": func(o *Time, c *Call) (Object, error) {
 		if err := c.CheckLen(0); err != nil {
 			return Undefined, err
 		}
 		return Int(o.Value.YearDay()), nil
 	},
-	"weekday": func(o *Time, c *Call) (Object, error) {
+	"weekDay": func(o *Time, c *Call) (Object, error) {
 		if err := c.CheckLen(0); err != nil {
 			return Undefined, err
 		}
 		return Int(o.Value.Weekday()), nil
 	},
-	"isoweek": func(o *Time, c *Call) (Object, error) {
+	"isoWeek": func(o *Time, c *Call) (Object, error) {
 		if err := c.CheckLen(0); err != nil {
 			return Undefined, err
 		}

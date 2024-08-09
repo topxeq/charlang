@@ -1876,8 +1876,8 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinFprf: &BuiltinFunction{
 		Name:    "fprf", // usage: the same as fprintf
-		Value:   FnASVaR(fmt.Fprintf),
-		ValueEx: FnASVaRex(fmt.Fprintf),
+		Value:   FnAWSVaRIE(fmt.Fprintf),
+		ValueEx: FnAWSVaRIEex(fmt.Fprintf),
 	},
 	BuiltinPl: &BuiltinFunction{
 		Name:    "pl", // usage: the same as printf, but with a line-end(\n) at the end
@@ -6012,6 +6012,59 @@ func FnASVaRex(fn func(string, ...interface{})) CallableExFunc {
 		fn(args[0].String(), vargs...)
 
 		return nil, nil
+	}
+}
+
+// like fmt.Printf
+func FnAWSVaRIE(fn func(io.Writer, string, ...interface{}) (int, error)) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+		// fmt.Fprintf()
+
+		nv1, ok := args[0].(*Writer)
+
+		if !ok {
+			return NewCommonError("unsupported type: %v", args[0].TypeName()), nil
+		}
+
+		vargs := ObjectsToI(args[2:])
+
+		n, errT := fn(nv1.Value, args[1].String(), vargs...)
+
+		if errT != nil {
+			return NewCommonError("failed to fprintf: %v", errT), nil
+		}
+
+		return Int(n), nil
+	}
+}
+
+func FnAWSVaRIEex(fn func(io.Writer, string, ...interface{}) (int, error)) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+		// fmt.Fprintf()
+
+		nv1, ok := args[0].(*Writer)
+
+		if !ok {
+			return NewCommonError("unsupported type: %v", args[0].TypeName()), nil
+		}
+
+		vargs := ObjectsToI(args[2:])
+
+		n, errT := fn(nv1.Value, args[1].String(), vargs...)
+
+		if errT != nil {
+			return NewCommonError("failed to fprintf: %v", errT), nil
+		}
+
+		return Int(n), nil
 	}
 }
 
