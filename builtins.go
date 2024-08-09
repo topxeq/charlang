@@ -377,6 +377,7 @@ const (
 	BuiltinPl
 	BuiltinPr
 	BuiltinPrf
+	BuiltinFprf
 	BuiltinPln
 	BuiltinPlv
 	BuiltinSpr
@@ -691,6 +692,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	// output/print related
 	"pr":     BuiltinPr,
 	"prf":    BuiltinPrf,
+	"fprf":   BuiltinFprf,
 	"pl":     BuiltinPl,
 	"pln":    BuiltinPln, // the same as 'println' in other languages. pln formats using the default formats for its arguments and writes to standard output. Usage: pln("the name is", str1)
 	"plv":    BuiltinPlv,
@@ -1871,6 +1873,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "prf", // usage: the same as printf
 		Value:   FnASVaR(tk.Printf),
 		ValueEx: FnASVaRex(tk.Printf),
+	},
+	BuiltinFprf: &BuiltinFunction{
+		Name:    "fprf", // usage: the same as fprintf
+		Value:   FnASVaR(fmt.Fprintf),
+		ValueEx: FnASVaRex(fmt.Fprintf),
 	},
 	BuiltinPl: &BuiltinFunction{
 		Name:    "pl", // usage: the same as printf, but with a line-end(\n) at the end

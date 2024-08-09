@@ -36,8 +36,10 @@
       - [Plot Data Graph in Console](#plot-data-graph-in-console)
       - [Plot Data Graph in Console with Realtime Data Update](#plot-data-graph-in-console-with-realtime-data-update)
     - [5.8 Advance Topics](#58-advance-topics)
+      - [Language Considerations](#language-considerations)
       - [Run Script from Command Line](#run-script-from-command-line)
       - [Show Environment Information of Charlang](#show-environment-information-of-charlang)
+      - [Charlang as An Embedded Language in Golang](#charlang-as-an-embedded-language-in-golang)
 
 # The Char Language (Charlang)
 
@@ -1068,6 +1070,20 @@ Demonstrate multi-thread, update one area of console...
 
 ### 5.8 Advance Topics
 
+#### Language Considerations
+
+Charlang source code is compiled to bytecode and run in a Virtual Machine (VM). Compiled bytecode can be serialized/deserialized for wire to remove compilation step before execution for remote processes, and deserialization will solve version differences to a certain degree.
+
+Main script and Charlang source modules in Charlang are all functions which have compiledFunction type name. Parameters can be defined for main function with param statement and main function returns a value with return statement as well. If return statement is missing, undefined value is returned by default. All functions return single value but thanks to destructuring feature Charlang allows to return multiple values as an array and set returning array elements to multiple variables.
+
+Charlang relies on Go's garbage collector and there is no allocation limit for objects. Builtin objects can be disabled before compilation.
+
+Charlang can handle runtime errors and Go panic with try-catch-finally statements which is similar to Ecmascript implementation with a few minor differences. Although Go developers are not fan of try-catch-finally, they are well known statements to work with.
+
+Charlang is developed to be an embedded script language for Go applications also, and importing source modules from files will not be added in near future but one can implement a custom module to return file content to the compiler.
+
+Charlang currently has a simple optimizer for constant folding and evaluating expressions which do not have side effects. Optimizer greedily evaluates expressions having only literals (int, uint, char, float, bool, string). Optimizer can be disabled with compiler options.
+
 #### Run Script from Command Line
 
 - One line
@@ -1122,4 +1138,157 @@ basePath: C:\Users\Administrator\char
 localPath: d:\scripts
 cloudPath: https://script.example.com/scripts/
 ```
+
+#### Charlang as An Embedded Language in Golang
+
+To run a script in Golang, it must be compiled to create a `Bytecode` object then it is
+provided to Virtual Machine (VM). Charlang has a simple optimizer enabled by default
+in the compiler. Optimizer evaluates simple expressions not having side effects
+to replace expressions with constant values. Note that, optimizer can be
+disabled to speed up compilation process.
+
+```go
+package main
+
+import (
+  "fmt"
+
+  "github.com/topxeq/charlang"
+)
+
+func main() {
+  script := `
+  param num
+
+  var fib
+  fib = func(n, a, b) {
+    if n == 0 {
+      return a
+    } else if n == 1 {
+      return b
+    }
+    return fib(n-1, b, a+b)
+    }
+  return fib(num, 0, 1)
+  `
+  bytecode, err := charlang.Compile([]byte(script), charlang.DefaultCompilerOptions)
+
+  if err != nil {
+    panic(err)
+  }
+
+  retValue, err := charlang.NewVM(bytecode).Run(nil,  charlang.Int(35))
+
+  if err != nil {
+    panic(err)
+  }
+
+  fmt.Println(retValue) // 9227465
+}
+```
+
+Script above is pretty self explanatory, which calculates the fibonacci number
+of given number.
+
+Compiler options hold all customizable options for the compiler.
+`TraceCompilerOptions` is used to trace parse-optimize-compile steps for
+debugging and testing purposes like below;
+
+```go
+bytecode, err := charlang.Compile([]byte(script), charlang.TraceCompilerOptions)
+// or change output and disable tracing parser
+// opts := charlang.TraceCompilerOptions
+// opts.Trace = os.Stderr
+// opts.TraceParser = false
+// bytecode, err := charlang.Compile([]byte(script), opts)
+```
+
+VM execution can be aborted by using `Abort` method which cause `Run` method to
+return an error wrapping `ErrVMAborted` error. `Abort` must be called from a
+different goroutine and it is safe to call multiple times.
+
+Errors returned from `Run` method can be checked for specific error values with
+Go's `errors.Is` function in `errors` package.
+
+`VM` instances are reusable. `Clear` method of `VM` clears all references held
+and ensures stack and module cache is cleaned.
+
+```go
+vm := charlang.NewVM(bytecode)
+retValue, err := vm.Run(nil,  Charlang.Int(35))
+/* ... */
+// vm.Clear()
+retValue, err := vm.Run(nil,  Charlang.Int(34))
+/* ... */
+```
+
+Global variables can be provided to VM which are declared with `global` keyword. Globals are accessible to source modules as well. Map like objects should be used to get/set global variables as below.
+
+```go
+script := `
+param num
+global upperBound
+return num > upperBound ? "big" : "small"
+`
+bytecode, err := charlang.Compile([]byte(script), charlang.DefaultCompilerOptions)
+
+if err != nil {
+  panic(err)
+}
+
+g := charlang.Map{"upperBound": charlang.Int(1984)}
+retValue, err := charlang.NewVM(bytecode).Run(g, charlang.Int(2018))
+// retValue == charlang.String("big")
+```
+
+There is a special type `SyncMap` in charlang to make goroutine safe map object where scripts/Go might need to interact with each other concurrently, e.g. one can collect statistics or data within maps. Underlying map of `SyncMap` is guarded with a `sync.RWMutex`.
+
+```go
+module := `
+global stats
+
+return func() {
+  stats.fn2++
+  /* ... */
+}
+`
+script := `
+global stats
+
+fn1 := func() {
+  stats.fn1++
+  /* ... */
+}
+
+fn1()
+
+fn2 := import("module")
+fn2()
+`
+mm := charlang.NewModuleMap()
+mm.AddSourceModule("module", []byte(module))
+
+opts := charlang.DefaultCompilerOptions
+opts.ModuleMap = mm
+
+bytecode, err := charlang.Compile([]byte(script), opts)
+
+if err != nil {
+  panic(err)
+}
+
+g := &charlang.SyncMap{
+    Map: charlang.Map{"stats": charlang.Map{"fn1": charlang.Int(0), "fn2": charlang.Int(0)}},
+}
+_, err = charlang.NewVM(bytecode).Run(g)
+/* ... */
+```
+
+As can be seen from examples above, VM's `Run` method takes arguments and its signature is as below. A map like `globals` argument or `nil` value can be provided for globals parameter. `args` variadic parameter enables providing arbitrary number of arguments to VM which are accessed via `param` statement.
+
+```go
+func (vm *VM) Run(globals Object, args ...Object) (Object, error)
+```
+
+
 
