@@ -1,4 +1,6 @@
+// get the const of max float
 f1 := getConst("maxFloat")
+
 f2 := f1 - 1
 
 r1 := f1 * f2
@@ -21,12 +23,21 @@ pl("bigF1: %v, bigF2: %v, bigR1: %v", bigF1, bigF2, bigR1)
 
 plt(toStr(bigF1))
 
+plt(bigF1.text("f", 10))
+
 plt("987654321000" + toStr(bigF1) + "000987654321")
 
-bigF3 := bigFloat("987654321000" + toStr(bigF1) + "000987654321")
+bigF3 := bigFloat("987654321000" + bigF1.text("f", 10) + "000987654321")
 
 plt(bigF3)
 
 bigF4 := bigFloat("987654321000.000987654321")
 
 plt(bigF4)
+
+pln(bigF4.text("f", 12))
+
+pl("%v", bigFloat("987654321000.0009"))
+
+pln(bigFloat("987654321000.0009").text("f", 4))
+

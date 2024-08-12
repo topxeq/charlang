@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "1.2.7"
+var VersionG = "1.2.8"
 
 var CodeTextG = ""
 
@@ -886,6 +886,49 @@ var methodFuncMapG = map[int]map[string]*Function{
 				}
 
 				return retT, nil
+			},
+		},
+	},
+	203: map[string]*Function{ // *BigFloat
+		"toStr": &Function{
+			Name: "toStr",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*BigFloat)
+
+				if !ok {
+					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+				}
+
+				return ToStringObject(nv.String()), nil
+			},
+		},
+		"text": &Function{
+			Name: "text",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*BigFloat)
+
+				if !ok {
+					return NewCommonError("invalid type: %#v", c.This), nil
+				}
+
+				argsT := c.GetArgs()
+
+				formatT := "f"
+				precT := 20
+
+				if len(argsT) > 0 {
+					formatT = argsT[0].String()
+
+					if len(formatT) < 1 {
+						formatT = "f"
+					}
+				}
+
+				if len(argsT) > 0 {
+					precT = ToIntQuick(argsT[1])
+				}
+
+				return String{Value: nv.Value.Text(formatT[0], precT)}, nil
 			},
 		},
 	},

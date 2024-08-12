@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"math"
 	"math/big"
 	"net/http"
 	"os"
@@ -10631,12 +10632,28 @@ func NewBigFloat(c Call) (Object, error) {
 
 		return &BigFloat{Value: big.NewFloat(0)}, nil
 	case String:
-		rs, _, errT := big.NewFloat(0).Parse(nv.Value, 10)
-		if errT != nil {
-			return NewCommonErrorWithPos(c, "failed to parse bigFloat: %v", errT), nil
+		nv1 := nv.Value
+		integerDigitCount := strings.Index(nv1, ".")
+
+		fractionalDigitCount := len(nv1) - (integerDigitCount + 1) // exclude the decimal from the count
+
+		if integerDigitCount < 1 || fractionalDigitCount < 1 {
+			rs, _, errT := big.NewFloat(0).Parse(nv.Value, 10)
+			if errT != nil {
+				return NewCommonErrorWithPos(c, "failed to parse bigFloat: %v", errT), nil
+			}
+
+			return &BigFloat{Value: rs}, nil
 		}
 
-		return &BigFloat{Value: rs}, nil
+		bf := big.NewFloat(0.0)
+		precision := uint(math.Ceil(float64(fractionalDigitCount)*math.Log2(10.0)) + float64(integerDigitCount)*math.Log2(10.0))
+		bf, _ = bf.SetPrec(uint(precision * 2)).SetString(nv1)
+		// ppi := bf.Text('f', fractionalDigitCount)
+		// fmt.Printf("%s\n", ppi)
+
+		return &BigFloat{Value: bf}, nil
+
 	case *BigInt:
 		return &BigFloat{Value: big.NewFloat(0).SetInt(nv.Value)}, nil
 	case *BigFloat:
