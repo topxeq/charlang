@@ -4425,7 +4425,7 @@ func (o *Time) HasMemeber() bool {
 }
 
 func (o *Time) CallMethod(nameA string, argsA ...Object) (Object, error) {
-	tk.Pl("*Time CallMethod: %v", nameA)
+	// tk.Pl("*Time CallMethod: %v", nameA)
 
 	switch nameA {
 	case "value":
