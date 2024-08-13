@@ -23,6 +23,9 @@ pl("bigF1: %v, bigF2: %v, bigR1: %v", bigF1, bigF2, bigR1)
 
 plt(toStr(bigF1))
 
+// get the text representation of the value
+// the first parameter is the format in "e", "E", "f", "g", "G", "x", "p", "b"
+// the second parameter is the precision
 plt(bigF1.text("f", 10))
 
 plt("987654321000" + toStr(bigF1) + "000987654321")

@@ -31,6 +31,11 @@
       - [Anonymous Function](#anonymous-function)
       - [More About Array](#more-about-array)
       - [More About Map](#more-about-map)
+      - [Big Int](#big-int)
+      - [Big Float](#big-float)
+      - [Bitwise Processing](#bitwise-processing)
+      - [Calculate BMI](#calculate-bmi)
+      - [Compare Binary Files](#compare-binary-files)
       - [A Simple Text Editor](#a-simple-text-editor)
       - [Base64 Encoding of Images](#base64-encoding-of-images)
       - [Plot Data Graph in Console](#plot-data-graph-in-console)
@@ -72,7 +77,6 @@
         - [For Statement](#for-statement)
         - [For-In Statement](#for-in-statement)
       - [Modules](#modules)
-      - [Comments](#comments-1)
       - [Differences from Go](#differences-from-go)
       - [Interfaces](#interfaces)
         - [Object interface](#object-interface)
@@ -1079,6 +1083,26 @@ file: [array.char](http://topget.org/dc/c/charlang/example/array.char)
 #### More About Map
 
 file: [map.char](http://topget.org/dc/c/charlang/example/map.char)
+
+#### Big Int
+
+file: [bigInt.char](http://topget.org/dc/c/charlang/example/bigInt.char)
+
+#### Big Float
+
+file: [bigFloat.char](http://topget.org/dc/c/charlang/example/bigFloat.char)
+
+#### Bitwise Processing
+
+file: [bitwise.char](http://topget.org/dc/c/charlang/example/bitwise.char)
+
+#### Calculate BMI
+
+file: [bmi.char](http://topget.org/dc/c/charlang/example/bmi.char)
+
+#### Compare Binary Files
+
+file: [binCompare.char](http://topget.org/dc/c/charlang/example/binCompare.char)
 
 #### A Simple Text Editor
 
@@ -2232,19 +2256,6 @@ In Charlang, modules are very similar to functions.
 * Arguments cannot be provided to source modules while importing although it is
   allowed to use `param` statement in module.
 * Modules can use `global` statements to access globally shared object.
-
-#### Comments
-
-Like Go, Charlang supports line comments (`//...`) and block comments
-(`/* ... */`).
-
-```go
-/*
-  multi-line block comments
-*/
-
-a := 5    // line comments
-```
 
 #### Differences from Go
 

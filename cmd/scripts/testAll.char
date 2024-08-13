@@ -74,7 +74,7 @@ testByText(rs, "height: 1.70 m\nweight: 65.00 kg\nBMI: 22.49\nnormal\n", seqT.ge
 
 rs = systemCmd("char", "-gopath", "bitwise.char")
 
-testByText(rs, "[0] (byte)3\n[1] (string)03\n[0] (int)1\n[1] (byte)163\n163 -> a3 -> 10100011\n92 -> 5C -> 01011100\n00001100\n01011111\n01010011\n", seqT.get(), "bitwise.char")
+testByText(rs, "b1: 0x61, b2: 97, b3: 0x61\n(byte)97\n(char)97\n(byte)97\n01\n60\n[0] (byte)3\n[1] (string)03\n[0] (int)1\n[1] (byte)163\n163 -> a3 -> 10100011\n92 -> 5C -> 01011100\n00001100\n01011111\n01010011\n", seqT.get(), "bitwise.char")
 
 rs = systemCmd("char", "-gopath", "copy.char")
 

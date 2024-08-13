@@ -1,4 +1,22 @@
-// Create a new byte pointer
+// various ways to declare or assign value to a byte type
+b1 := byte(97)
+b2 := 'a'
+b3 := byte(b2)
+
+pl("b1: %#v, b2: %#v, b3: %#v", b1, b2, b3)
+
+plt(b1)
+plt(b2)
+plt(b3)
+
+// bitwise and
+b4 := b3 & 0x0F
+b5 := b3 & 0xF0
+
+pl("%02X", b4)
+pl("%02X", b5)
+
+// Create a new byte pointer for scan functions
 // The new/newEx function also allocates space for it
 // Therefore, it can be assigned a value
 a := newEx("byte")

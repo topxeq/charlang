@@ -313,6 +313,7 @@ const (
 	BuiltinStrReplace
 	BuiltinGetErrStrX
 	BuiltinSshUpload
+	BuiltinSshUploadBytes
 	BuiltinSshDownload
 	BuiltinSshRun
 	BuiltinArchiveFilesToZip
@@ -379,6 +380,7 @@ const (
 	BuiltinPr
 	BuiltinPrf
 	BuiltinFprf
+	BuiltinPlNow
 	BuiltinPln
 	BuiltinPlv
 	BuiltinSpr
@@ -696,7 +698,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"prf":    BuiltinPrf,
 	"fprf":   BuiltinFprf,
 	"pl":     BuiltinPl,
-	"pln":    BuiltinPln, // the same as 'println' in other languages. pln formats using the default formats for its arguments and writes to standard output. Usage: pln("the name is", str1)
+	"plNow":  BuiltinPlNow, // the same as pl, with additional current time before the output
+	"pln":    BuiltinPln,   // the same as 'println' in other languages. pln formats using the default formats for its arguments and writes to standard output. Usage: pln("the name is", str1)
 	"plv":    BuiltinPlv,
 	"plt":    BuiltinPlt,
 	"plo":    BuiltinPlo,
@@ -942,9 +945,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"plotLoadFont": BuiltinPlotLoadFont, // load a font file in ttf format for plot, usage: plotLoadFont("c:\windows\tahoma.ttf", "tahoma", true), the secode parameter gives the font name(default is the file name), pass true for the third parameter to set the font as default font used in plot(default is false)
 
 	// ssh related
-	"sshUpload":   BuiltinSshUpload,
-	"sshDownload": BuiltinSshDownload,
-	"sshRun":      BuiltinSshRun,
+	"sshUpload":      BuiltinSshUpload,
+	"sshUploadBytes": BuiltinSshUploadBytes,
+	"sshDownload":    BuiltinSshDownload,
+	"sshRun":         BuiltinSshRun,
 
 	// eTable related
 	"readCsv":  BuiltinReadCsv,
@@ -1891,6 +1895,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinPlFunc),
 		ValueEx: builtinPlFunc,
 	},
+	BuiltinPlNow: &BuiltinFunction{
+		Name:    "plNow",
+		Value:   FnASVaR(tk.PlNow),
+		ValueEx: FnASVaRex(tk.PlNow),
+	},
 	BuiltinPln: &BuiltinFunction{
 		Name:    "pln",
 		Value:   FnAVaR(tk.Pln),
@@ -2647,6 +2656,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "sshUpload",
 		Value:   CallExAdapter(builtinSshUploadFunc),
 		ValueEx: builtinSshUploadFunc,
+	},
+	BuiltinSshUploadBytes: &BuiltinFunction{
+		Name:    "sshUploadBytes",
+		Value:   CallExAdapter(builtinSshUploadBytesFunc),
+		ValueEx: builtinSshUploadBytesFunc,
 	},
 	BuiltinSshDownload: &BuiltinFunction{
 		Name:    "sshDownload",
@@ -8903,6 +8917,83 @@ func builtinSshUploadFunc(c Call) (Object, error) {
 
 	} else {
 		errT = sshT.Upload(v5, v6, pa...)
+	}
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinSshUploadBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args[1:])
+
+	var v1, v2, v3, v4, v6 string
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+
+	v5, ok := args[0].(Bytes)
+
+	if !ok {
+		v5 = Bytes([]byte(args[0].String()))
+	}
+
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+
+	withProgressT := tk.IfSwitchExistsWhole(pa, "-progress")
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	// if v5 == "" {
+	// 	return ConvertToObject(fmt.Errorf("emtpy path")), nil
+	// }
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+	}
+
+	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	defer sshT.Close()
+
+	if withProgressT {
+		errT = sshT.UploadFileContent(v5, v6, pa...)
+	} else {
+		errT = sshT.UploadFileContent(v5, v6, pa...)
 	}
 
 	if errT != nil {

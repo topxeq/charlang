@@ -66,6 +66,8 @@
 
 **chars**
 
+**bytesBuffer**
+
 **error**
 
 **time**
@@ -196,6 +198,8 @@
 
 **strContains**
 
+**strIndex**
+
 **strStartsWith**
 
 **strEndsWith**
@@ -257,6 +261,8 @@
 **abs**
 
 **mathSqrt**
+
+**flexEval**
 
 ### --- random related ---
 
@@ -364,7 +370,11 @@
 
 **prf**
 
+**fprf**
+
 **pl**
+
+**plNow**: the same as pl, with additional current time before the output
 
 **pln**: the same as 'println' in other languages. pln formats using the default formats for its arguments and writes to standard output. Usage: pln("the name is", str1)
 
@@ -538,7 +548,11 @@
 
 **getTempDir**
 
+**lookPath**
+
 **getInput**
+
+**getInputf**
 
 **getChar**
 
@@ -592,7 +606,15 @@
 
 **saveBytes**
 
+**openFile**
+
+**closeFile**
+
 ### --- compress/zip related ---
+
+**compressData**
+
+**compressStr**
 
 **archiveFilesToZip**: Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
 
@@ -674,6 +696,10 @@
 
 **decryptBytes**
 
+**encryptStream**
+
+**decryptStream**
+
 ### --- image related ---
 
 **loadImageFromBytes**: usage: imageT := loadImageFromBytes(bytesT, "-type=png")
@@ -683,6 +709,18 @@
 **loadImageFromFile**: usage: imageT := loadImageFromFile(`c:\test\abc.png`) or image2T := loadImageFromFile(`c:\test\abc.jpg`, "-type=jpg")
 
 **saveImageToFile**: usage: errT := saveImageToFile(imageT, `c:\test\newabc.png`) or errT := saveImageToFile(imageT, `c:\test\newabc.png`, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
+
+**getImageInfo**
+
+**strToRgba**
+
+**encodeImage**
+
+**drawImageOnImage**
+
+**drawTextWrappedOnImage**
+
+**genQr**
 
 **imageToAscii**: convert an image object to colorful ASCII graph(array of string), usage: asciiT := imageToAscii(imageT, "-width=60", "-height=80"), set one of width or height will keep aspect ratio
 
@@ -701,6 +739,12 @@
 ### --- ssh related ---
 
 **sshUpload**
+
+**sshUploadBytes**
+
+**sshDownload**
+
+**sshRun**
 
 ### --- eTable related ---
 

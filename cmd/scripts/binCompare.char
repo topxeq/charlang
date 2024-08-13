@@ -1,4 +1,5 @@
-// char -gopath binCompare.char d:\tmpx\demo1.html d:\tmpx\demo2.html -limit=10
+// compare two files in binary way(byte by byte)
+// char -example binCompare.char d:\tmpx\demo1.html d:\tmpx\demo2.html -limit=10
 
 global argsG
 
