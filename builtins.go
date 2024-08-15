@@ -103,6 +103,9 @@ const (
 	BuiltinGetInput
 	BuiltinGetInputf
 	BuiltinGetChar
+	BuiltinSetStdin
+	BuiltinSetStdout
+	BuiltinSetStderr
 	BuiltinRegCount
 	BuiltinStrRepeat
 	BuiltinRegMatch
@@ -324,6 +327,7 @@ const (
 	BuiltinGetCurDir
 	BuiltinGetHomeDir
 	BuiltinGetTempDir
+	BuiltinChangeDir
 	BuiltinLookPath
 	BuiltinGetClipText
 	BuiltinSetClipText
@@ -523,7 +527,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"reader": BuiltinReader,
 	"writer": BuiltinWriter,
 
-	"file": BuiltinFile,
+	"file": BuiltinFile, // usage: file("c:\\tmp\abc.txt"), file(`/home/user1/a.json`), file("stdin"), file("stdout"), file("stderr")
 
 	"image": BuiltinImage, // new an image object, usage: imageT := image("-width=480", "-height=640", "-color=#FF0000")
 
@@ -809,11 +813,18 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getUserDir": BuiltinGetHomeDir,
 	"getTempDir": BuiltinGetTempDir,
 
+	"changeDirj": BuiltinChangeDir,
+	"chdir":      BuiltinChangeDir,
+
 	"lookPath": BuiltinLookPath,
 
 	"getInput":  BuiltinGetInput,
 	"getInputf": BuiltinGetInputf,
 	"getChar":   BuiltinGetChar,
+
+	"setStdin":  BuiltinSetStdin,
+	"setStdout": BuiltinSetStdout,
+	"setStderr": BuiltinSetStderr,
 
 	// dir/path related
 	"joinPath": BuiltinJoinPath, // join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
@@ -2238,6 +2249,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnARS(os.TempDir),
 		ValueEx: FnARSex(os.TempDir),
 	},
+	BuiltinChangeDir: &BuiltinFunction{
+		Name:    "changeDir",
+		Value:   FnASRE(os.Chdir),
+		ValueEx: FnASREex(os.Chdir),
+	},
 	BuiltinLookPath: &BuiltinFunction{
 		Name:    "lookPath",
 		Value:   FnASRSE(exec.LookPath),
@@ -2257,6 +2273,21 @@ var BuiltinObjects = [...]Object{
 		Name:    "getChar",
 		Value:   FnARA(tk.GetChar),
 		ValueEx: FnARAex(tk.GetChar),
+	},
+	BuiltinSetStdin: &BuiltinFunction{
+		Name:    "setStdin",
+		Value:   CallExAdapter(builtinSetStdinFunc),
+		ValueEx: builtinSetStdinFunc,
+	},
+	BuiltinSetStdout: &BuiltinFunction{
+		Name:    "setStdout",
+		Value:   CallExAdapter(builtinSetStdoutFunc),
+		ValueEx: builtinSetStdoutFunc,
+	},
+	BuiltinSetStderr: &BuiltinFunction{
+		Name:    "setStderr",
+		Value:   CallExAdapter(builtinSetStderrFunc),
+		ValueEx: builtinSetStderrFunc,
 	},
 
 	// dir/path related
@@ -8015,6 +8046,60 @@ func builtinRemovePathFunc(c Call) (Object, error) {
 	if errT != nil {
 		return NewCommonErrorWithPos(c, "%v", errT), nil
 	}
+
+	return Undefined, nil
+}
+
+func builtinSetStdinFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	readerT, ok := args[0].(*File)
+
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupported parameter type: %v", args[0].TypeName()), nil
+	}
+
+	os.Stdin = readerT.Value
+
+	return Undefined, nil
+}
+
+func builtinSetStdoutFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	writerT, ok := args[0].(*File)
+
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupported parameter type: %v", args[0].TypeName()), nil
+	}
+
+	os.Stdout = writerT.Value
+
+	return Undefined, nil
+}
+
+func builtinSetStderrFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	writerT, ok := args[0].(*File)
+
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupported parameter type: %v", args[0].TypeName()), nil
+	}
+
+	os.Stderr = writerT.Value
 
 	return Undefined, nil
 }

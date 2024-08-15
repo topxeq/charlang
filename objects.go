@@ -8972,7 +8972,19 @@ func NewFile(c Call) (Object, error) {
 
 	optsT := ObjectsToS(argsA[1:])
 
-	rs := tk.OpenFile(argsA[0].String(), optsT...)
+	filePathT := argsA[0].String()
+
+	if filePathT == "stdin" {
+		return &File{Value: os.Stdin}, nil
+	} else if filePathT == "stdout" {
+		return &File{Value: os.Stdout}, nil
+	} else if filePathT == "stderr" {
+		return &File{Value: os.Stderr}, nil
+		// } else if filePathT == "memfile" {
+		// 	return &File{Value: (*os.File)(tk.NewMemFile(nil))}, nil
+	}
+
+	rs := tk.OpenFile(filePathT, optsT...)
 
 	if tk.IsErrX(rs) {
 		return NewCommonErrorWithPos(c, "failed to open file: %v", tk.GetErrStrX(rs)), nil

@@ -4,14 +4,16 @@
   - [1. Features](#1-features)
   - [2. New Features](#2-new-features)
   - [3. Quick Links](#3-quick-links)
-  - [4. Quick Start](#4-quick-start)
-  - [5. Documentation](#5-documentation)
-    - [5.1 Get the Binary](#51-get-the-binary)
-    - [5.2 Compile from Source Code](#52-compile-from-source-code)
-    - [5.3 Start Running the Shell or Scripts](#53-start-running-the-shell-or-scripts)
-    - [5.4 Various Ways to Run Charlang Scripts](#54-various-ways-to-run-charlang-scripts)
-    - [5.5 Get the Examples](#55-get-the-examples)
-    - [5.6 Quick Tour](#56-quick-tour)
+  - [4. Download](#4-download)
+  - [5. Installation](#5-installation)
+  - [6. Quick Start](#6-quick-start)
+  - [7. Documentation](#7-documentation)
+    - [7.1 Get the Binary](#71-get-the-binary)
+    - [7.2 Compile from Source Code](#72-compile-from-source-code)
+    - [7.3 Start Running the Shell or Scripts](#73-start-running-the-shell-or-scripts)
+    - [7.4 Various Ways to Run Charlang Scripts](#74-various-ways-to-run-charlang-scripts)
+    - [7.5 Get the Examples](#75-get-the-examples)
+    - [7.6 Quick Tour](#76-quick-tour)
       - [Hello World!](#hello-world)
       - [Comments](#comments)
       - [Define Variables](#define-variables)
@@ -27,7 +29,7 @@
       - [Predefined Global Variables](#predefined-global-variables)
       - [Run Charlang Script/Code](#run-charlang-scriptcode)
       - [Charlang as System Service](#charlang-as-system-service)
-    - [5.7 More Examples](#57-more-examples)
+    - [7.7 More Examples](#77-more-examples)
       - [Anonymous Function](#anonymous-function)
       - [More About Array](#more-about-array)
       - [More About Map](#more-about-map)
@@ -35,12 +37,13 @@
       - [Big Float](#big-float)
       - [Bitwise Processing](#bitwise-processing)
       - [Calculate BMI](#calculate-bmi)
+      - [Redirect Stdout to a File](#redirect-stdout-to-a-file)
       - [Compare Binary Files](#compare-binary-files)
       - [A Simple Text Editor](#a-simple-text-editor)
       - [Base64 Encoding of Images](#base64-encoding-of-images)
       - [Plot Data Graph in Console](#plot-data-graph-in-console)
       - [Plot Data Graph in Console with Realtime Data Update](#plot-data-graph-in-console-with-realtime-data-update)
-    - [5.8 Advance Topics](#58-advance-topics)
+    - [7.8 Advance Topics](#78-advance-topics)
       - [Language Considerations](#language-considerations)
       - [Run Script from Command Line](#run-script-from-command-line)
       - [Show Environment Information of Charlang](#show-environment-information-of-charlang)
@@ -140,15 +143,27 @@ return fib(35)
 
 [Builtin Functions](http://topget.org/dc/charlang/funcs)
 
-## 4. Quick Start
+## 4. Download
+
+- Windows x64
+- Linux Amd64
+- Linux Arm8
+
+## 5. Installation
+
+Download the latest Charlang executable file or compressed package above or from the [official website](http://topget.org/charlang), and then put it in a directory, preferably within the system path(such as C:\Windows in Windows or /usr/bin). If you download a compressed package, decompress it first. Then it is ready to use, run it in any terminal or console application(Window CMD, PowerShell, Terminal or bash);
+
+## 6. Quick Start
+
+Install Charlang first according to the installation guide, or build from source code by:
 
 `go get -u github.com/topxeq/charlang`
 
-Charlang has a REPL application to learn and test Charlang language.
-
 `go get -u github.com/topxeq/charlang/cmd/char`
 
-`./char`
+Charlang has a REPL application to learn and test Charlang language, run Charlang's main executable file with no command-line arguments to start it.
+
+`char.exe` or `./char`
 
 ```go
 package main
@@ -213,19 +228,19 @@ return v
 }
 ```
 
-## 5. Documentation
+## 7. Documentation
 
-### 5.1 Get the Binary
+### 7.1 Get the Binary
 
 Download the binary release files according to your OS from the website: [Charlang Homepage](http://topget.org/charlang).
 
-### 5.2 Compile from Source Code
+### 7.2 Compile from Source Code
 
 ```shell
 go get -u github.com/topxeq/charlang
 ```
 
-### 5.3 Start Running the Shell or Scripts
+### 7.3 Start Running the Shell or Scripts
 
 After download, extract the executable from the zip file, put it into a directory, better in the system path.
 
@@ -233,7 +248,7 @@ Then type 'char' in the terminal/console to start the interactive command-line s
 
 Using command-line switch '-view' will show the source code of the script instead of run it.
 
-### 5.4 Various Ways to Run Charlang Scripts
+### 7.4 Various Ways to Run Charlang Scripts
 
 Examples:
 
@@ -246,7 +261,7 @@ Examples:
 - Run from cloud/network: place a config file cloud.cfg in the subdirectory 'char' under the user's home directory, with text content such as `http://script.my.com/`, then `char -cloud basic.char` will be the same as `char -remote http://script.my.com/basic.char`
 - Select the script(or input the script file path in console mode) to run: `char -selectScript`
 
-### 5.5 Get the Examples
+### 7.5 Get the Examples
 
 All the source code examples marked by file names in the document can be retrieved or run by the command line like:
 
@@ -270,7 +285,7 @@ You can browse to `http://topget.org/dc/c/charlang/example/basic.char` to view t
 
 Using command-line switch '-viewPage' with '-example' will show the online code page in system-default browser as well.
 
-### 5.6 Quick Tour
+### 7.6 Quick Tour
 
 #### Hello World!
 
@@ -1070,7 +1085,7 @@ rs := appendText("\nautoRemoveTask001.char\n", logPathT)
 ```
 
 
-### 5.7 More Examples
+### 7.7 More Examples
 
 #### Anonymous Function
 
@@ -1099,6 +1114,12 @@ file: [bitwise.char](http://topget.org/dc/c/charlang/example/bitwise.char)
 #### Calculate BMI
 
 file: [bmi.char](http://topget.org/dc/c/charlang/example/bmi.char)
+
+#### Redirect Stdout to a File
+
+Note: Better run the example code with charw.exe(i.e. the GUI version of Charlang in Windows).
+
+file: [guiRedirectStdout.char](http://topget.org/dc/c/charlang/example/guiRedirectStdout.char)
 
 #### Compare Binary Files
 
@@ -1133,7 +1154,7 @@ file: [asciiPlotRealTime.char](http://topget.org/dc/c/charlang/example/asciiPlot
 
 Demonstrate multi-thread, update one area of console...
 
-### 5.8 Advance Topics
+### 7.8 Advance Topics
 
 #### Language Considerations
 

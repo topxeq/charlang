@@ -1,0 +1,71 @@
+global guiG
+
+// set Stdout to a file
+// check the file after click 'Send Time Text' button several times to see the result
+checkErr(setStdout(file(`c:\test\stdout.txt`, "-create", "-append")))
+
+htmlT := `
+<html>
+<head>
+	<script>
+		var count = 0;
+
+		function sendText() {
+			dele("sendTextCommand", '' + count);
+
+			count++;
+		}
+
+		function closeWindow() {
+			dele("closeWindow");
+		}
+	</script>
+</head>
+<body>
+	<button onclick="sendText();">Send Time Text</button>
+	<button onclick="closeWindow();">Close</button>
+</body>
+</html>
+`
+
+windowT := guiG.newWindow("-title=Redirect Stdout to File", "-width=640", "-height=480", "-center", "-debug")
+
+dele1 := func(...vargs) {
+	// pln(vargs)
+
+	windowT := vargs[0]
+
+	cmdT := vargs[1]
+
+	if cmdT == "sendTextCommand" {
+		pln(vargs[2])
+
+		return ""
+	} else if cmdT == "closeWindow" {
+		windowT("close")
+
+		return ""
+	}
+
+	pl("unknown cmd: %v", cmdT)
+
+	return "TXERROR:unknown command: " + cmdT
+}
+
+checkErr(dele1)
+
+rs := windowT.setFunc("dele", dele1, windowT)
+
+checkErr(rs)
+
+rs = windowT.setHtml(htmlT)
+
+checkErr(rs)
+
+rs = windowT("show")
+
+checkErr(rs)
+
+rs = windowT("close")
+
+checkErr(rs)
