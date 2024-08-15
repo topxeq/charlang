@@ -106,6 +106,7 @@ const (
 	BuiltinSetStdin
 	BuiltinSetStdout
 	BuiltinSetStderr
+	BuiltinGetPipe
 	BuiltinRegCount
 	BuiltinStrRepeat
 	BuiltinRegMatch
@@ -825,6 +826,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"setStdin":  BuiltinSetStdin,
 	"setStdout": BuiltinSetStdout,
 	"setStderr": BuiltinSetStderr,
+
+	"getPipe": BuiltinGetPipe,
 
 	// dir/path related
 	"joinPath": BuiltinJoinPath, // join multiple file paths into one, equivalent to path/filepath.Join in the Go language standard library
@@ -2288,6 +2291,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "setStderr",
 		Value:   CallExAdapter(builtinSetStderrFunc),
 		ValueEx: builtinSetStderrFunc,
+	},
+	BuiltinGetPipe: &BuiltinFunction{
+		Name:    "getPipe",
+		Value:   CallExAdapter(builtinGetPipeFunc),
+		ValueEx: builtinGetPipeFunc,
 	},
 
 	// dir/path related
@@ -8100,6 +8108,19 @@ func builtinSetStderrFunc(c Call) (Object, error) {
 	}
 
 	os.Stderr = writerT.Value
+
+	return Undefined, nil
+}
+
+func builtinGetPipeFunc(c Call) (Object, error) {
+
+	r, w, err := os.Pipe()
+
+	if err != nil {
+		return NewCommonErrorWithPos(c, "%v", err), nil
+	}
+
+	return Array{&File{Value: r}, &File{Value: w}}, nil
 
 	return Undefined, nil
 }

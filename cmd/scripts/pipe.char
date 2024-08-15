@@ -1,0 +1,21 @@
+//
+
+aryT := getPipe()
+
+checkErr(aryT)
+
+readerT := aryT[0]
+writerT := aryT[1]
+
+plv(readerT, writerT)
+
+checkErr(writeStr(writerT, "abcd123"))
+
+close(writerT)
+
+s1 := readAllStr(readerT)
+
+pln(hexEncode(s1))
+
+
+
