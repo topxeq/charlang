@@ -1,0 +1,5 @@
+objT := getWeb(`https://topget.org/ms/basic`, "-object")
+
+checkErr(objT)
+
+plt(objT)

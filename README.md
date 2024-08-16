@@ -24,10 +24,13 @@
       - [String/Bytes/Chars Data Type](#stringbyteschars-data-type)
       - [Array](#array)
       - [Map](#map)
+      - [Function Type(Declare Function)](#function-typedeclare-function)
       - [For Loop](#for-loop)
       - [If Statement](#if-statement)
       - [Predefined Global Variables](#predefined-global-variables)
       - [Run Charlang Script/Code](#run-charlang-scriptcode)
+      - [Multi-Threading](#multi-threading)
+      - [Gel](#gel)
       - [Charlang as System Service](#charlang-as-system-service)
     - [7.7 More Examples](#77-more-examples)
       - [Anonymous Function](#anonymous-function)
@@ -37,6 +40,7 @@
       - [Big Float](#big-float)
       - [Bitwise Processing](#bitwise-processing)
       - [Calculate BMI](#calculate-bmi)
+      - [One More Example for Gels](#one-more-example-for-gels)
       - [Redirect Stdout to a File](#redirect-stdout-to-a-file)
       - [Compare Binary Files](#compare-binary-files)
       - [A Simple Text Editor](#a-simple-text-editor)
@@ -47,6 +51,7 @@
       - [Language Considerations](#language-considerations)
       - [Run Script from Command Line](#run-script-from-command-line)
       - [Show Environment Information of Charlang](#show-environment-information-of-charlang)
+      - [Compile a Script to One Executable](#compile-a-script-to-one-executable)
       - [Charlang as An Embedded Language in Golang](#charlang-as-an-embedded-language-in-golang)
       - [Variables Declaration and Scopes](#variables-declaration-and-scopes)
         - [param](#param)
@@ -145,9 +150,10 @@ return fib(35)
 
 ## 4. Download
 
-- Windows x64
-- Linux Amd64
-- Linux Arm8
+- [Windows x64](http://topget.org/pub/char.zip)
+- [Windows x64(No Console Version - for GUI Applications)](http://topget.org/pub/charw.zip)
+- [Linux Amd64](http://topget.org/pub/char.tar.gz)
+- [Linux Arm8(Termux)](http://topget.org/pub/charArm8.tar.gz)
 
 ## 5. Installation
 
@@ -809,6 +815,39 @@ c: {"3": "3", "-198": "true"}
 
 Refer to the map example in More Examples section for more information about map type.
 
+#### Function Type(Declare Function)
+
+Function is a data type in Charlang.
+
+```go
+// declare a function with arguments
+f1 := func(a, b, c, d) {
+	return a*b + c/d
+}
+
+result1 := f1(3, 6, 8, 9)
+
+pln("result1=", result1)
+
+// variadic function(function accepts a variable number of arguments)
+f2 := func(v0, v1, ...args) {
+	sum := v0 + v1
+
+	argsLen := len(args)
+
+	for i := 0; i < argsLen; i++ {
+		sum += args[i]
+	}
+
+	return sum
+}
+
+result2 := f2(3, 6, 8, 9, 7)
+
+pln("result2=", result2)
+
+```
+
 #### For Loop
 
 ```go
@@ -1014,6 +1053,263 @@ pl("result: %v", resultT)
 
 ```
 
+#### Multi-Threading
+
+- First way:
+
+```go
+func1 := func(v0) {
+	for i := 0; i < 5; i++ {
+		v0++
+
+		pl("(thread) v0=%v", v0)
+
+		sleep(1.0)
+	}
+}
+
+a := 5
+
+func1.threadRun(a)
+
+sleep(0.15)
+
+for i := 0; i < 5; i++ {
+	a += 10
+
+	pl("(main) a=%v", a)
+
+	sleep(1.3)
+}
+
+```
+
+- Second way, import the 'ex' module and use the ex.threadRunFunc function:
+
+Note: here also demonstrate the usage of mutex and pass/set value by reference.
+
+```go
+ex := import("ex")
+
+roundsT := 1000
+
+mutex1 := mutex()
+
+func1 := func(v0) {
+
+	for i := 0; i < roundsT; i++ {
+		lock(mutex1)
+
+		setValueByRef(v0, unref(v0)+1)
+
+		unlock(mutex1)
+
+		pl("(thread) *v0=%v", unref(v0))
+
+		sleep(0.05)
+	}
+}
+
+a := new("int", 5)
+
+ex.threadRunFunc(func1, a)
+
+sleep(0.15)
+
+for i := 0; i < roundsT; i++ {
+	lock(mutex1)
+
+	setValueByRef(a, unref(a)+10)
+
+	unlock(mutex1)
+
+	pl("(main) *a=%v", unref(a))
+
+	sleep(0.065)
+}
+
+
+```
+
+- The third way, run in another VM:
+
+Note: this example also demonstrate how to pass parameters to the thread runs in another VM.
+
+```go
+// using Array or Map to pass parameters which may change in the thread
+
+sourceT := `
+param (v0)
+
+for i := 0; i < 5; i++ {
+	v0[0] ++
+
+	pl("(thread) v0=%v", v0[0])
+
+	sleep(1.0)
+}
+
+return
+
+`
+
+c1 := charCode(sourceT).compile()
+
+if isErr(c1) {
+	fatalf("failed to compile code: %v", c1)
+}
+
+a := [5]
+
+c1.threadRun(a)
+
+sleep(0.15)
+
+for i := 0; i < 5; i++ {
+	a[0] += 10
+
+	pl("(main) a=%v", a[0])
+
+	sleep(1.3)
+}
+
+```
+
+#### Gel
+
+Gel in Charlang is an object to encapsulate values or functions.
+
+```go
+sourceT := `
+param (v0, ...vargs)
+
+pln(v0, vargs)
+
+add := func(a1, a2) {
+	return a1 + a2
+}
+
+mul := func(a1, a2) {
+	return a1 * a2
+}
+
+if v0 == "add" {
+	return add
+} else if v0 == "mul" {
+	return mul
+} else if v0 == "Pi" {
+	return 3.1415926
+}
+
+return errStrf("member/method not found: %v", v0)
+`
+
+c1 := charCode(sourceT)
+
+if isErr(c1.compile()) {
+	pl("failed to compile: %v", c1.lastError)
+	exit()
+}
+
+g1 := gel(c1)
+
+rs := g1.add(1, 2)
+
+plo(rs)
+
+pl("g1.Pi: %v", g1.Pi)
+
+pl("unknown member: %v", g1.var1)
+
+pln(isErr(g1.var1))
+
+pln(getErrStr(g1.var1))
+
+try {
+	pl("unknown func: %v", g1.func1())
+} catch e {
+	pl("unknown func(%v): %v", g1.func1, e)
+}
+
+rs2 := g1.mul(3.6, 8)
+
+plo(rs2)
+
+```
+
+The output:
+
+```shell
+D:\tmp>char -example gel1.char
+add []
+(charlang.Int)3
+Pi []
+g1.Pi: 3.1415926
+var1 []
+unknown member: TXERROR:member/method not found: var1
+true
+member/method not found: var1
+func1 []
+unknown func(TXERROR:member/method not found: func1): NotCallableError: string
+mul []
+(charlang.Float)28.8
+```
+
+We can use 'ex' module to load gels as well, loaded gels are compiled already.
+
+```go
+ex := import("ex")
+
+sourceT := `
+param (v0, ...vargs)
+
+pln(v0, vargs)
+
+add := func(a1, a2) {
+	return a1 + a2
+}
+
+mul := func(a1, a2) {
+	return a1 * a2
+}
+
+if v0 == "add" {
+	return add
+} else if v0 == "mul" {
+	return mul
+} else if v0 == "Pi" {
+	return 3.1415926
+}
+
+return errStrf("member/method not found: %v", v0)
+`
+
+g1 := ex.loadGel(sourceT)
+
+rs := g1.add(1, 2)
+
+plo(rs)
+
+pl("g1.Pi: %v", g1.Pi)
+
+pl("unknown member: %v", g1.var1)
+
+pln(isErrX(g1.var1))
+
+pln(getErrStrX(g1.var1))
+
+try {
+	pl("unknown func: %v", g1.func1())
+} catch e {
+	pl("unknown func(%v): %v", g1.func1, e)
+}
+
+rs2 := g1.mul(3.6, 8)
+
+plo(rs2)
+
+```
+
 #### Charlang as System Service
 
 Charlang can be started as a system service and supports operating systems such as Windows and Linux. As long as you add the command line parameter '-reinstallService' to run the Charlang main program, you can install a system service called charService in the system (which can be seen using the service management module in computer management under Windows). Note that installing services in the operating system generally requires administrator privileges. Under Windows, you need to open the CMD window as an administrator to execute this command, while under Linux, you need to execute it as root or with the sudo command.
@@ -1115,6 +1411,10 @@ file: [bitwise.char](http://topget.org/dc/c/charlang/example/bitwise.char)
 
 file: [bmi.char](http://topget.org/dc/c/charlang/example/bmi.char)
 
+#### One More Example for Gels
+
+file: [gel3.char](http://topget.org/dc/c/charlang/example/gel3.char)
+
 #### Redirect Stdout to a File
 
 Note: Better run the example code with charw.exe(i.e. the GUI version of Charlang in Windows).
@@ -1129,7 +1429,7 @@ file: [binCompare.char](http://topget.org/dc/c/charlang/example/binCompare.char)
 
 file: [editFile.char](http://topget.org/dc/c/charlang/example/editFile.char)
 
-A simple text editor with file load/save, JSON validate, code running features.
+A simple text editor with file load/save, JSON validate, code running features, in GUI.
 
 #### Base64 Encoding of Images
 
@@ -1224,6 +1524,32 @@ basePath: C:\Users\Administrator\char
 localPath: d:\scripts
 cloudPath: https://script.example.com/scripts/
 ```
+
+#### Compile a Script to One Executable
+
+```shell
+D:\tmp>char -compile -output=basic.exe -example basic.char
+
+D:\tmpx>basic.exe
+3.4000000000000004
+
+D:\tmpx>basic
+3.4000000000000004
+
+```
+
+Compile a script with charw.exe in Windows, to avoid the console window(CMD) to show while running. For example:
+
+```shell
+
+charw -compile -output=cal.exe -example guiCalculator.char
+
+D:\tmpx>cal.exe
+
+```
+
+![Snapshot](https://topget.org/dc/s/attach/pic1110174843.png)
+
 
 #### Charlang as An Embedded Language in Golang
 
@@ -1936,6 +2262,7 @@ var mul = func(arg1, arg2) {
 adder := func(base) {
   return func(x) { return base + x }  // capturing 'base'
 }
+
 add5 := adder(5)
 nine := add5(4)    // == 9
 ```

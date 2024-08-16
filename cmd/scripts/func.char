@@ -1,0 +1,25 @@
+// declare a function with arguments
+f1 := func(a, b, c, d) {
+	return a*b + c/d
+}
+
+result1 := f1(3, 6, 8, 9)
+
+pln("result1=", result1)
+
+// variadic function(function accepts a variable number of arguments)
+f2 := func(v0, v1, ...args) {
+	sum := v0 + v1
+
+	argsLen := len(args)
+
+	for i := 0; i < argsLen; i++ {
+		sum += args[i]
+	}
+
+	return sum
+}
+
+result2 := f2(3, 6, 8, 9, 7)
+
+pln("result2=", result2)
