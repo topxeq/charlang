@@ -988,6 +988,9 @@ And while runnin as a WEB/Application/Micro-service server, there are additional
 - reqUriG: the route of the request, such as 'static/images/img001.png'
 - paraMapG: holds the GET/POST form values, in a map object, such as `{"auth": "xxxxx", "input1": "value1"}`
 
+In Windows platform, there are some additional  predefined global variables:
+
+- guiG: holds the object to interact with WebView2 component which could used to establish GUI applications.
 
 #### Error handling: Try-Catch-Finally
 
