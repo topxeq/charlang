@@ -28,6 +28,7 @@
       - [For Loop](#for-loop)
       - [If Statement](#if-statement)
       - [Predefined Global Variables](#predefined-global-variables)
+      - [Error handling: Try-Catch-Finally](#error-handling-try-catch-finally)
       - [Run Charlang Script/Code](#run-charlang-scriptcode)
       - [Multi-Threading](#multi-threading)
       - [Gel](#gel)
@@ -100,7 +101,7 @@
 Charlang is compiled and executed as bytecode on stack-based VM that's written
 in native Go. Charlang has a more-common runtime error handling(try-catch-finally) than Golang.
 
-Charlang is inspired by and based on awesome script language [uGo](https://github.com/ozanh/ugo). A special thanks to uGo's creater([ozanh](https://github.com/ozanh)) and contributors.
+Charlang is inspired by and based on awesome script language [uGo](https://github.com/ozanh/ugo). Special thanks to uGo's creater([ozanh](https://github.com/ozanh)) and contributors.
 
 ## 1. Features
 
@@ -115,12 +116,14 @@ Charlang is inspired by and based on awesome script language [uGo](https://githu
 
 ## 2. New Features
 
-- New types such as Byte, Any...
+- New types such as Byte, Image, Any...
 - New functions: NewCommonError, NewError and more...
 - New builtin functions: getRandomInt, writeResp, setRespHeader, writeRespHeader and much more...
 - New global variables and resources.
 - A new thread-model.
 - Runtime/dynamically script compiling and running capability.
+- Server mode: quickly start a WEB and/or application server.
+- Run as system service.
 
 **Fibonacci Example**
 
@@ -386,6 +389,14 @@ true
 ```
 
 Note that unlike Golang, a variable can be assigned a value of different types.
+
+Declare more than 1 variable in one line within a pair of parentheses.
+
+```go
+var (a, b, c)
+
+...
+```
 
 #### Data Type Name
 
@@ -976,6 +987,37 @@ And while runnin as a WEB/Application/Micro-service server, there are additional
 - responseG: the HTTP respone object that could write response to, or set response settings;
 - reqUriG: the route of the request, such as 'static/images/img001.png'
 - paraMapG: holds the GET/POST form values, in a map object, such as `{"auth": "xxxxx", "input1": "value1"}`
+
+
+#### Error handling: Try-Catch-Finally
+
+```go
+a := 0
+
+var r
+
+try {
+	r = 3 / a
+
+} catch e {
+	pln("exception:", e)
+
+} finally {
+	
+	pln("r:", r)
+}
+
+pln("done")
+```
+
+Output:
+
+```shell
+D:\tmp>char -example tryCatch.char
+exception: ZeroDivisionError: 
+r: undefined
+done
+```
 
 #### Run Charlang Script/Code
 
