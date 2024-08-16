@@ -155,6 +155,8 @@ return fib(35)
 - [Linux Amd64](http://topget.org/pub/char.tar.gz)
 - [Linux Arm8(Termux)](http://topget.org/pub/charArm8.tar.gz)
 
+Or download the package from [Charlang Official Site](http://topget.org/charlang)
+
 ## 5. Installation
 
 Download the latest Charlang executable file or compressed package above or from the [official website](http://topget.org/charlang), and then put it in a directory, preferably within the system path(such as C:\Windows in Windows or /usr/bin). If you download a compressed package, decompress it first. Then it is ready to use, run it in any terminal or console application(Window CMD, PowerShell, Terminal or bash);
