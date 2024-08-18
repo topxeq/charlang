@@ -1,0 +1,215 @@
+global argsG
+global guiG
+
+var rs
+
+imagePathT := trim(getSwitch(argsG, "-dir=", ""))
+
+if imagePathT == "" {
+	imagePathT = guiG.selectDirectory()
+}
+
+checkErr(imagePathT)
+
+if imagePathT == "" {
+	fatalf("empty image path")
+}
+
+imagePathT = getFileAbs(imagePathT)
+
+// support *.png, *.jpg, *.bmp, *.gif
+listT := getFileList(imagePathT, "-recursive", "-pattern=*.[jpbg][pnmi][gpf]")
+
+currentIndexT := 0
+
+htmlT := `
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Images Viewer</title>
+	<script>
+		function handleKeydown(evt) {
+			// console.log(evt);
+			var consumed = true;
+			switch(evt.keyCode) {
+				case 36:     
+					runCmd('home');
+					break; 
+				case 35:     
+					runCmd('end');
+					break; 
+				case 27:     
+					runCmd('closeWindow');
+					break; 
+				case 37: // left arrow
+					runCmd('prev');
+					break; 
+				case 39: // right arrow
+					runCmd('next');
+					break; 
+				case 71: // g     
+					var idxT = prompt("Goto:");
+
+					if (!!idxT) {
+						console.log("idxT", idxT);
+						runCmd('showIndex', idxT);
+					}
+
+					break; 
+				default: 
+					console.log(evt, JSON.stringify({"Ctrl": evt.ctrlKey, "Shift": evt.shiftKey, "Alt": evt.altKey, "Meta": evt.metaKey, "Key": evt.key, "KeyCode": evt.keyCode, "charCode": evt.charCode, "Code": evt.code, "Composed": evt.composed, "Composed": evt.composed}));
+
+					consumed = false;
+
+					break;
+			}
+
+			if (consumed) {
+				evt.preventDefault();
+				evt.stopPropagation();
+				evt.returnValue = consumed;
+			}
+
+			return consumed;
+		}
+
+		function runCmd(cmdA, arg1) {
+			var rs = dele(cmdA, ''+arg1);
+
+			rs.then(res => {
+				// console.log("res: ", res);
+
+				document.getElementById("imageId").setAttribute("src", res);
+            });
+		}
+
+		window.onload = function() {
+			runCmd("showCurrentImage");
+		}
+	</script>
+</head>
+<body style="margin: 0px; padding: 0px; overflow-x: hidden; overflow-y: hidden;" onkeydown="handleKeydown(event);">
+	<div style="margin: 0px; padding: 0px; width: 100vw; height: 100vh; text-align: center; overflow-x: hidden; overflow-y: hidden;">
+		<img id="imageId" src="" style="width: 100%; height: 100%; object-fit: contain;" />
+	</div>
+
+</body>
+</html>
+`
+
+windowT := guiG.newWindow("-title=Images Viewer", "-width=960", "-height=720", "-center", "-debug")
+
+renderImage := func() {
+	fileObjT := getArrayItem(listT, currentIndexT, undefined)
+
+	if !fileObjT {
+		return ""
+	}
+
+	bytesT := loadBytes(fileObjT.Abs)
+
+	lenT := len(bytesT)
+	
+	if lenT < 1 {
+		return errStrf("empty file content: %v", lenT)
+	}
+	
+	if isEncrypted(bytesT) {
+		// pl("encrypted content")
+		bytesT = decryptBytes(bytesT, "-code="+getSwitch(argsG, "-code=", ""))
+	}
+	
+	imageExtT := getFileExt(fileObjT.Abs)
+	
+	imageT := loadImageFromBytes(bytesT, "-type="+getSwitch(argsG, "-type=", imageExtT))
+	
+	bytesNewT := saveImageToBytes(imageT, ".png")
+
+	base64StrT := "data:image/png;base64," + base64Encode(bytesNewT)
+
+	windowT.setTitle(spr("Images Viewer - %v/%v %v", currentIndexT+1, len(listT), strTrimStart(fileObjT.Abs, imagePathT)))
+
+	return base64StrT
+}
+
+dele1 := func(...vargs) {
+	// pln(vargs)
+
+	windowT := vargs[0]
+
+	cmdT := vargs[1]
+
+    if cmdT == "showCurrentImage" {
+		return renderImage()
+	} else if cmdT == "prev" {
+		currentIndexT--
+
+		if currentIndexT < 0 {
+			currentIndexT = 0
+		}
+		
+		return renderImage()
+	} else if cmdT == "next" {
+		currentIndexT++
+
+		if currentIndexT >= len(listT) {
+			currentIndexT = len(listT) - 1
+		}
+		
+		return renderImage()
+	} else if cmdT == "home" {
+		currentIndexT = 0
+		
+		return renderImage()
+	} else if cmdT == "end" {
+		currentIndexT = len(listT) - 1
+		
+		return renderImage()
+	} else if cmdT == "showIndex" {
+		currentIndexT = toInt(vargs[2], 0) - 1
+		
+		if currentIndexT < 0 {
+			currentIndexT = 0
+		}
+
+		if currentIndexT >= len(listT) {
+			currentIndexT = len(listT) - 1
+		}
+
+		return renderImage()
+	} else if cmdT == "closeWindow" {
+		pl("close window")
+
+		windowT("close")
+
+		return ""
+	}
+	
+    pl("cmd: %v", cmdT)
+
+    return "TXERROR:unknown command: " + cmdT
+}
+
+checkErr(dele1)
+
+rs = windowT.setFunc("dele", dele1, windowT)
+
+checkErr(rs)
+
+// htmlT = strReplace(htmlT, "TX_image_XT", base64StrT)
+
+rs = windowT.setHtml(htmlT)
+
+checkErr(rs)
+
+rs = windowT("show")
+
+checkErr(rs)
+
+rs = windowT("close")
+
+checkErr(rs)
+
+

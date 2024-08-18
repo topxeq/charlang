@@ -694,8 +694,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getErrStrX": BuiltinGetErrStrX,
 	"getErrStr":  BuiltinGetErrStrX,
 
-	"checkErrX": BuiltinCheckErrX,
-	"checkErr":  BuiltinCheckErrX,
+	"checkErrX": BuiltinCheckErrX, // check if the object is error or error string, if is, exit the program with output, usage: checkErrX(result, "-format=Failed to process: %v\n"), the default format is "Error: %v\n"
+	"checkErr":  BuiltinCheckErrX, // the same as checkErrX, check if the object is error or error string, if is, exit the program with output, usage: checkErr(result, "-format=Failed to process: %v\n"), the default format is "Error: %v\n"
 
 	"errStrf": BuiltinErrStrf,
 	"errf":    BuiltinErrf,
