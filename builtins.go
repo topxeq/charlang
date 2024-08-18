@@ -244,6 +244,8 @@ const (
 	BuiltinCloseFile
 	BuiltinCompressData
 	BuiltinCompressStr
+	BuiltinUncompressData
+	BuiltinUncompressStr
 	BuiltinUrlEncode
 	BuiltinUrlDecode
 	BuiltinOrderedMap
@@ -868,8 +870,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	"closeFile": BuiltinCloseFile,
 
 	// compress/zip related
-	"compressData":      BuiltinCompressData,
-	"compressStr":       BuiltinCompressStr,
+	"compressData":   BuiltinCompressData,
+	"compressStr":    BuiltinCompressStr,
+	"uncompressData": BuiltinUncompressData,
+	"uncompressStr":  BuiltinUncompressStr,
+
 	"archiveFilesToZip": BuiltinArchiveFilesToZip, // Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
 
 	// network/web related
@@ -2425,6 +2430,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "compressStr",
 		Value:   FnASRS(tk.CompressText),
 		ValueEx: FnASRSex(tk.CompressText),
+	},
+	BuiltinUncompressData: &BuiltinFunction{
+		Name:    "uncompressData",
+		Value:   FnAAVaRA(tk.Uncompress),
+		ValueEx: FnAAVaRAex(tk.Uncompress),
+	},
+	BuiltinUncompressStr: &BuiltinFunction{
+		Name:    "uncompressStr",
+		Value:   FnASRS(tk.UncompressText),
+		ValueEx: FnASRSex(tk.UncompressText),
 	},
 	BuiltinArchiveFilesToZip: &BuiltinFunction{
 		Name:    "archiveFilesToZip",
@@ -9016,7 +9031,7 @@ func builtinSshUploadFunc(c Call) (Object, error) {
 	if withProgressT {
 		fmt.Println()
 		errT = sshT.UploadWithProgressFunc(v5, v6, func(i interface{}) interface{} {
-			fmt.Printf("\rprogress: %v                ", tk.IntToKMGT(i))
+			fmt.Printf("\rprogress: %v                ", i)
 			return ""
 		}, pa...)
 		fmt.Println()
