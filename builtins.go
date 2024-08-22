@@ -235,6 +235,7 @@ const (
 	BuiltinSscanf
 	BuiltinStrQuote
 	BuiltinStrUnquote
+	BuiltinStrToTime
 	BuiltinToInt
 	BuiltinToFloat
 	BuiltinToHex
@@ -616,6 +617,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"strQuote":   BuiltinStrQuote,
 	"strUnquote": BuiltinStrUnquote,
+
+	"strToTime": BuiltinStrToTime,
 
 	"getTextSimilarity": BuiltinGetTextSimilarity,
 
@@ -1611,6 +1614,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strUnquote",
 		Value:   CallExAdapter(builtintStrUnquoteFunc),
 		ValueEx: builtintStrUnquoteFunc,
+	},
+	BuiltinStrToTime: &BuiltinFunction{
+		Name:    "strToTime",
+		Value:   CallExAdapter(builtinStrToTimeFunc),
+		ValueEx: builtinStrToTimeFunc,
 	},
 	BuiltinGetTextSimilarity: &BuiltinFunction{
 		Name:    "getTextSimilarity",
@@ -11709,6 +11717,33 @@ func builtintStrUnquoteFunc(c Call) (Object, error) {
 	}
 
 	return &String{Value: rs}, nil
+}
+
+func builtinStrToTimeFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	formatT := ""
+
+	if len(args) > 1 {
+		defaultA, ok := args[1].(String)
+		if ok {
+			formatT = defaultA.String()
+		}
+	}
+
+	strT := args[0].String()
+
+	rsT, errT := tk.StrToTimeByFormat(strT, formatT)
+
+	if errT != nil {
+		return NewCommonError("time parse failed: %v", errT), nil
+	}
+
+	return &Time{Value: rsT}, nil
 }
 
 func builtinSscanfFunc(c Call) (Object, error) {
