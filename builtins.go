@@ -203,6 +203,7 @@ const (
 	BuiltinStartTransparentProxy
 	BuiltinStartTransparentProxyEx
 	BuiltinRenderMarkdown
+	BuiltinReplaceHtmlByMap
 	BuiltinIsDir
 	BuiltinStrStartsWith
 	BuiltinStrEndsWith
@@ -1064,6 +1065,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"genUuid": BuiltinGetUuid,
 
 	"renderMarkdown": BuiltinRenderMarkdown,
+
+	"replaceHtmlByMap": BuiltinReplaceHtmlByMap,
 
 	// "sortByFunc": BuiltinSortByFunc,
 
@@ -3087,6 +3090,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "renderMarkdown",
 		Value:   FnASRS(tk.RenderMarkdown),
 		ValueEx: FnASRSex(tk.RenderMarkdown),
+	},
+	BuiltinReplaceHtmlByMap: &BuiltinFunction{
+		Name:    "replaceHtmlByMap",
+		Value:   CallExAdapter(builtinReplaceHtmlByMapFunc),
+		ValueEx: builtinReplaceHtmlByMapFunc,
 	},
 
 	// original internal related
@@ -11458,6 +11466,31 @@ func builtinAwsSignFunc(c Call) (Object, error) {
 	rsT := awsapi.Sign(postDataT, nv2)
 
 	return String{Value: rsT}, nil
+}
+
+func builtinReplaceHtmlByMapFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	s := args[0].String()
+
+	m, ok := args[1].(Map)
+	if !ok {
+		return NewCommonError("unsupported parameter type: %v", args[1].TypeName()), nil
+	}
+
+	if m == nil {
+		return args[0], nil
+	}
+
+	for k, v := range m {
+		s = tk.Replace(s, "TX_"+k+"_XT", v.String())
+	}
+
+	return ToStringObject(s), nil
 }
 
 func builtinSendMailFunc(c Call) (Object, error) {
