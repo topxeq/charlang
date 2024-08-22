@@ -32,6 +32,12 @@
       - [Run Charlang Script/Code](#run-charlang-scriptcode)
       - [Multi-Threading](#multi-threading)
       - [Gel](#gel)
+      - [Implement a Common Web Server](#implement-a-common-web-server)
+        - [Start a Simple Web Server(with SSL Support) to Serve Static Files](#start-a-simple-web-serverwith-ssl-support-to-serve-static-files)
+        - [Start a Common Web Server](#start-a-common-web-server)
+        - [Web Server with Multi-thread](#web-server-with-multi-thread)
+        - [Request Handler Running in a New Virtual Machine](#request-handler-running-in-a-new-virtual-machine)
+        - [Serve Static and Dynamic HTML Pages at the Same Time](#serve-static-and-dynamic-html-pages-at-the-same-time)
       - [Charlang as System Service](#charlang-as-system-service)
     - [7.7 More Examples](#77-more-examples)
       - [Anonymous Function](#anonymous-function)
@@ -1356,6 +1362,253 @@ rs2 := g1.mul(3.6, 8)
 plo(rs2)
 
 ```
+
+#### Implement a Common Web Server
+
+Demonstrate how to implement a more flexible Web server, with support of static files, dynamic pages(as PHP, JSP, ASPX...) and micro-services.
+
+##### Start a Simple Web Server(with SSL Support) to Serve Static Files
+
+```go
+// quickly start a static web server to serve files under certain directory
+// port and certificate directory could be set
+handlerT := httpHandler("static", joinPath(getHomeDir(), "pages"))
+
+if isErr(handlerT) {
+	fatalf("failed to create httpHandler: %v", getErrStr(handlerT))
+}
+
+muxT := mux()
+
+muxT.setHandler("/", handlerT)
+
+pln("starting http server on port 80(default)...")
+checkErr(muxT.threadStartHttpServer())
+
+// the certificate files should be server.crt and server.key
+pln("starting https(SSL) server on port 443...")
+plErr(muxT.threadStartHttpsServer("-port=443", "-certDir=."))
+
+for {
+	pln(time().format("2006-01-02 15:04:05"), "heartbeat")
+	sleep(5.0)
+}
+
+```
+
+##### Start a Common Web Server
+
+```go
+// a very simple web server
+// to test the server, open your browser, and browse to the URL address: http://127.0.0.1
+
+muxT := mux()
+
+handlerT := func(requestA, responseA) {
+	// pl("req: %#v, res: %#v", requestA, responseA)
+
+	writeResp(responseA, "This is a test!")
+
+	return "TX_END_RESPONSE_XT"
+}
+
+muxT.setHandler("/", handlerT)
+
+rs := muxT.startHttpServer()
+
+pl("result: %v", rs)
+
+```
+
+Modify the code part in handlerT to fulfill customized requirement of the Web server. You can mix a static files handler with the same Mux object in different route, such as:
+
+```go
+muxT.setHandler("/", staticFileHandlerT)
+muxT.setHandler("/common", commonHandlerT)
+```
+
+##### Web Server with Multi-thread
+
+One more example to Demonstrate the usage of mutex to avoid conflicts for multi http requests:
+
+```go
+n1 := new("int", 0)
+
+mutex1 := mutex()
+
+muxT := mux()
+
+handlerT := func(requestA, responseA) {
+	pl("req: %#v, res: %#v", requestA, responseA)
+
+	params1 := parseReqFormEx(requestA)
+
+	plo(params1)
+
+	setRespHeader(responseA, "Access-Control-Allow-Origin", "*")
+	setRespHeader(responseA, "Access-Control-Allow-Headers", "*")
+	setRespHeader(responseA, "Content-Type", "application/json;charset=utf-8")
+
+	authT := trim(params1["auth"])
+
+	if authT != "abc123" {
+		writeResp(responseA, genJsonResp(requestA, "fail", "auth failed"))
+		return "TX_END_RESPONSE_XT"
+	}
+
+	inputT := params1["input"]
+
+	if inputT == undefined {
+		writeResp(responseA, genJsonResp(requestA, "fail", "input could not be empty"))
+		return "TX_END_RESPONSE_XT"
+	}
+
+	c1 := int(inputT)
+
+	mutex1.lock()
+	setValueByRef(n1, unref(n1)+c1)
+	mutex1.unlock()
+
+	writeResp(responseA, genJsonResp(requestA, "success", toStr(unref(n1))))
+
+	return "TX_END_RESPONSE_XT"
+}
+
+muxT.setHandler("/test", handlerT)
+
+rs := muxT.startHttpServer()
+
+pl("result: %v", rs)
+
+```
+
+##### Request Handler Running in a New Virtual Machine
+
+Another example to Demonstrate how to set handler runnin in a new VM, and the way to pass parameters to it:
+
+```go
+// handler runs in a seperate VM, more safe but with a little more system resource(and time) cost/overhead
+n1 := new("int", 0)
+
+mutex1 := mutex()
+
+muxT := mux()
+
+handlerT := httpHandler().set("code", `
+param(n1, mutex1)
+
+global requestG
+global responseG
+
+pl("req: %#v, res: %#v", requestG, responseG)
+
+pl("n1: %#v, mutex1: %#v", n1, mutex1)
+
+params1 := parseReqForm(requestG)
+
+plo(params1)
+
+setRespHeader(responseG, "Access-Control-Allow-Origin", "*")
+setRespHeader(responseG, "Access-Control-Allow-Headers", "*")
+setRespHeader(responseG, "Content-Type", "application/json;charset=utf-8")
+
+authT := trim(params1["auth"])
+
+if authT != "abc123" {
+	writeResp(responseG, genJsonResp(requestG, "fail", "auth failed"))
+	return "TX_END_RESPONSE_XT"
+}
+
+inputT := params1["input"]
+
+if inputT == undefined {
+	writeResp(responseG, genJsonResp(requestG, "fail", "input could not be empty"))
+	return "TX_END_RESPONSE_XT"
+}
+
+c1 := int(inputT)
+
+pln("c1:", c1)
+
+mutex1.lock()
+
+setValueByRef(n1, unref(n1)+c1)
+mutex1.unlock()
+
+writeResp(responseG, genJsonResp(requestG, "success", toStr(unref(n1))))
+
+return "TX_END_RESPONSE_XT"
+
+`, n1, mutex1)
+
+if isErr(handlerT) {
+	fatalf("failed to create http handler: %v", getErrStr(handlerT))
+}
+
+muxT.setHandler("/test", handlerT)
+
+pln("starting web server on port 8080...")
+rs := muxT.startHttpServer("-port=8080")
+
+pl("result: %v", rs)
+
+```
+
+##### Serve Static and Dynamic HTML Pages at the Same Time
+
+Read HTML template from the file according to the route(in the URL parameter).
+
+```go
+// demonstrate how to serve static and dynamic HTML pages, not this is not the only way
+
+staticHandlerT := httpHandler("static", joinPath(getHomeDir(), "pages"))
+
+if isErr(staticHandlerT) {
+	fatalf("failed to create static handler: %v", getErrStr(staticHandlerT))
+}
+
+dynamicHandlerT := func(requestA, responseA) {
+	// set the proper response header
+	setRespHeader(responseA, "Access-Control-Allow-Origin", "*")
+	setRespHeader(responseA, "Access-Control-Allow-Headers", "*")
+	setRespHeader(responseA, "Content-Type", "text/html;charset=utf-8")
+
+	// get the parameters from the HTTP request
+	paramsT := parseReqForm(requestG)
+
+	// get the 'req' parameter from query string or post form values
+	// it will be used as route
+	reqT := trim(params1["req"])
+
+	// get HTML template from specified folder
+	templateDirT := `c:\test\tmpl`
+
+	templateFileT := joinPath(templateDirT, reqT+".html")
+
+	templateHtmlT := loadText(templateFileT)
+
+	// do some modifications on the template
+	strReplace(templateHtmlT, "{{field1}}", getNowStr())
+
+	// write the processed text to HTTP response
+	writeResp(responseA, templateHtmlT)
+
+	// write "TX_END_RESPONSE_XT" to end the response stream/output
+	return "TX_END_RESPONSE_XT"
+}
+
+// serve dynamic pages
+muxT.setHandler("/pages", dynamicHandlerT)
+
+// serve other route as static pages
+muxT.setHandler("/", staticHandlerT)
+
+rs := muxT.startHttpServer()
+
+pl("result: %v", rs)
+
+```
+
 
 #### Charlang as System Service
 

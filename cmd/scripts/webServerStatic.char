@@ -13,8 +13,9 @@ muxT.setHandler("/", handlerT)
 pln("starting http server on port 80(default)...")
 checkErr(muxT.threadStartHttpServer())
 
-pln("starting https(SSL) server on port 8080...")
-plErr(muxT.threadStartHttpsServer("-port=8080", "-certDir=."))
+// the certificate files should be server.crt and server.key
+pln("starting https(SSL) server on port 443...")
+plErr(muxT.threadStartHttpsServer("-port=443", "-certDir=."))
 
 for {
 	pln(time().format("2006-01-02 15:04:05"), "heartbeat")

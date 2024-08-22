@@ -585,6 +585,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// string related
 	"trim":          BuiltinTrim,
+	"nilToEmpty":    BuiltinTrim,
 	"strTrim":       BuiltinStrTrim,
 	"strTrimStart":  BuiltinStrTrimStart,
 	"strTrimEnd":    BuiltinStrTrimEnd,
@@ -921,7 +922,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"isEncrypted": BuiltinIsEncrypted,
 
 	"encryptText": BuiltinEncryptText,
+	"encryptStr":  BuiltinEncryptText,
 	"decryptText": BuiltinDecryptText,
+	"decryptStr":  BuiltinDecryptText,
 
 	"encryptTextByTXTE": BuiltinEncryptTextByTXTE,
 	"decryptTextByTXTE": BuiltinDecryptTextByTXTE,
@@ -8945,14 +8948,15 @@ func builtinWriteCsvFunc(c Call) (Object, error) {
 					return NewCommonErrorWithPos(c, "failed to write record of line(%v): %v", i, errT), nil
 				}
 
-				writerT.Flush()
-
-				return Undefined, nil
 			default:
 				tk.Pl("unsupported line type: %T", args[1])
 				return Undefined, nil
 			}
 		}
+
+		writerT.Flush()
+
+		return Undefined, nil
 	case *Any:
 		switch nvi := nv.Value.(type) {
 		case [][]string:

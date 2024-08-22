@@ -1,0 +1,49 @@
+// demonstrate how to serve static and dynamic HTML pages, not this is not the only way
+
+staticHandlerT := httpHandler("static", joinPath(getHomeDir(), "pages"))
+
+if isErr(staticHandlerT) {
+	fatalf("failed to create static handler: %v", getErrStr(staticHandlerT))
+}
+
+dynamicHandlerT := func(requestA, responseA) {
+	// set the proper response header
+	setRespHeader(responseA, "Access-Control-Allow-Origin", "*")
+	setRespHeader(responseA, "Access-Control-Allow-Headers", "*")
+	setRespHeader(responseA, "Content-Type", "text/html;charset=utf-8")
+
+	// get the parameters from the HTTP request
+	paramsT := parseReqForm(requestG)
+
+	// get the 'req' parameter from query string or post form values
+	// it will be used as route
+	reqT := trim(params1["req"])
+
+	// get HTML template from specified folder
+	templateDirT := `c:\test\tmpl`
+
+	templateFileT := joinPath(templateDirT, reqT+".html")
+
+	templateHtmlT := loadText(templateFileT)
+
+	// do some modifications on the template
+	strReplace(templateHtmlT, "{{field1}}", getNowStr())
+
+	// write the processed text to HTTP response
+	writeResp(responseA, templateHtmlT)
+
+	// write "TX_END_RESPONSE_XT" to end the response stream/output
+	return "TX_END_RESPONSE_XT"
+}
+
+// serve dynamic pages
+muxT.setHandler("/pages", dynamicHandlerT)
+
+// serve other route as static pages
+muxT.setHandler("/", staticHandlerT)
+
+rs := muxT.startHttpServer()
+
+pl("result: %v", rs)
+
+
