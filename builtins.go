@@ -1717,8 +1717,8 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinGetNowStr: &BuiltinFunction{
 		Name:    "getNowStr",
-		Value:   FnARS(tk.GetNowTimeStringFormal),
-		ValueEx: FnARSex(tk.GetNowTimeStringFormal),
+		Value:   FnAVsRS(tk.GetNowTimeStringFormat),
+		ValueEx: FnAVsRSex(tk.GetNowTimeStringFormat),
 	},
 	BuiltinGetNowStrCompact: &BuiltinFunction{
 		Name:    "getNowStrCompact",
