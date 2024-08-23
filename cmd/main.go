@@ -37,7 +37,7 @@ import (
 
 	// _ "github.com/mattn/go-sqlite3"
 	_ "github.com/glebarez/go-sqlite"
-	_ "github.com/jackc/pgx"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/sijms/go-ora/v2"
 	// _ "github.com/godror/godror"
 )

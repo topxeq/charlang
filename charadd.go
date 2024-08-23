@@ -548,6 +548,23 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Array{ToStringObject(rs1.Key), ConvertToObject(rs1.Value)}, nil
 			},
 		},
+		"getKeys": &Function{
+			Name: "getKeys",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*OrderedMap)
+				if !ok {
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
+				}
+
+				rs1 := nv.Value.GetKeys()
+
+				if rs1 == nil {
+					return Undefined, nil
+				}
+
+				return ConvertToObject(rs1), nil
+			},
+		},
 		"dump": &Function{
 			Name: "dump",
 			ValueEx: func(c Call) (Object, error) {
