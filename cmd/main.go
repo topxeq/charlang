@@ -37,6 +37,7 @@ import (
 
 	// _ "github.com/mattn/go-sqlite3"
 	_ "github.com/glebarez/go-sqlite"
+	_ "github.com/jackc/pgx"
 	_ "github.com/sijms/go-ora/v2"
 	// _ "github.com/godror/godror"
 )
@@ -670,14 +671,14 @@ func doServer() {
 
 	muxG.HandleFunc("/", serveStaticDirHandler)
 
-	tk.PlNow("Charlang Server %v -port=%v -sslPort=%v -dir=%v -webDir=%v -certDir=%v", charlang.VersionG, portG, sslPortG, basePathG, webPathG, certPathG)
+	tk.PlNow("Charlang Server V%v -port=%v -sslPort=%v -dir=%v -webDir=%v -certDir=%v", charlang.VersionG, portG, sslPortG, basePathG, webPathG, certPathG)
 
 	if sslPortG != "" {
 		tk.PlNow("try starting ssl server on %v...", sslPortG)
 		go startHttpsServer(sslPortG)
 	}
 
-	tk.Pl("try starting server on %v ...", portG)
+	tk.PlNow("try starting server on %v ...", portG)
 	err := http.ListenAndServe(portG, muxG)
 
 	if err != nil {

@@ -1,0 +1,33 @@
+// declare the global variables to use in the context
+global requestG
+global reqNameG
+global reqUriG
+global responseG
+global paraMapG
+
+// Get the current time and put it into variable t
+t := getNowStr()
+
+// Output reference information(to server's local console, not the HTTP response)
+// Where reqNameG is a predefined global variable that represents the service name, which is the last part of the access URL
+// reqUriG is a predefined global variable that represents the service route/path
+// paraMapG is also a global variable that represents the query string or form parameters contained in HTTP requests (which can be in GET or POST requests)
+pl(`[%v] reqNameG: %v, reqUriG: %v, paraMapG: %v`, t, reqNameG, reqUriG, paraMapG)
+
+// Set output response header information (to JSON format)
+setRespHeader(responseG, "Content-Type", "text/json; charset=utf-8")
+
+// Set the response status to 200 (HTTP_oK), indicating a successful request response
+writeRespHeader(responseG, 200)
+
+// Assembling response strings using spr instructions
+str1 := spr("The request is: %v, uri: %v, parameters: %v", reqNameG, reqUriG, paraMapG)
+
+// Generate encapsulated JSON responses using genJsonResp, or output strings in other formats on your own
+respStr := genJsonResp(requestG, "success", str1)
+
+// Write and output the response string (to a webpage)
+writeResp(responseG, respStr)
+
+// End processing and return 'TX_END_RESPONSE_XT' to terminate the continued output of the response stream
+return "TX_END_RESPONSE_XT"

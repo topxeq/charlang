@@ -1,0 +1,32 @@
+// responseG is the predefined global variable which holds the HTTP response object to write to
+global responseG
+
+// basePathG is the predefined global variable which holds the specified base path while starting the server
+global basePathG
+
+// Set the default global return value variable outG to the string TX_END_RESPONSE_XT
+// If the default Charlang server receives a function to process a request, the return result is TX_END_RESPONSE_XT
+// The server processing(output of the HTTP response) of the page will be terminated, otherwise the return value will be output as a string to the webpage
+outG := "TX_END_RESPONSE_XT"
+
+// Obtain the corresponding web page template(HTML)
+// The joinPath function will merge multiple file paths into one complete file path
+// The first parameter represents the variable to be placed in the result, where $push represents stack pushing
+// basePathG is a built-in global variable that represents the root directory of the service
+templatePathT := joinPath(basePathG, `charmsTmpl.html`)
+
+// Load the file as a text string(HTML)
+templateTextT := loadText(templatePathT)
+
+// Replace the {{text1}} tag to letter A
+templateTextT = strReplace(templateTextT, "{{text1}}", "A")
+
+// Set the corresponding response header
+setRespHeader(responseG, "Content-Type", "text/html; charset=utf-8")
+
+// Write the HTML to the web page output
+// responseG is also a predefined global variable that represents the HTTP/webpage output object to be written to
+writeResp(responseG, templateTextT)
+
+// Return 'TX_END_RESPONSE_XT' to end the output
+return outG

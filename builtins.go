@@ -10336,12 +10336,25 @@ func builtinGenJSONRespFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
+	var s1, s2 string
+
 	v0, ok := args[2].(*HttpReq)
-	if !ok {
-		return NewCommonErrorWithPos(c, "invalid param type: %T(%v)", args[0], args[0]), nil
+
+	if ok {
+		s1 = args[0].String()
+		s2 = args[1].String()
+	} else {
+		v0, ok = args[0].(*HttpReq)
+
+		if !ok {
+			return NewCommonErrorWithPos(c, "invalid param type: %T(%v)", args[0], args[0]), nil
+		}
+
+		s1 = args[1].String()
+		s2 = args[2].String()
 	}
 
-	rsT := tk.GenerateJSONPResponseWithMore(args[0].String(), args[1].String(), v0.Value, ObjectsToS(args[3:])...)
+	rsT := tk.GenerateJSONPResponseWithMore(s1, s2, v0.Value, ObjectsToS(args[3:])...)
 
 	return ToStringObject(rsT), nil
 }

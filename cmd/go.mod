@@ -10,6 +10,7 @@ require (
 	github.com/denisenkom/go-mssqldb v0.12.3
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/go-sql-driver/mysql v1.7.1
+	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jchv/go-webview2 v0.0.0-20221223143126-dc24628cff85
 	github.com/json-iterator/go v1.1.12
 	github.com/kardianos/service v1.2.2
@@ -31,6 +32,7 @@ require (
 	github.com/boombuler/barcode v1.0.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cention-sany/utf7 v0.0.0-20170124080048-26cad61bd60a // indirect
+	github.com/cockroachdb/apd v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dchest/jsmin v0.0.0-20220218165748-59f39799265f // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
@@ -41,6 +43,7 @@ require (
 	github.com/expr-lang/expr v1.16.9 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
 	github.com/gen2brain/shm v0.0.0-20230802011745-f2460f5984f7 // indirect
+	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
 	github.com/gojp/kana v0.1.0 // indirect
 	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
@@ -52,6 +55,7 @@ require (
 	github.com/ikawaha/kagome-dict v1.0.10 // indirect
 	github.com/ikawaha/kagome-dict/ipa v1.0.11 // indirect
 	github.com/ikawaha/kagome/v2 v2.9.8 // indirect
+	github.com/jackc/fake v0.0.0-20150926172116-812a484cc733 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 // indirect
 	github.com/jchv/go-winloader v0.0.0-20200815041850-dec1ee9a7fd5 // indirect
 	github.com/jezek/xgb v1.1.0 // indirect
@@ -61,6 +65,7 @@ require (
 	github.com/klauspost/compress v1.14.4 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/fs v0.1.0 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/lxn/win v0.0.0-20210218163916-a377121e959e // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -81,6 +86,7 @@ require (
 	github.com/richardlehane/mscfb v1.0.4 // indirect
 	github.com/richardlehane/msoleps v1.0.3 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff // indirect
 	github.com/topxeq/countingwriter v0.0.0-20230115115152-84660be6de09 // indirect

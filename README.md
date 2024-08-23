@@ -38,6 +38,7 @@
         - [Web Server with Multi-thread](#web-server-with-multi-thread)
         - [Request Handler Running in a New Virtual Machine](#request-handler-running-in-a-new-virtual-machine)
         - [Serve Static and Dynamic HTML Pages at the Same Time](#serve-static-and-dynamic-html-pages-at-the-same-time)
+      - [- Charlang's Embedded Fully Functional Web/Microservices/Application Server](#--charlangs-embedded-fully-functional-webmicroservicesapplication-server)
       - [Charlang as System Service](#charlang-as-system-service)
     - [7.7 More Examples](#77-more-examples)
       - [Anonymous Function](#anonymous-function)
@@ -1609,6 +1610,155 @@ pl("result: %v", rs)
 
 ```
 
+#### - Charlang's Embedded Fully Functional Web/Microservices/Application Server
+
+&nbsp;
+
+Charlang's main program comes with a server mode that supports a lightweight WEB/Application/API all-in-one server. You can start it using the following command line:
+
+```shell
+D:\tmp>char -server -dir=scripts
+[2024/08/23 08:08:22] Charlang Server V1.3.3 -port=:80 -sslPort=:443 -dir=scripts -webDir=scripts -certDir=scripts
+[2024/08/23 08:08:22] try starting ssl server on :443...
+[2024/08/23 08:08:22] try starting server on :80 ...
+[2024/08/23 08:08:22] failed to start https: open scripts\server.crt: The system cannot find the file specified.
+```
+
+As can be seen, the server mode of Charlang can be started with the '-server' parameter, and the '-port' parameter can be used to specify the HTTP service port (please add a colon), '-sslPort' can be used to specify the SSL port, '-certDir' can be used to specify the certificate file directory of the SSL service (which should be two files: server.crt and server.key), '-dir' can be used to specify the root directory of the service, and '-webDir' can be used to specify the web service for static pages and resources. These parameters have default values and can be seen without entering any parameters.
+
+The error in the output information is because the SSL certificate was not provided, and the SSL service will not be able to start. Adding the certificate files will suffice.
+
+Then open a browser to access the address http://127.0.0.1:80 to access the all-in-one web service written in Charlang.
+
+Assuming that the specified directory contains three files: charmsIndex.char, charmsTmpl.html, and charmsApi.char, various modes supported by the application server established by Charlang can be displayed.
+
+First, access it with a browser http://127.0.0.1/charmsTmpl.html This will be accessing general web services, as the web directory defaults to the same as the server root directory. Therefore, the static file xmsTmpl.html under the root directory will be displayed, which is an example web page.
+
+![Screenshot](//topget.org/dc/s/images/pic2719068761.png)
+
+You can see that the "{{text1}}" tag after the text 'Please click the button ' in the webpage. This is the tag that we need to replace when displaying the dynamic webpage later. The content of the charmsTmpl.html file is as follows:
+
+```html
+<html>
+<body>
+    <script>
+        function test() {
+            let xhr = new XMLHttpRequest();
+
+            xhr.open('POST', 'http://127.0.0.1:80/charms/charmsApi', true);
+
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+
+            xhr.onload = function(){
+                alert(xhr.responseText);
+            }
+
+            xhr.send("param1=abc&param2=123");
+        }
+    </script>
+
+    <div>
+        <span>Please click the button {{text1}}：</span><button onclick="javascript:test();">Button1</button>
+    </div>
+
+</body>
+</html>
+```
+
+Then we try to perform dynamic web page output, which is similar to dynamically rendering of webpages in the background supported by PHP, ASP, JSP, or other similar frameworks. Then browse to 'http://127.0.0.1/charms/charmsIndex' . Add the charms path to the URL, which is a virtual path indicating that the server will search for the charmsIndex.char file in the root directory while starting the server. This code will output the webpage content. Let's take a look inside the charmsIndex.char file.
+
+```go
+// responseG is the predefined global variable which holds the HTTP response object to write to
+global responseG
+
+// basePathG is the predefined global variable which holds the specified base path while starting the server
+global basePathG
+
+// Set the default global return value variable outG to the string TX_END_RESPONSE_XT
+// If the default Charlang server receives a function to process a request, the return result is TX_END_RESPONSE_XT
+// The server processing(output of the HTTP response) of the page will be terminated, otherwise the return value will be output as a string to the webpage
+outG := "TX_END_RESPONSE_XT"
+
+// Obtain the corresponding web page template(HTML)
+// The joinPath function will merge multiple file paths into one complete file path
+// The first parameter represents the variable to be placed in the result, where $push represents stack pushing
+// basePathG is a built-in global variable that represents the root directory of the service
+templatePathT := joinPath(basePathG, `charmsTmpl.html`)
+
+// Load the file as a text string(HTML)
+templateTextT := loadText(templatePathT)
+
+// Replace the {{text1}} tag to letter A
+templateTextT = strReplace(templateTextT, "{{text1}}", "A")
+
+// Set the corresponding response header
+setRespHeader(responseG, "Content-Type", "text/html; charset=utf-8")
+
+// Write the HTML to the web page output
+// responseG is also a predefined global variable that represents the HTTP/webpage output object to be written to
+writeResp(responseG, templateTextT)
+
+// Return 'TX_END_RESPONSE_XT' to end the output
+return outG
+
+```
+
+In Charlang server model, each HTTP request will be processed by a separate virtual machine, which can be seen as a microservice concept. The microservice in this example only replaces the specified tags in the loaded webpage template and outputs them to the webpage. Although it is simple, it has already demonstrated the basic principle of dynamic webpage, that is, it can perform necessary and controllable rendering before outputting the webpage.
+
+Let's browse to 'http://127.0.0.1/charms/charmsIndex'. It will result in the following results:
+
+![Screenshot](//topget.org/dc/s/images/pic362253946.png)
+
+We can found that the original tag has indeed been replaced with the uppercase letter A, verifying the effect of dynamic web pages.
+
+Looking at the webpage template file charmsTmpl.html above, once the button is clicked, the JavaScript function `test` will be executed, where an AJAX request is made and the result of the request will be output using the `alert` function. This is a typical example of a client accessing a backend API service. Let's take a look at how to implement this backend API service. The following is the content of the charmsApi.char file also located in the server root directory:
+
+```go
+// declare the global variables to use in the context
+global requestG
+global reqNameG
+global reqUriG
+global responseG
+global paraMapG
+
+// Get the current time and put it into variable t
+t := getNowStr()
+
+// Output reference information(to server's local console, not the HTTP response)
+// Where reqNameG is a predefined global variable that represents the service name, which is the last part of the access URL
+// reqUriG is a predefined global variable that represents the service route/path
+// paraMapG is also a global variable that represents the query string or form parameters contained in HTTP requests (which can be in GET or POST requests)
+pl(`[%v] reqNameG: %v, reqUriG: %v, paraMapG: %v`, t, reqNameG, reqUriG, paraMapG)
+
+// Set output response header information (to JSON format)
+setRespHeader(responseG, "Content-Type", "text/json; charset=utf-8")
+
+// Set the response status to 200 (HTTP_oK), indicating a successful request response
+writeRespHeader(responseG, 200)
+
+// Assembling response strings using spr instructions
+str1 := spr("The request is: %v, uri: %v, parameters: %v", reqNameG, reqUriG, paraMapG)
+
+// Generate encapsulated JSON responses using genJsonResp, or output strings in other formats on your own
+respStr := genJsonResp(requestG, "success", str1)
+
+// Write and output the response string (to a webpage)
+writeResp(responseG, respStr)
+
+// End processing and return 'TX_END_RESPONSE_XT' to terminate the continued output of the response stream
+return "TX_END_RESPONSE_XT"
+
+```
+
+Then, if we click button `button1` on the webpage, we will get the following alert pop-up:
+
+![Screenshot](//topget.org/dc/s/images/pic1052413353.png)
+
+This is because the webpage charmsTmpl.html called AJAX request to the service located at `http://127.0.0.1:80/charms/charmsApi`. And our Charlang server will find charmsApi.char (automatically added with the `.char` file name suffix) and execute it, so it will output the content we want.
+
+Now, an example of a small but fully functional WEB/application/API all-in-one server has been fully demonstrated. It is already sufficient for a general and small application service, and has almost no external dependencies. Deployment is also very convenient, only requiring the main program of Charlang and corresponding HTML and script files in the specified directory.
+
+&nbsp;
 
 #### Charlang as System Service
 

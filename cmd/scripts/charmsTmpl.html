@@ -1,0 +1,24 @@
+<html>
+<body>
+    <script>
+        function test() {
+            let xhr = new XMLHttpRequest();
+
+            xhr.open('POST', 'http://127.0.0.1:80/charms/charmsApi', true);
+
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+
+            xhr.onload = function(){
+                alert(xhr.responseText);
+            }
+
+            xhr.send("param1=abc&param2=123");
+        }
+    </script>
+
+    <div>
+        <span>Please click the button {{text1}}：</span><button onclick="javascript:test();">Button1</button>
+    </div>
+
+</body>
+</html>
