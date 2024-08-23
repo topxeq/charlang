@@ -104,7 +104,7 @@
 
 # The Char Language (Charlang)
 
-[Charlang](http://topget.org/charlang) is a fast, dynamic scripting language to embed in Go applications.
+[Charlang](https://topget.org/charlang) is a fast, dynamic scripting language to embed in Go applications.
 Charlang is compiled and executed as bytecode on stack-based VM that's written
 in native Go. Charlang has a more-common runtime error handling(try-catch-finally) than Golang.
 
@@ -152,24 +152,24 @@ return fib(35)
 
 ## 3. Quick Links
 
-[Charlang Home](http://topget.org/charlang)
+[Charlang Home](https://topget.org/charlang)
 
 [Go Reference](https://pkg.go.dev/github.com/topxeq/charlang)
 
-[Builtin Functions](http://topget.org/dc/charlang/funcs)
+[Builtin Functions](https://topget.org/dc/charlang/funcs)
 
 ## 4. Download
 
-- [Windows x64](http://topget.org/pub/char.zip)
-- [Windows x64(No Console Version - for GUI Applications)](http://topget.org/pub/charw.zip)
-- [Linux Amd64](http://topget.org/pub/char.tar.gz)
-- [Linux Arm8(Termux)](http://topget.org/pub/charArm8.tar.gz)
+- [Windows x64](https://topget.org/pub/char.zip)
+- [Windows x64(No Console Version - for GUI Applications)](https://topget.org/pub/charw.zip)
+- [Linux Amd64](https://topget.org/pub/char.tar.gz)
+- [Linux Arm8(Termux)](https://topget.org/pub/charArm8.tar.gz)
 
-Or download the package from [Charlang Official Site](http://topget.org/charlang)
+Or download the package from [Charlang Official Site](https://topget.org/charlang)
 
 ## 5. Installation
 
-Download the latest Charlang executable file or compressed package above or from the [official website](http://topget.org/charlang), and then put it in a directory, preferably within the system path(such as C:\Windows in Windows or /usr/bin). If you download a compressed package, decompress it first. Then it is ready to use, run it in any terminal or console application(Window CMD, PowerShell, Terminal or bash);
+Download the latest Charlang executable file or compressed package above or from the [official website](https://topget.org/charlang), and then put it in a directory, preferably within the system path(such as C:\Windows in Windows or /usr/bin). If you download a compressed package, decompress it first. Then it is ready to use, run it in any terminal or console application(Window CMD, PowerShell, Terminal or bash);
 
 ## 6. Quick Start
 
@@ -250,7 +250,7 @@ return v
 
 ### 7.1 Get the Binary
 
-Download the binary release files according to your OS from the website: [Charlang Homepage](http://topget.org/charlang).
+Download the binary release files according to your OS from the website: [Charlang Homepage](https://topget.org/charlang).
 
 ### 7.2 Compile from Source Code
 
@@ -299,7 +299,7 @@ C:\Users\Administrator>char -example basic.char
 C:\Users\Administrator>
 ```
 
-You can browse to `http://topget.org/dc/c/charlang/example/basic.char` to view the source code in an online text editor.
+You can browse to `https://topget.org/dc/c/charlang/example/basic.char` to view the source code in an online text editor.
 
 Using command-line switch '-viewPage' with '-example' will show the online code page in system-default browser as well.
 
@@ -307,7 +307,7 @@ Using command-line switch '-viewPage' with '-example' will show the online code 
 
 #### Hello World!
 
-file: [example001.char](http://topget.org/dc/c/charlang/example/example001.char)
+file: [example001.char](https://topget.org/dc/c/charlang/example/example001.char)
 
 ```go
 // function 'pln' is the same as 'println' in other languages
@@ -331,7 +331,7 @@ C:\Users\Administrator>
 
 #### Comments
 
-file: [example002.char](http://topget.org/dc/c/charlang/example/example002.char)
+file: [example002.char](https://topget.org/dc/c/charlang/example/example002.char)
 
 As mentioned above, like Golang, Charlang supports line comments (//...) and block comments (/* ... */). Comments in the code will be ignored by the compiler and virtual machine. You can use Ctrl+/key combination in many text or source code editors to switch whether the line is commented or not.
 
@@ -359,7 +359,7 @@ a: 8
 
 #### Define Variables
 
-file: [example003.char](http://topget.org/dc/c/charlang/example/example003.char)
+file: [example003.char](https://topget.org/dc/c/charlang/example/example003.char)
 
 ```go
 // define a variable before using it
@@ -407,7 +407,7 @@ var (a, b, c)
 
 #### Data Type Name
 
-file: [example004.char](http://topget.org/dc/c/charlang/example/example004.char)
+file: [example004.char](https://topget.org/dc/c/charlang/example/example004.char)
 
 ```go
 
@@ -436,7 +436,7 @@ C:\Users\Administrator>char -example example004.char
 
 #### Boolean Data Type
 
-file: [example005.char](http://topget.org/dc/c/charlang/example/example005.char)
+file: [example005.char](https://topget.org/dc/c/charlang/example/example005.char)
 
 ```go
 
@@ -482,7 +482,7 @@ b || c: true
 
 #### Integer Data Type
 
-file: [example006.char](http://topget.org/dc/c/charlang/example/example006.char)
+file: [example006.char](https://topget.org/dc/c/charlang/example/example006.char)
 
 ```go
 
@@ -518,7 +518,7 @@ charlang.Int, 150
 
 #### Float Data Type
 
-file: [example007.char](http://topget.org/dc/c/charlang/example/example007.char)
+file: [example007.char](https://topget.org/dc/c/charlang/example/example007.char)
 
 ```go
 
@@ -556,7 +556,7 @@ float, 1.32
 
 #### String/Bytes/Chars Data Type
 
-file: [example008.char](http://topget.org/dc/c/charlang/example/example008.char)
+file: [example008.char](https://topget.org/dc/c/charlang/example/example008.char)
 
 ```go
 
@@ -1634,7 +1634,7 @@ Assuming that the specified directory contains three files: charmsIndex.char, ch
 
 First, access it with a browser http://127.0.0.1/charmsTmpl.html This will be accessing general web services, as the web directory defaults to the same as the server root directory. Therefore, the static file xmsTmpl.html under the root directory will be displayed, which is an example web page.
 
-![Screenshot](//topget.org/dc/s/images/pic2719068761.png)
+![Screenshot](https://topget.org/dc/s/images/pic2719068761.png)
 
 You can see that the "{{text1}}" tag after the text 'Please click the button ' in the webpage. This is the tag that we need to replace when displaying the dynamic webpage later. The content of the charmsTmpl.html file is as follows:
 
@@ -1707,7 +1707,7 @@ In Charlang server model, each HTTP request will be processed by a separate virt
 
 Let's browse to 'http://127.0.0.1/charms/charmsIndex'. It will result in the following results:
 
-![Screenshot](//topget.org/dc/s/images/pic362253946.png)
+![Screenshot](https://topget.org/dc/s/images/pic362253946.png)
 
 We can found that the original tag has indeed been replaced with the uppercase letter A, verifying the effect of dynamic web pages.
 
@@ -1752,7 +1752,7 @@ return "TX_END_RESPONSE_XT"
 
 Then, if we click button `button1` on the webpage, we will get the following alert pop-up:
 
-![Screenshot](//topget.org/dc/s/images/pic1052413353.png)
+![Screenshot](https://topget.org/dc/s/images/pic1052413353.png)
 
 This is because the webpage charmsTmpl.html called AJAX request to the service located at `http://127.0.0.1:80/charms/charmsApi`. And our Charlang server will find charmsApi.char (automatically added with the `.char` file name suffix) and execute it, so it will output the content we want.
 
@@ -1776,7 +1776,7 @@ The task code can refer to examples such as task001.char, threadTask001.char, au
 
 - One-time-task Example
 
-file: [task001.char](http://topget.org/dc/c/charlang/example/task001.char)
+file: [task001.char](https://topget.org/dc/c/charlang/example/task001.char)
 
 ```go
 global basePathG
@@ -1791,7 +1791,7 @@ return "task001 returns some result 000"
 
 - Thread-task Example
 
-file: [threadTask001.char](http://topget.org/dc/c/charlang/example/threadTask001.char)
+file: [threadTask001.char](https://topget.org/dc/c/charlang/example/threadTask001.char)
 
 ```go
 for {
@@ -1805,7 +1805,7 @@ It will be a continous loop which will write the current time string in the file
 
 The following is the thread-task to run Frpc client when system started,
 
-file: [threadTaskFrpc.char](http://topget.org/dc/c/charlang/example/threadTaskFrpc.char)
+file: [threadTaskFrpc.char](https://topget.org/dc/c/charlang/example/threadTaskFrpc.char)
 
 ```go
 appendText(spr("\n[%v] %v %v\n", getNowStr(), "threadTaskFrpc", "starting..."), `c:\logs\frpcTask.log`)
@@ -1819,7 +1819,7 @@ appendText(spr("\n[%v] %v %v\n", getNowStr(), "threadTaskFrpc", rs), `c:\logs\fr
 
 - Auto-remove-task Example
 
-file: [autoRemoveTask001.char](http://topget.org/dc/c/charlang/example/autoRemoveTask001.char)
+file: [autoRemoveTask001.char](https://topget.org/dc/c/charlang/example/autoRemoveTask001.char)
 
 ```go
 global basePathG
@@ -1835,55 +1835,55 @@ rs := appendText("\nautoRemoveTask001.char\n", logPathT)
 
 #### Anonymous Function
 
-file: [anonymousFunc.char](http://topget.org/dc/c/charlang/example/anonymousFunc.char)
+file: [anonymousFunc.char](https://topget.org/dc/c/charlang/example/anonymousFunc.char)
 
 #### More About Array
 
-file: [array.char](http://topget.org/dc/c/charlang/example/array.char)
+file: [array.char](https://topget.org/dc/c/charlang/example/array.char)
 
 #### More About Map
 
-file: [map.char](http://topget.org/dc/c/charlang/example/map.char)
+file: [map.char](https://topget.org/dc/c/charlang/example/map.char)
 
 #### Big Int
 
-file: [bigInt.char](http://topget.org/dc/c/charlang/example/bigInt.char)
+file: [bigInt.char](https://topget.org/dc/c/charlang/example/bigInt.char)
 
 #### Big Float
 
-file: [bigFloat.char](http://topget.org/dc/c/charlang/example/bigFloat.char)
+file: [bigFloat.char](https://topget.org/dc/c/charlang/example/bigFloat.char)
 
 #### Bitwise Processing
 
-file: [bitwise.char](http://topget.org/dc/c/charlang/example/bitwise.char)
+file: [bitwise.char](https://topget.org/dc/c/charlang/example/bitwise.char)
 
 #### Calculate BMI
 
-file: [bmi.char](http://topget.org/dc/c/charlang/example/bmi.char)
+file: [bmi.char](https://topget.org/dc/c/charlang/example/bmi.char)
 
 #### One More Example for Gels
 
-file: [gel3.char](http://topget.org/dc/c/charlang/example/gel3.char)
+file: [gel3.char](https://topget.org/dc/c/charlang/example/gel3.char)
 
 #### Redirect Stdout to a File
 
 Note: Better run the example code with charw.exe(i.e. the GUI version of Charlang in Windows).
 
-file: [guiRedirectStdout.char](http://topget.org/dc/c/charlang/example/guiRedirectStdout.char)
+file: [guiRedirectStdout.char](https://topget.org/dc/c/charlang/example/guiRedirectStdout.char)
 
 #### Compare Binary Files
 
-file: [binCompare.char](http://topget.org/dc/c/charlang/example/binCompare.char)
+file: [binCompare.char](https://topget.org/dc/c/charlang/example/binCompare.char)
 
 #### A Simple Text Editor
 
-file: [editFile.char](http://topget.org/dc/c/charlang/example/editFile.char)
+file: [editFile.char](https://topget.org/dc/c/charlang/example/editFile.char)
 
 A simple text editor with file load/save, JSON validate, code running features, in GUI.
 
 #### Base64 Encoding of Images
 
-file: [base64EncodeImage.char](http://topget.org/dc/c/charlang/example/base64EncodeImage.char)
+file: [base64EncodeImage.char](https://topget.org/dc/c/charlang/example/base64EncodeImage.char)
 
 Encode an image file to Base64 code to use in img tag in HTML, for example,
 
@@ -1894,13 +1894,13 @@ data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA8AAAAHECAYAAAD22EOkAAABeGlDQ1BJQ0
 
 #### Plot Data Graph in Console
 
-file: [asciiPlot.char](http://topget.org/dc/c/charlang/example/asciiPlot.char)
+file: [asciiPlot.char](https://topget.org/dc/c/charlang/example/asciiPlot.char)
 
-![Snapshot](http://topget.org/dc/s/images/pic3873474424.png)
+![Snapshot](https://topget.org/dc/s/images/pic3873474424.png)
 
 #### Plot Data Graph in Console with Realtime Data Update
 
-file: [asciiPlotRealTime.char](http://topget.org/dc/c/charlang/example/asciiPlotRealTime.char)
+file: [asciiPlotRealTime.char](https://topget.org/dc/c/charlang/example/asciiPlotRealTime.char)
 
 Demonstrate multi-thread, update one area of console...
 
