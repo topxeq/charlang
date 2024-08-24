@@ -590,7 +590,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	// string related
 	"trim":          BuiltinTrim,
 	"nilToEmpty":    BuiltinTrim,
-	"strTrim":       BuiltinStrTrim,
+	"strTrim":       BuiltinTrim,
 	"strTrimStart":  BuiltinStrTrimStart,
 	"strTrimEnd":    BuiltinStrTrimEnd,
 	"strTrimLeft":   BuiltinStrTrimLeft,
