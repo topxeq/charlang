@@ -860,6 +860,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"extractFileDir":  BuiltinExtractFileDir,
 	"extractFileName": BuiltinExtractFileName,
+	"getBaseFileName": BuiltinExtractFileName,
+	"getFileBase":     BuiltinExtractFileName,
 
 	"copyFile":   BuiltinCopyFile,
 	"renameFile": BuiltinRenameFile,
