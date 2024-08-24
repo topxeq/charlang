@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "1.3.5"
+var VersionG = "1.3.6"
 
 var CodeTextG = ""
 
@@ -2159,6 +2159,36 @@ func QuickRun(codeA interface{}, globalsA map[string]interface{}, additionsA ...
 	}
 
 	return ConvertFromObject(retT)
+}
+
+func RunCharCode(codeA string, envA map[string]interface{}, paraMapA map[string]string, argsA ...Object) (interface{}, error) {
+	bytecodeT, errT := Compile([]byte(codeA), &DefaultCompilerOptions)
+	if errT != nil {
+		return nil, errT
+	}
+
+	envT := Map{}
+
+	// envT["argsG"] = ConvertToObject(os.Args)
+	envT["versionG"] = ToStringObject(VersionG)
+
+	for k, v := range envA {
+		envT[k] = ConvertToObject(v)
+	}
+
+	inParasT := make(Map, len(paraMapA))
+	for k, v := range paraMapA {
+		inParasT[k] = ToStringObject(v)
+	}
+
+	paramsT := make([]Object, 0, 2+len(argsA))
+
+	paramsT = append(paramsT, inParasT)
+	paramsT = append(paramsT, argsA...)
+
+	retT, errT := NewVM(bytecodeT).Run(envT, paramsT...)
+
+	return ConvertFromObject(retT), errT
 }
 
 func RunAsFunc(codeA interface{}, argsA ...interface{}) interface{} {
