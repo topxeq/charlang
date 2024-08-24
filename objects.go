@@ -2938,8 +2938,6 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 
 	fNameT := o.Name + "." + nv.Value
 
-	fmt.Println("fNameT:", fNameT)
-
 	if o.Methods == nil {
 		o.Methods = map[string]*Function{}
 	}
@@ -3161,7 +3159,13 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 		return rs, nil
 	}
 
-	return GetObjectMethodFunc(o, strT)
+	r, e := GetObjectMethodFunc(o, strT)
+
+	if e != nil {
+		fmt.Println("fNameT:", fNameT)
+	}
+
+	return r, e
 
 	// return nil, ErrNotIndexable
 
@@ -4652,8 +4656,6 @@ func (o *Time) IndexSet(index, value Object) error {
 
 // IndexGet implements Object interface.
 func (o *Time) IndexGet(index Object) (Object, error) {
-	// tk.Pl("Time IndexGet: %v", index)
-
 	v, ok := index.(String)
 	if !ok {
 		return Undefined, NewIndexTypeError("string", index.TypeName())
@@ -4748,7 +4750,10 @@ var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
 		if !ok {
 			return newArgTypeErr("1st", "int", c.Get(0).TypeName())
 		}
-		return timeAdd(o, d), nil
+
+		return &Time{Value: o.Value.Add(time.Second * time.Duration(d))}, nil
+
+		// return timeAdd(o, d), nil
 	},
 	"sub": func(o *Time, c *Call) (Object, error) {
 		if err := c.CheckLen(1); err != nil {
@@ -4803,18 +4808,18 @@ var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
 		// 	return Undefined, err
 		// }
 
-		var format string = ""
-		var ok bool
-		if c.Len() < 1 {
-			format = tk.TimeFormat
-		} else {
-			format, ok = ToGoString(c.Get(0))
-			if !ok {
-				return newArgTypeErr("1st", "string", c.Get(0).TypeName())
-			}
-		}
-
-		return timeFormat(o, format), nil
+		// var format string = ""
+		// var ok bool
+		// if c.Len() < 1 {
+		// 	format = tk.TimeFormat
+		// } else {
+		// 	format, ok = ToGoString(c.Get(0))
+		// 	if !ok {
+		// 		return newArgTypeErr("1st", "string", c.Get(0).TypeName())
+		// 	}
+		// }
+		return &String{Value: tk.FormatTime(o.Value, ObjectsToS(c.GetArgs())...)}, nil
+		// return timeFormat(o, format), nil
 	},
 	"appendFormat": func(o *Time, c *Call) (Object, error) {
 		if err := c.CheckLen(2); err != nil {
