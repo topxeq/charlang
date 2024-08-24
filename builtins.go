@@ -311,6 +311,7 @@ const (
 	BuiltinSetValueByRef
 	BuiltinGetWeb
 	BuiltinGetWebBytes
+	BuiltinGetWebBytesWithHeaders
 	BuiltinRegFindFirstGroups
 	BuiltinReadAllStr
 	BuiltinReadAllBytes
@@ -886,8 +887,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"archiveFilesToZip": BuiltinArchiveFilesToZip, // Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
 
 	// network/web related
-	"getWeb":      BuiltinGetWeb,
-	"getWebBytes": BuiltinGetWebBytes,
+	"getWeb":                 BuiltinGetWeb,
+	"getWebBytes":            BuiltinGetWebBytes,
+	"getWebBytesWithHeaders": BuiltinGetWebBytesWithHeaders,
 
 	"postRequest": BuiltinPostRequest,
 
@@ -2480,6 +2482,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getWebBytes",
 		Value:   CallExAdapter(builtinGetWebBytesFunc),
 		ValueEx: builtinGetWebBytesFunc,
+	},
+	BuiltinGetWebBytesWithHeaders: &BuiltinFunction{
+		Name:    "getWebBytesWithHeaders",
+		Value:   CallExAdapter(builtinGetWebBytesWithHeadersFunc),
+		ValueEx: builtinGetWebBytesWithHeadersFunc,
 	},
 	BuiltinPostRequest: &BuiltinFunction{
 		Name:    "postRequest",
@@ -8194,6 +8201,65 @@ func builtinGetWebBytesFunc(c Call) (Object, error) {
 	}
 
 	return Bytes(nv), nil
+}
+
+func builtinGetWebBytesWithHeadersFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return ToStringObject(tk.ErrStrf("not enough parameters")), nil
+	}
+
+	v0, ok := args[0].(String)
+
+	if !ok {
+		return ToStringObject(tk.ErrStrf("type error for arg 0")), nil
+	}
+
+	var v1 Map
+
+	if len(args) < 2 {
+		v1 = Map{}
+	} else {
+		v1, ok = args[1].(Map)
+
+		if !ok {
+			return ToStringObject(tk.ErrStrf("type error for arg 1")), nil
+		}
+	}
+
+	var v2 Map
+
+	if len(args) < 3 {
+		v2 = Map{}
+	} else {
+		v2, ok = args[2].(Map)
+
+		if !ok {
+			return ToStringObject(tk.ErrStrf("type error for arg 2")), nil
+		}
+	}
+
+	var optsT []Object
+
+	if len(args) < 4 {
+		optsT = []Object{}
+	} else {
+		optsT = args[3:]
+	}
+
+	b, m, e := tk.DownloadWebBytes(v0.String(), tk.MSI2MSS(ConvertFromObject(v1).(map[string]interface{})), tk.MSI2MSS(ConvertFromObject(v2).(map[string]interface{})), ObjectsToS(optsT)...)
+	// b, m, e := tk.DownloadWebBytes(v0.String(), nil, nil)
+
+	if e != nil {
+		return ToStringObject(tk.ErrStrf(e.Error())), nil
+	}
+
+	rsT := Array{}
+	rsT = append(rsT, Bytes(b))
+	rsT = append(rsT, ConvertToObject(m))
+
+	return rsT, nil
 }
 
 func builtinOpenFileFunc(c Call) (Object, error) {
