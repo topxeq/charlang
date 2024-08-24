@@ -1214,6 +1214,20 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
+	311: map[string]*Function{ // *Time
+		"toStr": &Function{
+			Name: "toStr",
+			Value: func(args ...Object) (Object, error) {
+				return ToStringObject(((time.Time)(args[0].(*Time).Value)).String()), nil
+			},
+		},
+		"now": &Function{
+			Name: "now",
+			Value: func(args ...Object) (Object, error) {
+				return &Time{Value: time.Now()}, nil
+			},
+		},
+	},
 	315: map[string]*Function{ // *Seq
 		"toStr": &Function{
 			Name: "toStr",
