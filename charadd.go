@@ -126,6 +126,7 @@ var namedValueMapG = map[string]interface{}{
 	"tk.TimeFormatDateCompact": tk.TimeFormatDateCompact, // "20060102"
 
 	"time.Layout":   time.Layout,
+	"time.RFC1123":  time.RFC1123,
 	"time.RFC3339":  time.RFC3339,
 	"time.DateTime": time.DateTime,
 	"time.DateOnly": time.DateOnly,

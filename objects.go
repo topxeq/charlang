@@ -2936,7 +2936,7 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 		return Undefined, NewIndexTypeError("string", index.TypeName())
 	}
 
-	// fNameT := o.Name + "." + nv.Value
+	fNameT := o.Name + "." + nv.Value
 
 	// if o.Methods == nil {
 	// 	o.Methods = map[string]*Function{}
@@ -2946,7 +2946,7 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 		o.Members = map[string]Object{}
 	}
 
-	// switch fNameT {
+	switch fNameT {
 	// case "any.new":
 	// 	fT, ok := o.Methods["any.new"]
 	// 	if !ok {
@@ -3097,55 +3097,55 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 	// 	}
 
 	// 	return fT, nil
-	// case "time.timeFormatRFC1123":
-	// 	mT, ok := o.Members["time.timeFormatRFC1123"]
-	// 	if !ok {
-	// 		o.Members["time.timeFormatRFC1123"] = ToStringObject(time.RFC1123)
-	// 		mT = o.Members["time.timeFormatRFC1123"]
-	// 	}
+	case "time.timeFormatRFC1123":
+		mT, ok := o.Members["time.timeFormatRFC1123"]
+		if !ok {
+			o.Members["time.timeFormatRFC1123"] = ToStringObject(time.RFC1123)
+			mT = o.Members["time.timeFormatRFC1123"]
+		}
 
-	// 	return mT, nil
-	// case "time.second":
-	// 	mT, ok := o.Members["time.second"]
-	// 	if !ok {
-	// 		o.Members["time.second"] = Int(time.Second)
-	// 		mT = o.Members["time.second"]
-	// 	}
+		return mT, nil
+		// case "time.second":
+		// 	mT, ok := o.Members["time.second"]
+		// 	if !ok {
+		// 		o.Members["time.second"] = Int(time.Second)
+		// 		mT = o.Members["time.second"]
+		// 	}
 
-	// 	return mT, nil
-	// case "time.timeFormatCompact":
-	// 	mT, ok := o.Members["time.timeFormatCompact"]
-	// 	if !ok {
-	// 		o.Members["time.timeFormatCompact"] = ToStringObject(tk.TimeFormatCompact)
-	// 		mT = o.Members["time.timeFormatCompact"]
-	// 	}
+		// 	return mT, nil
+		// case "time.timeFormatCompact":
+		// 	mT, ok := o.Members["time.timeFormatCompact"]
+		// 	if !ok {
+		// 		o.Members["time.timeFormatCompact"] = ToStringObject(tk.TimeFormatCompact)
+		// 		mT = o.Members["time.timeFormatCompact"]
+		// 	}
 
-	// 	return mT, nil
-	// case "time.timeFormat":
-	// 	mT, ok := o.Members["time.timeFormat"]
-	// 	if !ok {
-	// 		o.Members["time.timeFormat"] = ToStringObject(tk.TimeFormat)
-	// 		mT = o.Members["time.timeFormat"]
-	// 	}
+		// 	return mT, nil
+		// case "time.timeFormat":
+		// 	mT, ok := o.Members["time.timeFormat"]
+		// 	if !ok {
+		// 		o.Members["time.timeFormat"] = ToStringObject(tk.TimeFormat)
+		// 		mT = o.Members["time.timeFormat"]
+		// 	}
 
-	// 	return mT, nil
-	// case "time.timeFormatMS":
-	// 	mT, ok := o.Members["time.timeFormatMS"]
-	// 	if !ok {
-	// 		o.Members["time.timeFormatMS"] = ToStringObject(tk.TimeFormatMS)
-	// 		mT = o.Members["time.timeFormatMS"]
-	// 	}
+		// 	return mT, nil
+		// case "time.timeFormatMS":
+		// 	mT, ok := o.Members["time.timeFormatMS"]
+		// 	if !ok {
+		// 		o.Members["time.timeFormatMS"] = ToStringObject(tk.TimeFormatMS)
+		// 		mT = o.Members["time.timeFormatMS"]
+		// 	}
 
-	// 	return mT, nil
-	// case "time.timeFormatMSCompact":
-	// 	mT, ok := o.Members["time.timeFormatMSCompact"]
-	// 	if !ok {
-	// 		o.Members["time.timeFormatMSCompact"] = ToStringObject(tk.TimeFormatMSCompact)
-	// 		mT = o.Members["time.timeFormatMSCompact"]
-	// 	}
+		// 	return mT, nil
+		// case "time.timeFormatMSCompact":
+		// 	mT, ok := o.Members["time.timeFormatMSCompact"]
+		// 	if !ok {
+		// 		o.Members["time.timeFormatMSCompact"] = ToStringObject(tk.TimeFormatMSCompact)
+		// 		mT = o.Members["time.timeFormatMSCompact"]
+		// 	}
 
-	// 	return mT, nil
-	// }
+		// 	return mT, nil
+	}
 
 	strT := nv.Value
 

@@ -513,6 +513,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"error": BuiltinError,
 
 	"time":          BuiltinTime,
+	"dateTime":      BuiltinTime,
 	"stringBuilder": BuiltinStringBuilder,
 	"stringBuffer":  BuiltinStringBuilder,
 	"orderedMap":    BuiltinOrderedMap,
