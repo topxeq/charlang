@@ -210,6 +210,7 @@ const (
 	BuiltinStrSplit
 	BuiltinGenToken
 	BuiltinStrContains
+	BuiltinStrContainsIn
 	BuiltinStrIndex
 	BuiltinGetNowStr
 	BuiltinGetNowStrCompact
@@ -599,6 +600,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"toLower":       BuiltinToLower,
 	"strToLower":    BuiltinToLower,
 	"strContains":   BuiltinStrContains,
+	"strContainsIn": BuiltinStrContainsIn,
 	"strIndex":      BuiltinStrIndex,
 	"strStartsWith": BuiltinStrStartsWith,
 	"strEndsWith":   BuiltinStrEndsWith,
@@ -1538,6 +1540,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASSRB(strings.Contains),
 		ValueEx: FnASSRBex(strings.Contains),
 		Remark:  `usage: if strContains("abD", "bD") {...}`,
+	},
+	BuiltinStrContainsIn: &BuiltinFunction{
+		Name:    "strContainsIn",
+		Value:   FnASVsRB(tk.ContainsIn),
+		ValueEx: FnASVsRBex(tk.ContainsIn),
 	},
 	BuiltinStrIndex: &BuiltinFunction{
 		Name:    "strIndex",
