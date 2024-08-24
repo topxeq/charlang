@@ -2959,54 +2959,54 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 	// 	}
 
 	// 	return fT, nil
-	// case "database.connect":
-	// 	fT, ok := o.Methods["database.connect"]
-	// 	if !ok {
-	// 		o.Methods["database.connect"] = &Function{
-	// 			Name: "database.connect",
-	// 			Value: func(args ...Object) (Object, error) {
+	case "database.connect":
+		fT, ok := o.Methods["database.connect"]
+		if !ok {
+			o.Methods["database.connect"] = &Function{
+				Name: "database.connect",
+				Value: func(args ...Object) (Object, error) {
 
-	// 				nv0, ok := args[0].(String)
+					nv0, ok := args[0].(String)
 
-	// 				if !ok {
-	// 					return NewCommonError("invalid paramter 1"), nil
-	// 				}
+					if !ok {
+						return NewCommonError("invalid paramter 1"), nil
+					}
 
-	// 				nv1, ok := args[1].(String)
+					nv1, ok := args[1].(String)
 
-	// 				if !ok {
-	// 					return NewCommonError("invalid paramter 2"), nil
-	// 				}
+					if !ok {
+						return NewCommonError("invalid paramter 2"), nil
+					}
 
-	// 				rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
-	// 				if tk.IsError(rsT) {
-	// 					return NewFromError(rsT.(error)), nil
-	// 				}
+					rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
+					if tk.IsError(rsT) {
+						return NewFromError(rsT.(error)), nil
+					}
 
-	// 				return &Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
-	// 			}}
-	// 		fT = o.Methods["database.connect"]
-	// 	}
+					return &Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
+				}}
+			fT = o.Methods["database.connect"]
+		}
 
-	// 	return fT, nil
-	// case "database.formatSQLValue", "database.format":
-	// 	fT, ok := o.Methods["database.formatSQLValue"]
-	// 	if !ok {
-	// 		o.Methods["database.formatSQLValue"] = &Function{
-	// 			Name: "database.formatSQLValue",
-	// 			Value: func(args ...Object) (Object, error) {
-	// 				if len(args) < 1 {
-	// 					return NewCommonError("not enough paramters"), nil
-	// 				}
+		return fT, nil
+	case "database.formatSQLValue", "database.format":
+		fT, ok := o.Methods["database.formatSQLValue"]
+		if !ok {
+			o.Methods["database.formatSQLValue"] = &Function{
+				Name: "database.formatSQLValue",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough paramters"), nil
+					}
 
-	// 				nv0 := args[0].String()
+					nv0 := args[0].String()
 
-	// 				return ToStringObject(sqltk.FormatSQLValue(nv0)), nil
-	// 			}}
-	// 		fT = o.Methods["database.formatSQLValue"]
-	// 	}
+					return ToStringObject(tk.FormatSQLValue(nv0)), nil
+				}}
+			fT = o.Methods["database.formatSQLValue"]
+		}
 
-	// 	return fT, nil
+		return fT, nil
 	case "database.oneColumnToArray", "database.oneColToAry":
 		fT, ok := o.Methods["database.oneColumnToArray"]
 		if !ok {
@@ -3069,22 +3069,22 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 	// 	}
 
 	// 	return fT, nil
-	// case "time.format":
-	// 	fT, ok := o.Methods["time.format"]
-	// 	if !ok {
-	// 		o.Methods["time.format"] = &Function{
-	// 			Name: "time.format",
-	// 			Value: func(args ...Object) (Object, error) {
-	// 				if len(args) < 1 {
-	// 					return ToStringObject(tk.FormatTime(time.Now(), ObjectsToS(args)...)), nil
-	// 				}
+	case "time.format":
+		fT, ok := o.Methods["time.format"]
+		if !ok {
+			o.Methods["time.format"] = &Function{
+				Name: "time.format",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return ToStringObject(tk.FormatTime(time.Now(), ObjectsToS(args)...)), nil
+					}
 
-	// 				return ToStringObject(tk.FormatTime(args[0].(*Time).Value, ObjectsToS(args[1:])...)), nil
-	// 			}}
-	// 		fT = o.Methods["time.format"]
-	// 	}
+					return ToStringObject(tk.FormatTime(args[0].(*Time).Value, ObjectsToS(args[1:])...)), nil
+				}}
+			fT = o.Methods["time.format"]
+		}
 
-	// 	return fT, nil
+		return fT, nil
 	case "time.now":
 		fT, ok := o.Methods["time.now"]
 		if !ok {
@@ -3137,14 +3137,14 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 		}
 
 		return mT, nil
-		// case "time.timeFormatMSCompact":
-		// 	mT, ok := o.Members["time.timeFormatMSCompact"]
-		// 	if !ok {
-		// 		o.Members["time.timeFormatMSCompact"] = ToStringObject(tk.TimeFormatMSCompact)
-		// 		mT = o.Members["time.timeFormatMSCompact"]
-		// 	}
+	case "time.timeFormatMSCompact":
+		mT, ok := o.Members["time.timeFormatMSCompact"]
+		if !ok {
+			o.Members["time.timeFormatMSCompact"] = ToStringObject(tk.TimeFormatMSCompact)
+			mT = o.Members["time.timeFormatMSCompact"]
+		}
 
-		// 	return mT, nil
+		return mT, nil
 	}
 
 	strT := nv.Value
