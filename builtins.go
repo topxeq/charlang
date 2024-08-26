@@ -180,6 +180,7 @@ const (
 	BuiltinStrJoin
 	BuiltinStrCount
 	BuiltinStrPad
+	BuiltinStrRuneLen
 	BuiltinStrIn
 	BuiltinEnsureMakeDirs
 	BuiltinExtractFileDir
@@ -257,6 +258,7 @@ const (
 	// BuiltinSortByFunc
 	BuiltinLimitStr
 	BuiltinStrFindDiffPos
+	BuiltinStrFindAllSub
 	BuiltinRemoveItems
 	BuiltinAppendList
 	BuiltinGetRandomInt
@@ -349,6 +351,7 @@ const (
 	BuiltinStrTrimRight
 	BuiltinRegFindFirst
 	BuiltinRegFindAll
+	BuiltinRegFindAllIndex
 	BuiltinRegFindAllGroups
 	BuiltinCheckErrX
 	BuiltinLoadText
@@ -613,9 +616,13 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strCount":      BuiltinStrCount,
 	"strPad":        BuiltinStrPad,
 
+	"strRuneLen": BuiltinStrRuneLen,
+
 	"strIn": BuiltinStrIn,
 
 	"strFindDiffPos": BuiltinStrFindDiffPos, // return -1 if 2 strings are identical
+
+	"strFindAllSub": BuiltinStrFindAllSub,
 
 	"limitStr": BuiltinLimitStr,
 
@@ -633,6 +640,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"regFindFirst":       BuiltinRegFindFirst,
 	"regFindFirstGroups": BuiltinRegFindFirstGroups, // obtain the first match of a regular expression and return a list of all matching groups, where the first item is the complete matching result and the second item is the first matching group..., usage example: result := regFindFirstGroups(str1, regex1)
 	"regFindAll":         BuiltinRegFindAll,
+	"regFindAllIndex":    BuiltinRegFindAllIndex,
 	"regFindAllGroups":   BuiltinRegFindAllGroups,
 	"regQuote":           BuiltinRegQuote,
 	"regReplace":         BuiltinRegReplace,
@@ -1602,6 +1610,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASIVsRS(tk.PadString),
 		ValueEx: FnASIVsRSex(tk.PadString),
 	},
+	BuiltinStrRuneLen: &BuiltinFunction{
+		Name:    "strRuneLen",
+		Value:   FnASRI(tk.RuneLen),
+		ValueEx: FnASRIex(tk.RuneLen),
+	},
 	BuiltinStrIn: &BuiltinFunction{
 		Name:    "strIn",
 		Value:   FnASVsRB(tk.InStrings),
@@ -1611,6 +1624,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strFindDiffPos",
 		Value:   FnASSRI(tk.FindFirstDiffIndex),
 		ValueEx: FnASSRIex(tk.FindFirstDiffIndex),
+	},
+	BuiltinStrFindAllSub: &BuiltinFunction{
+		Name:    "strFindAllSub",
+		Value:   FnASSRA2I(tk.FindSubStringAll),
+		ValueEx: FnASSRA2Iex(tk.FindSubStringAll),
 	},
 	BuiltinLimitStr: &BuiltinFunction{
 		Name:    "limitStr",
@@ -1663,6 +1681,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "regFindAll",
 		Value:   FnASSIRLs(tk.RegFindAllX),
 		ValueEx: FnASSIRLsex(tk.RegFindAllX),
+	},
+	BuiltinRegFindAllIndex: &BuiltinFunction{
+		Name:    "regFindAllIndex",
+		Value:   FnASSRA2N(tk.RegFindAllIndexX),
+		ValueEx: FnASSRA2Nex(tk.RegFindAllIndexX),
 	},
 	BuiltinRegFindAllGroups: &BuiltinFunction{
 		Name:    "regFindAllGroups",
@@ -4460,6 +4483,31 @@ func FnASRSex(fn func(string) string) CallableExFunc {
 	}
 }
 
+// like tk.RuneLen
+func FnASRI(fn func(string) int) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String())
+		return ToIntObject(rs), nil
+	}
+}
+
+func FnASRIex(fn func(string) int) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String())
+		return ToIntObject(rs), nil
+	}
+}
+
 // like tk.FromBase64
 func FnASRA(fn func(string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
@@ -4833,6 +4881,31 @@ func FnASSIRLsex(fn func(string, string, int) []string) CallableExFunc {
 	}
 }
 
+// like tk.RegFindAllIndexX
+func FnASSRA2N(fn func(string, string) [][]int) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASSRA2Nex(fn func(string, string) [][]int) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ConvertToObject(rs), nil
+	}
+}
+
 // like tk.RegSplitX
 func FnASSViRLs(fn func(string, string, ...int) []string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
@@ -5124,6 +5197,31 @@ func FnASSRIex(fn func(string, string) int) CallableExFunc {
 
 		rs := fn(c.Get(0).String(), c.Get(1).String())
 		return ToIntObject(rs), nil
+	}
+}
+
+// like tk.FindSubStringAll
+func FnASSRA2I(fn func(string, string) [][]int) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASSRA2Iex(fn func(string, string) [][]int) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ConvertToObject(rs), nil
 	}
 }
 
