@@ -3,9 +3,11 @@ package charlang
 import (
 	"bytes"
 	"compress/flate"
+	"context"
 	"database/sql"
 	"encoding/base64"
 	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -15,6 +17,7 @@ import (
 	"io"
 	"math"
 	"math/big"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -31,6 +34,8 @@ import (
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype/truetype"
 	"github.com/guptarohit/asciigraph"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/topxeq/awsapi"
 	"github.com/topxeq/charlang/token"
 	"github.com/topxeq/sqltk"
@@ -142,6 +147,7 @@ const (
 	BuiltinLeGetList
 	BuiltinLeAppendFromStr
 	BuiltinLeClear
+	BuiltinS3PutObject
 	BuiltinAwsSign
 	BuiltinNow
 	BuiltinTimeToTick
@@ -195,6 +201,7 @@ const (
 	BuiltinHtmlEncode
 	BuiltinHtmlDecode
 	BuiltinServeFile
+	BuiltinGetFileInfo
 	BuiltinGetFileAbs
 	BuiltinGetFileRel
 	BuiltinGetFileExt
@@ -243,6 +250,7 @@ const (
 	BuiltinToHex
 	BuiltinCompareBytes
 	BuiltinLoadBytes
+	BuiltinLoadBytesFromFile
 	BuiltinSaveBytes
 	BuiltinOpenFile
 	BuiltinCloseFile
@@ -538,7 +546,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"reader": BuiltinReader,
 	"writer": BuiltinWriter,
 
-	"file": BuiltinFile, // usage: file("c:\\tmp\abc.txt"), file(`/home/user1/a.json`), file("stdin"), file("stdout"), file("stderr")
+	"file": BuiltinFile, // usage: file("c:\\tmp\abc.txt"), file(`/home/user1/a.json`), file("stdin"), file("stdout"), file("stderr"),  another example: fileT := file(`c:\test\a.json`, "-create"), options include: -flag=0, -readOnly, -append, -truncate, -perm=0777 (only octec format is supported)
 
 	"image": BuiltinImage, // new an image object, usage: imageT := image("-width=480", "-height=640", "-color=#FF0000")
 
@@ -862,9 +870,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"fileExists":   BuiltinFileExists,
 	"ifFileExists": BuiltinFileExists,
 
-	"getFileAbs": BuiltinGetFileAbs,
-	"getFileExt": BuiltinGetFileExt,
-	"getFileRel": BuiltinGetFileRel,
+	"getFileInfo": BuiltinGetFileInfo,
+	"getFileAbs":  BuiltinGetFileAbs,
+	"getFileExt":  BuiltinGetFileExt,
+	"getFileRel":  BuiltinGetFileRel,
 
 	"extractFileDir":  BuiltinExtractFileDir,
 	"extractFileName": BuiltinExtractFileName,
@@ -882,10 +891,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	"saveText":   BuiltinSaveText,
 	"appendText": BuiltinAppendText,
 
-	"loadBytes": BuiltinLoadBytes,
-	"saveBytes": BuiltinSaveBytes,
+	"loadBytes":         BuiltinLoadBytesFromFile, // load bytes from file, usage: loadBytes("file.bin"), return error or Bytes([]byte), loadBytes("a.txt", 5) to read only 5 bytes, can accept a File object
+	"loadBytesFromFile": BuiltinLoadBytesFromFile, // the same as loadBytes
+	"saveBytes":         BuiltinSaveBytes,
 
-	"openFile":  BuiltinOpenFile,
+	"openFile":  BuiltinOpenFile, // usage: fileT := openFile(`c:\test\a.json`, "-create"), options include: -flag=0, -readOnly, -append, -truncate, -perm=0777 (only octec format is supported)
 	"closeFile": BuiltinCloseFile,
 
 	// compress/zip related
@@ -1073,6 +1083,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// mail related
 	"sendMail": BuiltinSendMail,
+
+	// s3 related
+	"s3PutObject": BuiltinS3PutObject,
 
 	// 3rd party related
 	"awsSign": BuiltinAwsSign,
@@ -2381,6 +2394,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASRB(tk.IfFileExists),
 		ValueEx: FnASRBex(tk.IfFileExists),
 	},
+	BuiltinGetFileInfo: &BuiltinFunction{
+		Name:    "getFileInfo",
+		Value:   CallExAdapter(builtinGetFileInfoFunc),
+		ValueEx: builtinGetFileInfoFunc,
+	},
 	BuiltinGetFileAbs: &BuiltinFunction{
 		Name:    "getFileAbs",
 		Value:   FnASRS(tk.GetFileAbs),
@@ -2452,6 +2470,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASVIRA(tk.LoadBytesFromFile),
 		ValueEx: FnASVIRAex(tk.LoadBytesFromFile),
 		Remark:  `load bytes from file, usage: loadBytes("file.bin"), return error or Bytes([]byte)`,
+	},
+	BuiltinLoadBytesFromFile: &BuiltinFunction{
+		Name:    "loadBytesFromFile",
+		Value:   CallExAdapter(builtinLoadBytesFromFileFunc),
+		ValueEx: builtinLoadBytesFromFileFunc,
 	},
 	BuiltinSaveBytes: &BuiltinFunction{
 		Name:    "saveBytes",
@@ -3111,6 +3134,14 @@ var BuiltinObjects = [...]Object{
 		Name:    "sendMail",
 		Value:   CallExAdapter(builtinSendMailFunc),
 		ValueEx: builtinSendMailFunc,
+	},
+
+	// s3 related
+
+	BuiltinS3PutObject: &BuiltinFunction{
+		Name:    "s3PutObject",
+		Value:   CallExAdapter(builtinS3PutObjectFunc),
+		ValueEx: builtinS3PutObjectFunc,
 	},
 
 	// 3rd party related
@@ -8172,6 +8203,55 @@ func builtinRemoveDirFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
+func builtinGetFileInfoFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	fileT, ok := args[0].(*File)
+
+	filePathT := ""
+
+	if ok {
+		filePathMemberT := fileT.GetMember("Path")
+		filePathT = strings.TrimSpace(filePathMemberT.String())
+
+		if IsUndefInternal(filePathMemberT) || filePathT == "" {
+			fi, errT := fileT.Value.Stat()
+			if errT != nil && !os.IsExist(errT) {
+				return NewCommonErrorWithPos(c, "%v", errT), nil
+			}
+
+			fileNameT := fi.Name()
+			absPathT := ""
+
+			mapT := Map{"Path": ToStringObject(filePathT), "Abs": ToStringObject(absPathT), "Name": ToStringObject(fileNameT), "Ext": ToStringObject(filepath.Ext(fileNameT)), "Size": ToStringObject(tk.Int64ToStr(fi.Size())), "IsDir": ToStringObject(tk.BoolToStr(fi.IsDir())), "Time": ToStringObject(tk.FormatTime(fi.ModTime(), tk.TimeFormatCompact)), "Mode": ToStringObject(fmt.Sprintf("%v", fi.Mode()))}
+
+			return mapT, nil
+		}
+	} else {
+		filePathT = args[0].String()
+	}
+
+	fi, errT := os.Stat(filePathT)
+	if errT != nil && !os.IsExist(errT) {
+		return NewCommonErrorWithPos(c, "%v", errT), nil
+	}
+
+	absPathT, errT := filepath.Abs(filePathT)
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "%v", errT), nil
+	}
+
+	fileNameT := filepath.Base(filePathT)
+
+	mapT := Map{"Path": ToStringObject(filePathT), "Abs": ToStringObject(absPathT), "Name": ToStringObject(fileNameT), "Ext": ToStringObject(filepath.Ext(fileNameT)), "Size": ToStringObject(tk.Int64ToStr(fi.Size())), "IsDir": ToStringObject(tk.BoolToStr(fi.IsDir())), "Time": ToStringObject(tk.FormatTime(fi.ModTime(), tk.TimeFormatCompact)), "Mode": ToStringObject(fmt.Sprintf("%v", fi.Mode()))}
+
+	return mapT, nil
+}
+
 func builtinRemovePathFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -8379,7 +8459,61 @@ func builtinOpenFileFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "%v", rsT), nil
 	}
 
-	return &File{Value: rsT.(*os.File)}, nil
+	objT := &File{Value: rsT.(*os.File)}
+
+	objT.SetMember("Path", ToStringObject(pathT))
+
+	return objT, nil
+}
+
+func builtinLoadBytesFromFileFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	fileT, ok := args[0].(*File)
+
+	numT := 0
+
+	if len(args) > 1 {
+		numT = ToGoIntWithDefault(args[1], 0)
+	}
+
+	if ok {
+		if numT < 1 {
+			fileContentT, err := io.ReadAll(fileT)
+			if err != nil {
+				return NewCommonErrorWithPos(c, "faild to read file content: %v", err), nil
+			}
+
+			return Bytes(fileContentT), nil
+		}
+
+		bufT := make([]byte, numT)
+		nn, err := fileT.Read(bufT)
+		if err != nil {
+			return NewCommonErrorWithPos(c, "faild to read file content: %v", err), nil
+		}
+
+		if nn != len(bufT) {
+			return NewCommonErrorWithPos(c, "faild to read file content, length not match: %v/%v", nn, len(bufT)), nil
+		}
+
+		return Bytes(bufT), nil
+
+	}
+
+	pathT := args[0].String()
+
+	rsT := tk.LoadBytesFromFile(pathT, numT)
+
+	if tk.IsErrX(rsT) {
+		return NewCommonErrorWithPos(c, "%v", rsT), nil
+	}
+
+	return Bytes(rsT.([]byte)), nil
 }
 
 func builtinCloseFileFunc(c Call) (Object, error) {
@@ -11661,6 +11795,112 @@ func builtinAwsSignFunc(c Call) (Object, error) {
 	rsT := awsapi.Sign(postDataT, nv2)
 
 	return String{Value: rsT}, nil
+}
+
+func builtinS3PutObjectFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	var readerT io.Reader = nil
+
+	nv1, ok := args[0].(*Reader)
+
+	if !ok {
+		nv1a, ok := args[0].(*File)
+
+		if !ok {
+			return NewCommonError("invalid parameter 1 type: (%T)", args[0]), nil
+		}
+
+		readerT = nv1a.Value
+	} else {
+		readerT = nv1.Value
+	}
+
+	nv2 := args[1].String()
+
+	vs := ObjectsToS(args[2:])
+
+	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
+	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
+	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
+	useSslT := tk.IfSwitchExists(vs, "-ssl")
+
+	bucketNameT := tk.GetSwitch(vs, "-bucket=", "")
+	pathT := tk.GetSwitch(vs, "-path=", nv2)
+
+	contentTypeT := tk.GetSwitch(vs, "-contentType=", "application/octet-stream")
+
+	sizeT := tk.ToInt(tk.GetSwitch(vs, "-size=", "-1"), -1)
+
+	timeoutT := time.Duration(tk.ToFloat(tk.GetSwitch(vs, "-timeout=", "600"), 600.0) * float64(time.Second))
+
+	tk.Pl("timeout: %v", timeoutT)
+
+	tagsStrT := tk.GetSwitch(vs, "-tags=", "")
+
+	optionsT := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
+		Secure: useSslT,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ResponseHeaderTimeout: timeoutT,
+			// TLSClientConfig:       tlsConfig,
+		},
+	}
+
+	minioClient, errT := minio.New(endPointT, optionsT)
+
+	// minioClient.SetCustomTransport(transport)
+
+	if errT != nil {
+		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+	}
+
+	ctxT := context.Background()
+
+	putObjectOptionsT := minio.PutObjectOptions{
+		ContentType:  contentTypeT,
+		AutoChecksum: minio.ChecksumSHA256,
+	}
+
+	var tagsT map[string]string
+
+	if tagsStrT != "" {
+
+		errT = json.Unmarshal([]byte(tagsStrT), &tagsT)
+
+		if errT != nil {
+			return NewCommonError("failed to parse user tags: %v", errT), nil
+		}
+
+		putObjectOptionsT.UserTags = tagsT
+	}
+
+	infoT, errT := minioClient.PutObject(ctxT, bucketNameT, pathT, readerT, int64(sizeT), putObjectOptionsT)
+	if errT != nil {
+		return NewCommonError("failed to put object: %v", errT), nil
+	}
+
+	mapT := make(Map, 0)
+
+	objT := tk.FromJSONX(tk.ToJSONX(infoT)).(map[string]interface{})
+
+	for k, v := range objT {
+		mapT[k] = ToStringObject(tk.ToStr(v))
+	}
+
+	return mapT, nil
 }
 
 func builtinReplaceHtmlByMapFunc(c Call) (Object, error) {

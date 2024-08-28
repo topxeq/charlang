@@ -12,6 +12,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -4746,12 +4747,15 @@ var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
 		if err := c.CheckLen(1); err != nil {
 			return Undefined, err
 		}
-		d, ok := ToGoInt64(c.Get(0))
+
+		d, ok := ToGoFloat64(c.Get(0))
 		if !ok {
-			return newArgTypeErr("1st", "int", c.Get(0).TypeName())
+			return newArgTypeErr("1st", "float", c.Get(0).TypeName())
 		}
 
-		return &Time{Value: o.Value.Add(time.Second * time.Duration(d))}, nil
+		addDurT := time.Duration(d * float64(time.Second))
+
+		return &Time{Value: o.Value.Add(addDurT)}, nil
 
 		// return timeAdd(o, d), nil
 	},
@@ -8849,6 +8853,77 @@ func (o *File) HasMemeber() bool {
 	return true
 }
 
+var methodTableForFile = map[string]func(*File, *Call) (Object, error){
+	"getInfo": func(o *File, c *Call) (Object, error) {
+		filePathT := ""
+
+		filePathMemberT := o.GetMember("Path")
+		filePathT = strings.TrimSpace(filePathMemberT.String())
+
+		if IsUndefInternal(filePathMemberT) || filePathT == "" {
+			fi, errT := o.Value.Stat()
+			if errT != nil && !os.IsExist(errT) {
+				return NewCommonErrorWithPos(*c, "%v", errT), nil
+			}
+
+			fileNameT := fi.Name()
+			absPathT := ""
+
+			mapT := Map{"Path": ToStringObject(filePathT), "Abs": ToStringObject(absPathT), "Name": ToStringObject(fileNameT), "Ext": ToStringObject(filepath.Ext(fileNameT)), "Size": ToStringObject(tk.Int64ToStr(fi.Size())), "IsDir": ToStringObject(tk.BoolToStr(fi.IsDir())), "Time": ToStringObject(tk.FormatTime(fi.ModTime(), tk.TimeFormatCompact)), "Mode": ToStringObject(fmt.Sprintf("%v", fi.Mode()))}
+
+			return mapT, nil
+		}
+
+		fi, errT := os.Stat(filePathT)
+		if errT != nil && !os.IsExist(errT) {
+			return NewCommonErrorWithPos(*c, "%v", errT), nil
+		}
+
+		absPathT, errT := filepath.Abs(filePathT)
+		if errT != nil {
+			return NewCommonErrorWithPos(*c, "%v", errT), nil
+		}
+
+		fileNameT := filepath.Base(filePathT)
+
+		mapT := Map{"Path": ToStringObject(filePathT), "Abs": ToStringObject(absPathT), "Name": ToStringObject(fileNameT), "Ext": ToStringObject(filepath.Ext(fileNameT)), "Size": ToStringObject(tk.Int64ToStr(fi.Size())), "IsDir": ToStringObject(tk.BoolToStr(fi.IsDir())), "Time": ToStringObject(tk.FormatTime(fi.ModTime(), tk.TimeFormatCompact)), "Mode": ToStringObject(fmt.Sprintf("%v", fi.Mode()))}
+
+		return mapT, nil
+		// fi, errT := o.Value.Stat()
+
+		// if errT != nil {
+		// 	return NewCommonErrorWithPos(*c, "%v", errT), nil
+		// }
+
+		// fileNameT := fi.Name()
+		// filePathT := ""
+		// absPathT := ""
+
+		// mapT := Map{"Path": ToStringObject(filePathT), "Abs": ToStringObject(absPathT), "Name": ToStringObject(fileNameT), "Ext": ToStringObject(filepath.Ext(fileNameT)), "Size": ToStringObject(tk.Int64ToStr(fi.Size())), "IsDir": ToStringObject(tk.BoolToStr(fi.IsDir())), "Time": ToStringObject(tk.FormatTime(fi.ModTime(), tk.TimeFormatCompact)), "Mode": ToStringObject(fmt.Sprintf("%v", fi.Mode()))}
+
+		// return mapT, nil
+	},
+}
+
+func (o *File) CallName(name string, c Call) (Object, error) {
+	// tk.Pl("File CallName: %v", name)
+
+	fn, ok := methodTableForFile[name]
+	if !ok {
+		if !tk.ReflectHasMethod(o.Value, name) {
+			return NewCommonErrorWithPos(c, "method(%v) not found for type: %T", name, o), nil
+		}
+
+		rs3 := tk.ReflectCallMethodCompact(o.Value, name, ObjectsToI(c.GetArgs())...)
+
+		return ConvertToObject(rs3), nil
+
+		// return Undefined, ErrInvalidIndex.NewError(name)
+	}
+
+	return fn(o, &c)
+}
+
 func (o *File) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
@@ -8997,7 +9072,11 @@ func NewFile(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "failed to open file: %v", tk.GetErrStrX(rs)), nil
 	}
 
-	return &File{Value: rs.(*os.File)}, nil
+	objT := &File{Value: rs.(*os.File)}
+
+	objT.SetMember("Path", ToStringObject(filePathT))
+
+	return objT, nil
 
 }
 
