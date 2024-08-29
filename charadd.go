@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "1.5.0"
+var VersionG = "1.5.1"
 
 var CodeTextG = ""
 
@@ -865,6 +865,30 @@ var methodFuncMapG = map[int]map[string]*Function{
 				nv.Value.Value = byteCodeT.(*Bytecode)
 
 				return nv, nil
+			},
+		},
+		"decrypt": &Function{
+			Name: "decrypt",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*Gel)
+
+				if !ok {
+					return NewCommonError("invalid type: %#v", c.This), nil
+				}
+
+				if nv.Value == nil {
+					return NewCommonError("charCode not loaded in gel"), nil
+				}
+
+				argsT := c.GetArgs()
+
+				if len(argsT) < 1 {
+					return NewCommonError("not enough parameters"), nil
+				}
+
+				nv.Value.Source = tk.DecryptStringByTXDEF(nv.Value.Source, argsT[0].String())
+
+				return Undefined, nil
 			},
 		},
 		"load": &Function{

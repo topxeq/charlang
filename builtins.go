@@ -148,6 +148,11 @@ const (
 	BuiltinLeAppendFromStr
 	BuiltinLeClear
 	BuiltinS3PutObject
+	BuiltinS3GetObjectUrl
+	BuiltinS3GetObjectTags
+	BuiltinS3GetObjectStat
+	BuiltinS3RemoveObject
+	BuiltinS3ListObjects
 	BuiltinAwsSign
 	BuiltinNow
 	BuiltinTimeToTick
@@ -188,6 +193,7 @@ const (
 	BuiltinStrPad
 	BuiltinStrRuneLen
 	BuiltinStrIn
+	BuiltinStrGetLastComponent
 	BuiltinEnsureMakeDirs
 	BuiltinExtractFileDir
 	BuiltinExtractFileName
@@ -263,6 +269,7 @@ const (
 	BuiltinOrderedMap
 	BuiltinExcel
 	BuiltinArrayContains
+	BuiltinSortArray
 	// BuiltinSortByFunc
 	BuiltinLimitStr
 	BuiltinStrFindDiffPos
@@ -580,6 +587,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"arrayContains": BuiltinArrayContains,
 
+	"sortArray": BuiltinSortArray,
+
 	"getMapItem": BuiltinGetMapItem,
 
 	"toOrderedMap": BuiltinToOrderedMap,
@@ -627,6 +636,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strRuneLen": BuiltinStrRuneLen,
 
 	"strIn": BuiltinStrIn,
+
+	"strGetLastComponent": BuiltinStrGetLastComponent,
 
 	"strFindDiffPos": BuiltinStrFindDiffPos, // return -1 if 2 strings are identical
 
@@ -1085,7 +1096,12 @@ var BuiltinsMap = map[string]BuiltinType{
 	"sendMail": BuiltinSendMail,
 
 	// s3 related
-	"s3PutObject": BuiltinS3PutObject,
+	"s3PutObject":     BuiltinS3PutObject,
+	"s3GetObjectUrl":  BuiltinS3GetObjectUrl,
+	"s3GetObjectTags": BuiltinS3GetObjectTags,
+	"s3GetObjectStat": BuiltinS3GetObjectStat,
+	"s3RemoveObject":  BuiltinS3RemoveObject,
+	"s3ListObjects":   BuiltinS3ListObjects,
 
 	// 3rd party related
 	"awsSign": BuiltinAwsSign,
@@ -1457,6 +1473,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinArrayContainsFunc),
 		ValueEx: builtinArrayContainsFunc,
 	},
+	BuiltinSortArray: &BuiltinFunction{
+		Name:    "sortArray",
+		Value:   CallExAdapter(builtinSortArrayFunc),
+		ValueEx: builtinSortArrayFunc,
+	},
 	BuiltinGetMapItem: &BuiltinFunction{
 		Name:    "getMapItem",
 		Value:   CallExAdapter(builtinGetMapItemFunc),
@@ -1632,6 +1653,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strIn",
 		Value:   FnASVsRB(tk.InStrings),
 		ValueEx: FnASVsRBex(tk.InStrings),
+	},
+	BuiltinStrGetLastComponent: &BuiltinFunction{
+		Name:    "strGetLastComponent",
+		Value:   FnASVsRS(tk.GetLastComponentBySeparator),
+		ValueEx: FnASVsRSex(tk.GetLastComponentBySeparator),
 	},
 	BuiltinStrFindDiffPos: &BuiltinFunction{
 		Name:    "strFindDiffPos",
@@ -3142,6 +3168,36 @@ var BuiltinObjects = [...]Object{
 		Name:    "s3PutObject",
 		Value:   CallExAdapter(builtinS3PutObjectFunc),
 		ValueEx: builtinS3PutObjectFunc,
+	},
+
+	BuiltinS3GetObjectUrl: &BuiltinFunction{
+		Name:    "s3GetObjectUrl",
+		Value:   CallExAdapter(builtinS3GetObjectUrlFunc),
+		ValueEx: builtinS3GetObjectUrlFunc,
+	},
+
+	BuiltinS3GetObjectTags: &BuiltinFunction{
+		Name:    "s3GetObjectTags",
+		Value:   CallExAdapter(builtinS3GetObjectTagsFunc),
+		ValueEx: builtinS3GetObjectTagsFunc,
+	},
+
+	BuiltinS3GetObjectStat: &BuiltinFunction{
+		Name:    "s3GetObjectStat",
+		Value:   CallExAdapter(builtinS3GetObjectStatFunc),
+		ValueEx: builtinS3GetObjectStatFunc,
+	},
+
+	BuiltinS3RemoveObject: &BuiltinFunction{
+		Name:    "s3RemoveObject",
+		Value:   CallExAdapter(builtinS3RemoveObjectFunc),
+		ValueEx: builtinS3RemoveObjectFunc,
+	},
+
+	BuiltinS3ListObjects: &BuiltinFunction{
+		Name:    "s3ListObjects",
+		Value:   CallExAdapter(builtinS3ListObjectsFunc),
+		ValueEx: builtinS3ListObjectsFunc,
 	},
 
 	// 3rd party related
@@ -9655,6 +9711,15 @@ func builtinCharCodeFunc(c Call) (Object, error) {
 			compilerOptionsT = &DefaultCompilerOptions
 		}
 	}
+	vs := ObjectsToS(args[1:])
+
+	if tk.IfSwitchExists(vs, "-new") {
+		compilerOptionsT = nil
+	}
+
+	if compilerOptionsT == nil {
+		compilerOptionsT = &DefaultCompilerOptions
+	}
 
 	return NewCharCode(args[0].String(), compilerOptionsT), nil
 }
@@ -9668,7 +9733,7 @@ func builtinGelFunc(c Call) (Object, error) {
 		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
-	return NewGel(args[0])
+	return NewGel(args...)
 }
 
 func builtinOrderedMapFunc(c Call) (Object, error) {
@@ -11800,7 +11865,7 @@ func builtinAwsSignFunc(c Call) (Object, error) {
 func builtinS3PutObjectFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
-	if len(args) < 2 {
+	if len(args) < 3 {
 		return NewCommonError("not enough parameters"), nil
 	}
 
@@ -11822,15 +11887,17 @@ func builtinS3PutObjectFunc(c Call) (Object, error) {
 
 	nv2 := args[1].String()
 
-	vs := ObjectsToS(args[2:])
+	nv3 := args[2].String()
+
+	vs := ObjectsToS(args[3:])
 
 	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
 	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
 	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
 	useSslT := tk.IfSwitchExists(vs, "-ssl")
 
-	bucketNameT := tk.GetSwitch(vs, "-bucket=", "")
-	pathT := tk.GetSwitch(vs, "-path=", nv2)
+	bucketNameT := tk.GetSwitch(vs, "-bucket=", nv2)
+	pathT := tk.GetSwitch(vs, "-path=", nv3)
 
 	contentTypeT := tk.GetSwitch(vs, "-contentType=", "application/octet-stream")
 
@@ -11838,9 +11905,13 @@ func builtinS3PutObjectFunc(c Call) (Object, error) {
 
 	timeoutT := time.Duration(tk.ToFloat(tk.GetSwitch(vs, "-timeout=", "600"), 600.0) * float64(time.Second))
 
-	tk.Pl("timeout: %v", timeoutT)
+	getUrlT := tk.IfSwitchExists(vs, "-getUrl")
+
+	urlTimeoutT := time.Duration(tk.ToFloat(tk.GetSwitch(vs, "-urlTimeout=", "86400"), 86400) * float64(time.Second))
 
 	tagsStrT := tk.GetSwitch(vs, "-tags=", "")
+
+	metaStrT := tk.GetSwitch(vs, "-meta=", "")
 
 	optionsT := &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
@@ -11867,8 +11938,6 @@ func builtinS3PutObjectFunc(c Call) (Object, error) {
 		return NewCommonError("failed to initialize s3 client: %v", errT), nil
 	}
 
-	ctxT := context.Background()
-
 	putObjectOptionsT := minio.PutObjectOptions{
 		ContentType:  contentTypeT,
 		AutoChecksum: minio.ChecksumSHA256,
@@ -11887,7 +11956,20 @@ func builtinS3PutObjectFunc(c Call) (Object, error) {
 		putObjectOptionsT.UserTags = tagsT
 	}
 
-	infoT, errT := minioClient.PutObject(ctxT, bucketNameT, pathT, readerT, int64(sizeT), putObjectOptionsT)
+	var metaT map[string]string
+
+	if metaStrT != "" {
+
+		errT = json.Unmarshal([]byte(metaStrT), &metaT)
+
+		if errT != nil {
+			return NewCommonError("failed to parse meta data: %v", errT), nil
+		}
+
+		putObjectOptionsT.UserMetadata = metaT
+	}
+
+	infoT, errT := minioClient.PutObject(context.Background(), bucketNameT, pathT, readerT, int64(sizeT), putObjectOptionsT)
 	if errT != nil {
 		return NewCommonError("failed to put object: %v", errT), nil
 	}
@@ -11900,7 +11982,333 @@ func builtinS3PutObjectFunc(c Call) (Object, error) {
 		mapT[k] = ToStringObject(tk.ToStr(v))
 	}
 
+	if getUrlT {
+		reqParams := make(url.Values)
+		reqParams.Set("response-content-disposition", `attachment; filename="`+tk.GetLastComponentOfUrl(pathT)+`"`)
+
+		presignedURL, errT := minioClient.PresignedGetObject(context.Background(), bucketNameT, pathT, urlTimeoutT, reqParams)
+		if errT != nil {
+			mapT["PresignedUrl"] = ToStringObject(fmt.Sprintf("Error: %v", errT))
+			// return NewCommonError("failed to get url : %v", errT), nil
+		} else {
+			mapT["PresignedUrl"] = ToStringObject(presignedURL.String())
+		}
+
+	}
+
 	return mapT, nil
+}
+
+func builtinS3GetObjectUrlFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	bucketNameT := args[0].String()
+
+	pathT := args[1].String()
+
+	vs := ObjectsToS(args[2:])
+
+	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
+	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
+	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
+	useSslT := tk.IfSwitchExists(vs, "-ssl")
+
+	bucketNameT = tk.GetSwitch(vs, "-bucket=", bucketNameT)
+	pathT = tk.GetSwitch(vs, "-path=", pathT)
+	fileNameT := tk.GetSwitch(vs, "-fileName=", tk.GetLastComponentOfUrl(pathT))
+
+	urlTimeoutT := time.Duration(tk.ToFloat(tk.GetSwitch(vs, "-timeout=", "86400"), 86400) * float64(time.Second))
+
+	optionsT := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
+		Secure: useSslT,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			// TLSClientConfig:       tlsConfig,
+		},
+	}
+
+	minioClient, errT := minio.New(endPointT, optionsT)
+
+	// minioClient.SetCustomTransport(transport)
+
+	if errT != nil {
+		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+	}
+
+	reqParams := make(url.Values)
+	reqParams.Set("response-content-disposition", `attachment; filename="`+fileNameT+`"`)
+
+	presignedURL, errT := minioClient.PresignedGetObject(context.Background(), bucketNameT, pathT, urlTimeoutT, reqParams)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "%v", errT), nil
+	}
+
+	return ToStringObject(presignedURL.String()), nil
+}
+
+func builtinS3GetObjectTagsFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	bucketNameT := args[0].String()
+
+	pathT := args[1].String()
+
+	vs := ObjectsToS(args[2:])
+
+	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
+	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
+	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
+	useSslT := tk.IfSwitchExists(vs, "-ssl")
+
+	bucketNameT = tk.GetSwitch(vs, "-bucket=", bucketNameT)
+	pathT = tk.GetSwitch(vs, "-path=", pathT)
+
+	optionsT := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
+		Secure: useSslT,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			// TLSClientConfig:       tlsConfig,
+		},
+	}
+
+	minioClient, errT := minio.New(endPointT, optionsT)
+
+	// minioClient.SetCustomTransport(transport)
+
+	if errT != nil {
+		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+	}
+
+	tagsT, errT := minioClient.GetObjectTagging(context.Background(), bucketNameT, pathT, minio.GetObjectTaggingOptions{})
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to get object tags: %v", errT), nil
+	}
+
+	return ConvertToObject(tagsT), nil
+}
+
+func builtinS3GetObjectStatFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	bucketNameT := args[0].String()
+
+	pathT := args[1].String()
+
+	vs := ObjectsToS(args[2:])
+
+	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
+	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
+	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
+	useSslT := tk.IfSwitchExists(vs, "-ssl")
+
+	bucketNameT = tk.GetSwitch(vs, "-bucket=", bucketNameT)
+	pathT = tk.GetSwitch(vs, "-path=", pathT)
+
+	optionsT := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
+		Secure: useSslT,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			// TLSClientConfig:       tlsConfig,
+		},
+	}
+
+	minioClient, errT := minio.New(endPointT, optionsT)
+
+	// minioClient.SetCustomTransport(transport)
+
+	if errT != nil {
+		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+	}
+
+	objT, errT := minioClient.GetObject(context.Background(), bucketNameT, pathT, minio.GetObjectOptions{})
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to get object: %v", errT), nil
+	}
+
+	statT, errT := objT.Stat()
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to get object stat: %v", errT), nil
+	}
+
+	return ConvertToObject(statT), nil
+}
+
+func builtinS3RemoveObjectFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	bucketNameT := args[0].String()
+
+	pathT := args[1].String()
+
+	vs := ObjectsToS(args[2:])
+
+	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
+	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
+	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
+	useSslT := tk.IfSwitchExists(vs, "-ssl")
+
+	bucketNameT = tk.GetSwitch(vs, "-bucket=", bucketNameT)
+	pathT = tk.GetSwitch(vs, "-path=", pathT)
+
+	forceT := tk.IfSwitchExists(vs, "-force")
+
+	versionIdT := strings.TrimSpace(tk.GetSwitch(vs, "-versionId=", ""))
+
+	optionsT := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
+		Secure: useSslT,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			// TLSClientConfig:       tlsConfig,
+		},
+	}
+
+	minioClient, errT := minio.New(endPointT, optionsT)
+
+	// minioClient.SetCustomTransport(transport)
+
+	if errT != nil {
+		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+	}
+
+	removeOptionsT := minio.RemoveObjectOptions{
+		ForceDelete: forceT,
+	}
+
+	if versionIdT != "" {
+		removeOptionsT.VersionID = versionIdT
+	}
+
+	errT = minioClient.RemoveObject(context.Background(), bucketNameT, pathT, removeOptionsT)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to remove object: %v", errT), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinS3ListObjectsFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	bucketNameT := args[0].String()
+
+	vs := ObjectsToS(args[1:])
+
+	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
+	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
+	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
+	useSslT := tk.IfSwitchExists(vs, "-ssl")
+
+	bucketNameT = tk.GetSwitch(vs, "-bucket=", bucketNameT)
+
+	prefixT := tk.GetSwitch(vs, "-prefix=", "")
+	withVersionT := tk.IfSwitchExists(vs, "-withVersion")
+	withMetadataT := tk.IfSwitchExists(vs, "-withMetadata") || tk.IfSwitchExists(vs, "-withMeta")
+	recursiveT := tk.IfSwitchExists(vs, "-recursive")
+
+	optionsT := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
+		Secure: useSslT,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			// TLSClientConfig:       tlsConfig,
+		},
+	}
+
+	minioClient, errT := minio.New(endPointT, optionsT)
+
+	// minioClient.SetCustomTransport(transport)
+
+	if errT != nil {
+		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+	}
+
+	listOptionsT := minio.ListObjectsOptions{
+		WithVersions: withVersionT,
+		WithMetadata: withMetadataT,
+		Recursive:    recursiveT,
+	}
+
+	if prefixT != "" {
+		listOptionsT.Prefix = prefixT
+	}
+
+	aryT := make(Array, 0)
+
+	for object := range minioClient.ListObjects(context.Background(), bucketNameT, listOptionsT) {
+		// aryT = append(aryT, ToStringObject(tk.ToJSONX(object)))
+		aryT = append(aryT, ConvertToObject(object))
+	}
+
+	return aryT, nil
 }
 
 func builtinReplaceHtmlByMapFunc(c Call) (Object, error) {
@@ -13641,6 +14049,94 @@ func builtinCloseFunc(c Call) (Object, error) {
 	}
 
 	return NewCommonErrorWithPos(c, "unsupported type: %v", typeNameT), nil
+}
+
+func builtinSortArrayFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	switch obj := args[0].(type) {
+	case Array:
+		var err error
+
+		keyT := ""
+		if len(args) > 1 {
+			keyT = args[1].String()
+		}
+
+		descT := false
+		if len(args) > 2 {
+			descT = (args[2].String() == "desc") || (!(args[2].IsFalsy()))
+		}
+
+		if keyT != "" {
+			sort.Slice(obj, func(i, j int) bool {
+				// v1 := Undefined
+				// v2 := Undefined
+
+				m1, ok := obj[i].(Map)
+
+				if ok {
+					m2, ok := obj[j].(Map)
+					if ok {
+						v1, ok := m1[keyT]
+						if ok {
+							v2, ok := m2[keyT]
+
+							if ok {
+								v, e := v1.BinaryOp(tk.IfThenElse(descT, token.Greater, token.Less).(token.Token), v2)
+								if e != nil && err == nil {
+									err = e
+									return false
+								}
+								if v != nil {
+									return !v.IsFalsy()
+								}
+								return false
+							}
+						}
+					}
+				}
+
+				return false
+			})
+		} else {
+			sort.Slice(obj, func(i, j int) bool {
+				v, e := obj[i].BinaryOp(token.Less, obj[j])
+				if e != nil && err == nil {
+					err = e
+					return false
+				}
+				if v != nil {
+					return !v.IsFalsy()
+				}
+				return false
+			})
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		return obj, nil
+	case String:
+		s := []rune(obj.Value)
+		sort.Slice(s, func(i, j int) bool {
+			return s[i] < s[j]
+		})
+		return ToStringObject(s), nil
+	case Bytes:
+		sort.Slice(obj, func(i, j int) bool {
+			return obj[i] < obj[j]
+		})
+		return obj, nil
+	case *UndefinedType:
+		return Undefined, nil
+	}
+
+	return nil, NewArgumentTypeError(
+		"first",
+		"array|string|bytes",
+		args[0].TypeName(),
+	)
 }
 
 // char add end

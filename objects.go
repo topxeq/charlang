@@ -5243,7 +5243,7 @@ func (o *Database) TypeName() string {
 }
 
 func (o *Database) String() string {
-	return fmt.Sprintf("%v", o)
+	return fmt.Sprintf("(database)%v", o.Value)
 }
 
 func (o *Database) HasMemeber() bool {
@@ -9105,7 +9105,7 @@ func (*CharCode) TypeName() string {
 }
 
 func (o *CharCode) String() string {
-	return fmt.Sprintf("%v", o.Value)
+	return fmt.Sprintf("(charCode)%v", o.Value)
 }
 
 // func (o *Reader) SetValue(valueA Object) error {
@@ -9295,6 +9295,10 @@ func NewCharCode(srcA string, optsA ...*CompilerOptions) *CharCode {
 		} else {
 			compilerOptionsT = &DefaultCompilerOptions
 		}
+	}
+
+	if compilerOptionsT == nil {
+		compilerOptionsT = &DefaultCompilerOptions
 	}
 
 	if strings.HasPrefix(srcA, "//TXRR#") {
@@ -9538,17 +9542,29 @@ func NewGel(argsA ...Object) (Object, error) {
 	if len(argsA) < 1 {
 		return Undefined, fmt.Errorf("not enough parameters")
 	}
-
+	// tk.Plv(argsA[0])
 	nv, ok := argsA[0].(*CharCode)
 
+	vs := ObjectsToS(argsA[1:])
+
 	if !ok {
-		nv = NewCharCode(argsA[0].String())
+		nv2, ok := argsA[0].(*Error)
+
+		if ok {
+			return nv2, nil
+		}
+
+		if tk.IfSwitchExists(vs, "-new") {
+			nv = NewCharCode(argsA[0].String(), nil)
+		} else {
+			nv = NewCharCode(argsA[0].String())
+		}
 
 		// return Undefined, fmt.Errorf("invalid input type")
 	}
 
 	if nv == nil {
-		return Undefined, fmt.Errorf("nil CharCode")
+		return NewCommonError("nil CharCode"), nil
 	}
 
 	return &Gel{Value: nv}, nil
