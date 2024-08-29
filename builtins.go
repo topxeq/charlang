@@ -587,7 +587,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"arrayContains": BuiltinArrayContains,
 
-	"sortArray": BuiltinSortArray,
+	"sortArray": BuiltinSortArray, // usage: sortArray(totalFindsT, "runeStart", "desc")
 
 	"getMapItem": BuiltinGetMapItem,
 
@@ -12173,7 +12173,7 @@ func builtinS3GetObjectStatFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "failed to get object stat: %v", errT), nil
 	}
 
-	return ConvertToObject(statT), nil
+	return ConvertToObject(tk.FromJSONX(tk.ToJSONX(statT))), nil
 }
 
 func builtinS3RemoveObjectFunc(c Call) (Object, error) {
