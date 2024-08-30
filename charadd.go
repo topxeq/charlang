@@ -1602,6 +1602,13 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(fmt.Sprintf("%v", (*http.Request)(args[0].(*HttpReq).Value))), nil
 			},
 		},
+		"parseMultipartForm": &Function{
+			Name: "parseMultipartForm",
+			ValueEx: func(c Call) (Object, error) {
+				objT := c.This.(*HttpReq)
+				return ConvertToObject(objT.Value.ParseMultipartForm(1000000000000)), nil
+			},
+		},
 		"saveFormFile": &Function{
 			Name: "saveFormFile",
 			ValueEx: func(c Call) (Object, error) {
