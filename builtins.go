@@ -147,10 +147,12 @@ const (
 	BuiltinLeGetList
 	BuiltinLeAppendFromStr
 	BuiltinLeClear
+	BuiltinS3GetObjectBytes
 	BuiltinS3PutObject
 	BuiltinS3GetObjectUrl
 	BuiltinS3GetObjectTags
 	BuiltinS3GetObjectStat
+	BuiltinS3StatObject
 	BuiltinS3RemoveObject
 	BuiltinS3ListObjects
 	BuiltinAwsSign
@@ -1096,12 +1098,14 @@ var BuiltinsMap = map[string]BuiltinType{
 	"sendMail": BuiltinSendMail,
 
 	// s3 related
-	"s3PutObject":     BuiltinS3PutObject,
-	"s3GetObjectUrl":  BuiltinS3GetObjectUrl,
-	"s3GetObjectTags": BuiltinS3GetObjectTags,
-	"s3GetObjectStat": BuiltinS3GetObjectStat,
-	"s3RemoveObject":  BuiltinS3RemoveObject,
-	"s3ListObjects":   BuiltinS3ListObjects,
+	"s3GetObjectBytes": BuiltinS3GetObjectBytes,
+	"s3PutObject":      BuiltinS3PutObject,
+	"s3GetObjectUrl":   BuiltinS3GetObjectUrl,
+	"s3GetObjectTags":  BuiltinS3GetObjectTags,
+	"s3GetObjectStat":  BuiltinS3GetObjectStat,
+	"s3StatObject":     BuiltinS3StatObject,
+	"s3RemoveObject":   BuiltinS3RemoveObject,
+	"s3ListObjects":    BuiltinS3ListObjects,
 
 	// 3rd party related
 	"awsSign": BuiltinAwsSign,
@@ -3164,6 +3168,12 @@ var BuiltinObjects = [...]Object{
 
 	// s3 related
 
+	BuiltinS3GetObjectBytes: &BuiltinFunction{
+		Name:    "s3GetObjectBytes",
+		Value:   CallExAdapter(builtinS3GetObjectBytesFunc),
+		ValueEx: builtinS3GetObjectBytesFunc,
+	},
+
 	BuiltinS3PutObject: &BuiltinFunction{
 		Name:    "s3PutObject",
 		Value:   CallExAdapter(builtinS3PutObjectFunc),
@@ -3186,6 +3196,12 @@ var BuiltinObjects = [...]Object{
 		Name:    "s3GetObjectStat",
 		Value:   CallExAdapter(builtinS3GetObjectStatFunc),
 		ValueEx: builtinS3GetObjectStatFunc,
+	},
+
+	BuiltinS3StatObject: &BuiltinFunction{
+		Name:    "s3StatObject",
+		Value:   CallExAdapter(builtinS3StatObjectFunc),
+		ValueEx: builtinS3StatObjectFunc,
 	},
 
 	BuiltinS3RemoveObject: &BuiltinFunction{
@@ -12176,6 +12192,124 @@ func builtinS3GetObjectStatFunc(c Call) (Object, error) {
 	return ConvertToObject(tk.FromJSONX(tk.ToJSONX(statT))), nil
 }
 
+func builtinS3GetObjectBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	bucketNameT := args[0].String()
+
+	pathT := args[1].String()
+
+	vs := ObjectsToS(args[2:])
+
+	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
+	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
+	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
+	useSslT := tk.IfSwitchExists(vs, "-ssl")
+
+	bucketNameT = tk.GetSwitch(vs, "-bucket=", bucketNameT)
+	pathT = tk.GetSwitch(vs, "-path=", pathT)
+
+	optionsT := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
+		Secure: useSslT,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			// TLSClientConfig:       tlsConfig,
+		},
+	}
+
+	minioClient, errT := minio.New(endPointT, optionsT)
+
+	// minioClient.SetCustomTransport(transport)
+
+	if errT != nil {
+		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+	}
+
+	objT, errT := minioClient.GetObject(context.Background(), bucketNameT, pathT, minio.GetObjectOptions{})
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to get object: %v", errT), nil
+	}
+
+	bytesT, errT := io.ReadAll(objT)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to read object bytes: %v", errT), nil
+	}
+
+	objT.Close()
+
+	return Bytes(bytesT), nil
+}
+
+func builtinS3StatObjectFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	bucketNameT := args[0].String()
+
+	pathT := args[1].String()
+
+	vs := ObjectsToS(args[2:])
+
+	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
+	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
+	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
+	useSslT := tk.IfSwitchExists(vs, "-ssl")
+
+	bucketNameT = tk.GetSwitch(vs, "-bucket=", bucketNameT)
+	pathT = tk.GetSwitch(vs, "-path=", pathT)
+
+	optionsT := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
+		Secure: useSslT,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			// TLSClientConfig:       tlsConfig,
+		},
+	}
+
+	minioClient, errT := minio.New(endPointT, optionsT)
+
+	// minioClient.SetCustomTransport(transport)
+
+	if errT != nil {
+		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+	}
+
+	statT, errT := minioClient.StatObject(context.Background(), bucketNameT, pathT, minio.StatObjectOptions{})
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to stat object: %v", errT), nil
+	}
+
+	return ConvertToObject(tk.FromJSONX(tk.ToJSONX(statT))), nil
+}
+
 func builtinS3RemoveObjectFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12265,6 +12399,7 @@ func builtinS3ListObjectsFunc(c Call) (Object, error) {
 	withVersionT := tk.IfSwitchExists(vs, "-withVersion")
 	withMetadataT := tk.IfSwitchExists(vs, "-withMetadata") || tk.IfSwitchExists(vs, "-withMeta")
 	recursiveT := tk.IfSwitchExists(vs, "-recursive")
+	compactT := tk.IfSwitchExists(vs, "-compact")
 
 	optionsT := &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
@@ -12305,7 +12440,23 @@ func builtinS3ListObjectsFunc(c Call) (Object, error) {
 
 	for object := range minioClient.ListObjects(context.Background(), bucketNameT, listOptionsT) {
 		// aryT = append(aryT, ToStringObject(tk.ToJSONX(object)))
-		aryT = append(aryT, ConvertToObject(object))
+		if compactT {
+			mapT := Map{
+				"Key":          ToStringObject(object.Key),
+				"LastModified": ToStringObject(tk.FormatTime(object.LastModified.Local())),
+				"Size":         ToIntObject(object.Size),
+			}
+
+			if prefixT != "" {
+				mapT["Rel"] = ToStringObject(strings.TrimPrefix(object.Key, prefixT))
+			} else {
+				mapT["Rel"] = ToStringObject(object.Key)
+			}
+
+			aryT = append(aryT, mapT)
+		} else {
+			aryT = append(aryT, ConvertToObject(object))
+		}
 	}
 
 	return aryT, nil
