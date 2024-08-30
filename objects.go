@@ -8334,6 +8334,26 @@ func (o *Reader) Close() error {
 	nv, ok := o.Value.(io.Closer)
 
 	if !ok {
+		methodT := o.GetMember("close")
+
+		if !IsUndefInternal(methodT) {
+			f1, ok := methodT.(*Function)
+
+			if ok {
+				rs, err := (*f1).Call()
+
+				if err != nil {
+					return err
+				}
+
+				if isErrX(rs) {
+					return rs.(*Error).Unwrap()
+				}
+
+				return nil
+			}
+		}
+
 		return fmt.Errorf("unable to close")
 	}
 

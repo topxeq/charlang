@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "1.5.1"
+var VersionG = "1.5.2"
 
 var CodeTextG = ""
 
@@ -1625,7 +1625,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				}
 
 				defer formFile1.Close()
-				tk.Pl("file name : %#v", headerT.Filename)
+				// tk.Pl("file name : %#v", headerT.Filename)
 
 				defaultExtT := tk.GetSwitch(argsT, "-defaultExt=", "")
 
@@ -1652,6 +1652,51 @@ var methodFuncMapG = map[int]map[string]*Function{
 				}
 
 				return ToStringObject(tk.GetLastComponentOfFilePath(destFile1.Name())), nil
+				// return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+
+			},
+		},
+		"getFormFile": &Function{
+			Name: "getFormFile",
+			ValueEx: func(c Call) (Object, error) {
+				objT := c.This.(*HttpReq)
+
+				argsA := c.GetArgs()
+
+				if len(argsA) < 3 {
+					return NewCommonErrorWithPos(c, "not enough parameters"), nil
+				}
+
+				arg0 := argsA[0].String()
+
+				// argsT := ObjectsToS(argsA[1:])
+
+				formFile1, headerT, errT := objT.Value.FormFile(arg0)
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "failed to get upload file: %v", errT), nil
+				}
+
+				// defer formFile1.Close()
+				// tk.Pl("file name : %#v", headerT.Filename)
+
+				// _, errT = io.Copy(destFile1, formFile1)
+				// if errT != nil {
+				// 	return NewCommonErrorWithPos(c, "internal server error: %v", errT), nil
+				// }
+
+				readerT := &Reader{Value: formFile1}
+
+				readerT.SetMember("close", &Function{
+					Name: "close",
+					Value: func(args ...Object) (Object, error) {
+						return ConvertToObject(formFile1.Close()), nil
+					},
+				})
+
+				return Map{
+					"FileName": ToStringObject(headerT.Filename),
+					"Reader":   readerT,
+				}, nil
 				// return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
 
 			},
