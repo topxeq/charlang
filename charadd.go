@@ -1663,7 +1663,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 				argsA := c.GetArgs()
 
-				if len(argsA) < 3 {
+				if len(argsA) < 1 {
 					return NewCommonErrorWithPos(c, "not enough parameters"), nil
 				}
 
