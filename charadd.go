@@ -1695,6 +1695,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 				return Map{
 					"FileName": ToStringObject(headerT.Filename),
+					"Size":     ToStringObject(headerT.Size),
 					"Reader":   readerT,
 				}, nil
 				// return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
