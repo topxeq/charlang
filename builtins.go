@@ -12272,6 +12272,7 @@ func builtinS3StatObjectFunc(c Call) (Object, error) {
 	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
 	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
 	useSslT := tk.IfSwitchExists(vs, "-ssl")
+	compactT := tk.IfSwitchExists(vs, "-compact")
 
 	bucketNameT = tk.GetSwitch(vs, "-bucket=", bucketNameT)
 	pathT = tk.GetSwitch(vs, "-path=", pathT)
@@ -12307,7 +12308,31 @@ func builtinS3StatObjectFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "failed to stat object: %v", errT), nil
 	}
 
-	return ConvertToObject(tk.FromJSONX(tk.ToJSONX(statT))), nil
+	if compactT {
+		mapT := Map{
+			"Key":          ToStringObject(statT.Key),
+			"LastModified": ToStringObject(tk.FormatTime(statT.LastModified.Local())),
+			"Size":         ToIntObject(statT.Size),
+		}
+
+		mapT["ContentType"] = ToStringObject(statT.Metadata.Get("Content-Type"))
+		originalNameT := statT.Metadata.Get("X-Amz-Meta-Originname")
+
+		if strings.HasPrefix(originalNameT, "HEX_") {
+			originalNameT = tk.HexToStr(originalNameT)
+		}
+
+		mapT["VersionID"] = ToStringObject(statT.VersionID)
+		mapT["OriginName"] = ToStringObject(originalNameT)
+		mapT["Uploader"] = ToStringObject(statT.Metadata.Get("X-Amz-Meta-Uploader"))
+
+		return mapT, nil
+	}
+
+	map1T := tk.FromJSONX(tk.ToJSONX(statT))
+	// tk.Plv(map1T)
+
+	return ConvertToObject(map1T), nil
 }
 
 func builtinS3RemoveObjectFunc(c Call) (Object, error) {
@@ -12393,12 +12418,15 @@ func builtinS3ListObjectsFunc(c Call) (Object, error) {
 	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
 	useSslT := tk.IfSwitchExists(vs, "-ssl")
 
+	useV1T := tk.IfSwitchExists(vs, "-useV1")
+
 	bucketNameT = tk.GetSwitch(vs, "-bucket=", bucketNameT)
 
 	prefixT := tk.GetSwitch(vs, "-prefix=", "")
-	withVersionT := tk.IfSwitchExists(vs, "-withVersion")
+	withVersionT := tk.IfSwitchExists(vs, "-withVersions")
 	withMetadataT := tk.IfSwitchExists(vs, "-withMetadata") || tk.IfSwitchExists(vs, "-withMeta")
 	recursiveT := tk.IfSwitchExists(vs, "-recursive")
+	detailT := tk.IfSwitchExists(vs, "-detail")
 	compactT := tk.IfSwitchExists(vs, "-compact")
 
 	optionsT := &minio.Options{
@@ -12423,18 +12451,21 @@ func builtinS3ListObjectsFunc(c Call) (Object, error) {
 	// minioClient.SetCustomTransport(transport)
 
 	if errT != nil {
-		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+		return NewCommonErrorWithPos(c, "failed to initialize s3 client: %v", errT), nil
 	}
 
 	listOptionsT := minio.ListObjectsOptions{
 		WithVersions: withVersionT,
 		WithMetadata: withMetadataT,
 		Recursive:    recursiveT,
+		UseV1:        useV1T,
 	}
 
 	if prefixT != "" {
 		listOptionsT.Prefix = prefixT
 	}
+
+	// tk.Pl("listOptionsT: %#v", listOptionsT)
 
 	aryT := make(Array, 0)
 
@@ -12453,8 +12484,44 @@ func builtinS3ListObjectsFunc(c Call) (Object, error) {
 				mapT["Rel"] = ToStringObject(object.Key)
 			}
 
+			if detailT {
+				statT, errT := minioClient.StatObject(context.Background(), bucketNameT, object.Key, minio.StatObjectOptions{})
+
+				if errT == nil {
+					// return NewCommonErrorWithPos(c, "failed to stat object: %v", errT), nil
+					mapT["ContentType"] = ToStringObject(statT.Metadata.Get("Content-Type"))
+					originalNameT := statT.Metadata.Get("X-Amz-Meta-Originname")
+
+					if strings.HasPrefix(originalNameT, "HEX_") {
+						originalNameT = tk.HexToStr(originalNameT)
+					}
+
+					mapT["VersionID"] = ToStringObject(statT.VersionID)
+					mapT["OriginName"] = ToStringObject(originalNameT)
+					mapT["Uploader"] = ToStringObject(statT.Metadata.Get("X-Amz-Meta-Uploader"))
+				}
+
+			}
+
 			aryT = append(aryT, mapT)
 		} else {
+			if detailT {
+				statT, errT := minioClient.StatObject(context.Background(), bucketNameT, object.Key, minio.StatObjectOptions{})
+
+				if errT == nil {
+					// return NewCommonErrorWithPos(c, "failed to stat object: %v", errT), nil
+					object.ContentType = statT.Metadata.Get("Content-Type")
+					originalNameT := statT.Metadata.Get("X-Amz-Meta-Originname")
+
+					if strings.HasPrefix(originalNameT, "HEX_") {
+						originalNameT = tk.HexToStr(originalNameT)
+					}
+
+					object.UserMetadata = minio.StringMap{"VersionID": statT.VersionID, "OriginName": originalNameT, "Uploader": statT.Metadata.Get("X-Amz-Meta-Uploader")}
+				}
+
+			}
+
 			aryT = append(aryT, ConvertToObject(object))
 		}
 	}
