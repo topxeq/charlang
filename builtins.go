@@ -268,6 +268,7 @@ const (
 	BuiltinUncompressData
 	BuiltinUncompressStr
 	BuiltinUrlEncode
+	BuiltinUrlEncode1
 	BuiltinUrlDecode
 	BuiltinOrderedMap
 	BuiltinExcel
@@ -797,6 +798,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"md5": BuiltinMd5,
 
 	"urlEncode":    BuiltinUrlEncode,
+	"urlEncode1":   BuiltinUrlEncode1,
 	"urlDecode":    BuiltinUrlDecode,
 	"htmlEncode":   BuiltinHtmlEncode,
 	"htmlDecode":   BuiltinHtmlDecode,
@@ -2172,6 +2174,11 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinUrlEncode: &BuiltinFunction{
 		Name:    "urlEncode",
+		Value:   FnASRS(tk.UrlEncode2),
+		ValueEx: FnASRSex(tk.UrlEncode2),
+	},
+	BuiltinUrlEncode1: &BuiltinFunction{
+		Name:    "urlEncode1",
 		Value:   FnASRS(tk.UrlEncode),
 		ValueEx: FnASRSex(tk.UrlEncode),
 	},
