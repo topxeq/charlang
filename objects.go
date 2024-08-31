@@ -7896,6 +7896,7 @@ type HttpResp struct {
 }
 
 // var _ Object = NewHttpReq()
+var _ io.Writer = &HttpResp{Value: nil}
 
 func (*HttpResp) TypeCode() int {
 	return 323
@@ -7908,6 +7909,17 @@ func (*HttpResp) TypeName() string {
 
 func (o *HttpResp) String() string {
 	return fmt.Sprintf("%v", o.Value)
+}
+
+// comply to io.Writer
+func (o *HttpResp) Write(p []byte) (n int, err error) {
+	nv, ok := o.Value.(io.Writer)
+
+	if !ok {
+		return 0, fmt.Errorf("unable to write")
+	}
+
+	return nv.Write(p)
 }
 
 // func (o *HttpResp) SetValue(valueA Object) error {
