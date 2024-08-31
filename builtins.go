@@ -149,6 +149,7 @@ const (
 	BuiltinLeClear
 	BuiltinS3GetObjectBytes
 	BuiltinS3PutObject
+	BuiltinS3GetObjectReader
 	BuiltinS3GetObjectUrl
 	BuiltinS3GetObjectTags
 	BuiltinS3GetObjectStat
@@ -336,6 +337,7 @@ const (
 	BuiltinReadAllBytes
 	BuiltinWriteStr
 	BuiltinWriteBytes
+	BuiltinIoCopy
 	BuiltinStrSplitLines
 	BuiltinNew
 	BuiltinStringBuilder
@@ -789,6 +791,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"writeStr":     BuiltinWriteStr,
 	"writeBytes":   BuiltinWriteBytes,
 
+	"ioCopy": BuiltinIoCopy,
+
 	// encode/decode related
 	"md5": BuiltinMd5,
 
@@ -1098,14 +1102,15 @@ var BuiltinsMap = map[string]BuiltinType{
 	"sendMail": BuiltinSendMail,
 
 	// s3 related
-	"s3GetObjectBytes": BuiltinS3GetObjectBytes,
-	"s3PutObject":      BuiltinS3PutObject,
-	"s3GetObjectUrl":   BuiltinS3GetObjectUrl,
-	"s3GetObjectTags":  BuiltinS3GetObjectTags,
-	"s3GetObjectStat":  BuiltinS3GetObjectStat,
-	"s3StatObject":     BuiltinS3StatObject,
-	"s3RemoveObject":   BuiltinS3RemoveObject,
-	"s3ListObjects":    BuiltinS3ListObjects,
+	"s3GetObjectBytes":  BuiltinS3GetObjectBytes,
+	"s3PutObject":       BuiltinS3PutObject,
+	"s3GetObjectReader": BuiltinS3GetObjectReader,
+	"s3GetObjectUrl":    BuiltinS3GetObjectUrl,
+	"s3GetObjectTags":   BuiltinS3GetObjectTags,
+	"s3GetObjectStat":   BuiltinS3GetObjectStat,
+	"s3StatObject":      BuiltinS3StatObject,
+	"s3RemoveObject":    BuiltinS3RemoveObject,
+	"s3ListObjects":     BuiltinS3ListObjects,
 
 	// 3rd party related
 	"awsSign": BuiltinAwsSign,
@@ -2151,6 +2156,13 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinWriteBytesFunc),
 		ValueEx: builtinWriteBytesFunc,
 	},
+	BuiltinIoCopy: &BuiltinFunction{
+		Name:    "ioCopy",
+		Value:   FnAWtRdRI64E(io.Copy),
+		ValueEx: FnAWtRdRI64Eex(io.Copy),
+		// Value:   CallExAdapter(builtinIoCopyFunc),
+		// ValueEx: builtinIoCopyFunc,
+	},
 
 	// encode/decode related
 	BuiltinMd5: &BuiltinFunction{
@@ -3184,6 +3196,12 @@ var BuiltinObjects = [...]Object{
 		Name:    "s3GetObjectUrl",
 		Value:   CallExAdapter(builtinS3GetObjectUrlFunc),
 		ValueEx: builtinS3GetObjectUrlFunc,
+	},
+
+	BuiltinS3GetObjectReader: &BuiltinFunction{
+		Name:    "s3GetObjectReader",
+		Value:   CallExAdapter(builtinS3GetObjectReaderFunc),
+		ValueEx: builtinS3GetObjectReaderFunc,
 	},
 
 	BuiltinS3GetObjectTags: &BuiltinFunction{
@@ -4560,6 +4578,65 @@ func FnAARSex(fn func(interface{}) string) CallableExFunc {
 
 		rs := fn(ConvertFromObject(c.Get(0)))
 		return ToStringObject(rs), nil
+	}
+}
+
+// like io.Copy
+func FnAWtRdRI64E(fn func(io.Writer, io.Reader) (int64, error)) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(io.Writer)
+
+		if !ok {
+			return NewCommonError("unsupported parameter 1 type: %T", args[0]), nil
+		}
+
+		nv2, ok := args[1].(io.Reader)
+
+		if !ok {
+			return NewCommonError("unsupported parameter 2 type: %T", args[1]), nil
+		}
+
+		rs, errT := fn(nv1, nv2)
+
+		if errT != nil {
+			return NewCommonError("%v", errT), nil
+		}
+
+		return ToIntObject(rs), nil
+	}
+}
+
+func FnAWtRdRI64Eex(fn func(io.Writer, io.Reader) (int64, error)) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(io.Writer)
+
+		if !ok {
+			return NewCommonError("unsupported parameter 1 type: %T", args[0]), nil
+		}
+
+		nv2, ok := args[1].(io.Reader)
+
+		if !ok {
+			return NewCommonError("unsupported parameter 2 type: %T", args[1]), nil
+		}
+
+		rs, errT := fn(nv1, nv2)
+
+		if errT != nil {
+			return NewCommonError("%v", errT), nil
+		}
+
+		return ToIntObject(rs), nil
 	}
 }
 
@@ -12255,6 +12332,63 @@ func builtinS3GetObjectBytesFunc(c Call) (Object, error) {
 	return Bytes(bytesT), nil
 }
 
+func builtinS3GetObjectReaderFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	bucketNameT := args[0].String()
+
+	pathT := args[1].String()
+
+	vs := ObjectsToS(args[2:])
+
+	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
+	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
+	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
+	useSslT := tk.IfSwitchExists(vs, "-ssl")
+
+	bucketNameT = tk.GetSwitch(vs, "-bucket=", bucketNameT)
+	pathT = tk.GetSwitch(vs, "-path=", pathT)
+
+	optionsT := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
+		Secure: useSslT,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			// TLSClientConfig:       tlsConfig,
+		},
+	}
+
+	minioClient, errT := minio.New(endPointT, optionsT)
+
+	// minioClient.SetCustomTransport(transport)
+
+	if errT != nil {
+		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+	}
+
+	objT, errT := minioClient.GetObject(context.Background(), bucketNameT, pathT, minio.GetObjectOptions{})
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to get object: %v", errT), nil
+	}
+
+	readerT := &Reader{Value: objT}
+
+	return readerT, nil
+}
+
 func builtinS3StatObjectFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12325,6 +12459,7 @@ func builtinS3StatObjectFunc(c Call) (Object, error) {
 		mapT["VersionID"] = ToStringObject(statT.VersionID)
 		mapT["OriginName"] = ToStringObject(originalNameT)
 		mapT["Uploader"] = ToStringObject(statT.Metadata.Get("X-Amz-Meta-Uploader"))
+		mapT["UploaderName"] = ToStringObject(statT.Metadata.Get("X-Amz-Meta-Uploadername"))
 
 		return mapT, nil
 	}
@@ -12499,6 +12634,7 @@ func builtinS3ListObjectsFunc(c Call) (Object, error) {
 					mapT["VersionID"] = ToStringObject(statT.VersionID)
 					mapT["OriginName"] = ToStringObject(originalNameT)
 					mapT["Uploader"] = ToStringObject(statT.Metadata.Get("X-Amz-Meta-Uploader"))
+					mapT["UploaderName"] = ToStringObject(statT.Metadata.Get("X-Amz-Meta-Uploadername"))
 				}
 
 			}

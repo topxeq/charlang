@@ -8308,7 +8308,7 @@ type Reader struct {
 	Members map[string]Object `json:"-"`
 }
 
-// var _ Object = NewReader()
+var _ io.ReadCloser = &Reader{Value: nil}
 
 func (*Reader) TypeCode() int {
 	return 331
@@ -8578,6 +8578,8 @@ type Writer struct {
 	Members map[string]Object `json:"-"`
 }
 
+var _ io.WriteCloser = &Writer{Value: nil}
+
 func (*Writer) TypeCode() int {
 	return 333
 }
@@ -8596,6 +8598,26 @@ func (o *Writer) Close() error {
 	nv, ok := o.Value.(io.Closer)
 
 	if !ok {
+		methodT := o.GetMember("close")
+
+		if !IsUndefInternal(methodT) {
+			f1, ok := methodT.(*Function)
+
+			if ok {
+				rs, err := (*f1).Call()
+
+				if err != nil {
+					return err
+				}
+
+				if isErrX(rs) {
+					return rs.(*Error).Unwrap()
+				}
+
+				return nil
+			}
+		}
+
 		return fmt.Errorf("unable to close")
 	}
 
@@ -8609,11 +8631,11 @@ func (o *Writer) Close() error {
 }
 
 // comply to io.Writer
-func (o *Writer) Writer(p []byte) (n int, err error) {
+func (o *Writer) Write(p []byte) (n int, err error) {
 	nv, ok := o.Value.(io.Writer)
 
 	if !ok {
-		return 0, fmt.Errorf("unable to close")
+		return 0, fmt.Errorf("unable to write")
 	}
 
 	return nv.Write(p)
