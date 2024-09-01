@@ -12402,7 +12402,7 @@ func builtinS3GetObjectTextFunc(c Call) (Object, error) {
 	bytesT, errT := io.ReadAll(objT)
 
 	if errT != nil {
-		return NewCommonErrorWithPos(c, "failed to read object bytes: %v", errT), nil
+		return NewCommonErrorWithPos(c, "failed to read object text: %v", errT), nil
 	}
 
 	objT.Close()
