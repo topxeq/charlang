@@ -12463,10 +12463,16 @@ func builtinS3StatObjectFunc(c Call) (Object, error) {
 			originalNameT = tk.HexToStr(originalNameT)
 		}
 
+		uploaderNameT := statT.Metadata.Get("X-Amz-Meta-Uploadername")
+
+		if strings.HasPrefix(uploaderNameT, "HEX_") {
+			uploaderNameT = tk.HexToStr(uploaderNameT)
+		}
+
 		mapT["VersionID"] = ToStringObject(statT.VersionID)
 		mapT["OriginName"] = ToStringObject(originalNameT)
 		mapT["Uploader"] = ToStringObject(statT.Metadata.Get("X-Amz-Meta-Uploader"))
-		mapT["UploaderName"] = ToStringObject(statT.Metadata.Get("X-Amz-Meta-Uploadername"))
+		mapT["UploaderName"] = ToStringObject(uploaderNameT)
 
 		return mapT, nil
 	}
@@ -12638,10 +12644,15 @@ func builtinS3ListObjectsFunc(c Call) (Object, error) {
 						originalNameT = tk.HexToStr(originalNameT)
 					}
 
+					uploaderNameT := statT.Metadata.Get("X-Amz-Meta-Uploadername")
+					if strings.HasPrefix(uploaderNameT, "HEX_") {
+						uploaderNameT = tk.HexToStr(uploaderNameT)
+					}
+
 					mapT["VersionID"] = ToStringObject(statT.VersionID)
 					mapT["OriginName"] = ToStringObject(originalNameT)
 					mapT["Uploader"] = ToStringObject(statT.Metadata.Get("X-Amz-Meta-Uploader"))
-					mapT["UploaderName"] = ToStringObject(statT.Metadata.Get("X-Amz-Meta-Uploadername"))
+					mapT["UploaderName"] = ToStringObject(uploaderNameT)
 				}
 
 			}
