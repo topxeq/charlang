@@ -72,6 +72,8 @@
 
 **time**
 
+**dateTime**
+
 **stringBuilder**
 
 **stringBuffer**
@@ -98,7 +100,7 @@
 
 **writer**
 
-**file**
+**file**: usage: file("c:\\tmp\abc.txt"), file(`/home/user1/a.json`), file("stdin"), file("stdout"), file("stderr"),  another example: fileT := file(`c:\test\a.json`, "-create"), options include: -flag=0, -readOnly, -append, -truncate, -perm=0777 (only octec format is supported)
 
 **image**: new an image object, usage: imageT := image("-width=480", "-height=640", "-color=#FF0000")
 
@@ -144,6 +146,8 @@
 
 **arrayContains**
 
+**sortArray**: usage: sortArray(totalFindsT, "runeStart", "desc")
+
 **getMapItem**
 
 **toOrderedMap**
@@ -178,6 +182,8 @@
 
 **trim**
 
+**nilToEmpty**
+
 **strTrim**
 
 **strTrimStart**
@@ -197,6 +203,8 @@
 **strToLower**
 
 **strContains**
+
+**strContainsIn**
 
 **strIndex**
 
@@ -218,15 +226,23 @@
 
 **strPad**
 
+**strRuneLen**
+
 **strIn**
 
+**strGetLastComponent**
+
 **strFindDiffPos**: return -1 if 2 strings are identical
+
+**strFindAllSub**
 
 **limitStr**
 
 **strQuote**
 
 **strUnquote**
+
+**strToTime**
 
 **getTextSimilarity**
 
@@ -241,6 +257,8 @@
 **regFindFirstGroups**: obtain the first match of a regular expression and return a list of all matching groups, where the first item is the complete matching result and the second item is the first matching group..., usage example: result := regFindFirstGroups(str1, regex1)
 
 **regFindAll**
+
+**regFindAllIndex**
 
 **regFindAllGroups**
 
@@ -356,9 +374,9 @@
 
 **getErrStr**
 
-**checkErrX**
+**checkErrX**: check if the object is error or error string, if is, exit the program with output, usage: checkErrX(result, "-format=Failed to process: %v\n"), the default format is "Error: %v\n"
 
-**checkErr**
+**checkErr**: the same as checkErrX, check if the object is error or error string, if is, exit the program with output, usage: checkErr(result, "-format=Failed to process: %v\n"), the default format is "Error: %v\n"
 
 **errStrf**
 
@@ -446,11 +464,15 @@
 
 **writeBytes**
 
+**ioCopy**
+
 ### --- encode/decode related ---
 
 **md5**
 
 **urlEncode**
+
+**urlEncode1**
 
 **urlDecode**
 
@@ -548,6 +570,10 @@
 
 **getTempDir**
 
+**changeDirj**
+
+**chdir**
+
 **lookPath**
 
 **getInput**
@@ -555,6 +581,14 @@
 **getInputf**
 
 **getChar**
+
+**setStdin**
+
+**setStdout**
+
+**setStderr**
+
+**getPipe**
 
 ### --- dir/path related ---
 
@@ -574,6 +608,8 @@
 
 **ifFileExists**
 
+**getFileInfo**
+
 **getFileAbs**
 
 **getFileExt**
@@ -583,6 +619,10 @@
 **extractFileDir**
 
 **extractFileName**
+
+**getBaseFileName**
+
+**getFileBase**
 
 **copyFile**
 
@@ -602,11 +642,13 @@
 
 **appendText**
 
-**loadBytes**
+**loadBytes**: load bytes from file, usage: loadBytes("file.bin"), return error or Bytes([]byte), loadBytes("a.txt", 5) to read only 5 bytes, can accept a File object
+
+**loadBytesFromFile**: the same as loadBytes
 
 **saveBytes**
 
-**openFile**
+**openFile**: usage: fileT := openFile(`c:\test\a.json`, "-create"), options include: -flag=0, -readOnly, -append, -truncate, -perm=0777 (only octec format is supported)
 
 **closeFile**
 
@@ -616,6 +658,10 @@
 
 **compressStr**
 
+**uncompressData**
+
+**uncompressStr**
+
 **archiveFilesToZip**: Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
 
 ### --- network/web related ---
@@ -623,6 +669,8 @@
 **getWeb**
 
 **getWebBytes**
+
+**getWebBytesWithHeaders**
 
 **postRequest**
 
@@ -682,7 +730,11 @@
 
 **encryptText**
 
+**encryptStr**
+
 **decryptText**
+
+**decryptStr**
 
 **encryptTextByTXTE**
 
@@ -844,9 +896,9 @@
 
 **leLoadFromUrl**
 
-**leLoadFromSsh**
+**leLoadFromSsh**: usage: rs := leLoadFromSsh("-host=a.b.com", "-port=22", "-user=user1", "-password=pass1", "-path=/home/user1/abc.txt")
 
-**leSaveToSsh**
+**leSaveToSsh**: usage: rs := leSaveToSsh("-host=a.b.com", "-port=22", "-user=user1", "-password=pass1", "-path="+pathT)
 
 **leSshInfo**
 
@@ -890,6 +942,28 @@
 
 **sendMail**
 
+### --- s3 related ---
+
+**s3GetObjectBytes**
+
+**s3GetObjectText**
+
+**s3PutObject**
+
+**s3GetObjectReader**
+
+**s3GetObjectUrl**
+
+**s3GetObjectTags**
+
+**s3GetObjectStat**
+
+**s3StatObject**
+
+**s3RemoveObject**
+
+**s3ListObjects**
+
 ### --- 3rd party related ---
 
 **awsSign**
@@ -903,6 +977,8 @@
 **genUuid**
 
 **renderMarkdown**
+
+**replaceHtmlByMap**
 
 // "sortByFunc": BuiltinSortByFunc,
 
