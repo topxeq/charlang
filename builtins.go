@@ -148,6 +148,7 @@ const (
 	BuiltinLeAppendFromStr
 	BuiltinLeClear
 	BuiltinS3GetObjectBytes
+	BuiltinS3GetObjectText
 	BuiltinS3PutObject
 	BuiltinS3GetObjectReader
 	BuiltinS3GetObjectUrl
@@ -1105,6 +1106,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// s3 related
 	"s3GetObjectBytes":  BuiltinS3GetObjectBytes,
+	"s3GetObjectText":   BuiltinS3GetObjectText,
 	"s3PutObject":       BuiltinS3PutObject,
 	"s3GetObjectReader": BuiltinS3GetObjectReader,
 	"s3GetObjectUrl":    BuiltinS3GetObjectUrl,
@@ -3191,6 +3193,12 @@ var BuiltinObjects = [...]Object{
 		Name:    "s3GetObjectBytes",
 		Value:   CallExAdapter(builtinS3GetObjectBytesFunc),
 		ValueEx: builtinS3GetObjectBytesFunc,
+	},
+
+	BuiltinS3GetObjectText: &BuiltinFunction{
+		Name:    "s3GetObjectText",
+		Value:   CallExAdapter(builtinS3GetObjectTextFunc),
+		ValueEx: builtinS3GetObjectTextFunc,
 	},
 
 	BuiltinS3PutObject: &BuiltinFunction{
@@ -12337,6 +12345,69 @@ func builtinS3GetObjectBytesFunc(c Call) (Object, error) {
 	objT.Close()
 
 	return Bytes(bytesT), nil
+}
+
+func builtinS3GetObjectTextFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	bucketNameT := args[0].String()
+
+	pathT := args[1].String()
+
+	vs := ObjectsToS(args[2:])
+
+	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
+	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
+	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
+	useSslT := tk.IfSwitchExists(vs, "-ssl")
+
+	bucketNameT = tk.GetSwitch(vs, "-bucket=", bucketNameT)
+	pathT = tk.GetSwitch(vs, "-path=", pathT)
+
+	optionsT := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
+		Secure: useSslT,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			// TLSClientConfig:       tlsConfig,
+		},
+	}
+
+	minioClient, errT := minio.New(endPointT, optionsT)
+
+	// minioClient.SetCustomTransport(transport)
+
+	if errT != nil {
+		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+	}
+
+	objT, errT := minioClient.GetObject(context.Background(), bucketNameT, pathT, minio.GetObjectOptions{})
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to get object: %v", errT), nil
+	}
+
+	bytesT, errT := io.ReadAll(objT)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to read object bytes: %v", errT), nil
+	}
+
+	objT.Close()
+
+	return &String{Value: string(bytesT)}, nil
 }
 
 func builtinS3GetObjectReaderFunc(c Call) (Object, error) {
