@@ -12127,9 +12127,19 @@ func builtinS3GetObjectUrlFunc(c Call) (Object, error) {
 
 	bucketNameT = tk.GetSwitch(vs, "-bucket=", bucketNameT)
 	pathT = tk.GetSwitch(vs, "-path=", pathT)
-	fileNameT := tk.GetSwitch(vs, "-fileName=", tk.GetLastComponentOfUrl(pathT))
+	fileNameT := strings.TrimSpace(tk.GetSwitch(vs, "-fileName=", tk.GetLastComponentOfUrl(pathT)))
 
-	urlTimeoutT := time.Duration(tk.ToFloat(tk.GetSwitch(vs, "-timeout=", "86400"), 86400) * float64(time.Second))
+	if fileNameT == "" {
+		fileNameT = tk.GetLastComponentOfUrl(pathT)
+	}
+
+	timeoutT := strings.TrimSpace(tk.GetSwitch(vs, "-timeout=", "86400"))
+
+	if timeoutT == "" {
+		timeoutT = "86400"
+	}
+
+	urlTimeoutT := time.Duration(tk.ToFloat(timeoutT, 86400) * float64(time.Second))
 
 	optionsT := &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
