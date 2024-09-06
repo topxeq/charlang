@@ -222,6 +222,7 @@ const (
 	BuiltinStartTransparentProxyEx
 	BuiltinRenderMarkdown
 	BuiltinReplaceHtmlByMap
+	BuiltinProcessHtmlTemplate
 	BuiltinIsDir
 	BuiltinStrStartsWith
 	BuiltinStrEndsWith
@@ -1126,7 +1127,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"renderMarkdown": BuiltinRenderMarkdown,
 
-	"replaceHtmlByMap": BuiltinReplaceHtmlByMap,
+	"replaceHtmlByMap":    BuiltinReplaceHtmlByMap,
+	"processHtmlTemplate": BuiltinProcessHtmlTemplate,
 
 	// "sortByFunc": BuiltinSortByFunc,
 
@@ -3280,6 +3282,13 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinReplaceHtmlByMapFunc),
 		ValueEx: builtinReplaceHtmlByMapFunc,
 	},
+	BuiltinProcessHtmlTemplate: &BuiltinFunction{
+		Name: "processHtmlTemplate",
+		// Value:   CallExAdapter(builtinProcessHtmlTemplateFunc),
+		// ValueEx: builtinProcessHtmlTemplateFunc,
+		Value:   FnASSAVaRA(tk.ProcessHtmlTemplate),
+		ValueEx: FnASSAVaRAex(tk.ProcessHtmlTemplate),
+	},
 
 	// original internal related
 	BuiltinCopy: &BuiltinFunction{
@@ -4675,6 +4684,37 @@ func FnASRSex(fn func(string) string) CallableExFunc {
 
 		rs := fn(c.Get(0).String())
 		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.ProcessHtmlTemplate
+func FnASSAVaRA(fn func(string, string, interface{}, ...string) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 3 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vs := ObjectsToS(args[3:])
+
+		rs := fn(args[0].String(), args[1].String(), ConvertFromObject(args[2]), vs...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASSAVaRAex(fn func(string, string, interface{}, ...string) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 3 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+
+		vs := ObjectsToS(args[3:])
+
+		rs := fn(args[0].String(), args[1].String(), ConvertFromObject(args[2]), vs...)
+
+		return ConvertToObject(rs), nil
 	}
 }
 
