@@ -7720,6 +7720,10 @@ type HttpReq struct {
 
 // var _ Object = NewHttpReq()
 
+func NewHttpReq(c Call) (Object, error) {
+	return &HttpReq{Value: nil}, nil
+}
+
 func (*HttpReq) TypeCode() int {
 	return 321
 }

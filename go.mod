@@ -14,6 +14,7 @@ require (
 )
 
 require (
+	github.com/ALTree/bigfloat v0.2.0 // indirect
 	github.com/aarzilli/sandblast v0.0.0-20151220083925-43f8fb998d06 // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect

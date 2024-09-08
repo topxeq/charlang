@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "1.5.5"
+var VersionG = "1.5.6"
 
 var CodeTextG = ""
 
@@ -981,6 +981,12 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(((*strings.Builder)(args[0].(*StringBuilder).Value)).String()), nil
 			},
 		},
+		"String": &Function{
+			Name: "String",
+			Value: func(args ...Object) (Object, error) {
+				return ToStringObject(((*strings.Builder)(args[0].(*StringBuilder).Value)).String()), nil
+			},
+		},
 		"write": &Function{
 			Name: "write",
 			Value: func(args ...Object) (Object, error) {
@@ -1038,6 +1044,28 @@ var methodFuncMapG = map[int]map[string]*Function{
 		},
 		"writeStr": &Function{
 			Name: "writeStr",
+			Value: func(args ...Object) (Object, error) {
+				var errT error
+
+				o := args[0].(*StringBuilder)
+
+				argsT := args[1:]
+
+				if len(argsT) < 1 {
+					return NewCommonError("not enough parameters"), nil
+				}
+
+				rsT, errT := o.Value.WriteString(argsT[0].String())
+
+				if errT != nil {
+					return NewFromError(errT), nil
+				}
+
+				return Int(rsT), nil
+			},
+		},
+		"WriteString": &Function{
+			Name: "WriteString",
 			Value: func(args ...Object) (Object, error) {
 				var errT error
 

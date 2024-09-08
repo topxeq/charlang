@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/csv"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -240,23 +241,34 @@ const (
 	BuiltinRUnlock
 	BuiltinTryRLock
 	BuiltinToKMG
+	BuiltinFloatToStr
 	BuiltinGetFileList
 	BuiltinMathAbs
 	BuiltinMathSqrt
+	BuiltinMathPow
+	BuiltinMathExp
+	BuiltinMathLog
+	BuiltinMathMin
+	BuiltinMathMax
 	BuiltinFlexEval
 	BuiltinAdjustFloat
 	BuiltinBigInt
 	BuiltinBigFloat
 	BuiltinToOrderedMap
 	BuiltinUnhex
+	BuiltinHexToStr
 	BuiltinBitNot
 	BuiltinToUpper
 	BuiltinToLower
 	BuiltinSscanf
 	BuiltinStrQuote
 	BuiltinStrUnquote
+	BuiltinStrToInt
 	BuiltinStrToTime
+	BuiltinDealStr
 	BuiltinToInt
+	BuiltinToBool
+	BuiltinToBoolWithDefault
 	BuiltinToFloat
 	BuiltinToHex
 	BuiltinCompareBytes
@@ -300,6 +312,8 @@ const (
 	BuiltinFileExists
 	BuiltinGenJSONResp
 	BuiltinUrlExists
+	BuiltinParseUrl
+	BuiltinParseQuery
 	BuiltinErrStrf
 	BuiltinErrf
 	BuiltinCharCode
@@ -315,6 +329,7 @@ const (
 	BuiltinMux
 	BuiltinMutex
 	BuiltinHttpHandler
+	BuiltinHttpReq
 	BuiltinFatalf
 	BuiltinSeq
 	BuiltinIsNil
@@ -523,6 +538,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"bool":  BuiltinBool, //  create a boolean value(with type 'bool'), usage: b1 := bool(),  b2 := bool(true)
 	"byte":  BuiltinByte,
 	"char":  BuiltinChar,
+	"rune":  BuiltinChar,
 	"int":   BuiltinInt,
 	"uint":  BuiltinUint,
 	"float": BuiltinFloat,
@@ -556,6 +572,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"mux":         BuiltinMux,
 	"httpHandler": BuiltinHttpHandler,
+
+	"httpReq": BuiltinHttpReq,
 
 	"reader": BuiltinReader,
 	"writer": BuiltinWriter,
@@ -605,15 +623,20 @@ var BuiltinsMap = map[string]BuiltinType{
 	"setValueByRef": BuiltinSetValueByRef,
 
 	// convert related
-	"toStr":     BuiltinToStr,
-	"toInt":     BuiltinToInt,
-	"toFloat":   BuiltinToFloat,
-	"toTime":    BuiltinToTime,
-	"toHex":     BuiltinToHex,
-	"hexEncode": BuiltinToHex,
-	"unhex":     BuiltinUnhex,
-	"hexDecode": BuiltinUnhex,
-	"toKMG":     BuiltinToKMG,
+	"toStr":             BuiltinToStr,
+	"toBool":            BuiltinToBool,
+	"toBoolWithDefault": BuiltinToBoolWithDefault,
+	"toInt":             BuiltinToInt,
+	"toFloat":           BuiltinToFloat,
+	"toTime":            BuiltinToTime,
+	"toHex":             BuiltinToHex,
+	"hexEncode":         BuiltinToHex,
+	"unhex":             BuiltinUnhex,
+	"hexDecode":         BuiltinUnhex,
+	"hexToStr":          BuiltinHexToStr,
+	"toKMG":             BuiltinToKMG,
+
+	"floatToStr": BuiltinFloatToStr,
 
 	// string related
 	"trim":          BuiltinTrim,
@@ -655,7 +678,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strQuote":   BuiltinStrQuote,
 	"strUnquote": BuiltinStrUnquote,
 
+	"strToInt":  BuiltinStrToInt,
 	"strToTime": BuiltinStrToTime,
+
+	"dealStr": BuiltinDealStr,
 
 	"getTextSimilarity": BuiltinGetTextSimilarity,
 
@@ -679,6 +705,12 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mathAbs":  BuiltinMathAbs,
 	"abs":      BuiltinMathAbs,
 	"mathSqrt": BuiltinMathSqrt,
+	"mathPow":  BuiltinMathPow,
+	"mathExp":  BuiltinMathExp,
+	"mathLog":  BuiltinMathLog,
+
+	"min": BuiltinMathMin,
+	"max": BuiltinMathMax,
 
 	"flexEval": BuiltinFlexEval,
 
@@ -935,6 +967,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"postRequest": BuiltinPostRequest,
 
 	"urlExists": BuiltinUrlExists,
+
+	"parseUrl":   BuiltinParseUrl,   // parse URL and return a map
+	"parseQuery": BuiltinParseQuery, // parse URL query string(such as 'x=1&y=2&y=3') and return a map({"x": "1", "y": ["2", "3"]})
 
 	"isHttps": BuiltinIsHttps,
 
@@ -1387,6 +1422,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinHttpHandlerFunc),
 		ValueEx: builtinHttpHandlerFunc,
 	},
+	BuiltinHttpReq: &BuiltinFunction{
+		Name:    "httpReq",
+		Value:   CallExAdapter(builtinHttpReqFunc),
+		ValueEx: builtinHttpReqFunc,
+	},
 
 	BuiltinImage: &BuiltinFunction{
 		Name:    "image",
@@ -1522,6 +1562,16 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinToStrFunc),
 		ValueEx: builtinToStrFunc,
 	},
+	BuiltinToBool: &BuiltinFunction{
+		Name:    "toBool",
+		Value:   CallExAdapter(builtinToBoolFunc),
+		ValueEx: builtinToBoolFunc,
+	},
+	BuiltinToBoolWithDefault: &BuiltinFunction{
+		Name:    "toBoolWithDefault",
+		Value:   CallExAdapter(builtinToBoolWithDefaultFunc),
+		ValueEx: builtinToBoolWithDefaultFunc,
+	},
 	BuiltinToInt: &BuiltinFunction{
 		Name:    "toInt",
 		Value:   CallExAdapter(builtinToIntFunc),
@@ -1547,10 +1597,20 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASRLby(tk.HexToBytes),
 		ValueEx: FnASRLbyex(tk.HexToBytes),
 	},
+	BuiltinHexToStr: &BuiltinFunction{
+		Name:    "hexToStr",
+		Value:   FnASRS(tk.HexToStr),
+		ValueEx: FnASRSex(tk.HexToStr),
+	},
 	BuiltinToKMG: &BuiltinFunction{
 		Name:    "toKMG",
 		Value:   FnAAVaRS(tk.IntToKMGT),
 		ValueEx: FnAAVaRSex(tk.IntToKMGT),
+	},
+	BuiltinFloatToStr: &BuiltinFunction{
+		Name:    "floatToStr",
+		Value:   FnAFRS(tk.Float64ToStr),
+		ValueEx: FnAFRSex(tk.Float64ToStr),
 	},
 
 	// string related
@@ -1699,10 +1759,20 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtintStrUnquoteFunc),
 		ValueEx: builtintStrUnquoteFunc,
 	},
+	BuiltinStrToInt: &BuiltinFunction{
+		Name:    "strToInt",
+		Value:   FnASViRI(tk.StrToIntWithDefaultValue),
+		ValueEx: FnASViRIex(tk.StrToIntWithDefaultValue),
+	},
 	BuiltinStrToTime: &BuiltinFunction{
 		Name:    "strToTime",
 		Value:   CallExAdapter(builtinStrToTimeFunc),
 		ValueEx: builtinStrToTimeFunc,
+	},
+	BuiltinDealStr: &BuiltinFunction{
+		Name:    "dealStr",
+		Value:   CallExAdapter(builtinDealStrFunc),
+		ValueEx: builtinDealStrFunc,
 	},
 	BuiltinGetTextSimilarity: &BuiltinFunction{
 		Name:    "getTextSimilarity",
@@ -1782,6 +1852,31 @@ var BuiltinObjects = [...]Object{
 		Name:    "mathSqrt",
 		Value:   CallExAdapter(builtinMathSqrtFunc),
 		ValueEx: builtinMathSqrtFunc,
+	},
+	BuiltinMathPow: &BuiltinFunction{
+		Name:    "mathPow",
+		Value:   CallExAdapter(builtinMathPowFunc),
+		ValueEx: builtinMathPowFunc,
+	},
+	BuiltinMathExp: &BuiltinFunction{
+		Name:    "mathExp",
+		Value:   CallExAdapter(builtinMathExpFunc),
+		ValueEx: builtinMathExpFunc,
+	},
+	BuiltinMathLog: &BuiltinFunction{
+		Name:    "mathLog",
+		Value:   CallExAdapter(builtinMathLogFunc),
+		ValueEx: builtinMathLogFunc,
+	},
+	BuiltinMathMin: &BuiltinFunction{
+		Name:    "min",
+		Value:   FnAVaRA(tk.Min),
+		ValueEx: FnAVaRAex(tk.Min),
+	},
+	BuiltinMathMax: &BuiltinFunction{
+		Name:    "max",
+		Value:   FnAVaRA(tk.Max),
+		ValueEx: FnAVaRAex(tk.Max),
 	},
 	BuiltinFlexEval: &BuiltinFunction{
 		Name:    "flexEval",
@@ -2520,8 +2615,8 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinLoadBytes: &BuiltinFunction{
 		Name:    "loadBytes",
-		Value:   FnASVIRA(tk.LoadBytesFromFile),
-		ValueEx: FnASVIRAex(tk.LoadBytesFromFile),
+		Value:   FnASViRA(tk.LoadBytesFromFile),
+		ValueEx: FnASViRAex(tk.LoadBytesFromFile),
 		Remark:  `load bytes from file, usage: loadBytes("file.bin"), return error or Bytes([]byte)`,
 	},
 	BuiltinLoadBytesFromFile: &BuiltinFunction{
@@ -2598,6 +2693,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "urlExists",
 		Value:   FnASVaRA(tk.UrlExists),
 		ValueEx: FnASVaRAex(tk.UrlExists),
+	},
+	BuiltinParseUrl: &BuiltinFunction{
+		Name:    "parseUrl",
+		Value:   CallExAdapter(builtinParseUrlFunc),
+		ValueEx: builtinParseUrlFunc,
+	},
+	BuiltinParseQuery: &BuiltinFunction{
+		Name:    "parseQuery",
+		Value:   CallExAdapter(builtinParseQueryFunc),
+		ValueEx: builtinParseQueryFunc,
 	},
 	BuiltinIsHttps: &BuiltinFunction{
 		Name:    "isHttps",
@@ -3625,6 +3730,8 @@ func builtinGetMapItemFunc(c Call) (Object, error) {
 		defaultT = args[2]
 	}
 
+	// tk.Pl("defaultT: %#v", defaultT)
+
 	valueT, errT := args[0].IndexGet(args[1])
 
 	if errT != nil {
@@ -3634,6 +3741,10 @@ func builtinGetMapItemFunc(c Call) (Object, error) {
 	b := isErrX(valueT)
 
 	if b {
+		return defaultT, nil
+	}
+
+	if IsUndefInternal(valueT) {
 		return defaultT, nil
 	}
 
@@ -4938,6 +5049,33 @@ func FnAFRFex(fn func(float64) float64) CallableExFunc {
 	}
 }
 
+// like tk.Float64ToStr
+func FnAFRS(fn func(float64) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		rs := fn(ToFloatQuick(args[0]))
+
+		return ToStringObject(rs), nil
+	}
+}
+
+func FnAFRSex(fn func(float64) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+
+		rs := fn(ToFloatQuick(args[0]))
+
+		return ToStringObject(rs), nil
+	}
+}
+
 // like tk.HexToBytes
 func FnASRLby(fn func(string) []byte) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
@@ -6031,7 +6169,7 @@ func FnAAVaRAex(fn func(interface{}, ...interface{}) interface{}) CallableExFunc
 }
 
 // like tk.LoadBytesFromFile
-func FnASVIRA(fn func(string, ...int) interface{}) CallableFunc {
+func FnASViRA(fn func(string, ...int) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
 			return NewCommonError("not enough parameters"), nil
@@ -6043,7 +6181,7 @@ func FnASVIRA(fn func(string, ...int) interface{}) CallableFunc {
 	}
 }
 
-func FnASVIRAex(fn func(string, ...int) interface{}) CallableExFunc {
+func FnASViRAex(fn func(string, ...int) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
@@ -6051,6 +6189,30 @@ func FnASVIRAex(fn func(string, ...int) interface{}) CallableExFunc {
 		vargs := toArgsN(1, c)
 		rs := fn(c.Get(0).String(), vargs...)
 		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.StrToIntWithDefaultValue
+func FnASViRI(fn func(string, ...int) int) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		vargs := ObjectsToN(args[1:])
+		rs := fn(args[0].String(), vargs...)
+		return ToIntObject(rs), nil
+	}
+}
+
+func FnASViRIex(fn func(string, ...int) int) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+		vargs := toArgsN(1, c)
+		rs := fn(c.Get(0).String(), vargs...)
+		return ToIntObject(rs), nil
 	}
 }
 
@@ -6371,6 +6533,25 @@ func FnAVaRex(fn func(...interface{})) CallableExFunc {
 		vargs := toArgsA(0, c)
 		fn(vargs...)
 		return nil, nil
+	}
+}
+
+// like tk.Min
+func FnAVaRA(fn func(...interface{}) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		vargs := ObjectsToI(args)
+		rs := fn(vargs...)
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnAVaRAex(fn func(...interface{}) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		vargs := ObjectsToI(args)
+		rs := fn(vargs...)
+		return ConvertToObject(rs), nil
 	}
 }
 
@@ -8124,6 +8305,42 @@ func builtinToIntFunc(c Call) (Object, error) {
 	return Int(rsT), nil
 }
 
+func builtinToBoolFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Bool(false), nil
+	}
+
+	rsT := tk.ToBool(ConvertFromObject(args[0]))
+
+	return Bool(rsT), nil
+}
+
+func builtinToBoolWithDefaultFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Bool(false), nil
+	}
+
+	nv2, ok := args[1].(Bool)
+
+	if !ok {
+		nv2 = Bool(false)
+	}
+
+	if len(args) > 1 {
+		rsT := tk.ToBoolWithDefaultValue(ConvertFromObject(args[0]), bool(nv2))
+
+		return Bool(rsT), nil
+	}
+
+	rsT := tk.ToBoolWithDefaultValue(ConvertFromObject(args[0]))
+
+	return Bool(rsT), nil
+}
+
 func builtinToFloatFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -8644,6 +8861,54 @@ func builtinGetWebBytesWithHeadersFunc(c Call) (Object, error) {
 	rsT = append(rsT, ConvertToObject(m))
 
 	return rsT, nil
+}
+
+func builtinParseUrlFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	strT := args[0].String()
+
+	rs, errT := url.Parse(strT)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "%v", errT), nil
+	}
+
+	return ConvertToObject(tk.FromJSONX(tk.ToJSONX(rs))), nil
+}
+
+func builtinParseQueryFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	strT := args[0].String()
+
+	vs := ObjectsToS(args[1:])
+
+	rs, errT := url.ParseQuery(strT)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "%v", errT), nil
+	}
+
+	if tk.IfSwitchExists(vs, "-compact") {
+		mapT := make(Map)
+
+		for k, v := range rs {
+			mapT[k] = ToStringObject(v[0])
+		}
+
+		return mapT, nil
+	}
+
+	return ConvertToObject(tk.FromJSONX(tk.ToJSONX(rs))), nil
 }
 
 func builtinOpenFileFunc(c Call) (Object, error) {
@@ -9915,11 +10180,6 @@ func builtinWriteRespFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
-	v, ok := args[0].(*HttpResp)
-	if !ok {
-		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
-	}
-
 	var contentT Bytes = nil
 
 	v1, ok := args[1].(String)
@@ -9930,11 +10190,49 @@ func builtinWriteRespFunc(c Call) (Object, error) {
 
 	if contentT == nil {
 		v2, ok := args[1].(Bytes)
-		if !ok {
-			return NewCommonErrorWithPos(c, "invalid content type: (%T)%v", args[1], args[1]), nil
+
+		if ok {
+			contentT = v2
+		}
+	}
+
+	if contentT == nil {
+		return NewCommonErrorWithPos(c, "invalid content type: (%T)%v", args[1], args[1]), nil
+	}
+
+	v, ok := args[0].(*HttpResp)
+	if !ok {
+		var writerT io.Writer = nil
+
+		nv2, ok := args[0].(*Writer)
+
+		if ok {
+			writerT = nv2.Value
+		} else {
+			nv3, ok := args[0].(*File)
+
+			if ok {
+				writerT = nv3.Value
+			}
 		}
 
-		contentT = v2
+		if writerT == nil {
+			return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
+		}
+
+		// v2, ok := args[0].(*Writer)
+
+		// if !ok {
+		// 	return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
+		// }
+
+		r, errT := writerT.Write(contentT)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to write to writer: %v", errT), nil
+		}
+
+		return Int(r), errT
 	}
 
 	r, errT := v.Value.Write(contentT)
@@ -10046,7 +10344,27 @@ func builtinSetRespHeaderFunc(c Call) (Object, error) {
 
 	nv1, ok := args[0].(*HttpResp)
 	if !ok {
-		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
+		var writerT io.Writer = nil
+
+		nv2, ok := args[0].(*Writer)
+
+		if ok {
+			writerT = nv2.Value
+		} else {
+			nv3, ok := args[0].(*File)
+
+			if ok {
+				writerT = nv3.Value
+			}
+		}
+
+		if writerT == nil {
+			return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
+		}
+
+		writerT.Write([]byte(fmt.Sprintf("setRespHeader: %v -> %v\n", args[1].String(), args[2].String())))
+
+		return Undefined, nil
 	}
 
 	reqT := nv1.Value
@@ -10314,15 +10632,15 @@ func builtinMakeFunc(c Call) (Object, error) {
 		} else {
 			return &MutableString{Value: ""}, nil
 		}
-	case "array", "list":
+	case "[]", "array", "list":
 		if len(args) > 2 {
 			return make(Array, tk.ToInt(args[1].String(), 0), tk.ToInt(args[2].String(), 0)), nil
 		} else if len(args) > 1 {
-			return make(Array, 0, tk.ToInt(args[1].String(), 0)), nil
+			return make(Array, tk.ToInt(args[1].String(), 0)), nil
 		} else {
 			return make(Array, 0, 0), nil
 		}
-	case "map":
+	case "{}", "map":
 		if len(args) > 1 {
 			return make(Map, tk.ToInt(args[1].String(), 0)), nil
 		} else {
@@ -10858,6 +11176,10 @@ func builtinGenJSONRespFunc(c Call) (Object, error) {
 	}
 
 	var s1, s2 string
+
+	if IsUndefInternal(args[2]) {
+		args[2] = &HttpReq{Value: nil}
+	}
 
 	v0, ok := args[2].(*HttpReq)
 
@@ -13086,6 +13408,55 @@ func builtinStrToTimeFunc(c Call) (Object, error) {
 	return &Time{Value: rsT}, nil
 }
 
+func builtinDealStrFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	strT := args[0].String()
+
+	if strings.HasPrefix(strT, "HEX_") {
+		strT = strT[4:]
+
+		buf, errT := hex.DecodeString(strT)
+		if errT != nil {
+			return NewCommonError("failed decode hex: %v", errT), nil
+		}
+
+		return &String{Value: string(buf)}, nil
+	} else if strings.HasPrefix(strT, "//TXDEF#") || strings.HasPrefix(strT, "740404") {
+		codeT := ""
+
+		if len(args) > 1 {
+			codeT = args[1].String()
+		}
+
+		return &String{Value: tk.DecryptStringByTXDEF(strT, codeT)}, nil
+	} else if strings.HasPrefix(strT, "//TXRR#") {
+		strT = strT[7:]
+
+		codeT := "char"
+
+		if len(args) > 1 {
+			codeT = args[1].String()
+		}
+
+		if strings.HasPrefix(strT, "//TXDEF#") {
+			strT = tk.DecryptStringByTXDEF(strings.TrimSpace(strT[8:]), codeT)
+		}
+
+		if strings.HasPrefix(strT, "http") {
+			strT = tk.ToStr(tk.GetWeb(strings.TrimSpace(strT)))
+		}
+
+		return &String{Value: strT}, nil
+	}
+
+	return &String{Value: strT}, nil
+}
+
 func builtinSscanfFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13277,6 +13648,87 @@ func builtinMathSqrtFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
 }
 
+func builtinMathExpFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	switch nv := args[0].(type) {
+	case Byte:
+		return Float(math.Exp(float64(nv))), nil
+	case Char:
+		return Float(math.Exp(float64(nv))), nil
+	case Int:
+		return Float(math.Exp(float64(nv))), nil
+	case Uint:
+		return Float(math.Exp(float64(nv))), nil
+	case Float:
+		return Float(math.Exp(float64(nv))), nil
+	case *BigInt:
+		return &BigFloat{Value: tk.BigFloatExp(big.NewFloat(0).SetInt(nv.Value))}, nil
+	case *BigFloat:
+		return &BigFloat{Value: tk.BigFloatExp(big.NewFloat(0).Set(nv.Value))}, nil
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
+}
+
+func builtinMathLogFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	switch nv := args[0].(type) {
+	case Byte:
+		return Float(math.Log(float64(nv))), nil
+	case Char:
+		return Float(math.Log(float64(nv))), nil
+	case Int:
+		return Float(math.Log(float64(nv))), nil
+	case Uint:
+		return Float(math.Log(float64(nv))), nil
+	case Float:
+		return Float(math.Log(float64(nv))), nil
+	case *BigInt:
+		return &BigFloat{Value: tk.BigFloatLog(big.NewFloat(0).SetInt(nv.Value))}, nil
+	case *BigFloat:
+		return &BigFloat{Value: tk.BigFloatLog(big.NewFloat(0).Set(nv.Value))}, nil
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
+}
+
+func builtinMathPowFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	switch nv := args[0].(type) {
+	case Byte:
+		return Float(math.Pow(float64(nv), tk.ToFloat(ConvertFromObject(args[1]), 0.0))), nil
+	case Char:
+		return Float(math.Pow(float64(nv), tk.ToFloat(ConvertFromObject(args[1]), 0.0))), nil
+	case Int:
+		return Float(math.Pow(float64(nv), tk.ToFloat(ConvertFromObject(args[1]), 0.0))), nil
+	case Uint:
+		return Float(math.Pow(float64(nv), tk.ToFloat(ConvertFromObject(args[1]), 0.0))), nil
+	case Float:
+		return Float(math.Pow(float64(nv), tk.ToFloat(ConvertFromObject(args[1]), 0.0))), nil
+	case *BigInt:
+		return &BigFloat{Value: tk.BigFloatPower(big.NewFloat(0).SetInt(nv.Value), big.NewFloat(0).SetFloat64(tk.ToFloat(ConvertFromObject(args[1]), 0.0)))}, nil
+	case *BigFloat:
+		return &BigFloat{Value: tk.BigFloatPower(big.NewFloat(0).Set(nv.Value), big.NewFloat(0).SetFloat64(tk.ToFloat(ConvertFromObject(args[1]), 0.0)))}, nil
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
+}
+
 func builtinMathAbsFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13336,6 +13788,10 @@ func builtinHttpHandlerFunc(c Call) (Object, error) {
 	return NewHttpHandler(c)
 }
 
+func builtinHttpReqFunc(c Call) (Object, error) {
+	return NewHttpReq(c)
+}
+
 func builtinImageFunc(c Call) (Object, error) {
 	return NewImage(c)
 }
@@ -13365,7 +13821,29 @@ func builtinWriteRespHeaderFunc(c Call) (Object, error) {
 
 	v, ok := args[0].(*HttpResp)
 	if !ok {
-		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+		var writerT io.Writer = nil
+
+		nv2, ok := args[0].(*Writer)
+
+		if ok {
+			writerT = nv2.Value
+		} else {
+			nv3, ok := args[0].(*File)
+
+			if ok {
+				writerT = nv3.Value
+			}
+		}
+
+		if writerT == nil {
+			return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
+		}
+
+		writerT.Write([]byte(fmt.Sprintf("writeRespHeader: %v\n", args[1].String())))
+
+		return Undefined, nil
+
+		// return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
 	}
 
 	var statusT int = 200
