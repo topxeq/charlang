@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "1.5.6"
+var VersionG = "1.5.7"
 
 var CodeTextG = ""
 
@@ -115,6 +115,7 @@ func init() {
 
 var namedFuncMapG = map[string]interface{}{
 	"fmt.Fprintf": fmt.Fprintf,
+	"tk.NewTK":    tk.NewTK,
 }
 
 var namedValueMapG = map[string]interface{}{

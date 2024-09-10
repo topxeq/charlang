@@ -50,6 +50,8 @@
       - [Calculate BMI](#calculate-bmi)
       - [One More Example for Gels](#one-more-example-for-gels)
       - [Redirect Stdout to a File](#redirect-stdout-to-a-file)
+      - [Get Named Value in Charlang](#get-named-value-in-charlang)
+      - [Call Named Function in Golang](#call-named-function-in-golang)
       - [Compare Binary Files](#compare-binary-files)
       - [A Simple Text Editor](#a-simple-text-editor)
       - [Base64 Encoding of Images](#base64-encoding-of-images)
@@ -256,6 +258,20 @@ Download the binary release files according to your OS from the website: [Charla
 
 ```shell
 go get -u github.com/topxeq/charlang
+```
+
+or
+
+```shell
+cd $GOPATH/src/github.com/topxeq
+
+git clone https://github.com/topxeq/tkc
+
+git clone https://github.com/topxeq/charlang
+
+cd $GOPATH/src/github.com/topxeq/charlang/cmd
+
+go install
 ```
 
 ### 7.3 Start Running the Shell or Scripts
@@ -1871,6 +1887,59 @@ Note: Better run the example code with charw.exe(i.e. the GUI version of Charlan
 
 file: [guiRedirectStdout.char](https://topget.org/dc/c/charlang/example/guiRedirectStdout.char)
 
+#### Get Named Value in Charlang
+
+Note: These values should be defined in the Charlang source code first before using them. In charadd.go:
+
+```go
+...
+
+var namedValueMapG = map[string]interface{}{
+	"tk.TimeFormat":            tk.TimeFormat,            // "2006-01-02 15:04:05"
+	"tk.TimeFormatMS":          tk.TimeFormatMS,          // "2006-01-02 15:04:05.000"
+	"tk.TimeFormatMSCompact":   tk.TimeFormatMSCompact,   // "20060102150405.000"
+	"tk.TimeFormatCompact":     tk.TimeFormatCompact,     // "20060102150405"
+	"tk.TimeFormatCompact2":    tk.TimeFormatCompact2,    // "2006/01/02 15:04:05"
+	"tk.TimeFormatDateCompact": tk.TimeFormatDateCompact, // "20060102"
+
+	"time.Layout":   time.Layout,
+	"time.RFC1123":  time.RFC1123,
+	"time.RFC3339":  time.RFC3339,
+	"time.DateTime": time.DateTime,
+	"time.DateOnly": time.DateOnly,
+	"time.TimeOnly": time.TimeOnly,
+
+	"maxInt":   math.MaxInt,
+	"minInt":   math.MinInt,
+	"maxFloat": math.MaxFloat64,
+	"minFloat": math.SmallestNonzeroFloat64,
+
+...
+```
+
+Get these values by calling getNamedValue(getConst) function.
+
+file: [namedValue.char](https://topget.org/dc/c/charlang/example/namedValue.char)
+
+#### Call Named Function in Golang
+
+Note: These functions should be defined in the Charlang source code first before calling them. In charadd.go:
+
+```go
+...
+
+var namedFuncMapG = map[string]interface{}{
+	"fmt.Fprintf": fmt.Fprintf,
+	"tk.NewTK":    tk.NewTK,
+}
+
+...
+```
+
+Call these functions by calling callNamedValue function and passing the proper parameters.
+
+file: [callNamedFunc.char](https://topget.org/dc/c/charlang/example/callNamedFunc.char)
+
 #### Compare Binary Files
 
 file: [binCompare.char](https://topget.org/dc/c/charlang/example/binCompare.char)
@@ -2003,7 +2072,7 @@ D:\tmpx>cal.exe
 
 #### Charlang as An Embedded Language in Golang
 
-To run a script in Golang, it must be compiled to create a `Bytecode` object then it is
+To run a Charlang script in Golang, it must be compiled to create a `Bytecode` object then it is
 provided to Virtual Machine (VM). Charlang has a simple optimizer enabled by default
 in the compiler. Optimizer evaluates simple expressions not having side effects
 to replace expressions with constant values. Note that, optimizer can be

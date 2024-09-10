@@ -1,0 +1,9 @@
+// note the result is an array
+tk := callNamedFunc("tk.NewTK")[0]
+
+pln(tk)
+
+// note the result is an array
+rs := callMethodEx(tk, "GetTextSimilarity", "abc", "abd")[0]
+
+plv(rs)

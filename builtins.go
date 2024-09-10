@@ -7721,7 +7721,7 @@ func builtinCallNamedFuncFunc(c Call) (Object, error) {
 		return Undefined, NewCommonErrorWithPos(c, "named func not found")
 	}
 
-	rsT := tk.ReflectCallFuncQuick(fn1, ObjectsToI(args[1:]))
+	rsT := tk.ReflectCallFuncQuick(fn1, ObjectsToI(args[1:])...)
 
 	return ConvertToObject(rsT), nil
 }
@@ -7796,6 +7796,8 @@ func builtinCallMethodExFunc(c Call) (Object, error) {
 	// }
 
 	paramsT := ObjectsToI(args[2:])
+
+	// tk.Plv(objT, name1, paramsT)
 
 	rsT := tk.ReflectCallMethodQuick(objT, name1, paramsT...)
 

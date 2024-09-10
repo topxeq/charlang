@@ -1,0 +1,10 @@
+// these values are predefined in Charlang
+maxIntT := getNamedValue("maxInt")
+
+pln(maxIntT)
+
+// getConst is equivalent to getNamedValue
+maxFloatT := getConst("maxFloat")
+
+pln(maxFloatT)
+
