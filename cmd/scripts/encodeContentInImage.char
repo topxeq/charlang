@@ -1,0 +1,21 @@
+imagePathT := joinPath(getEnv("GOPATH"), "src", "github.com", "topxeq", "charlang", "cmd", "scripts", "flower01.png")
+
+imageT := loadImageFromFile(imagePathT)
+
+bytesT := bytes(3, 1, 4, 1, 5, 9, 2, 6)
+
+plv(bytesT)
+
+encodedBytesT := encodeBytesInImage(bytesT, imageT)
+
+newImageT := loadImageFromBytes(encodedBytesT, "-type=png")
+
+asciiT := imageToAscii(imageT, "-width=60", "-height=80")
+
+for i, v in asciiT {
+	pln(v)
+}
+
+decodeBytesT := decodeBytesFromImage(newImageT)
+
+plv(decodeBytesT)

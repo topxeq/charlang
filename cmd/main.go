@@ -1766,7 +1766,7 @@ func main() {
 		return
 	}
 
-	if tk.IfSwitchExistsWhole(argsT, "-update") {
+	if tk.IfSwitchExistsWhole(argsT, "-updateChar") {
 		remoteVersionT := tk.GetWeb(`http://topget.org/pub/charVersion.txt`)
 
 		if tk.IsErrX(remoteVersionT) {

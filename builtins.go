@@ -82,6 +82,8 @@ const (
 	BuiltinGetImageInfo
 	BuiltinStrToRgba
 	BuiltinEncodeImage
+	BuiltinEncodeBytesInImage
+	BuiltinDecodeBytesFromImage
 	BuiltinDrawImageOnImage
 	BuiltinDrawTextWrappedOnImage
 	BuiltinGenQr
@@ -350,6 +352,7 @@ const (
 	BuiltinGetWeb
 	BuiltinGetWebBytes
 	BuiltinGetWebBytesWithHeaders
+	BuiltinGetWebRespBody
 	BuiltinRegFindFirstGroups
 	BuiltinReadAllStr
 	BuiltinReadAllBytes
@@ -963,6 +966,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getWeb":                 BuiltinGetWeb,
 	"getWebBytes":            BuiltinGetWebBytes,
 	"getWebBytesWithHeaders": BuiltinGetWebBytesWithHeaders,
+	"getWebRespBody":         BuiltinGetWebRespBody,
 
 	"postRequest": BuiltinPostRequest,
 
@@ -1033,7 +1037,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"strToRgba": BuiltinStrToRgba,
 
-	"encodeImage": BuiltinEncodeImage,
+	"encodeImage":          BuiltinEncodeImage,
+	"encodeBytesInImage":   BuiltinEncodeBytesInImage,
+	"decodeBytesFromImage": BuiltinDecodeBytesFromImage,
 
 	"drawImageOnImage":       BuiltinDrawImageOnImage,
 	"drawTextWrappedOnImage": BuiltinDrawTextWrappedOnImage,
@@ -2684,6 +2690,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinGetWebBytesWithHeadersFunc),
 		ValueEx: builtinGetWebBytesWithHeadersFunc,
 	},
+	BuiltinGetWebRespBody: &BuiltinFunction{
+		Name:    "getWebRespBody",
+		Value:   CallExAdapter(builtinGetWebRespBodyFunc),
+		ValueEx: builtinGetWebRespBodyFunc,
+	},
 	BuiltinPostRequest: &BuiltinFunction{
 		Name:    "postRequest",
 		Value:   CallExAdapter(builtinPostRequestFunc),
@@ -2889,6 +2900,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "encodeImage",
 		Value:   CallExAdapter(builtinEncodeImageFunc),
 		ValueEx: builtinEncodeImageFunc,
+	},
+	BuiltinEncodeBytesInImage: &BuiltinFunction{
+		Name:    "encodeBytesInImage",
+		Value:   CallExAdapter(builtinEncodeBytesInImageFunc),
+		ValueEx: builtinEncodeBytesInImageFunc,
+	},
+	BuiltinDecodeBytesFromImage: &BuiltinFunction{
+		Name:    "decodeBytesFromImage",
+		Value:   CallExAdapter(builtinDecodeBytesFromImageFunc),
+		ValueEx: builtinDecodeBytesFromImageFunc,
 	},
 	BuiltinDrawImageOnImage: &BuiltinFunction{
 		Name:    "drawImageOnImage",
@@ -8806,6 +8827,43 @@ func builtinGetWebBytesFunc(c Call) (Object, error) {
 	return Bytes(nv), nil
 }
 
+func builtinGetWebRespBodyFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	urlT := args[0].String()
+
+	vs := ObjectsToI(args[1:])
+
+	rsT := tk.GetWebResponseBody(urlT, vs...)
+
+	if tk.IsErrX(rsT) {
+		return NewCommonErrorWithPos(c, "%v", rsT), nil
+	}
+
+	nv, ok := rsT.(io.ReadCloser)
+
+	if ok {
+		return &Reader{Value: nv}, nil
+	}
+
+	nv2, ok := rsT.([]interface{})
+
+	if ok {
+		aryT := make(Array, 0)
+		for _, v := range nv2 {
+			aryT = append(aryT, ConvertToObject(v))
+		}
+
+		return aryT, nil
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported return type"), nil
+}
+
 func builtinGetWebBytesWithHeadersFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10128,7 +10186,7 @@ func builtinCharCodeFunc(c Call) (Object, error) {
 	}
 	vs := ObjectsToS(args[1:])
 
-	if tk.IfSwitchExists(vs, "-new") {
+	if !tk.IfSwitchExists(vs, "-inherit") {
 		compilerOptionsT = nil
 	}
 
@@ -13995,6 +14053,55 @@ func builtinEncodeImageFunc(c Call) (Object, error) {
 	}
 
 	return Undefined, nil
+}
+
+func builtinEncodeBytesInImageFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v1, ok := args[0].(Bytes)
+	if !ok {
+		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	v2, ok := args[1].(*Image)
+	if !ok {
+		return NewCommonError("invalid parameter 2 type: (%T)%v", args[1], args[1]), nil
+	}
+
+	vs := ObjectsToS(args[2:])
+
+	rs := tk.EncodeBytesInImage([]byte(v1), v2.Value, vs...)
+
+	nv1, ok := rs.(error)
+
+	if ok {
+		return NewCommonErrorWithPos(c, "%v", nv1), nil
+	}
+
+	return Bytes(rs.([]byte)), nil
+}
+
+func builtinDecodeBytesFromImageFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	v1, ok := args[0].(*Image)
+	if !ok {
+		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	vs := ObjectsToS(args[1:])
+
+	rs := tk.DecodeBytesFromImage(v1.Value, vs...)
+
+	return Bytes(rs), nil
 }
 
 func builtinDrawImageOnImageFunc(c Call) (Object, error) {

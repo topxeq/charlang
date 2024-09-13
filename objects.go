@@ -9612,7 +9612,7 @@ func NewGel(argsA ...Object) (Object, error) {
 			return nv2, nil
 		}
 
-		if tk.IfSwitchExists(vs, "-new") {
+		if !tk.IfSwitchExists(vs, "-inherit") {
 			nv = NewCharCode(argsA[0].String(), nil)
 		} else {
 			nv = NewCharCode(argsA[0].String())
