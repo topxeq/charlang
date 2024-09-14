@@ -966,7 +966,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getWeb":                 BuiltinGetWeb,
 	"getWebBytes":            BuiltinGetWebBytes,
 	"getWebBytesWithHeaders": BuiltinGetWebBytesWithHeaders,
-	"getWebRespBody":         BuiltinGetWebRespBody,
+	"getWebRespBody":         BuiltinGetWebRespBody, // rs := getWebRespBody(urlT, "-withLen"); if isErr(rs) {...}; readerT := rs[0]; lenT := rs[1]; rs = s3PutObject(readerT, "tmpbucket", keyT, "-endPoint=xxxxx", "-accessKey=xxxxx", "-secretAccessKey=xxxxx", "-ssl", "-force", "-size="+toStr(lenT), "-contentType=application/octet-stream", "-timeout=600");  close(readerT)
 
 	"postRequest": BuiltinPostRequest,
 

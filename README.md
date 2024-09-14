@@ -1940,6 +1940,8 @@ Call these functions by calling callNamedValue function and passing the proper p
 
 file: [callNamedFunc.char](https://topget.org/dc/c/charlang/example/callNamedFunc.char)
 
+With this method, in theory, we can add any functions in Golang's standard library or 3rd party repositories.
+
 #### Compare Binary Files
 
 file: [binCompare.char](https://topget.org/dc/c/charlang/example/binCompare.char)
