@@ -57,6 +57,7 @@
       - [Base64 Encoding of Images](#base64-encoding-of-images)
       - [Plot Data Graph in Console](#plot-data-graph-in-console)
       - [Plot Data Graph in Console with Realtime Data Update](#plot-data-graph-in-console-with-realtime-data-update)
+      - [Byte Queue](#byte-queue)
     - [7.8 Advance Topics](#78-advance-topics)
       - [Language Considerations](#language-considerations)
       - [Run Script from Command Line](#run-script-from-command-line)
@@ -1974,6 +1975,12 @@ file: [asciiPlot.char](https://topget.org/dc/c/charlang/example/asciiPlot.char)
 file: [asciiPlotRealTime.char](https://topget.org/dc/c/charlang/example/asciiPlotRealTime.char)
 
 Demonstrate multi-thread, update one area of console...
+
+#### Byte Queue
+
+file: [byteQueue.char](https://topget.org/dc/c/charlang/example/byteQueue.char)
+
+Demonstrate usage of a non-builtin data type "byteQueue", using 'newObj' function.
 
 ### 7.8 Advance Topics
 
