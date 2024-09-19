@@ -66,6 +66,7 @@ const (
 	BuiltinAppend BuiltinType = iota
 
 	BuiltinGetMapItem
+	BuiltinSetMapItem
 	BuiltinSendMail
 	BuiltinGetTextSimilarity
 	BuiltinLeSshInfo
@@ -618,6 +619,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"sortArray": BuiltinSortArray, // usage: sortArray(totalFindsT, "runeStart", "desc")
 
 	"getMapItem": BuiltinGetMapItem,
+	"setMapItem": BuiltinSetMapItem,
 
 	"toOrderedMap": BuiltinToOrderedMap,
 
@@ -1543,6 +1545,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getMapItem",
 		Value:   CallExAdapter(builtinGetMapItemFunc),
 		ValueEx: builtinGetMapItemFunc,
+	},
+	BuiltinSetMapItem: &BuiltinFunction{
+		Name:    "setMapItem",
+		Value:   CallExAdapter(builtinSetMapItemFunc),
+		ValueEx: builtinSetMapItemFunc,
 	},
 	BuiltinToOrderedMap: &BuiltinFunction{
 		Name:    "toOrderedMap",
@@ -3770,6 +3777,26 @@ func builtinGetMapItemFunc(c Call) (Object, error) {
 	}
 
 	return valueT, nil
+}
+
+func builtinSetMapItemFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	nv1, ok := args[0].(Map)
+
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
+	}
+
+	keyT := args[1].String()
+
+	nv1[keyT] = args[2]
+
+	return Undefined, nil
 }
 
 func builtinCopyFunc(arg Object) Object {
