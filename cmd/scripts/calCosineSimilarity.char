@@ -1,9 +1,10 @@
 // work out the cosine similarity of two vectors
 // the result is in [0..1], which 1 indicates almost the same, 0 indicates not same at all
 
-// use the ex module and the math object in it
-ex := import("ex")
-math := ex.math 
+// another way, use the ex module and the math object in it
+// ex := import("ex")
+// math := ex.math 
+// rs := rr / (math.sqrt(f1r) * math.sqrt(f2r))
 
 calCosSim := func(f1, f2) {
 	l1 := len(f1)
@@ -24,7 +25,7 @@ calCosSim := func(f1, f2) {
 		f2r += f2[i] * f2[i]
 	}
 
-	rs := rr / (math.sqrt(f1r) * math.sqrt(f2r))
+	rs := rr / (mathSqrt(f1r) * mathSqrt(f2r))
 
 	return rs
 }

@@ -30,6 +30,8 @@ b2 := bytes(ary1)
 
 plo(b2)
 
+plo(string(b2))
+
 plo(bytesStartsWith(b2, "abc1"))
 
 plo(bytesStartsWith(b2, "cdb"))
@@ -47,3 +49,9 @@ plo(bytesEndsWith(b2, "dajia好"))
 plo(bytesEndsWith(b2, [10, 11, 12]))
 
 plo(bytesEndsWith(b2, [0xef, 0xbc, 0x81]))
+
+plo(bytesContains(b2, [0xef, 0xbc, 0x81]))
+
+plo(bytesContains(b2, "cdb"))
+
+plo(bytesContains(b2, "3天气"))

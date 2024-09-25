@@ -1,3 +1,4 @@
+// compares to string, mutableString is string type which can change value at run time
 s1 := mutableString("abc")
 
 plt(s1)

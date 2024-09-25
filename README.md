@@ -44,10 +44,13 @@
       - [Anonymous Function](#anonymous-function)
       - [More About Array](#more-about-array)
       - [More About Map](#more-about-map)
+      - [Mutable String](#mutable-string)
       - [Big Int](#big-int)
       - [Big Float](#big-float)
       - [Bitwise Processing](#bitwise-processing)
       - [Calculate BMI](#calculate-bmi)
+      - [Calculate Cosine Similarity of Two Vectors](#calculate-cosine-similarity-of-two-vectors)
+      - [Calculate Cosine Similarity of Two Vectors by Big Floats](#calculate-cosine-similarity-of-two-vectors-by-big-floats)
       - [One More Example for Gels](#one-more-example-for-gels)
       - [Redirect Stdout to a File](#redirect-stdout-to-a-file)
       - [Get Named Value in Charlang](#get-named-value-in-charlang)
@@ -1862,6 +1865,10 @@ file: [array.char](https://topget.org/dc/c/charlang/example/array.char)
 
 file: [map.char](https://topget.org/dc/c/charlang/example/map.char)
 
+#### Mutable String
+
+file: [mutableString.char](https://topget.org/dc/c/charlang/example/mutableString.char)
+
 #### Big Int
 
 file: [bigInt.char](https://topget.org/dc/c/charlang/example/bigInt.char)
@@ -1877,6 +1884,16 @@ file: [bitwise.char](https://topget.org/dc/c/charlang/example/bitwise.char)
 #### Calculate BMI
 
 file: [bmi.char](https://topget.org/dc/c/charlang/example/bmi.char)
+
+#### Calculate Cosine Similarity of Two Vectors
+
+file: [calCosineSimilarity.char](https://topget.org/dc/c/charlang/example/calCosineSimilarity.char)
+
+#### Calculate Cosine Similarity of Two Vectors by Big Floats
+
+* more precision
+
+file: [calCosineSimilarityBig.char](https://topget.org/dc/c/charlang/example/calCosineSimilarityBig.char)
 
 #### One More Example for Gels
 

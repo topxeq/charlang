@@ -182,6 +182,7 @@ const (
 	BuiltinThumbImage
 	BuiltinBytesStartsWith
 	BuiltinBytesEndsWith
+	BuiltinBytesContains
 	BuiltinIsEncrypted
 	BuiltinEncryptData
 	BuiltinDecryptData
@@ -539,34 +540,35 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"any": BuiltinAny, // create a value with type 'any', usage: a1 := any(),  a2 := any(object1)
 
-	"bool":  BuiltinBool, //  create a boolean value(with type 'bool'), usage: b1 := bool(),  b2 := bool(true)
-	"byte":  BuiltinByte,
-	"char":  BuiltinChar,
-	"rune":  BuiltinChar,
-	"int":   BuiltinInt,
-	"uint":  BuiltinUint,
-	"float": BuiltinFloat,
+	"bool":  BuiltinBool,  // create a boolean value(with type 'bool'), usage: b1 := bool(),  b2 := bool(true)
+	"byte":  BuiltinByte,  // create a byte value(with type 'byte'), usage: by1 := byte(),  by2 := byte(33)
+	"char":  BuiltinChar,  // create a char/rune value(with type 'char'), usage: c1 := char(),  c2 := char(33), c3 := char('&')
+	"rune":  BuiltinChar,  // same as char
+	"int":   BuiltinInt,   // create an integer/int value(with type 'int'), usage: n1 := int(),  n2 := int(-112)
+	"uint":  BuiltinUint,  // create an unsigned integer/int value(with type 'uint'), usage: n1 := uint(),  n2 := uint(68)
+	"float": BuiltinFloat, // create a float value(with type 'float'), usage: f1 := float(),  f2 := float(-57.23)
 
-	"bigInt":   BuiltinBigInt,
-	"bigFloat": BuiltinBigFloat,
+	"bigInt":   BuiltinBigInt,   // create a big integer/int value(with type 'bigInt'), usage: n1 := bigInt(),  n2 := bigInt(-112)
+	"bigFloat": BuiltinBigFloat, // create a big float value(with type 'bigFloat'), usage: f1 := bigFloat(),  f2 := bigFloat(-57.23)
 
-	"string":        BuiltinString,
-	"mutableString": BuiltinMutableString,
-	"bytes":         BuiltinBytes,
-	"chars":         BuiltinChars,
+	"string":        BuiltinString,        // create a string value(with type 'string'), usage: s1 := string(),  s2 := string("abc")
+	"mutableString": BuiltinMutableString, // create a mutable string value(with type 'mutableString'), mutableString could change value at run time, usage: s1 := mutableString(),  s2 := mutableString("abc")
+	"bytes":         BuiltinBytes,         // create a bytes value(with type 'bytes'), usage: b1 := bytes([0xef, 0xbc, 0x81]), b2 := bytes("abc123")
+	"chars":         BuiltinChars,         // create a chars/runes value(with type 'chars'), usage: c1 := chars([0xefab, 0xbc01, 0x81cf]) , c2 := ("abc123")
 
 	"bytesBuffer": BuiltinBytesBuffer,
 
-	"error": BuiltinError,
-
-	"time":          BuiltinTime,
-	"dateTime":      BuiltinTime,
 	"stringBuilder": BuiltinStringBuilder,
 	"stringBuffer":  BuiltinStringBuilder,
 	"orderedMap":    BuiltinOrderedMap,
 
 	"stack": BuiltinStack,
 	"queue": BuiltinQueue,
+
+	"error": BuiltinError,
+
+	"time":     BuiltinTime,
+	"dateTime": BuiltinTime,
 
 	"excel": BuiltinExcel,
 
@@ -737,6 +739,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	// binary/bytes related
 	"bytesStartsWith": BuiltinBytesStartsWith,
 	"bytesEndsWith":   BuiltinBytesEndsWith,
+	"bytesContains":   BuiltinBytesContains,
 
 	// compare related
 	"compareBytes": BuiltinCompareBytes,
@@ -1086,6 +1089,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// database related
 	"formatSQLValue": BuiltinFormatSQLValue,
+	"formatSqlValue": BuiltinFormatSQLValue,
 
 	"dbConnect": BuiltinDatabase,
 	"dbClose":   BuiltinDbClose,
@@ -1361,18 +1365,6 @@ var BuiltinObjects = [...]Object{
 		ValueEx: NewBytesBuffer,
 	},
 
-	BuiltinError: &BuiltinFunction{
-		Name:    "error",
-		Value:   funcPORO(builtinErrorFunc),
-		ValueEx: funcPOROEx(builtinErrorFunc),
-	},
-
-	BuiltinTime: &BuiltinFunction{
-		Name:    "time", // new a Time object
-		Value:   CallExAdapter(builtinTimeFunc),
-		ValueEx: builtinTimeFunc,
-	},
-
 	BuiltinStringBuilder: &BuiltinFunction{
 		Name:    "stringBuilder",
 		Value:   CallExAdapter(builtinStringBuilderFunc),
@@ -1395,6 +1387,18 @@ var BuiltinObjects = [...]Object{
 		Name:    "queue",
 		Value:   CallExAdapter(NewQueue),
 		ValueEx: NewQueue,
+	},
+
+	BuiltinError: &BuiltinFunction{
+		Name:    "error",
+		Value:   funcPORO(builtinErrorFunc),
+		ValueEx: funcPOROEx(builtinErrorFunc),
+	},
+
+	BuiltinTime: &BuiltinFunction{
+		Name:    "time", // new a Time object
+		Value:   CallExAdapter(builtinTimeFunc),
+		ValueEx: builtinTimeFunc,
 	},
 
 	BuiltinExcel: &BuiltinFunction{
@@ -1956,6 +1960,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "bytesEndsWith",
 		Value:   FnALyARB(tk.BytesEndsWith),
 		ValueEx: FnALyARBex(tk.BytesEndsWith),
+	},
+	BuiltinBytesContains: &BuiltinFunction{
+		Name:    "bytesContains",
+		Value:   FnALyARB(tk.BytesContains),
+		ValueEx: FnALyARBex(tk.BytesContains),
 	},
 
 	// compare related
@@ -4386,6 +4395,18 @@ func builtinCharsFunc(arg Object) (ret Object, err error) {
 			}
 			ret = append(ret.(Chars), r)
 			i += w
+		}
+	case Chars:
+		sz := len(obj)
+		ret = make(Chars, 0, sz)
+		for i := 0; i < sz; i++ {
+			ret = append(ret.(Chars), obj[i])
+		}
+	case Array:
+		sz := len(obj)
+		ret = make(Chars, 0, sz)
+		for i := 0; i < sz; i++ {
+			ret = append(ret.(Chars), rune(ToIntQuick(obj[i])))
 		}
 	default:
 		ret = Undefined

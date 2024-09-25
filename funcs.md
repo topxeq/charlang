@@ -44,35 +44,31 @@
 
 **bool**: create a boolean value(with type 'bool'), usage: b1 := bool(),  b2 := bool(true)
 
-**byte**
+**byte**: create a byte value(with type 'byte'), usage: by1 := byte(),  by2 := byte(33)
 
-**char**
+**char**: create a char/rune value(with type 'char'), usage: c1 := char(),  c2 := char(33), c3 := char('&')
 
-**int**
+**rune**: same as char
 
-**uint**
+**int**: create an integer/int value(with type 'int'), usage: n1 := int(),  n2 := int(-112)
 
-**float**
+**uint**: create an unsigned integer/int value(with type 'uint'), usage: n1 := uint(),  n2 := uint(68)
 
-**bigInt**
+**float**: create a float value(with type 'float'), usage: f1 := float(),  f2 := float(-57.23)
 
-**bigFloat**
+**bigInt**: create a big integer/int value(with type 'bigInt'), usage: n1 := bigInt(),  n2 := bigInt(-112)
 
-**string**
+**bigFloat**: create a big float value(with type 'bigFloat'), usage: f1 := bigFloat(),  f2 := bigFloat(-57.23)
 
-**mutableString**
+**string**: create a string value(with type 'string'), usage: s1 := string(),  s2 := string("abc")
 
-**bytes**
+**mutableString**: create a mutable string value(with type 'mutableString'), mutableString could change value at run time, usage: s1 := mutableString(),  s2 := mutableString("abc")
 
-**chars**
+**bytes**: create a bytes value(with type 'bytes'), usage: b1 := bytes([0xef, 0xbc, 0x81]), b2 := bytes("abc123")
+
+**chars**: create a chars/runes value(with type 'chars'), usage: c1 := chars([0xefab, 0xbc01, 0x81cf]) , c2 := ("abc123")
 
 **bytesBuffer**
-
-**error**
-
-**time**
-
-**dateTime**
 
 **stringBuilder**
 
@@ -83,6 +79,12 @@
 **stack**
 
 **queue**
+
+**error**
+
+**time**
+
+**dateTime**
 
 **excel**
 
@@ -95,6 +97,8 @@
 **mux**
 
 **httpHandler**
+
+**httpReq**
 
 **reader**
 
@@ -150,6 +154,8 @@
 
 **getMapItem**
 
+**setMapItem**
+
 **toOrderedMap**
 
 ### --- ref/pointer related ---
@@ -161,6 +167,10 @@
 ### --- convert related ---
 
 **toStr**
+
+**toBool**
+
+**toBoolWithDefault**
 
 **toInt**
 
@@ -176,7 +186,11 @@
 
 **hexDecode**
 
+**hexToStr**
+
 **toKMG**
+
+**floatToStr**
 
 ### --- string related ---
 
@@ -242,7 +256,11 @@
 
 **strUnquote**
 
+**strToInt**
+
 **strToTime**
+
+**dealStr**
 
 **getTextSimilarity**
 
@@ -280,6 +298,16 @@
 
 **mathSqrt**
 
+**mathPow**
+
+**mathExp**
+
+**mathLog**
+
+**min**
+
+**max**
+
 **flexEval**
 
 ### --- random related ---
@@ -311,6 +339,8 @@
 **bytesStartsWith**
 
 **bytesEndsWith**
+
+**bytesContains**
 
 ### --- compare related ---
 
@@ -672,9 +702,15 @@
 
 **getWebBytesWithHeaders**
 
+**getWebRespBody**: rs := getWebRespBody(urlT, "-withLen"); if isErr(rs) {...}; readerT := rs[0]; lenT := rs[1]; rs = s3PutObject(readerT, "tmpbucket", keyT, "-endPoint=xxxxx", "-accessKey=xxxxx", "-secretAccessKey=xxxxx", "-ssl", "-force", "-size="+toStr(lenT), "-contentType=application/octet-stream", "-timeout=600");  close(readerT)
+
 **postRequest**
 
 **urlExists**
+
+**parseUrl**: parse URL and return a map
+
+**parseQuery**: parse URL query string(such as 'x=1&y=2&y=3') and return a map({"x": "1", "y": ["2", "3"]})
 
 **isHttps**
 
@@ -768,6 +804,10 @@
 
 **encodeImage**
 
+**encodeBytesInImage**
+
+**decodeBytesFromImage**
+
 **drawImageOnImage**
 
 **drawTextWrappedOnImage**
@@ -835,6 +875,8 @@
 ### --- database related ---
 
 **formatSQLValue**
+
+**formatSqlValue**
 
 **dbConnect**
 
@@ -979,6 +1021,8 @@
 **renderMarkdown**
 
 **replaceHtmlByMap**
+
+**processHtmlTemplate**
 
 // "sortByFunc": BuiltinSortByFunc,
 

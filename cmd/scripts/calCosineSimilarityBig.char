@@ -1,4 +1,4 @@
-// work out the cosine similarity of two vectors
+// work out the cosine similarity of two vectors(by big floats which have more precision)
 // the result is in [0..1], which 1 indicates almost the same, 0 indicates not same at all
 
 calCosineSimilarityBig := func(f1, f2) {
