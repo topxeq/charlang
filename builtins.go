@@ -254,6 +254,9 @@ const (
 	BuiltinMathLog
 	BuiltinMathMin
 	BuiltinMathMax
+	BuiltinMathCeil
+	BuiltinMathFloor
+	BuiltinMathRound
 	BuiltinFlexEval
 	BuiltinAdjustFloat
 	BuiltinBigInt
@@ -718,6 +721,10 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"min": BuiltinMathMin,
 	"max": BuiltinMathMax,
+
+	"ceil":  BuiltinMathCeil,
+	"floor": BuiltinMathFloor,
+	"round": BuiltinMathRound,
 
 	"flexEval": BuiltinFlexEval,
 
@@ -1894,6 +1901,21 @@ var BuiltinObjects = [...]Object{
 		Name:    "max",
 		Value:   FnAVaRA(tk.Max),
 		ValueEx: FnAVaRAex(tk.Max),
+	},
+	BuiltinMathCeil: &BuiltinFunction{
+		Name:    "ceil",
+		Value:   FnAARA(tk.Ceil),
+		ValueEx: FnAARAex(tk.Ceil),
+	},
+	BuiltinMathFloor: &BuiltinFunction{
+		Name:    "floor",
+		Value:   FnAARA(tk.Floor),
+		ValueEx: FnAARAex(tk.Floor),
+	},
+	BuiltinMathRound: &BuiltinFunction{
+		Name:    "round",
+		Value:   FnAARA(tk.Round),
+		ValueEx: FnAARAex(tk.Round),
 	},
 	BuiltinFlexEval: &BuiltinFunction{
 		Name:    "flexEval",
@@ -6620,6 +6642,33 @@ func FnAVaRAex(fn func(...interface{}) interface{}) CallableExFunc {
 
 		vargs := ObjectsToI(args)
 		rs := fn(vargs...)
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.Ceil
+func FnAARA(fn func(interface{}) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		rs := fn(ConvertFromObject(args[0]))
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnAARAex(fn func(interface{}) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		rs := fn(ConvertFromObject(args[0]))
+
 		return ConvertToObject(rs), nil
 	}
 }
