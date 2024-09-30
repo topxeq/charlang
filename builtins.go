@@ -120,6 +120,7 @@ const (
 	BuiltinStrRepeat
 	BuiltinRegMatch
 	BuiltinRegContains
+	BuiltinRegContainsIn
 	BuiltinLePrint
 	BuiltinLeFindLines
 	BuiltinLeFind
@@ -252,6 +253,7 @@ const (
 	BuiltinMathPow
 	BuiltinMathExp
 	BuiltinMathLog
+	BuiltinMathLog10
 	BuiltinMathMin
 	BuiltinMathMax
 	BuiltinMathCeil
@@ -649,13 +651,13 @@ var BuiltinsMap = map[string]BuiltinType{
 	"floatToStr": BuiltinFloatToStr,
 
 	// string related
-	"trim":          BuiltinTrim,
-	"nilToEmpty":    BuiltinTrim,
-	"strTrim":       BuiltinTrim,
-	"strTrimStart":  BuiltinStrTrimStart,
-	"strTrimEnd":    BuiltinStrTrimEnd,
-	"strTrimLeft":   BuiltinStrTrimLeft,
-	"strTrimRight":  BuiltinStrTrimRight,
+	"trim":          BuiltinTrim,         // trim spaces of the string, also convert undefined value to empty string
+	"nilToEmpty":    BuiltinTrim,         // convert undefined value to empty string
+	"strTrim":       BuiltinTrim,         // same as trim
+	"strTrimStart":  BuiltinStrTrimStart, // usage: strTrimStart(s, prefix), returns string without the provided leading prefix sub-string. If the string doesn't start with prefix, s is returned unchanged.
+	"strTrimEnd":    BuiltinStrTrimEnd,   // usage: strTrimEnd(s, suffix), returns string without the provided trailing suffix sub-string. If the string doesn't end with suffix, s is returned unchanged.
+	"strTrimLeft":   BuiltinStrTrimLeft,  // usage: strTrimLeft(s, cutset string), strTrimLeft returns a slice of the string s with all leading Unicode code points contained in cutset removed.
+	"strTrimRight":  BuiltinStrTrimRight, // usage: strTrimRight(s, cutset string), strTrimRight returns a slice of the string s, with all trailing Unicode code points contained in cutset removed.
 	"toUpper":       BuiltinToUpper,
 	"strToUpper":    BuiltinToUpper,
 	"toLower":       BuiltinToLower,
@@ -671,9 +673,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strJoin":       BuiltinStrJoin,
 	"strRepeat":     BuiltinStrRepeat,
 	"strCount":      BuiltinStrCount,
-	"strPad":        BuiltinStrPad,
+	"strPad":        BuiltinStrPad, // string padding operations such as zero padding, for example, result := strPad(strT, 5, "-fill=0", "-right=true"), where the first parameter is the string to be padded, and the second parameter is the number of characters to be padded. The default padding string is fill as string 0, and right (indicating whether to fill on the right side) is false (which can also be written directly as -right). Therefore, the above example is equivalent to result := strPad(strT, 5). If the fill string contains more than one character, the final number of padding will not exceed the value specified by the second parameter, but it may be less
 
-	"strRuneLen": BuiltinStrRuneLen,
+	"strRuneLen": BuiltinStrRuneLen, // get the length of string by rune(how many rune characters in the string)
 
 	"strIn": BuiltinStrIn,
 
@@ -688,43 +690,50 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strQuote":   BuiltinStrQuote,
 	"strUnquote": BuiltinStrUnquote,
 
-	"strToInt":  BuiltinStrToInt,
-	"strToTime": BuiltinStrToTime,
+	"strToInt":  BuiltinStrToInt,  // convert string to int, return error if failed
+	"strToTime": BuiltinStrToTime, // convert string to time by format, usage: strToTime(strA, "20060102150405"), default "2006-01-02 15:04:05"
 
-	"dealStr": BuiltinDealStr,
+	"dealStr": BuiltinDealStr, // deal with hex-encoded, encrypted or other special-treated string
 
-	"getTextSimilarity": BuiltinGetTextSimilarity,
+	"getTextSimilarity": BuiltinGetTextSimilarity, // calculate the cosine similarity of two strings
 
 	// regex related
-	"regMatch":    BuiltinRegMatch,
-	"regContains": BuiltinRegContains,
+	"regMatch":      BuiltinRegMatch,      // determine whether a string fully conforms to a regular expression, usage example: result := regMatch("abcab", `a.*b`)
+	"regContains":   BuiltinRegContains,   // determine whether the string contains substrings that conform to the regular expression
+	"regContainsIn": BuiltinRegContainsIn, // determine whether the string contains substrings that conform to any regular expression
 
-	"regFindFirst":       BuiltinRegFindFirst,
+	"regFindFirst":       BuiltinRegFindFirst,       // get the first match of a regular expression, usage example: result := regFindFirst(str1, regex1, group)
 	"regFindFirstGroups": BuiltinRegFindFirstGroups, // obtain the first match of a regular expression and return a list of all matching groups, where the first item is the complete matching result and the second item is the first matching group..., usage example: result := regFindFirstGroups(str1, regex1)
-	"regFindAll":         BuiltinRegFindAll,
-	"regFindAllIndex":    BuiltinRegFindAllIndex,
-	"regFindAllGroups":   BuiltinRegFindAllGroups,
-	"regQuote":           BuiltinRegQuote,
-	"regReplace":         BuiltinRegReplace,
-	"regCount":           BuiltinRegCount,
-	"regSplit":           BuiltinRegSplit,
+	"regFindAll":         BuiltinRegFindAll,         // get all matches of a regular expression, and the default matching group number is 0, which means a complete match. Usage example: result := regFindAll(str1, regex1, group)
+	"regFindAllIndex":    BuiltinRegFindAllIndex,    // get all matches' indexes of a regular expression, and the default matching group number is 0, which means a complete match. Usage example: result := regFindAll(str1, regex1, group)
+	"regFindAllGroups":   BuiltinRegFindAllGroups,   // get all matches of a regular expression, the result is a two-dimensional string array containing various groups, where the 0th group is a complete match, and the 1st group starts with the matching groups in parentheses. usage example: result := regFindAllGroups(str1, regex1)
+	"regQuote":           BuiltinRegQuote,           // escaping and replacing special characters related to regular expressions in a regular string for use in regular expressions
+	"regReplace":         BuiltinRegReplace,         // replace in a string based on regular expressions, function definition: regReplace(strA, patternA, replaceA string) string, example: regReplace("abcdefgabcdfg", "(b. *) f (ga. *?) g", "$ {1}_ ${2} "), the result is abcd_gabcdf
+	"regCount":           BuiltinRegCount,           // determine if a certain string contains several substrings that match the regular expression, usage: result := regCount(str1, regex1)
+	"regSplit":           BuiltinRegSplit,           // split strings using regular expressions, usage: listT := regSplit(str1, regex1)
 
 	// math related
-	"adjustFloat": BuiltinAdjustFloat,
+	"adjustFloat": BuiltinAdjustFloat, // remove the number of digits from floating-point calculation error values such as 32.0000000004. The result parameter cannot be omitted. Usage: adjustFloat(0.65-0.6, 10). The second parameter is the number of decimal places to which it is organized, which can be omitted. The default is 10.
 
-	"mathAbs":  BuiltinMathAbs,
-	"abs":      BuiltinMathAbs,
-	"mathSqrt": BuiltinMathSqrt,
-	"mathPow":  BuiltinMathPow,
-	"mathExp":  BuiltinMathExp,
-	"mathLog":  BuiltinMathLog,
+	"mathAbs":   BuiltinMathAbs,
+	"abs":       BuiltinMathAbs,
+	"mathSqrt":  BuiltinMathSqrt,
+	"sqrt":      BuiltinMathSqrt,
+	"mathPow":   BuiltinMathPow,
+	"pow":       BuiltinMathPow,
+	"mathExp":   BuiltinMathExp,
+	"exp":       BuiltinMathExp,
+	"mathLog":   BuiltinMathLog,
+	"log":       BuiltinMathLog,
+	"mathLog10": BuiltinMathLog10,
+	"log10":     BuiltinMathLog10,
 
-	"min": BuiltinMathMin,
-	"max": BuiltinMathMax,
+	"min": BuiltinMathMin, // returns the largest of several values(integer of float).
+	"max": BuiltinMathMax, // returns the smallest of several values(integer of float).
 
-	"ceil":  BuiltinMathCeil,
-	"floor": BuiltinMathFloor,
-	"round": BuiltinMathRound,
+	"ceil":  BuiltinMathCeil,  // returns the least integer value greater than or equal to x.
+	"floor": BuiltinMathFloor, // returns the greatest integer value less than or equal to x.
+	"round": BuiltinMathRound, // returns the nearest integer, rounding half away from zero.
 
 	"flexEval": BuiltinFlexEval,
 
@@ -1815,6 +1824,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASSRB(tk.RegContainsX),
 		ValueEx: FnASSRBex(tk.RegContainsX),
 	},
+	BuiltinRegContainsIn: &BuiltinFunction{
+		Name:    "regContainsIn",
+		Value:   FnASVsRB(tk.RegContainsIn),
+		ValueEx: FnASVsRBex(tk.RegContainsIn),
+	},
 	BuiltinRegFindFirst: &BuiltinFunction{
 		Name:    "regFindFirst",
 		Value:   FnASSIRS(tk.RegFindFirstX),
@@ -1891,6 +1905,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "mathLog",
 		Value:   CallExAdapter(builtinMathLogFunc),
 		ValueEx: builtinMathLogFunc,
+	},
+	BuiltinMathLog10: &BuiltinFunction{
+		Name:    "mathLog10",
+		Value:   CallExAdapter(builtinMathLog10Func),
+		ValueEx: builtinMathLog10Func,
 	},
 	BuiltinMathMin: &BuiltinFunction{
 		Name:    "min",
@@ -8595,6 +8614,7 @@ func builtinTrimFunc(c Call) (Object, error) {
 	return ToStringObject(tk.Trim(arg0.String(), ObjectsToS(args[1:])...)), nil
 }
 
+// won't convert undefined value to empty string
 func builtinStrTrimFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13854,6 +13874,29 @@ func builtinMathLogFunc(c Call) (Object, error) {
 		return &BigFloat{Value: tk.BigFloatLog(big.NewFloat(0).SetInt(nv.Value))}, nil
 	case *BigFloat:
 		return &BigFloat{Value: tk.BigFloatLog(big.NewFloat(0).Set(nv.Value))}, nil
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
+}
+
+func builtinMathLog10Func(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	switch nv := args[0].(type) {
+	case Byte:
+		return Float(math.Log10(float64(nv))), nil
+	case Char:
+		return Float(math.Log10(float64(nv))), nil
+	case Int:
+		return Float(math.Log10(float64(nv))), nil
+	case Uint:
+		return Float(math.Log10(float64(nv))), nil
+	case Float:
+		return Float(math.Log10(float64(nv))), nil
 	}
 
 	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
