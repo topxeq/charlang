@@ -146,6 +146,17 @@ htmlT := `
 
 	}
 
+	function compileIt() {
+		var rs = delegateDo("compile", document.getElementById('mainTextID').value);
+
+		rs.then(res => {
+            if (!(!res)) {
+                alert("compile result: " + JSON.stringify(res));
+            }
+		});
+
+	}
+
 	function loadIt() {
 		var rs = delegateDo("loadText");
 
