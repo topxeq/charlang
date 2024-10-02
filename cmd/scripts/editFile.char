@@ -201,6 +201,7 @@ htmlT := `
 	<button onclick="javascript:checkJSON();">Check JSON</button>
 	<button onclick="javascript:loadIt();">Load</button>
 	<button onclick="javascript:saveIt();">Save</button>
+	<button onclick="javascript:compileIt();">Compile</button>
 	<button onclick="javascript:quickRunIt();">Quick Run</button>
 	<button onclick="javascript:runIt();" style="display: none;">Run</button>
 	<button onclick="javascript:setParamIt();" style="display: none;">Param</button>
@@ -329,6 +330,24 @@ dele1 := delegate(strReplace(`
 		// plv(rs)
 
 		return toStr(rs)
+	} else if cmdT == "compile" {
+		v1 := trim(vargs[1])
+
+		// pl("code: %v", v1)
+
+		c1 := charCode(v1)
+
+		if isErr(c1) {
+			return spr("TXERROR:failed to create charCode: %v", c1)
+		}
+
+		crs := c1.compile()
+
+		if isErr(crs) {
+			return spr("TXERROR:failed to compile code: %v", crs)
+		}
+
+		return "successfully compiled"
 	}
 	
     pl("cmd: %v", cmdT)
