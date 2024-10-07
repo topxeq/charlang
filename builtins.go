@@ -561,21 +561,22 @@ var BuiltinsMap = map[string]BuiltinType{
 	"bytes":         BuiltinBytes,         // create a bytes value(with type 'bytes'), usage: b1 := bytes([0xef, 0xbc, 0x81]), b2 := bytes("abc123")
 	"chars":         BuiltinChars,         // create a chars/runes value(with type 'chars'), usage: c1 := chars([0xefab, 0xbc01, 0x81cf]) , c2 := ("abc123")
 
-	"bytesBuffer": BuiltinBytesBuffer,
+	"bytesBuffer": BuiltinBytesBuffer, // create a bytes buffer, usage: buf1 := bytesBuffer() , buf2 := bytesBuffer(bytes("abc123"))
 
-	"stringBuilder": BuiltinStringBuilder,
-	"stringBuffer":  BuiltinStringBuilder,
-	"orderedMap":    BuiltinOrderedMap,
+	"stringBuilder": BuiltinStringBuilder, // create a string builder, usage: sb1 := stringBuilder() , sb2 := stringBuilder("abc123")
+	"stringBuffer":  BuiltinStringBuilder, // same as stringBuilder
 
-	"stack": BuiltinStack,
-	"queue": BuiltinQueue,
+	"orderedMap": BuiltinOrderedMap, // create an ordered-map, usage: map1 := orderedMap() , map2 := orderedMap({1, 2.5, true, "abc123"})
 
-	"error": BuiltinError,
+	"stack": BuiltinStack, // create a stack object(first-in-last-out), usage: st1 := stack() , st2 := stack(1, 2.5, true, "abc123"), the objects passed as parameters for builtin stack function will be pushed in sequence after the creation of the stack
+	"queue": BuiltinQueue, // create a queue object(first-in-first-out), usage: que1 := queue() , que2 := queue(10), the integer value passed as parameters for builtin queue function will set the capacity(default infinite) of the queue, the first item will be discarded while a new item is pushing into the queue and the queue is full
 
-	"time":     BuiltinTime,
-	"dateTime": BuiltinTime,
+	"error": BuiltinError, // manually create an error object, usage: err1 := error("failed to do something")
 
-	"excel": BuiltinExcel,
+	"time":     BuiltinTime, // create a time object, usage: time1 := time(), get a new time object with the value of current time; time2 := time(123432545), create a time object with the value set to the tick/timestamp of the integer value; time3 := time("2023-01-02 00:18:23")
+	"dateTime": BuiltinTime, // same as 'time'
+
+	"excel": BuiltinExcel, // create an Excel object
 
 	"statusResult": BuiltinStatusResult,
 	"seq":          BuiltinSeq,
