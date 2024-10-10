@@ -6,11 +6,15 @@ path2T := joinPath(dirT, `src`, `github.com`, `topxeq`, `charlang`, `stdlib`, "e
 
 mdPathT := joinPath(dirT, `src`, `github.com`, `topxeq`, `charlang`, `funcs.md`)
 
+funcListPathT := joinPath(dirT, `src`, `github.com`, `topxeq`, `charlang`, `funcList.txt`)
+
 plt(pathT)
+
+funcAryT := []
 
 fcT := loadText(pathT)
 
-checkErrX(fcT)
+checkErr(fcT)
 
 pln(1.0, "builtins.go loaded")
 
@@ -18,7 +22,7 @@ docBodyT := regFindFirst(fcT, `(?sm)// funcs start(.*?)// funcs end`, 1)
 
 plt(docBodyT)
 
-checkErrX(docBodyT)
+checkErr(docBodyT)
 
 pln(1.1, "docBodyT found")
 
@@ -50,28 +54,32 @@ for i, v in linesT {
 
     tmp1 := regFindFirst(tv, `//\s+(.* related)`, 1)
 
-    if !isErrX(tmp1) {
+    if !isErr(tmp1) {
         writeStr(bufT, "### --- " + tmp1 + " ---" + "\n\n")
         continue
     }
 
     tmp1 = regFindFirstGroups(tv, `^"(.*?)":\s*\w+\s*,\s*//\s*(.*?)\s*$`)
 
-    if !isErrX(tmp1) && len(tmp1) > 0 {
+    if !isErr(tmp1) && len(tmp1) > 0 {
+		funcAryT = append(funcAryT, tmp1[1]+"\n")
+
         writeStr(bufT, "**" + tmp1[1] + "**" + ": " + tmp1[2] + "\n\n")
         continue
     }
-
+	
     tmp1 = regFindFirstGroups(tv, `^"(.*?)":\s*\w+\s*,\s*$`)
 
-    if !isErrX(tmp1) && len(tmp1) > 0 {
+    if !isErr(tmp1) && len(tmp1) > 0 {
+		funcAryT = append(funcAryT, tmp1[1]+"\n")
+
         writeStr(bufT, "**" + tmp1[1] + "**" + "\n\n")
         continue
     }
 
-    tmp1 = regFindFirst(tv, `//\s+(.*)`, 1)
+	tmp1 = regFindFirst(tv, `//\s+(.*)`, 1)
 
-    if !isErrX(tmp1) && len(tmp1) > 0 {
+    if !isErr(tmp1) && len(tmp1) > 0 {
         writeStr(bufT, "// " + tmp1 + "" + "\n\n")
         continue
     }
@@ -85,7 +93,7 @@ pln(1.2, "Builtin Function done")
 
 fc2T := loadText(path2T)
 
-checkErrX(fc2T)
+checkErr(fc2T)
 
 pln(1.3, "ex/module.go loaded")
 
@@ -93,7 +101,7 @@ docBody2T := regFindFirst(fc2T, `(?sm)// funcs start(.*?)// funcs end`, 1)
 
 plt(docBody2T)
 
-checkErrX(docBody2T)
+checkErr(docBody2T)
 
 pln(1.3, "ex/module.go funcs found")
 
@@ -116,21 +124,21 @@ for i, v in lines2T {
 
     tmp1 := regFindFirst(tv, `//\s+(.* related)`, 1)
 
-    if !isErrX(tmp1) {
+    if !isErr(tmp1) {
         writeStr(bufT, "### --- " + tmp1 + " ---" + "\n\n")
         continue
     }
 
     tmp1 = regFindFirstGroups(tv, `^Name:\s*"(.*?)"\s*,\s*//\s*(.*?)\s*$`)
 
-    if !isErrX(tmp1) && len(tmp1) > 0 {
+    if !isErr(tmp1) && len(tmp1) > 0 {
         writeStr(bufT, "**" + tmp1[1] + "**" + ": " + tmp1[2] + "\n\n")
         continue
     }
 
     tmp1 = regFindFirstGroups(tv, `^Name:\s*"(.*?)"\s*,\s*$`)
 
-    if !isErrX(tmp1) && len(tmp1) > 0 {
+    if !isErr(tmp1) && len(tmp1) > 0 {
         writeStr(bufT, "**" + tmp1[1] + "**" + "\n\n")
         continue
     }
@@ -147,7 +155,11 @@ pln(1.4, "ex/module.go funcs done")
 rs := saveText(toStr(bufT), mdPathT)
 // rs := saveText(bufT.toStr(), mdPathT)
 
-checkErrX(rs)
+checkErr(rs)
+
+rs = saveText(strJoin(funcAryT, ""), funcListPathT)
+
+checkErr(rs)
 
 pln("done")
 

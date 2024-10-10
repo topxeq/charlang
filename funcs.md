@@ -68,25 +68,25 @@
 
 **chars**: create a chars/runes value(with type 'chars'), usage: c1 := chars([0xefab, 0xbc01, 0x81cf]) , c2 := ("abc123")
 
-**bytesBuffer**
+**bytesBuffer**: create a bytes buffer, usage: buf1 := bytesBuffer() , buf2 := bytesBuffer(bytes("abc123"))
 
-**stringBuilder**
+**stringBuilder**: create a string builder, usage: sb1 := stringBuilder() , sb2 := stringBuilder("abc123")
 
-**stringBuffer**
+**stringBuffer**: same as stringBuilder
 
-**orderedMap**
+**orderedMap**: create an ordered-map, usage: map1 := orderedMap() , map2 := orderedMap({1, 2.5, true, "abc123"})
 
-**stack**
+**stack**: create a stack object(first-in-last-out), usage: st1 := stack() , st2 := stack(1, 2.5, true, "abc123"), the objects passed as parameters for builtin stack function will be pushed in sequence after the creation of the stack
 
-**queue**
+**queue**: create a queue object(first-in-first-out), usage: que1 := queue() , que2 := queue(10), the integer value passed as parameters for builtin queue function will set the capacity(default infinite) of the queue, the first item will be discarded while a new item is pushing into the queue and the queue is full
 
-**error**
+**error**: manually create an error object, usage: err1 := error("failed to do something")
 
-**time**
+**time**: create a time object, usage: time1 := time(), get a new time object with the value of current time; time2 := time(123432545), create a time object with the value set to the tick/timestamp of the integer value; time3 := time("2023-01-02 00:18:23")
 
-**dateTime**
+**dateTime**: same as 'time'
 
-**excel**
+**excel**: create an Excel object
 
 **statusResult**
 
