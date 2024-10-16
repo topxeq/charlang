@@ -401,6 +401,7 @@ const (
 	BuiltinRegFindAllIndex
 	BuiltinRegFindAllGroups
 	BuiltinCheckErrX
+	BuiltinCheckEmpty
 	BuiltinLoadText
 	BuiltinSaveText
 	BuiltinAppendText
@@ -796,6 +797,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"checkErrX": BuiltinCheckErrX, // check if the object is error or error string, if is, exit the program with output, usage: checkErrX(result, "-format=Failed to process: %v\n"), the default format is "Error: %v\n"
 	"checkErr":  BuiltinCheckErrX, // the same as checkErrX, check if the object is error or error string, if is, exit the program with output, usage: checkErr(result, "-format=Failed to process: %v\n"), the default format is "Error: %v\n"
+
+	"checkEmpty":  BuiltinCheckEmpty, // similar to checkErr, check if the object is undefined or empty string(for other objects, will use its string representation), if is, exit the program with output, usage: checkEmpty(result, "-format=Failed to process: %v\n"), the default format is "Empty: %v\n"
 
 	"errStrf": BuiltinErrStrf,
 	"errf":    BuiltinErrf,
@@ -2144,6 +2147,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "checkErrX",
 		Value:   CallExAdapter(builtinCheckErrXFunc),
 		ValueEx: builtinCheckErrXFunc,
+	},
+	BuiltinCheckEmpty: &BuiltinFunction{
+		Name:    "checkEmpty",
+		Value:   CallExAdapter(builtinCheckEmptyFunc),
+		ValueEx: builtinCheckEmptyFunc,
 	},
 	BuiltinErrStrf: &BuiltinFunction{
 		Name:    "errStrf",
@@ -8592,6 +8600,36 @@ func builtinCheckErrXFunc(c Call) (Object, error) {
 		formatT := tk.GetSwitch(vs, "-format=", "Error: %v\n")
 
 		fmt.Printf(formatT, tk.GetErrStrX(objT))
+		os.Exit(0)
+	}
+
+	return args[0], nil
+}
+
+func builtinCheckEmptyFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+	
+	if IsUndefInternal(args[0]) {
+		vs := ObjectsToS(args[1:])
+
+		formatT := tk.GetSwitch(vs, "-format=", "Empty\n")
+
+		fmt.Printf(formatT)
+		os.Exit(0)
+	}
+
+	strT := args[0].String()
+
+	if strT == "" {
+		vs := ObjectsToS(args[1:])
+
+		formatT := tk.GetSwitch(vs, "-format=", "Empty\n\n")
+
+		fmt.Printf(formatT)
 		os.Exit(0)
 	}
 
@@ -15181,7 +15219,17 @@ func builtinPlotDataToImageFunc(c Call) (Object, error) {
 	return Bytes(bytesT), nil
 }
 
-func builtinCloseFunc(c Call) (Object, error) {
+func builtinCloseFunc(c Call) (result Object, err error) {
+	defer func() {
+		r := recover()
+
+		if r != nil {
+			result = NewCommonErrorWithPos(c, "failed: %v", r)
+			err = nil
+			return
+		}
+	}()
+
 	args := c.GetArgs()
 
 	if len(args) < 1 {
@@ -15235,6 +15283,7 @@ func builtinCloseFunc(c Call) (Object, error) {
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to close file: %v", errT), nil
 		}
+		
 		return Undefined, nil
 	} else if typeNameT == "excel" {
 		r1 := args[0].(*Excel)

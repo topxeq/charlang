@@ -1,0 +1,17 @@
+stdInT := file("stdin")
+
+plt(stdInT)
+
+strT := readAllStr(stdInT)
+
+plt(strT)
+
+stdOutT := file("stdout")
+
+writeStr(stdOutT, "abcde\n")
+
+plt("1", close(stdInT))
+
+// won't output, since the stdout is closed
+plt("2", close(stdOutT))
+
