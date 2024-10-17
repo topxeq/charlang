@@ -160,6 +160,8 @@ const (
 	BuiltinS3GetObjectTags
 	BuiltinS3GetObjectStat
 	BuiltinS3StatObject
+	BuiltinS3CopyObject
+	BuiltinS3MoveObject
 	BuiltinS3RemoveObject
 	BuiltinS3ListObjects
 	BuiltinAwsSign
@@ -798,7 +800,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"checkErrX": BuiltinCheckErrX, // check if the object is error or error string, if is, exit the program with output, usage: checkErrX(result, "-format=Failed to process: %v\n"), the default format is "Error: %v\n"
 	"checkErr":  BuiltinCheckErrX, // the same as checkErrX, check if the object is error or error string, if is, exit the program with output, usage: checkErr(result, "-format=Failed to process: %v\n"), the default format is "Error: %v\n"
 
-	"checkEmpty":  BuiltinCheckEmpty, // similar to checkErr, check if the object is undefined or empty string(for other objects, will use its string representation), if is, exit the program with output, usage: checkEmpty(result, "-format=Failed to process: %v\n"), the default format is "Empty: %v\n"
+	"checkEmpty": BuiltinCheckEmpty, // similar to checkErr, check if the object is undefined or empty string(for other objects, will use its string representation), if is, exit the program with output, usage: checkEmpty(result, "-format=Failed to process: %v\n"), the default format is "Empty: %v\n"
 
 	"errStrf": BuiltinErrStrf,
 	"errf":    BuiltinErrf,
@@ -1181,6 +1183,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"s3GetObjectTags":   BuiltinS3GetObjectTags,
 	"s3GetObjectStat":   BuiltinS3GetObjectStat,
 	"s3StatObject":      BuiltinS3StatObject,
+	"s3CopyObject":      BuiltinS3CopyObject,
+	"s3MoveObject":      BuiltinS3MoveObject,
 	"s3RemoveObject":    BuiltinS3RemoveObject,
 	"s3ListObjects":     BuiltinS3ListObjects,
 
@@ -3429,6 +3433,18 @@ var BuiltinObjects = [...]Object{
 		Name:    "s3StatObject",
 		Value:   CallExAdapter(builtinS3StatObjectFunc),
 		ValueEx: builtinS3StatObjectFunc,
+	},
+
+	BuiltinS3CopyObject: &BuiltinFunction{
+		Name:    "s3CopyObject",
+		Value:   CallExAdapter(builtinS3CopyObjectFunc),
+		ValueEx: builtinS3CopyObjectFunc,
+	},
+
+	BuiltinS3MoveObject: &BuiltinFunction{
+		Name:    "s3MoveObject",
+		Value:   CallExAdapter(builtinS3MoveObjectFunc),
+		ValueEx: builtinS3MoveObjectFunc,
 	},
 
 	BuiltinS3RemoveObject: &BuiltinFunction{
@@ -8612,7 +8628,7 @@ func builtinCheckEmptyFunc(c Call) (Object, error) {
 	if len(args) < 1 {
 		return nil, fmt.Errorf("not enough parameters")
 	}
-	
+
 	if IsUndefInternal(args[0]) {
 		vs := ObjectsToS(args[1:])
 
@@ -13215,6 +13231,172 @@ func builtinS3RemoveObjectFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
+func builtinS3CopyObjectFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	srcBucketNameT := args[0].String()
+	srcPathT := args[1].String()
+
+	destBucketNameT := args[2].String()
+	destPathT := args[3].String()
+
+	vs := ObjectsToS(args[2:])
+
+	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
+	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
+	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
+	useSslT := tk.IfSwitchExists(vs, "-ssl")
+
+	srcBucketNameT = tk.GetSwitch(vs, "-srcBucket=", srcBucketNameT)
+	destBucketNameT = tk.GetSwitch(vs, "-destBucket=", destBucketNameT)
+	srcPathT = tk.GetSwitch(vs, "-srcPath=", srcPathT)
+	destPathT = tk.GetSwitch(vs, "-destPath=", destPathT)
+
+//	forceT := tk.IfSwitchExists(vs, "-force")
+
+	versionIdT := strings.TrimSpace(tk.GetSwitch(vs, "-versionId=", ""))
+
+	srcOpts := minio.CopySrcOptions{
+		Bucket: srcBucketNameT,
+		Object: srcPathT,
+	}
+	
+	if versionIdT != "" {
+		srcOpts.VersionID = versionIdT
+	}
+
+	dstOpts := minio.CopyDestOptions{
+		Bucket: destBucketNameT,
+		Object: destPathT,
+	}
+
+	optionsT := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
+		Secure: useSslT,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			// TLSClientConfig:       tlsConfig,
+		},
+	}
+
+	minioClient, errT := minio.New(endPointT, optionsT)
+
+	// minioClient.SetCustomTransport(transport)
+
+	if errT != nil {
+		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+	}
+
+	uploadInfo, errT := minioClient.CopyObject(context.Background(), dstOpts, srcOpts)
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to copy object: %v", errT), nil
+	}
+
+	return ToStringObject(uploadInfo.VersionID), nil
+}
+
+func builtinS3MoveObjectFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	srcBucketNameT := args[0].String()
+	srcPathT := args[1].String()
+
+	destBucketNameT := args[2].String()
+	destPathT := args[3].String()
+
+	vs := ObjectsToS(args[2:])
+
+	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
+	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
+	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
+	useSslT := tk.IfSwitchExists(vs, "-ssl")
+
+	srcBucketNameT = tk.GetSwitch(vs, "-srcBucket=", srcBucketNameT)
+	destBucketNameT = tk.GetSwitch(vs, "-destBucket=", destBucketNameT)
+	srcPathT = tk.GetSwitch(vs, "-srcPath=", srcPathT)
+	destPathT = tk.GetSwitch(vs, "-destPath=", destPathT)
+
+	forceT := tk.IfSwitchExists(vs, "-force")
+
+	versionIdT := strings.TrimSpace(tk.GetSwitch(vs, "-versionId=", ""))
+
+	srcOpts := minio.CopySrcOptions{
+		Bucket: srcBucketNameT,
+		Object: srcPathT,
+	}
+	
+	if versionIdT != "" {
+		srcOpts.VersionID = versionIdT
+	}
+
+	dstOpts := minio.CopyDestOptions{
+		Bucket: destBucketNameT,
+		Object: destPathT,
+	}
+
+	optionsT := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
+		Secure: useSslT,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			// TLSClientConfig:       tlsConfig,
+		},
+	}
+
+	minioClient, errT := minio.New(endPointT, optionsT)
+
+	// minioClient.SetCustomTransport(transport)
+
+	if errT != nil {
+		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+	}
+
+	uploadInfo, errT := minioClient.CopyObject(context.Background(), dstOpts, srcOpts)
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to copy object: %v", errT), nil
+	}
+
+	removeOptionsT := minio.RemoveObjectOptions{
+		ForceDelete: forceT,
+	}
+
+	if versionIdT != "" {
+		removeOptionsT.VersionID = versionIdT
+	}
+
+	errT = minioClient.RemoveObject(context.Background(), srcBucketNameT, srcPathT, removeOptionsT)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to remove object: %v", errT), nil
+	}
+
+	return ToStringObject(uploadInfo.VersionID), nil
+}
+
 func builtinS3ListObjectsFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15283,7 +15465,7 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to close file: %v", errT), nil
 		}
-		
+
 		return Undefined, nil
 	} else if typeNameT == "excel" {
 		r1 := args[0].(*Excel)
