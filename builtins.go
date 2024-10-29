@@ -51,6 +51,8 @@ import (
 
 	// "github.com/gojp/kana"
 	"github.com/jtclarkjr/kanjikana"
+	
+	"github.com/jlaffaye/ftp"
 )
 
 var (
@@ -373,6 +375,7 @@ const (
 	BuiltinStringBuilder
 	BuiltinStrReplace
 	BuiltinGetErrStrX
+	BuiltinFtpUpload
 	BuiltinSshUpload
 	BuiltinSshUploadBytes
 	BuiltinSshDownload
@@ -1084,7 +1087,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"plotLoadFont": BuiltinPlotLoadFont, // load a font file in ttf format for plot, usage: plotLoadFont("c:\windows\tahoma.ttf", "tahoma", true), the secode parameter gives the font name(default is the file name), pass true for the third parameter to set the font as default font used in plot(default is false)
 
-	// ssh related
+	// ssh/ftp related
+	"ftpUpload":      BuiltinFtpUpload,
+
 	"sshUpload":      BuiltinSshUpload,
 	"sshUploadBytes": BuiltinSshUploadBytes,
 	"sshDownload":    BuiltinSshDownload,
@@ -3032,7 +3037,13 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinPlotLoadFontFunc,
 	},
 
-	// ssh related
+	// ssh/ftp related
+	BuiltinFtpUpload: &BuiltinFunction{
+		Name:    "ftpUpload",
+		Value:   CallExAdapter(builtinFtpUploadFunc),
+		ValueEx: builtinFtpUploadFunc,
+	},
+
 	BuiltinSshUpload: &BuiltinFunction{
 		Name:    "sshUpload",
 		Value:   CallExAdapter(builtinSshUploadFunc),
@@ -9998,6 +10009,111 @@ func builtinWriteCsvFunc(c Call) (Object, error) {
 	}
 
 	return NewCommonErrorWithPos(c, "unsupported type for write csv content: %T", args[1]), nil
+}
+
+func builtinFtpUploadFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v5, v6 string
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-path=", v5))
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+	
+	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if v5 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy path")), nil
+	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+	}
+
+	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to connect ftp server: %v", err)), nil
+	}
+
+	err = clientT.Login(v3, v4)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to login ftp server: %v", err)), nil
+	}
+
+	fileT, err := os.Open(v5)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to open local file: %v", err)), nil
+	}
+	defer fileT.Close()
+
+	//	data := bytes.NewBufferString("Hello World")
+	err = clientT.Stor(v6, fileT)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to upload file: %v", err)), nil
+	}
+	
+	err = clientT.Quit()
+
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to close ftp connection: %v", err)), nil
+	}
+
+//	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+//
+//	if errT != nil {
+//		return ConvertToObject(errT), nil
+//	}
+//
+//	defer sshT.Close()
+//
+//	if withProgressT {
+//		fmt.Println()
+//		errT = sshT.UploadWithProgressFunc(v5, v6, func(i interface{}) interface{} {
+//			fmt.Printf("\rprogress: %v                ", i)
+//			return ""
+//		}, pa...)
+//		fmt.Println()
+//
+//	} else {
+//		errT = sshT.Upload(v5, v6, pa...)
+//	}
+//
+//	if errT != nil {
+//		return ConvertToObject(errT), nil
+//	}
+//
+	return Undefined, nil
 }
 
 func builtinSshUploadFunc(c Call) (Object, error) {
