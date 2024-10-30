@@ -175,6 +175,7 @@ const (
 	BuiltinBase64Decode
 	BuiltinXmlGetNodeStr
 	BuiltinStrXmlEncode
+	BuiltinFromXml
 	BuiltinMd5
 	BuiltinPostRequest
 	BuiltinHttpRedirect
@@ -375,6 +376,7 @@ const (
 	BuiltinStringBuilder
 	BuiltinStrReplace
 	BuiltinGetErrStrX
+	BuiltinFtpCreateDir
 	BuiltinFtpUpload
 	BuiltinSshUpload
 	BuiltinSshUploadBytes
@@ -883,6 +885,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	// XML related
 	"xmlEncodeStr":  BuiltinStrXmlEncode,
 	"xmlGetNodeStr": BuiltinXmlGetNodeStr,
+	"fromXml": BuiltinFromXml,
 
 	// command-line related
 	"ifSwitchExists": BuiltinIfSwitchExists,
@@ -1088,6 +1091,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"plotLoadFont": BuiltinPlotLoadFont, // load a font file in ttf format for plot, usage: plotLoadFont("c:\windows\tahoma.ttf", "tahoma", true), the secode parameter gives the font name(default is the file name), pass true for the third parameter to set the font as default font used in plot(default is false)
 
 	// ssh/ftp related
+	"ftpCreateDir":      BuiltinFtpCreateDir,
 	"ftpUpload":      BuiltinFtpUpload,
 
 	"sshUpload":      BuiltinSshUpload,
@@ -2419,6 +2423,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASSRSE(tk.GetNodeStringFromXML),
 		ValueEx: FnASSRSEex(tk.GetNodeStringFromXML),
 	},
+	BuiltinFromXml: &BuiltinFunction{
+		Name:    "fromXml",
+		Value:   CallExAdapter(builtinFromXmlFunc),
+		ValueEx: builtinFromXmlFunc,
+	},
 
 	// command-line related
 	BuiltinIfSwitchExists: &BuiltinFunction{
@@ -3038,6 +3047,12 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// ssh/ftp related
+	BuiltinFtpCreateDir: &BuiltinFunction{
+		Name:    "ftpCreateDir",
+		Value:   CallExAdapter(builtinFtpCreateDirFunc),
+		ValueEx: builtinFtpCreateDirFunc,
+	},
+
 	BuiltinFtpUpload: &BuiltinFunction{
 		Name:    "ftpUpload",
 		Value:   CallExAdapter(builtinFtpUploadFunc),
@@ -7478,6 +7493,40 @@ func builtinFromJSONFunc(c Call) (Object, error) {
 	return cObjT, nil
 }
 
+func builtinFromXmlFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	var xmlTextT string
+
+	objT := args[0]
+
+	switch nv := objT.(type) {
+	case String:
+		xmlTextT = nv.Value
+	case Bytes:
+		xmlTextT = string(nv)
+	case Chars:
+		xmlTextT = string(nv)
+	default:
+		xmlTextT = tk.ToStr(ConvertFromObject(args[0]))
+
+	}
+
+	jObjT := tk.FromXMLX(xmlTextT, ObjectsToI(args[1:])...)
+
+	if tk.IsError(jObjT) {
+		return NewCommonError("%v", jObjT), nil
+	}
+
+	cObjT := ConvertToObject(jObjT)
+
+	return cObjT, nil
+}
+
 func builtinIsErrXFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10009,6 +10058,76 @@ func builtinWriteCsvFunc(c Call) (Object, error) {
 	}
 
 	return NewCommonErrorWithPos(c, "unsupported type for write csv content: %T", args[1]), nil
+}
+
+func builtinFtpCreateDirFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v6 string
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+
+	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+	}
+
+	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to connect ftp server: %v", err)), nil
+	}
+
+	err = clientT.Login(v3, v4)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to login ftp server: %v", err)), nil
+	}
+
+	err = clientT.MakeDir(v6)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to create dir: %v", err)), nil
+	}
+	
+	err = clientT.Quit()
+
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to close ftp connection: %v", err)), nil
+	}
+
+	return Undefined, nil
 }
 
 func builtinFtpUploadFunc(c Call) (Object, error) {

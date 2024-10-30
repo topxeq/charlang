@@ -6014,6 +6014,26 @@ func (o *Any) String() string {
 	return fmt.Sprintf("(any:%T)%v", o.Value, o.Value)
 }
 
+func (o *Any) CallName(nameA string, c Call) (Object, error) {
+	// tk.Pl("Any CallName: %v", name)
+
+	fn, errT := GetObjectMethodFunc(o, nameA)
+
+	if errT == nil && !tk.IsError(fn) && !IsUndefInternal(fn) {
+		fnT := fn.(*Function)
+		return (*fnT).Call(append([]Object{o}, c.GetArgs()...)...)
+	}
+
+	if !tk.ReflectHasMethod(o.Value, nameA) {
+		return NewCommonErrorWithPos(c, "method(%v) not found for type: %T(%T)", nameA, o, o.Value), nil
+	}
+
+	rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
+
+	return ConvertToObject(rs3), nil
+
+}
+
 func (o *Any) SetValue(valueA Object) error {
 	rs, errT := builtinAnyFunc(Call{Args: []Object{valueA}})
 
