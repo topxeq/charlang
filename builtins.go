@@ -157,6 +157,7 @@ const (
 	BuiltinS3GetObjectBytes
 	BuiltinS3GetObjectText
 	BuiltinS3PutObject
+	BuiltinS3GetObjectToFile
 	BuiltinS3GetObjectReader
 	BuiltinS3GetObjectUrl
 	BuiltinS3GetObjectTags
@@ -176,6 +177,7 @@ const (
 	BuiltinXmlGetNodeStr
 	BuiltinStrXmlEncode
 	BuiltinFromXml
+	BuiltinFormatXml
 	BuiltinMd5
 	BuiltinPostRequest
 	BuiltinHttpRedirect
@@ -376,8 +378,11 @@ const (
 	BuiltinStringBuilder
 	BuiltinStrReplace
 	BuiltinGetErrStrX
+	BuiltinFtpList
 	BuiltinFtpCreateDir
+	BuiltinFtpSize
 	BuiltinFtpUpload
+	BuiltinFtpUploadFromReader
 	BuiltinSshUpload
 	BuiltinSshUploadBytes
 	BuiltinSshDownload
@@ -886,6 +891,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"xmlEncodeStr":  BuiltinStrXmlEncode,
 	"xmlGetNodeStr": BuiltinXmlGetNodeStr,
 	"fromXml": BuiltinFromXml,
+	"formatXml": BuiltinFormatXml,
 
 	// command-line related
 	"ifSwitchExists": BuiltinIfSwitchExists,
@@ -1091,8 +1097,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	"plotLoadFont": BuiltinPlotLoadFont, // load a font file in ttf format for plot, usage: plotLoadFont("c:\windows\tahoma.ttf", "tahoma", true), the secode parameter gives the font name(default is the file name), pass true for the third parameter to set the font as default font used in plot(default is false)
 
 	// ssh/ftp related
+	"ftpList":      BuiltinFtpList,
 	"ftpCreateDir":      BuiltinFtpCreateDir,
+	"ftpSize":      BuiltinFtpSize, // could used to determine if file exists, by check the result if is error and contains certain text
 	"ftpUpload":      BuiltinFtpUpload,
+	"ftpUploadFromReader":      BuiltinFtpUploadFromReader,
 
 	"sshUpload":      BuiltinSshUpload,
 	"sshUploadBytes": BuiltinSshUploadBytes,
@@ -1187,6 +1196,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"s3GetObjectBytes":  BuiltinS3GetObjectBytes,
 	"s3GetObjectText":   BuiltinS3GetObjectText,
 	"s3PutObject":       BuiltinS3PutObject,
+	"s3GetObjectToFile":       BuiltinS3GetObjectToFile,
 	"s3GetObjectReader": BuiltinS3GetObjectReader,
 	"s3GetObjectUrl":    BuiltinS3GetObjectUrl,
 	"s3GetObjectTags":   BuiltinS3GetObjectTags,
@@ -2429,6 +2439,12 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinFromXmlFunc,
 	},
 
+	BuiltinFormatXml: &BuiltinFunction{
+		Name:    "formatXml",
+		Value:   FnASRS(tk.ReshapeXML),
+		ValueEx: FnASRSex(tk.ReshapeXML),
+	},
+
 	// command-line related
 	BuiltinIfSwitchExists: &BuiltinFunction{
 		Name:    "ifSwitchExists", // usage: if ifSwitchExists(argsG, "-verbose") {...}
@@ -3047,16 +3063,34 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// ssh/ftp related
+	BuiltinFtpList: &BuiltinFunction{
+		Name:    "ftpList",
+		Value:   CallExAdapter(builtinFtpListFunc),
+		ValueEx: builtinFtpListFunc,
+	},
+
 	BuiltinFtpCreateDir: &BuiltinFunction{
 		Name:    "ftpCreateDir",
 		Value:   CallExAdapter(builtinFtpCreateDirFunc),
 		ValueEx: builtinFtpCreateDirFunc,
 	},
 
+	BuiltinFtpSize: &BuiltinFunction{
+		Name:    "ftpSize",
+		Value:   CallExAdapter(builtinFtpSizeFunc),
+		ValueEx: builtinFtpSizeFunc,
+	},
+
 	BuiltinFtpUpload: &BuiltinFunction{
 		Name:    "ftpUpload",
 		Value:   CallExAdapter(builtinFtpUploadFunc),
 		ValueEx: builtinFtpUploadFunc,
+	},
+
+	BuiltinFtpUploadFromReader: &BuiltinFunction{
+		Name:    "ftpUploadFromReader",
+		Value:   CallExAdapter(builtinFtpUploadFromReaderFunc),
+		ValueEx: builtinFtpUploadFromReaderFunc,
 	},
 
 	BuiltinSshUpload: &BuiltinFunction{
@@ -3431,16 +3465,22 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinS3PutObjectFunc,
 	},
 
-	BuiltinS3GetObjectUrl: &BuiltinFunction{
-		Name:    "s3GetObjectUrl",
-		Value:   CallExAdapter(builtinS3GetObjectUrlFunc),
-		ValueEx: builtinS3GetObjectUrlFunc,
+	BuiltinS3GetObjectToFile: &BuiltinFunction{
+		Name:    "s3GetObjectToFile",
+		Value:   CallExAdapter(builtinS3GetObjectToFileFunc),
+		ValueEx: builtinS3GetObjectToFileFunc,
 	},
 
 	BuiltinS3GetObjectReader: &BuiltinFunction{
 		Name:    "s3GetObjectReader",
 		Value:   CallExAdapter(builtinS3GetObjectReaderFunc),
 		ValueEx: builtinS3GetObjectReaderFunc,
+	},
+
+	BuiltinS3GetObjectUrl: &BuiltinFunction{
+		Name:    "s3GetObjectUrl",
+		Value:   CallExAdapter(builtinS3GetObjectUrlFunc),
+		ValueEx: builtinS3GetObjectUrlFunc,
 	},
 
 	BuiltinS3GetObjectTags: &BuiltinFunction{
@@ -10130,6 +10170,146 @@ func builtinFtpCreateDirFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
+func builtinFtpListFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v6 string
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+
+	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+	}
+
+	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to connect ftp server: %v", err)), nil
+	}
+
+	err = clientT.Login(v3, v4)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to login ftp server: %v", err)), nil
+	}
+
+	err = clientT.MakeDir(v6)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to create dir: %v", err)), nil
+	}
+	
+	err = clientT.Quit()
+
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to close ftp connection: %v", err)), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinFtpSizeFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v6 string
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+
+	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+	}
+
+	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to connect ftp server: %v", err)), nil
+	}
+
+	err = clientT.Login(v3, v4)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to login ftp server: %v", err)), nil
+	}
+
+	sizeT, err := clientT.FileSize(v6)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to get file size: %v", err)), nil
+	}
+	
+	err = clientT.Quit()
+
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to close ftp connection: %v", err)), nil
+	}
+
+	return Int(sizeT), nil
+}
+
 func builtinFtpUploadFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10156,6 +10336,8 @@ func builtinFtpUploadFunc(c Call) (Object, error) {
 	
 	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
 
+	forceT := tk.IfSwitchExists(pa, "-force")
+	
 	if v1 == "" {
 		return ConvertToObject(fmt.Errorf("emtpy host")), nil
 	}
@@ -10190,22 +10372,29 @@ func builtinFtpUploadFunc(c Call) (Object, error) {
 		return ConvertToObject(fmt.Errorf("failed to login ftp server: %v", err)), nil
 	}
 
+	if !forceT {
+		_, err := clientT.FileSize(v6)
+		if err == nil {
+			return NewCommonErrorWithPos(c, "remote file already exists"), nil
+		}
+	}
+
 	fileT, err := os.Open(v5)
 	if err != nil {
-		return ConvertToObject(fmt.Errorf("failed to open local file: %v", err)), nil
+		return NewCommonErrorWithPos(c, "failed to open local file: %v", err), nil
 	}
 	defer fileT.Close()
 
 	//	data := bytes.NewBufferString("Hello World")
 	err = clientT.Stor(v6, fileT)
 	if err != nil {
-		return ConvertToObject(fmt.Errorf("failed to upload file: %v", err)), nil
+		return NewCommonErrorWithPos(c, "failed to upload file: %v", err), nil
 	}
 	
 	err = clientT.Quit()
 
 	if err != nil {
-		return ConvertToObject(fmt.Errorf("failed to close ftp connection: %v", err)), nil
+		return NewCommonErrorWithPos(c, "failed to close ftp connection: %v", err), nil
 	}
 
 //	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
@@ -10232,6 +10421,90 @@ func builtinFtpUploadFunc(c Call) (Object, error) {
 //		return ConvertToObject(errT), nil
 //	}
 //
+	return Undefined, nil
+}
+
+func builtinFtpUploadFromReaderFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args[1:])
+
+	var v1, v2, v3, v4, v6 string
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+//	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-path=", v5))
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+	
+	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
+
+	forceT := tk.IfSwitchExists(pa, "-force")
+	
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+//	if v5 == "" {
+//		return ConvertToObject(fmt.Errorf("emtpy path")), nil
+//	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+	}
+
+	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to connect ftp server: %v", err)), nil
+	}
+
+	err = clientT.Login(v3, v4)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to login ftp server: %v", err)), nil
+	}
+
+	if !forceT {
+		_, err := clientT.FileSize(v6)
+		if err == nil {
+			return NewCommonErrorWithPos(c, "remote file already exists"), nil
+		}
+	}
+
+	//	data := bytes.NewBufferString("Hello World")
+	err = clientT.Stor(v6, ConvertFromObject(args[0]).(io.Reader))
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to upload file: %v", err)), nil
+	}
+	
+	err = clientT.Quit()
+
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to close ftp connection: %v", err)), nil
+	}
+
 	return Undefined, nil
 }
 
@@ -13304,6 +13577,70 @@ func builtinS3GetObjectReaderFunc(c Call) (Object, error) {
 	readerT := &Reader{Value: objT}
 
 	return readerT, nil
+}
+
+func builtinS3GetObjectToFileFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	bucketNameT := args[0].String()
+
+	pathT := args[1].String()
+
+	localPathT := args[2].String()
+
+	vs := ObjectsToS(args[3:])
+
+	endPointT := tk.GetSwitch(vs, "-endPoint=", "")
+	accessKeyT := tk.GetSwitch(vs, "-accessKey=", "")
+	secretAccessKeyT := tk.GetSwitch(vs, "-secretAccessKey=", "")
+	useSslT := tk.IfSwitchExists(vs, "-ssl")
+
+	bucketNameT = tk.GetSwitch(vs, "-bucket=", bucketNameT)
+	pathT = tk.GetSwitch(vs, "-path=", pathT)
+	localPathT = tk.GetSwitch(vs, "-localPath=", localPathT)
+
+	forceT := tk.IfSwitchExists(vs, "-force")
+	
+	if !forceT && tk.IfFileExists(localPathT) {
+		return NewCommonError("local file already exists"), nil
+	}
+
+	optionsT := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyT, secretAccessKeyT, ""),
+		Secure: useSslT,
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			// TLSClientConfig:       tlsConfig,
+		},
+	}
+
+	minioClient, errT := minio.New(endPointT, optionsT)
+
+	// minioClient.SetCustomTransport(transport)
+
+	if errT != nil {
+		return NewCommonError("failed to initialize s3 client: %v", errT), nil
+	}
+
+	errT = minioClient.FGetObject(context.Background(), bucketNameT, pathT, localPathT, minio.GetObjectOptions{})
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to get object to file: %v", errT), nil
+	}
+
+	return Undefined, nil
 }
 
 func builtinS3StatObjectFunc(c Call) (Object, error) {
