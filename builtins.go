@@ -458,6 +458,7 @@ const (
 	BuiltinPln
 	BuiltinPlv
 	BuiltinSpr
+	BuiltinSpln
 	BuiltinTestByText
 	BuiltinTestByStartsWith
 	BuiltinTestByEndsWith
@@ -828,6 +829,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"plErr":  BuiltinPlErr,
 	"fatalf": BuiltinFatalf,
 	"spr":    BuiltinSpr,
+	"spln":    BuiltinSpln,
 
 	// scan related
 	"sscanf": BuiltinSscanf,
@@ -1831,8 +1833,8 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinDealStr: &BuiltinFunction{
 		Name:    "dealStr",
-		Value:   CallExAdapter(builtinDealStrFunc),
-		ValueEx: builtinDealStrFunc,
+		Value:   CallExAdapter(BuiltinDealStrFunc),
+		ValueEx: BuiltinDealStrFunc,
 	},
 	BuiltinGetTextSimilarity: &BuiltinFunction{
 		Name:    "getTextSimilarity",
@@ -2249,6 +2251,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "spr", // usage: the same as sprintf
 		Value:   FnASVaRS(fmt.Sprintf),
 		ValueEx: FnASVaRSex(fmt.Sprintf),
+	},
+	BuiltinSpln: &BuiltinFunction{
+		Name:    "spln", // usage: the same as sprintln
+		Value:   FnAVaRS(fmt.Sprintln),
+		ValueEx: FnAVaRSex(fmt.Sprintln),
 	},
 
 	// scan related
@@ -6278,6 +6285,27 @@ func FnASVaRSex(fn func(string, ...interface{}) string) CallableExFunc {
 		vargs := ObjectsToI(args[1:])
 
 		rs := fn(args[0].String(), vargs...)
+		return ToStringObject(rs), nil
+	}
+}
+
+// like fmt.Sprintln
+func FnAVaRS(fn func(...interface{}) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		vargs := ObjectsToI(args[0:])
+
+		rs := fn(vargs...)
+		return ToStringObject(rs), nil
+	}
+}
+
+func FnAVaRSex(fn func(...interface{}) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		vargs := ObjectsToI(args[0:])
+
+		rs := fn(vargs...)
 		return ToStringObject(rs), nil
 	}
 }
@@ -14378,7 +14406,7 @@ func builtinStrToTimeFunc(c Call) (Object, error) {
 	return &Time{Value: rsT}, nil
 }
 
-func builtinDealStrFunc(c Call) (Object, error) {
+func BuiltinDealStrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {

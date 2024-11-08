@@ -11,6 +11,8 @@
       <UseXPManifest Value="True"/>
       <XPManifest>
         <DpiAware Value="True"/>
+        <TextName Value="org.topget.chared"/>
+        <TextDesc Value="Charlang Editor"/>
       </XPManifest>
       <Icon Value="0"/>
     </General>
@@ -64,12 +66,12 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="chared"/>
+      <Filename Value="D:\goprjs\bin\chared"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
       <OtherUnitFiles Value="D:\lzprjs\libs\"/>
-      <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+      <UnitOutputDirectory Value="D:\lzprjs\tmplibs\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>
       <Debugging>

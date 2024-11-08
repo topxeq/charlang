@@ -3,6 +3,8 @@ package main
 import "C"
 
 import (
+	"strings"
+	"github.com/topxeq/tkc"
 	"github.com/topxeq/charlang"
 )
 
@@ -23,19 +25,46 @@ func SumStr(a, b *C.char) *C.char {
     return C.CString(a1 + b1)
 }
 
+//export DealStr
+func DealStr(strA, codeA *C.char) *C.char {
+	a1 := C.GoString(strA)
+	b1 := C.GoString(codeA)
+    return C.CString(tkc.DealString(a1, b1))
+}
+
 //export QuickRunChar
-func QuickRunChar(codeA, paramA *C.char) *C.char {
-	nv, errT := charlang.Compile([]byte(C.GoString(codeA)), &charlang.DefaultCompilerOptions)
+func QuickRunChar(codeA, paramA, secureCodeA, injectA *C.char) *C.char {
+	codeT := C.GoString(codeA)
+
+	secureCodeT := strings.TrimSpace(C.GoString(secureCodeA))
+	
+	if secureCodeT != "" {
+		codeT = tkc.DealString(codeT, secureCodeT)
+	}
+	
+	injectT := C.GoString(injectA)
+	
+	codeT = injectT + codeT
+
+	nv, errT := charlang.Compile([]byte(codeT), &charlang.DefaultCompilerOptions)
 	if errT != nil {
 		return C.CString("TXERROR:" + errT.Error())
 	}
 
 	envT := charlang.Map{}
 
+	envT["versionG"] = charlang.String{Value: charlang.VersionG}
+	envT["scriptPathG"] = charlang.String{Value: ""}
+	envT["runModeG"] = charlang.String{Value: "dll"}
+
 	retT, errT := charlang.NewVM(nv).Run(envT, charlang.String{Value: C.GoString(paramA)})
 
 	if errT != nil {
 		return C.CString("TXERROR:" + errT.Error())
+	}
+	
+	if charlang.IsUndefInternal(retT) {
+		return C.CString("TXERROR:undefined")
 	}
 	
 	return C.CString(retT.String())
