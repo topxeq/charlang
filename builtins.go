@@ -14424,6 +14424,23 @@ func BuiltinDealStrFunc(c Call) (Object, error) {
 		}
 
 		return &String{Value: string(buf)}, nil
+	} else if strings.HasPrefix(strT, "//TXHEX#") {
+		strT = strT[8:]
+
+		buf, errT := hex.DecodeString(strT)
+		if errT != nil {
+			return NewCommonError("failed decode hex: %v", errT), nil
+		}
+
+		return &String{Value: string(buf)}, nil
+	} else if strings.HasPrefix(strT, "//TXTE#") {
+		codeT := ""
+
+		if len(args) > 1 {
+			codeT = args[1].String()
+		}
+
+		return &String{Value: tk.DecryptStringByTXTE(strT[7:], codeT)}, nil
 	} else if strings.HasPrefix(strT, "//TXDEF#") || strings.HasPrefix(strT, "740404") {
 		codeT := ""
 

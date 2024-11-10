@@ -1578,6 +1578,8 @@ func runArgs(argsA ...string) interface{} {
 			ifBatchT = true
 		}
 	}
+	
+	fcT = tk.DealString(fcT, tk.GetSwitchWithDefaultValue(argsT, "-secureCode=", ""))
 
 	// if ifBatchT {
 	// 	listT := tk.SplitLinesRemoveEmpty(fcT)

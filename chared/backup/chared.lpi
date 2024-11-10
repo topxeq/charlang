@@ -31,9 +31,6 @@
         <PackageName Value="weblaz"/>
       </Item>
       <Item>
-        <PackageName Value="atsynedit_package"/>
-      </Item>
-      <Item>
         <PackageName Value="SynEditDsgn"/>
       </Item>
       <Item>
@@ -57,7 +54,7 @@
         <UnitName Value="Unit1"/>
       </Unit>
       <Unit>
-        <Filename Value="D:\lzprjs\libs\tkunit.pas"/>
+        <Filename Value="tkunit.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
     </Units>

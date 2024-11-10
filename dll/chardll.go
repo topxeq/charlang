@@ -38,7 +38,7 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA *C.char) *C.char {
 
 	secureCodeT := strings.TrimSpace(C.GoString(secureCodeA))
 	
-	if secureCodeT != "" {
+	if true { // secureCodeT != "" {
 		codeT = tkc.DealString(codeT, secureCodeT)
 	}
 	
