@@ -6,9 +6,11 @@ interface
 
 uses
   Classes, Forms, Dialogs, SysUtils, StrUtils, httpprotocol, fphttpclient,
-  openssl, opensslsockets, Variants, TypInfo;
+  openssl, opensslsockets, Variants, TypInfo, fpjsonrtti, fpjson, Generics.Collections;
 
 type
+
+  tkStrMap = specialize TDictionary<string, string>;
 
   tk = class
   public
@@ -27,9 +29,19 @@ type
     class function isErrStr(strA: string): boolean;
     class function getErrStr(strA: string): string;
 
+    // array/list related
+    class function getArrayItem(listA: TStringList; idxA: integer;
+      defaultA: string = ''): string;
+
+    // map/dictionary related
+    class function newStrMap(pairsA: array of string): tkStrMap;
+
     // encode/decode related
     class function urlEncode(strA: string): string;
     class function urlDecode(strA: string): string;
+
+    // json related
+    class function toJson(valueA: TObject): string;
 
     // encrypt/decrypt related
     class function encryptStringByTXTE(originStr: string; code: string): string;
@@ -42,6 +54,8 @@ type
     class function getCliSwitch(keyA: string; defaultA: string): string;
     class function ifSwitchExists(listA: TStringList; keyA: string): boolean;
     class function ifCliSwitchExists(keyA: string): boolean;
+    class function parseCommandLine(originStr: string;
+      var argList: TStringList): string;
 
     // dir/path related
     class function getAppDir(): string;
@@ -462,7 +476,7 @@ begin
         FirstField := PManagedField(pbyte(@TotalFieldCount) + SizeOf(TotalFieldCount));
         for I := 0 to TotalFieldCount - 1 do
           {$ELSE}
-        FirstField := PManagedField(PByte(@ManagedFldCount) + SizeOf(ManagedFldCount));
+          FirstField := PManagedField(pbyte(@ManagedFldCount) + SizeOf(ManagedFldCount));
         for I := 0 to ManagedFldCount - 1 do
           {$ENDIF}
         begin
@@ -568,7 +582,7 @@ begin
       ) then exit(False);
   end;
 
-  exit(true);
+  exit(True);
 end;
 
 class function tk.encryptStringByTXTE(originStr: string; code: string): string;
@@ -660,6 +674,164 @@ class function tk.hexToByte(hexA: string): byte;
   //end;
 begin
   Result := byte(hex2Dec(hexA));
+end;
+
+class function tk.parseCommandLine(originStr: string; var argList: TStringList): string;
+var
+  tmpS: string;
+  p: integer;
+begin
+  if argList <> nil then
+  begin
+    if Length(originStr) < 1 then
+    begin
+      argList.Clear;
+      exit('');
+    end;
+
+    argList.Clear;
+
+    tmpS := trim(originStr);
+    if tmpS = '' then
+    begin
+      exit('');
+    end;
+
+    repeat
+      if (tmpS[1] = '"') then
+      begin
+        tmpS := trim(RightBStr(tmpS, Length(tmpS) - 1));
+        p := Pos('"', tmpS);
+        if (p > 0) then
+        begin
+          argList.Add(trim(LeftBStr(tmpS, p - 1)));
+          tmpS := trim(RightBStr(tmpS, Length(tmpS) - p + 1));
+          if (tmpS = '"') then
+          begin
+            tmpS := '';
+            break;
+          end;
+
+          if tmpS[1] = '"' then
+            tmpS := trim(RightBStr(tmpS, Length(tmpS) - 1));
+        end;
+      end
+      else
+      begin
+        p := Pos(' ', tmpS);
+        if (p > 0) then
+        begin
+          argList.Add(trim(LeftBStr(tmpS, p - 1)));
+          tmpS := trim(RightBStr(tmpS, Length(tmpS) - p + 1));
+        end;
+      end;
+    until p < 1;
+
+    if (tmpS <> '') then
+      argList.Add(tmpS);
+
+    exit('');
+  end;
+
+  exit('TXERROR:output list is nil');
+end;
+
+class function tk.toJson(valueA: TObject): string;
+var
+  jsoSerialize: TJSONStreamer;
+  classNameT: string;
+  tmps: string;
+  strAryT: array of string;
+  jsonAryT: TJSONArray;
+  jsonObjectT: TJSONObject;
+begin
+  Result := '';
+
+  classNameT := valueA.ClassName;
+
+  case classNameT of
+    'TStringList': begin
+      jsonAryT := TJSONArray.Create;
+
+      for tmps in TStringList(valueA) do
+      begin
+        jsonAryT.Add(tmps);
+      end;
+
+      tmps := jsonAryT.AsJson;
+
+      FreeAndNil(jsonAryT);
+
+      exit(tmps);
+    end;
+    'TDictionary<System.AnsiString,System.AnsiString>': begin
+      jsonObjectT := TJSONObject.Create;
+
+      strAryT := tkStrMap(valueA).Keys.ToArray;
+
+      for tmps in strAryT do
+      begin
+        jsonObjectT.Add(tmps, tkStrMap(valueA).Items[tmps]);
+      end;
+
+      tmps := jsonObjectT.AsJson;
+
+      FreeAndNil(jsonObjectT);
+
+      exit(tmps);
+    end;
+  end;
+
+  jsoSerialize := TJSONStreamer.Create(nil);
+
+  try
+    Result := jsoSerialize.ObjectToJSONString(valueA);
+  finally
+    jsoSerialize.Free;
+  end;
+
+end;
+
+class function tk.getArrayItem(listA: TStringList; idxA: integer;
+  defaultA: string): string;
+begin
+  if listA = nil then
+  begin
+    exit(defaultA);
+  end;
+
+  if (idxA < 0) or (idxA >= listA.Count) then
+  begin
+    exit(defaultA);
+  end;
+
+  exit(listA[idxA]);
+end;
+
+class function tk.newStrMap(pairsA: array of string): tkStrMap;
+var
+  rListT:  tkStrMap;
+  tmps: string;
+  cntT: integer;
+  lenT: integer;
+begin
+     rListT := tkStrMap.Create;
+
+     lenT := length(pairsA);
+
+     cntT :=0;
+     while cntT < lenT do
+     begin
+       if cntT+1>= lenT then
+       break;
+
+       rListT.addOrSetValue( pairsA[cntT], pairsA[cntT+1]);
+
+           cntT := cntT + 2;
+     end;
+
+     exit(rListT);
+
 end;
 
 end.

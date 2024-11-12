@@ -67,6 +67,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinGuiServerCommand
 	BuiltinGetMapItem
 	BuiltinSetMapItem
 	BuiltinSendMail
@@ -1193,6 +1194,10 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// mail related
 	"sendMail": BuiltinSendMail,
+
+	// GUI server related
+	"guiServerCommand": BuiltinGuiServerCommand, // send command to GUI server, usage: rs := cgsCmd("pln", "-url="+trim(guiServerUrlG), "value", "18")
+	"cgsCmd": BuiltinGuiServerCommand,
 
 	// s3 related
 	"s3GetObjectBytes":  BuiltinS3GetObjectBytes,
@@ -3450,6 +3455,14 @@ var BuiltinObjects = [...]Object{
 		Name:    "sendMail",
 		Value:   CallExAdapter(builtinSendMailFunc),
 		ValueEx: builtinSendMailFunc,
+	},
+
+	// GUI server related
+
+	BuiltinGuiServerCommand: &BuiltinFunction{
+		Name:    "guiServerCommand",
+		Value:   CallExAdapter(builtinGuiServerCommandFunc),
+		ValueEx: builtinGuiServerCommandFunc,
 	},
 
 	// s3 related
@@ -14296,6 +14309,66 @@ func builtinSendMailFunc(c Call) (Object, error) {
 	}
 
 	return Undefined, nil
+}
+
+func builtinGuiServerCommandFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+	
+	cmdT := args[0].String()
+
+	vs := ObjectsToS(args[1:])
+
+	urlT := strings.TrimSpace(tk.GetSwitch(vs, "-url=", "http://127.0.0.1:7458"))
+
+	if urlT == "" {
+		urlT = "http://127.0.0.1:7458"
+//		return NewCommonErrorWithPos(c, "url empty"), nil
+	}
+
+	mapT := map[string]string{"cmd": cmdT}
+	
+	parasT := make([]string, 0, len(vs))
+
+	optsT := make([]interface{}, 0, len(vs))
+
+	for _, argT := range vs {
+		if strings.HasPrefix(argT, "-") {
+			optsT = append(optsT, argT)
+			continue
+		}
+
+		parasT = append(parasT, argT)
+	}
+
+	lenT := len(parasT)
+	cntT := 0
+	
+	for {
+		if cntT >= lenT {
+			break
+		}
+		
+		if cntT + 1 >= lenT {
+			break
+		}
+		
+		mapT[parasT[cntT]] = parasT[cntT + 1]
+		
+		cntT += 2
+	}
+	
+	optsT = append(optsT, mapT)
+
+	rs := tk.GetWeb(urlT, optsT...)
+	if tk.IsErrX(rs) {
+		return NewCommonErrorWithPos(c, "failed to send command to GUI server: %v", tk.GetErrStrX(rs)), nil
+	}
+
+	return ConvertToObject(rs), nil
 }
 
 func builtinArrayContainsFunc(c Call) (Object, error) {

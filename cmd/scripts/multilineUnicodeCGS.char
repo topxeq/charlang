@@ -1,0 +1,22 @@
+global guiServerUrlG
+
+s1 := `abcde99h花括号好999
+fsa但其实第三方师傅洒点水代发更大搜嘎打撒
+打啊发舒fd89879879服
+`
+
+// appendText("abcde99h花括号好999\n", `D:\tmpx\ddd.txt`)
+pln(123, "abc") // injected
+pl("pl: %v", s1) // injected， too
+// instead of normal pl to stdout
+
+//rs := cgsCmd("http://127.0.0.1:7458", {"cmd": "pln", "value": "18"})
+rs := cgsCmd("pln", "-url="+trim(guiServerUrlG), "value", "18")
+
+sleep(2.0)
+
+if rs == "" {
+   pl("rs: %#v", rs)
+}
+
+return rs

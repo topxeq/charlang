@@ -33,7 +33,7 @@ func DealStr(strA, codeA *C.char) *C.char {
 }
 
 //export QuickRunChar
-func QuickRunChar(codeA, paramA, secureCodeA, injectA *C.char) *C.char {
+func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA *C.char) *C.char {
 	codeT := C.GoString(codeA)
 
 	secureCodeT := strings.TrimSpace(C.GoString(secureCodeA))
@@ -56,6 +56,22 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA *C.char) *C.char {
 	envT["versionG"] = charlang.String{Value: charlang.VersionG}
 	envT["scriptPathG"] = charlang.String{Value: ""}
 	envT["runModeG"] = charlang.String{Value: "dll"}
+
+	globalsT := strings.TrimSpace(C.GoString(globalsA))
+	
+//	tkc.AppendStringToFile(tkc.Spr("\nglobalsT: %v\n", globalsT), `c:\test\test.log`)
+	
+	if globalsT != "" {
+		mapT, errT := tkc.MSSFromJSON(globalsT)
+		
+//		tkc.AppendStringToFile(tkc.Spr("\nglobalsT: %#v -- #v\n", mapT, errT), `c:\test\test.log`)
+	
+		if errT == nil {
+			for k, v := range mapT {
+				envT[k] = charlang.String{Value: v}
+			}
+		}
+	}
 
 	retT, errT := charlang.NewVM(nv).Run(envT, charlang.String{Value: C.GoString(paramA)})
 

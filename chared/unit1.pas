@@ -9,18 +9,20 @@ uses
   StdCtrls, ExtCtrls, PairSplitter, Buttons, SynEdit,
   SynHighlighterAny, SynHighlighterCpp, SynHighlighterSQL,
   SynHighlighterJScript, SynHighlighterPas, tkunit, fphttpserver, fileutil,
-  RegExpr, fpjson, Process, LazUTF8, SynEditTypes, Generics.Collections;
+  RegExpr, fpjson, Process, LazUTF8, SynEditTypes, Generics.Collections,
+  unitCommandPalette;
 
   // , ATStringProc, ATSynEdit_LineParts
 
 const
-  VersionG = '0.9.2';
+  VersionG = '0.9.3';
   WebPortG = 7458;
 
 type
   strHashMap = specialize TDictionary<string, string>;
 
-  TfuncCharlangBackG = function(codeA, paramA, secureCodeA, injectA: PChar): PChar;
+  TfuncCharlangBackG = function(codeA, paramA, secureCodeA, injectA,
+    globalsA: PChar): PChar;
     stdcall;
 
   THTTPServerThread = class(TThread)
@@ -129,9 +131,37 @@ type
     MainMenu1: TMainMenu;
     Memo1: TMemo;
     MenuItem1: TMenuItem;
+    MenuItem10: TMenuItem;
+    MenuItem11: TMenuItem;
+    MenuItem12: TMenuItem;
+    MenuItem13: TMenuItem;
+    MenuItem14: TMenuItem;
+    MenuItem15: TMenuItem;
+    MenuItem16: TMenuItem;
+    MenuItem17: TMenuItem;
+    MenuItem18: TMenuItem;
+    MenuItem19: TMenuItem;
+    MenuItem20: TMenuItem;
+    MenuItem21: TMenuItem;
+    MenuItem22: TMenuItem;
+    MenuItem23: TMenuItem;
+    MenuItem24: TMenuItem;
+    MenuItem25: TMenuItem;
+    MenuItem26: TMenuItem;
+    Separator6: TMenuItem;
+    Separator5: TMenuItem;
+    PopupMenu1: TPopupMenu;
+    Separator4: TMenuItem;
+    Separator3: TMenuItem;
+    Separator2: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
+    MenuItem5: TMenuItem;
+    MenuItem6: TMenuItem;
+    MenuItem7: TMenuItem;
+    MenuItem8: TMenuItem;
+    MenuItem9: TMenuItem;
     OpenDialog1: TOpenDialog;
     PairSplitter1: TPairSplitter;
     PairSplitterSide1: TPairSplitterSide;
@@ -154,6 +184,12 @@ type
     ToolButton11: TToolButton;
     ToolButton12: TToolButton;
     ToolButton13: TToolButton;
+    ToolButton14: TToolButton;
+    ToolButton15: TToolButton;
+    ToolButton16: TToolButton;
+    ToolButton17: TToolButton;
+    ToolButton18: TToolButton;
+    ToolButton19: TToolButton;
     ToolButton2: TToolButton;
     ToolButton3: TToolButton;
     ToolButton4: TToolButton;
@@ -170,7 +206,21 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: word; Shift: TShiftState);
+    procedure MenuItem10Click(Sender: TObject);
+    procedure MenuItem11Click(Sender: TObject);
+    procedure MenuItem13Click(Sender: TObject);
+    procedure MenuItem14Click(Sender: TObject);
+    procedure MenuItem15Click(Sender: TObject);
+    procedure MenuItem16Click(Sender: TObject);
+    procedure MenuItem17Click(Sender: TObject);
+    procedure MenuItem18Click(Sender: TObject);
+    procedure MenuItem19Click(Sender: TObject);
+    procedure MenuItem20Click(Sender: TObject);
+    procedure MenuItem2Click(Sender: TObject);
+    procedure MenuItem3Click(Sender: TObject);
     procedure MenuItem4Click(Sender: TObject);
+    procedure MenuItem8Click(Sender: TObject);
+    procedure MenuItem9Click(Sender: TObject);
     procedure SpeedButton1Click(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
     procedure SynEdit1Change(Sender: TObject);
@@ -178,6 +228,11 @@ type
     procedure ToolButton10Click(Sender: TObject);
     procedure ToolButton11Click(Sender: TObject);
     procedure ToolButton13Click(Sender: TObject);
+    procedure ToolButton15Click(Sender: TObject);
+    procedure ToolButton16Click(Sender: TObject);
+    procedure ToolButton17Click(Sender: TObject);
+    procedure ToolButton18Click(Sender: TObject);
+    procedure ToolButton19Click(Sender: TObject);
     procedure ToolButton1Click(Sender: TObject);
     //procedure ToolButton10Click(Sender: TObject);
     procedure ToolButton3Click(Sender: TObject);
@@ -510,6 +565,10 @@ begin
       begin
         ToolButton1Click(nil);
       end;
+      80: // ctrl-p
+      begin
+        ToolButton19Click(nil);
+      end;
       82: // ctrl-r
       begin
         if ssShift in Shift then
@@ -527,6 +586,76 @@ begin
 
   //addMessage('FormKeyUp: ' + IntToStr(Key) + ' ' + tk.toStr(Shift, typeInfo(Shift)));
 
+end;
+
+procedure TForm1.MenuItem10Click(Sender: TObject);
+begin
+  ToolButton9Click(Sender);
+end;
+
+procedure TForm1.MenuItem11Click(Sender: TObject);
+begin
+  ToolButton10Click(Sender);
+end;
+
+procedure TForm1.MenuItem13Click(Sender: TObject);
+begin
+  SynEdit1.CopyToClipboard;
+end;
+
+procedure TForm1.MenuItem14Click(Sender: TObject);
+begin
+  SynEdit1.CutToClipboard;
+end;
+
+procedure TForm1.MenuItem15Click(Sender: TObject);
+begin
+  SynEdit1.PasteFromClipboard(False);
+end;
+
+procedure TForm1.MenuItem16Click(Sender: TObject);
+var
+  mapT: tkStrMap;
+begin
+  SynEdit1.Clear;
+
+  mapT := tk.newStrMap(['inputG', SynEdit1.Text,
+    'secureCodeG', 'abc123']);
+
+  addMessage(tk.toJson(mapT));
+
+  FreeAndNil(mapT);
+
+end;
+
+procedure TForm1.MenuItem17Click(Sender: TObject);
+begin
+  SynEdit1.SelectAll;
+end;
+
+procedure TForm1.MenuItem18Click(Sender: TObject);
+begin
+  SynEdit1.Undo;
+end;
+
+procedure TForm1.MenuItem19Click(Sender: TObject);
+begin
+  SynEdit1.Redo;
+end;
+
+procedure TForm1.MenuItem20Click(Sender: TObject);
+begin
+  ToolButton19Click(Sender);
+end;
+
+procedure TForm1.MenuItem2Click(Sender: TObject);
+begin
+  ToolButton1Click(Sender);
+end;
+
+procedure TForm1.MenuItem3Click(Sender: TObject);
+begin
+  ToolButton11Click(Sender);
 end;
 
 procedure TForm1.AddMessage(msgA: string);
@@ -683,6 +812,16 @@ end;
 procedure TForm1.MenuItem4Click(Sender: TObject);
 begin
   self.Close();
+end;
+
+procedure TForm1.MenuItem8Click(Sender: TObject);
+begin
+  ToolButton3Click(Sender);
+end;
+
+procedure TForm1.MenuItem9Click(Sender: TObject);
+begin
+  ToolButton6Click(Sender);
 end;
 
 procedure TForm1.SpeedButton1Click(Sender: TObject);
@@ -857,6 +996,32 @@ end;
 procedure TForm1.ToolButton13Click(Sender: TObject);
 begin
   SynEdit1.Undo;
+end;
+
+procedure TForm1.ToolButton15Click(Sender: TObject);
+begin
+  SynEdit1.CopyToClipboard;
+end;
+
+procedure TForm1.ToolButton16Click(Sender: TObject);
+begin
+  SynEdit1.CutToClipboard;
+end;
+
+procedure TForm1.ToolButton17Click(Sender: TObject);
+begin
+  SynEdit1.PasteFromClipboard(False);
+end;
+
+procedure TForm1.ToolButton18Click(Sender: TObject);
+begin
+  SynEdit1.Redo;
+end;
+
+procedure TForm1.ToolButton19Click(Sender: TObject);
+begin
+  Form2.Memo1.Text := '';
+  Form2.showModal;
 end;
 
 procedure TForm1.ToolButton1Click(Sender: TObject);
@@ -1136,9 +1301,11 @@ begin
     //if not startsStr('//TX', codeTextM) then
 
     rs := funcCharlangBackG(PChar(string(codeTextM)), PChar(IntToStr(WebPortG)),
-      PChar(secureCodeM), PChar(injectG));
+      PChar(secureCodeM), PChar(injectG),
+      PChar('{"guiServerUrlG":"http://127.0.0.1:' + IntToStr(WebPortG) + '"}'));
 
-    if rs <> 'TXERROR:undefined' then begin
+    if rs <> 'TXERROR:undefined' then
+    begin
       msgTextM := '--- Result:';
       Synchronize(@AddMessage);
       msgTextM := rs;
@@ -1217,13 +1384,19 @@ begin
     'showError': begin
       tk.showError(guiValue1M, guiValue2M);
     end;
+    'getInput': begin
+      if InputQuery(guiValue1M, guiValue2M, false, guiOut1M) then tk.pass()
+      else
+      begin
+        guiOut1M := tk.errStr('failed to get input');
+      end;
+    end;
     'getPassword': begin
-      if InputQuery(guiValue1M, guiValue2M, true, guiOut1M)
-  then tk.pass()
-  else
-  begin
-    guiOut1M := tk.errStr('failed to get input');
-  end
+      if InputQuery(guiValue1M, guiValue2M, True, guiOut1M) then tk.pass()
+      else
+      begin
+        guiOut1M := tk.errStr('failed to get input');
+      end;
     end;
   end;
 

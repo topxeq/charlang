@@ -1,0 +1,67 @@
+object Form2: TForm2
+  Left = 246
+  Height = 378
+  Top = 340
+  Width = 640
+  Caption = 'Command palette'
+  ClientHeight = 378
+  ClientWidth = 640
+  KeyPreview = True
+  OnCreate = FormCreate
+  OnKeyUp = FormKeyUp
+  Position = poDesktopCenter
+  LCLVersion = '3.6.0.0'
+  object Panel1: TPanel
+    Left = 0
+    Height = 328
+    Top = 0
+    Width = 640
+    Align = alClient
+    Caption = 'Panel1'
+    ClientHeight = 328
+    ClientWidth = 640
+    TabOrder = 0
+    object Memo1: TMemo
+      Left = 1
+      Height = 326
+      Top = 1
+      Width = 638
+      Align = alClient
+      Font.Height = -21
+      Lines.Strings = (
+        'go build -buildmode=c-shared -ldflags="-s -w" -o \goprjs\bin\char.dll chardll.go'
+      )
+      ParentFont = False
+      ScrollBars = ssAutoVertical
+      TabOrder = 0
+    end
+  end
+  object Panel2: TPanel
+    Left = 0
+    Height = 50
+    Top = 328
+    Width = 640
+    Align = alBottom
+    ClientHeight = 50
+    ClientWidth = 640
+    TabOrder = 1
+    object BitBtn1: TBitBtn
+      Left = 200
+      Height = 30
+      Top = 8
+      Width = 75
+      Caption = 'Go'
+      OnClick = BitBtn1Click
+      TabOrder = 0
+    end
+    object BitBtn2: TBitBtn
+      Left = 352
+      Height = 30
+      Top = 8
+      Width = 75
+      Caption = 'Close'
+      OnClick = BitBtn2Click
+      TabOrder = 1
+    end
+  end
+end
