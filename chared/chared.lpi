@@ -61,8 +61,23 @@
         <Filename Value="unitcommandpalette.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="Form2"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitCommandPalette"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unitprocess.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form3"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="unitProcess"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unitselectlist.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form4"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="unitSelectList"/>
       </Unit>
     </Units>
   </ProjectOptions>

@@ -5,7 +5,7 @@ unit unitCommandPalette;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls,
+  Classes, SysUtils, StrUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   StdCtrls, Buttons, tkunit;
 
 type
@@ -35,7 +35,7 @@ implementation
 
 {$R *.lfm}
 
-uses unit1;
+uses unit1, unitProcess;
 
   { TForm2 }
 
@@ -56,6 +56,20 @@ begin
       end;
     end;
   end;
+
+  if Shift = [ssCtrl] then
+  begin
+    case Key of
+      71: // g
+      begin
+        BitBtn1Click(nil);
+        exit;
+      end;
+    end;
+  end;
+
+  //Form1.addMessage('FormKeyUp: ' + IntToStr(Key) + ' ' +
+  //tk.toStr(Shift, typeInfo(Shift)));
 
   //  if ssCtrl in Shift then
   //begin
@@ -93,15 +107,20 @@ end;
 
 procedure TForm2.BitBtn1Click(Sender: TObject);
 var
+  tmps: string;
   listT: TStringList;
   rs: string;
   cmdT: string;
   secodeT: string;
   mapT: tkStrMap;
 begin
+  tmps := trim(memo1.Text);
+
+  if tmps = '' then exit;
+
   listT := TStringList.Create;
 
-  rs := tk.parseCommandLine(memo1.Text, listT);
+  rs := tk.parseCommandLine(tmps, listT);
 
   if rs <> '' then
   begin
@@ -120,6 +139,59 @@ begin
   cmdT := listT[0];
 
   //Form1.addMessage('cmdT: ' + cmdT);
+
+  if startsStr('mc', cmdT) then
+  begin
+    if @funcCharlangBackG <> nil then
+    begin
+      mapT := tk.newStrMap(['inputG', trim(cmdT)]);
+
+      rs := funcCharlangBackG(PChar('global inputG' + #10 +
+        'return getWeb("https://topget.org/ms/magic?auth=topxeq&valueonly=true&witherror=true&code="+inputG)'),
+        PChar(''), PChar(''), PChar(''), PChar(tk.toJson(mapT)));
+
+      FreeAndNil(mapT);
+
+      //Form1.addMessage('rs: ' + rs);
+      if rs <> 'TXERROR:undefined' then
+      begin
+        if startsStr('//TXTE#', rs) then
+        begin
+          rs := tk.decryptStringByTXTE(midStr(rs, 8, length(rs) - 7), 'char');
+        end;
+        //Form1.addMessage('rs: ' + rs);
+
+        if runCharThreadSignalG <> 0 then
+        begin
+          ShowMessage('A Charlang session is already running now.');
+          exit;
+        end;
+
+        runCharThreadSignalG := 1;
+
+        runCharThreadG := TRunCharThread.Create(True);
+
+        runCharThreadG.codeTextM := rs;
+        //runCharThreadG.secureCodeM := trim(Form1.LabeledEdit1.Text);
+
+        runCharThreadG.Start;
+
+        exit;
+        //rs := funcCharlangBackG(PChar(rs),
+        //  PChar(''), PChar(''), PChar(''), PChar('{"guiServerUrlG":"http://127.0.0.1:' + IntToStr(WebPortG) + '"}'));
+
+        //if rs <> 'TXERROR:undefined' then
+        //begin
+        //  Form1.addMessage('--- result: '+#10 + rs);
+        //end;
+
+        //Form1.SynEdit1.Text := rs;
+      end;
+    end;
+
+    exit;
+  end;
+
   case cmdT of
     'encryptText': begin
       secodeT := tk.getArrayItem(listT, 1);
@@ -130,8 +202,8 @@ begin
           'secureCodeG', secodeT]);
 
         rs := funcCharlangBackG(PChar(
-          'global inputG'#10'global secureCodeG'#10'return encryptText(inputG, secureCodeG)'), PChar(''),
-          PChar(''), PChar(''), PChar(tk.toJson(mapT)));
+          'global inputG'#10'global secureCodeG'#10'return encryptText(inputG, secureCodeG)'), PChar(''), PChar(''),
+          PChar(''), PChar(tk.toJson(mapT)));
 
         FreeAndNil(mapT);
 
@@ -149,12 +221,12 @@ begin
 
       if @funcCharlangBackG <> nil then
       begin
-        mapT := tk.newStrMap(['inputG', Form1.SynEdit1.Text,
+        mapT := tk.newStrMap(['inputG', trim(Form1.SynEdit1.Text),
           'secureCodeG', secodeT]);
 
         rs := funcCharlangBackG(PChar(
-          'global inputG'#10'global secureCodeG'#10'return decryptText(inputG, secureCodeG)'), PChar(''),
-          PChar(''), PChar(''), PChar(tk.toJson(mapT)));
+          'global inputG'#10'global secureCodeG'#10'return decryptText(inputG, secureCodeG)'), PChar(''), PChar(''),
+          PChar(''), PChar(tk.toJson(mapT)));
 
         FreeAndNil(mapT);
 

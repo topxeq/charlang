@@ -10,7 +10,7 @@ uses
   SynHighlighterAny, SynHighlighterCpp, SynHighlighterSQL,
   SynHighlighterJScript, SynHighlighterPas, tkunit, fphttpserver, fileutil,
   RegExpr, fpjson, Process, LazUTF8, SynEditTypes, Generics.Collections,
-  unitCommandPalette;
+  unitCommandPalette, UnitSelectList;
 
   // , ATStringProc, ATSynEdit_LineParts
 
@@ -21,9 +21,8 @@ const
 type
   strHashMap = specialize TDictionary<string, string>;
 
-  TfuncCharlangBackG = function(codeA, paramA, secureCodeA, injectA,
-    globalsA: PChar): PChar;
-    stdcall;
+  TfuncCharlangBackG = function(codeA, paramA, secureCodeA, injectA, globalsA: PChar):
+    PChar; stdcall;
 
   THTTPServerThread = class(TThread)
   private
@@ -55,14 +54,19 @@ type
   TRunCharThread = class(TThread)
   private
     procedure AddMessage;
+    procedure ShowError;
+    procedure QuitApp;
   protected
     procedure Execute; override;
   public
+    msgTitleM: string;
     msgTextM: string;
 
     codeTextM: string;
 
     secureCodeM: string;
+
+    terminateWhileFailM: boolean;
 
     //threadModeM: string;
 
@@ -148,6 +152,7 @@ type
     MenuItem24: TMenuItem;
     MenuItem25: TMenuItem;
     MenuItem26: TMenuItem;
+    OpenDialog2: TOpenDialog;
     Separator6: TMenuItem;
     Separator5: TMenuItem;
     PopupMenu1: TPopupMenu;
@@ -178,6 +183,7 @@ type
     StatusBar1: TStatusBar;
     SynEdit1: TSynEdit;
     SynJScriptSyn1: TSynJScriptSyn;
+    Timer1: TTimer;
     ToolBar1: TToolBar;
     ToolButton1: TToolButton;
     ToolButton10: TToolButton;
@@ -225,6 +231,7 @@ type
     procedure SpeedButton2Click(Sender: TObject);
     procedure SynEdit1Change(Sender: TObject);
     procedure SynEdit1StatusChange(Sender: TObject; Changes: TSynStatusChanges);
+    procedure Timer1Timer(Sender: TObject);
     procedure ToolButton10Click(Sender: TObject);
     procedure ToolButton11Click(Sender: TObject);
     procedure ToolButton13Click(Sender: TObject);
@@ -273,6 +280,8 @@ var
   examplesMapG: strHashMap;
   examplesListG: TStringList;
 
+  terminateFlagG: boolean = False;
+
   injectG: string = 'pl := func(formatA, ...valuesA) { ' + #10 +
     '        rs1 := getWeb("http://127.0.0.1:7458", {"cmd": "pln", "value": spr(formatA, ...valuesA)})  '
     + #10 + '          return toInt(rs1, 0)      ' + #10 + '}' + #10 +
@@ -296,6 +305,16 @@ begin
   //tk.appendStringToFile('start...' + #10, 'd:\tmpx\abclog.txt');
 
   //FPHttpServer1.Active := true;
+
+  //if MessageDlg('Please confirm', 'Required executable file not found, download now?(please wait patiently after downloading started)',
+  //    mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+  //begin
+  //  application.Terminate;
+  //end;
+
+  //Form1.hide();
+  //Form2.showModal();
+  //Form1.show();
 
   // init global variables
   filePathG := '';
@@ -402,6 +421,12 @@ begin
   //runCharThreadG.Start;
 
   TInit1Thread.Create(False);
+
+  //addMessage(tk.getErrStr('TXERROR:safhkd方式客户反馈'));
+  //addMessage(tk.strSlice('safhkd方式客户反馈', 0, 3));
+  //addMessage(tk.strSlice('safhkd方式客户反馈', 1, 3));
+  //addMessage(tk.strSlice('safhkd方式客户反馈', 1, 8));
+  //addMessage(tk.strSlice('safhkd方式客户反馈', 3, 10));
 
   //addMessage(tk.encryptStringByTXTE('safhkd方式客户反馈', ''));
   //addMessage(tk.decryptStringByTXTE('E8D2D9E4D5DB610D32672C0C662B216EFE3A6C1212772211', ''));
@@ -554,6 +579,7 @@ begin
     FreeLibrary(LibHandleG);
   end;
 
+  Application.Terminate;
 end;
 
 procedure TForm1.FormKeyUp(Sender: TObject; var Key: word; Shift: TShiftState);
@@ -619,8 +645,7 @@ var
 begin
   SynEdit1.Clear;
 
-  mapT := tk.newStrMap(['inputG', SynEdit1.Text,
-    'secureCodeG', 'abc123']);
+  mapT := tk.newStrMap(['inputG', SynEdit1.Text, 'secureCodeG', 'abc123']);
 
   addMessage(tk.toJson(mapT));
 
@@ -812,6 +837,7 @@ end;
 procedure TForm1.MenuItem4Click(Sender: TObject);
 begin
   self.Close();
+  application.terminate;
 end;
 
 procedure TForm1.MenuItem8Click(Sender: TObject);
@@ -955,6 +981,16 @@ begin
   //end;
 end;
 
+procedure TForm1.Timer1Timer(Sender: TObject);
+begin
+  if terminateFlagG then
+  begin
+    self.Close();
+
+    application.Terminate;
+  end;
+end;
+
 procedure TForm1.ToolButton10Click(Sender: TObject);
 begin
   if runCharExtThreadSignalG <> 0 then
@@ -1060,9 +1096,9 @@ begin
 
   runCharThreadG := TRunCharThread.Create(True);
   s1 := trim(SynEdit1.Text);
-  if startsStr(s1, '//TXTE#') or tk.isHex(s1) then
+  if startsStr('//TXTE#', s1) or tk.isHex(s1) then
   begin
-    s1 := tk.decryptStringByTXTE(s1, trim(LabeledEdit1.Text));
+    s1 := tk.decryptStringByTXTE(s1.remove(0, 7), trim(LabeledEdit1.Text));
   end;
   //addMessage(s1);
   runCharThreadG.codeTextM := s1;
@@ -1085,6 +1121,7 @@ end;
 procedure TForm1.ToolButton5Click(Sender: TObject);
 begin
   self.Close();
+  Application.Terminate;
 end;
 
 //var
@@ -1264,6 +1301,7 @@ constructor TRunCharThread.Create(CreateSuspended: boolean);
 begin
   runCharThreadSignalG := 1;
 
+  terminateWhileFailM := False;
   //threadModeM := '';
 
   inherited Create(CreateSuspended);
@@ -1289,6 +1327,16 @@ begin
   //Form1.StatusBar1.Panels[1].Text := msgTextM;
 end;
 
+procedure TRunCharThread.ShowError;
+begin
+  tk.showError(msgTitleM, msgTextM);
+end;
+
+procedure TRunCharThread.QuitApp;
+begin
+  terminateFlagG := True;
+end;
+
 procedure TRunCharThread.Execute;
 var
   //injectT: string;
@@ -1298,19 +1346,37 @@ begin
   begin
     //injectT := '';
 
-    //if not startsStr('//TX', codeTextM) then
-
     rs := funcCharlangBackG(PChar(string(codeTextM)), PChar(IntToStr(WebPortG)),
-      PChar(secureCodeM), PChar(injectG),
+      PChar(secureCodeM), PChar(''),
       PChar('{"guiServerUrlG":"http://127.0.0.1:' + IntToStr(WebPortG) + '"}'));
 
-    if rs <> 'TXERROR:undefined' then
+    if startsStr('TXERROR:', rs) then
+    begin
+      if rs = 'TXERROR:undefined' then
+      begin
+
+      end
+      else
+      begin
+        msgTitleM := 'Error';
+        msgTextM := tk.getErrStr(rs);           // + '|' + codeTextM
+        Synchronize(@ShowError);
+
+        if terminateWhileFailM then
+        begin
+          Synchronize(@QuitApp);
+        end;
+
+      end;
+    end
+    else
     begin
       msgTextM := '--- Result:';
       Synchronize(@AddMessage);
       msgTextM := rs;
       Synchronize(@AddMessage);
     end;
+
 
     //Form1.Memo1.Lines.Add('--- Result:');
     //Form1.Memo1.Lines.Add(rs);
@@ -1373,8 +1439,17 @@ begin
 end;
 
 procedure THTTPServerThread.doGuiCmd;
+var
+  i: integer;
+  tmps: string;
+  jAryT: TJSONArray;
+  tmpDataT: TJSONEnum;
 begin
   case guiCmdM of
+    'quit': begin
+      terminateFlagG := True;
+      //application.Terminate;
+    end;
     'alert': begin
       tk.showError('Alert', guiValue1M);
     end;
@@ -1384,11 +1459,67 @@ begin
     'showError': begin
       tk.showError(guiValue1M, guiValue2M);
     end;
+    'getInput': begin
+      if InputQuery(guiValue1M, guiValue2M, False, guiOut1M) then tk.pass()
+      else
+      begin
+        guiOut1M := tk.errStr('failed to get input');
+      end;
+    end;
     'getPassword': begin
       if InputQuery(guiValue1M, guiValue2M, True, guiOut1M) then tk.pass()
       else
       begin
         guiOut1M := tk.errStr('failed to get input');
+      end;
+    end;
+    'selectItem': begin
+      Form4.Caption := guiValue1M;
+      jAryT := getJson(guiValue2M) as TJSONArray;
+
+      Form4.ListBox1.Clear;
+
+      for tmpDataT in jAryT do
+      begin
+        tmps := tmpDataT.Value.AsString;
+        Form4.ListBox1.Items.Add(tmps);
+      end;
+
+      FreeAndNil(jAryT);
+
+      if Form4.ShowModal = mrOk then
+      begin
+        if Form4.ListBox1.SelCount < 1 then
+        begin
+          guiOut1M := tk.errStr('no item selected');
+          exit;
+        end;
+
+        for i := 0 to Form4.ListBox1.Count - 1 do
+        begin
+          if Form4.ListBox1.Selected[i] then
+          begin
+            guiOut1M := Form4.ListBox1.Items[i];
+            exit;
+          end;
+        end;
+        guiOut1M := tk.errStr('failed to get selected item');
+      end
+      else
+      begin
+        guiOut1M := tk.errStr('canceled');
+      end;
+    end;
+    'selectFile': begin
+      Form1.OpenDialog2.Title := guiValue1M;
+
+      if not Form1.OpenDialog2.Execute then
+      begin
+        guiOut1M := tk.errStr('canceled');
+      end
+      else
+      begin
+        guiOut1M := Form1.OpenDialog2.FileName;
       end;
     end;
   end;
@@ -1401,11 +1532,29 @@ var
   objT: TJSONObject;
   //fieldsT: TStrings;
   cmdT: string;
-  rsValueT: string;
+  statusValueT, rsValueT: string;
 begin
   cmdT := ARequest.QueryFields.Values['cmd'] + ARequest.ContentFields.Values['cmd'];
 
+  statusValueT := 'success';
+
   case cmdT of
+    'selectFile':
+    begin
+      guiCmdM := 'selectFile';
+      guiValue1M := ARequest.QueryFields.Values['title'] +
+        ARequest.ContentFields.Values['title'];
+      guiValue2M := ARequest.QueryFields.Values['opts'] +
+        ARequest.ContentFields.Values['opts'];
+      Synchronize(@doGuiCmd);
+      rsValueT := '';
+    end;
+    'quit':
+    begin
+      guiCmdM := 'quit';
+      Synchronize(@doGuiCmd);
+      rsValueT := '';
+    end;
     'alert':
     begin
       guiCmdM := 'alert';
@@ -1444,6 +1593,16 @@ begin
       Synchronize(@doGuiCmd);
       rsValueT := guiOut1M;
     end;
+    'selectItem':
+    begin
+      guiCmdM := 'selectItem';
+      guiValue1M := ARequest.QueryFields.Values['title'] +
+        ARequest.ContentFields.Values['title'];
+      guiValue2M := ARequest.QueryFields.Values['value'] +
+        ARequest.ContentFields.Values['value'];
+      Synchronize(@doGuiCmd);
+      rsValueT := guiOut1M;
+    end;
     'pln':
     begin
       msgTextM := ARequest.QueryFields.Values['value'] +
@@ -1462,12 +1621,13 @@ begin
     begin
       //msgTextM := 'unknown command: ' + cmdT;
       //Synchronize(@AddMessage);
+      statusValueT := 'fail';
       rsValueT := 'unknown command: ' + cmdT;
     end;
 
   end;
 
-  objT := TJSONObject.Create(['Status', 'success', 'Value', rsValueT]);
+  objT := TJSONObject.Create(['Status', statusValueT, 'Value', rsValueT]);
   // 'abdkhds代付款很舒服开始'
 
   AResponse.Code := 200;

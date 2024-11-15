@@ -28,9 +28,6 @@ object Form2: TForm2
       Width = 638
       Align = alClient
       Font.Height = -21
-      Lines.Strings = (
-        'go build -buildmode=c-shared -ldflags="-s -w" -o \goprjs\bin\char.dll chardll.go'
-      )
       ParentFont = False
       ScrollBars = ssAutoVertical
       TabOrder = 0
@@ -48,6 +45,7 @@ object Form2: TForm2
     object BitBtn1: TBitBtn
       Left = 200
       Height = 30
+      Hint = 'Go(ctrl-G)'
       Top = 8
       Width = 75
       Caption = 'Go'
@@ -57,6 +55,7 @@ object Form2: TForm2
     object BitBtn2: TBitBtn
       Left = 352
       Height = 30
+      Hint = 'Close(esc)'
       Top = 8
       Width = 75
       Caption = 'Close'

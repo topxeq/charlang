@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, Forms, Dialogs, SysUtils, StrUtils, httpprotocol, fphttpclient,
-  openssl, opensslsockets, Variants, TypInfo, fpjsonrtti, fpjson, Generics.Collections;
+  openssl, opensslsockets, Variants, TypInfo, fpjsonrtti, fpjson,
+  Generics.Collections, lazutf8;
 
 type
 
@@ -19,10 +20,16 @@ type
 
     // string related
     class function isStringNullOrEmpty(strA: string): boolean;
+    class function strSlice(strA: string; fromA: integer; toA: integer = -1): string;
+    class function strLen(strA: string): integer;
 
     class function trim(strA: string): string;
     class function trim(strA: WideString): WideString;
     class function toStr(const AValue; ATypeInfo: PTypeInfo): string;
+
+    class function strStartsWith(strA: string; subStrA: string): boolean;
+
+    class function strSplitLines(strA: string): TStringArray;
 
     // error related
     class function errStr(strA: string): string;
@@ -547,7 +554,7 @@ end;
 class function tk.getErrStr(strA: string): string;
 begin
   if leftStr(strA, 8) = 'TXERROR:' then
-    Result := midStr(strA, 8, length(strA) - 8)
+    Result := midStr(strA, 9, length(strA) - 8)
   else
     Result := strA;
 end;
@@ -626,6 +633,8 @@ var
   codeLenT: integer;
   tmps: string;
 begin
+  originStr := trim(originStr);
+
   tmpStr := '';
   if code = '' then
   begin
@@ -810,28 +819,69 @@ end;
 
 class function tk.newStrMap(pairsA: array of string): tkStrMap;
 var
-  rListT:  tkStrMap;
+  rListT: tkStrMap;
   tmps: string;
   cntT: integer;
   lenT: integer;
 begin
-     rListT := tkStrMap.Create;
+  rListT := tkStrMap.Create;
 
-     lenT := length(pairsA);
+  lenT := length(pairsA);
 
-     cntT :=0;
-     while cntT < lenT do
-     begin
-       if cntT+1>= lenT then
-       break;
+  cntT := 0;
+  while cntT < lenT do
+  begin
+    if cntT + 1 >= lenT then
+      break;
 
-       rListT.addOrSetValue( pairsA[cntT], pairsA[cntT+1]);
+    rListT.addOrSetValue(pairsA[cntT], pairsA[cntT + 1]);
 
-           cntT := cntT + 2;
-     end;
+    cntT := cntT + 2;
+  end;
 
-     exit(rListT);
+  exit(rListT);
 
+end;
+
+class function tk.strSlice(strA: string; fromA: integer; toA: integer = -1): string;
+var
+  lenT, toT: integer;
+begin
+  lenT := UTF8Length(strA);
+
+  if (fromA < 1) or (fromA > lenT) then
+  begin
+    exit(tk.errStr('start index over range'));
+  end;
+
+  toT := toA;
+
+  if (toT < 1) then toT := lenT;
+
+  if (toT < 1) or (toT > lenT) then
+  begin
+    exit(tk.errStr('end index over range'));
+  end;
+
+  exit(UTF8Copy(strA, fromA, toT - fromA));
+end;
+
+class function tk.strLen(strA: string): integer;
+begin
+  exit(UTF8Length(strA));
+end;
+
+class function tk.strSplitLines(strA: string): TStringArray;
+var
+  tmps: string;
+begin
+  tmps := strA.Replace(#13, '', [rfReplaceAll]);
+  exit(tmps.Split(#10));
+end;
+
+class function tk.strStartsWith(strA: string; subStrA: string): boolean;
+begin
+     exit(startsStr(subStrA, strA));
 end;
 
 end.

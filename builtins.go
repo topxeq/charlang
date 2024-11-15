@@ -14535,6 +14535,8 @@ func BuiltinDealStrFunc(c Call) (Object, error) {
 			strT = tk.DecryptStringByTXDEF(strings.TrimSpace(strT[8:]), codeT)
 		}
 
+		strT = strings.ReplaceAll(strT, "TX_secureCode_XT", tk.EncryptStringByTXDEF(codeT, "char"))
+
 		if strings.HasPrefix(strT, "http") {
 			strT = tk.ToStr(tk.GetWeb(strings.TrimSpace(strT)))
 		}

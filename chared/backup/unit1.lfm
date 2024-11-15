@@ -22,7 +22,7 @@ object Form1: TForm1
     TabOrder = 0
     object ToolButton1: TToolButton
       Left = 1
-      Hint = 'New'
+      Hint = 'New(ctrl-N)'
       Top = 2
       Caption = 'New'
       ImageIndex = 0
@@ -39,7 +39,7 @@ object Form1: TForm1
     end
     object ToolButton3: TToolButton
       Left = 101
-      Hint = 'Quick run'
+      Hint = 'Quick run(ctrl-R)'
       Top = 2
       Caption = 'Quick run'
       ImageIndex = 9
@@ -71,10 +71,11 @@ object Form1: TForm1
       OnClick = ToolButton6Click
       ParentShowHint = False
       ShowHint = True
+      Visible = False
     end
     object ToolButton7: TToolButton
       Left = 47
-      Hint = 'Save'
+      Hint = 'Save(ctrl-S)'
       Top = 2
       Caption = 'Save'
       ImageIndex = 13
@@ -101,10 +102,11 @@ object Form1: TForm1
       OnClick = ToolButton9Click
       ParentShowHint = False
       ShowHint = True
+      Visible = False
     end
     object ToolButton10: TToolButton
       Left = 170
-      Hint = 'Console run(cmd)'
+      Hint = 'Console run(ctrl-shift-R)'
       Top = 2
       Caption = 'Console run(cmd)'
       ImageIndex = 5
@@ -131,6 +133,7 @@ object Form1: TForm1
     end
     object ToolButton13: TToolButton
       Left = 301
+      Hint = 'Undo(ctrl-Z)'
       Top = 2
       Caption = 'ToolButton13'
       ImageIndex = 70
@@ -146,6 +149,7 @@ object Form1: TForm1
     end
     object ToolButton15: TToolButton
       Left = 232
+      Hint = 'Copy(ctrl-c)'
       Top = 2
       Caption = 'ToolButton15'
       ImageIndex = 17
@@ -153,6 +157,7 @@ object Form1: TForm1
     end
     object ToolButton16: TToolButton
       Left = 255
+      Hint = 'Cut(ctrl-X)'
       Top = 2
       Caption = 'ToolButton16'
       ImageIndex = 19
@@ -160,6 +165,7 @@ object Form1: TForm1
     end
     object ToolButton17: TToolButton
       Left = 278
+      Hint = 'Paste(ctrl-V)'
       Top = 2
       Caption = 'ToolButton17'
       ImageIndex = 22
@@ -167,6 +173,7 @@ object Form1: TForm1
     end
     object ToolButton18: TToolButton
       Left = 324
+      Hint = 'Redo(ctrl-Y)'
       Top = 2
       Caption = 'ToolButton18'
       ImageIndex = 101
@@ -174,6 +181,7 @@ object Form1: TForm1
     end
     object ToolButton19: TToolButton
       Left = 201
+      Hint = 'Command(ctrl-P)'
       Top = 2
       Caption = 'Command'
       ImageIndex = 95
@@ -833,7 +841,7 @@ object Form1: TForm1
     object injectHolder1: TStaticText
       Left = 688
       Height = 89
-      Top = 16
+      Top = 24
       Width = 168
       Caption = 'pl := func(formatA, ...valuesA) {'#13#10'  rs1 := getWeb("http://127.0.0.1:7458", {"cmd": "pln", "value": spr(formatA, ...valuesA)})'#13#10'  return toInt(rs1, 0)'#13#10'}'#13#10#13#10'pln := func(...valuesA) {'#13#10'  rs1 := getWeb("http://127.0.0.1:7458", {"cmd": "pln", "value": spln(...valuesA)}) '#13#10'  return toInt(rs1, 0)'#13#10'}'#13#10'//'#13#10
       TabOrder = 3
@@ -913,10 +921,12 @@ object Form1: TForm1
       end
       object MenuItem9: TMenuItem
         Caption = 'Console Run'
+        Visible = False
         OnClick = MenuItem9Click
       end
       object MenuItem10: TMenuItem
         Caption = 'Console Run(keep)'
+        Visible = False
         OnClick = MenuItem10Click
       end
       object MenuItem11: TMenuItem
@@ -1693,5 +1703,14 @@ object Form1: TForm1
     object MenuItem26: TMenuItem
       Caption = 'Command'
     end
+  end
+  object Timer1: TTimer
+    OnTimer = Timer1Timer
+    Left = 722
+    Top = 37
+  end
+  object OpenDialog2: TOpenDialog
+    Left = 559
+    Top = 100
   end
 end

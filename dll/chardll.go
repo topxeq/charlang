@@ -32,6 +32,8 @@ func DealStr(strA, codeA *C.char) *C.char {
     return C.CString(tkc.DealString(a1, b1))
 }
 
+//var CurrentVM *charlang.VM = nil
+
 //export QuickRunChar
 func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA *C.char) *C.char {
 	codeT := C.GoString(codeA)
@@ -39,7 +41,7 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA *C.char) *C.char
 	secureCodeT := strings.TrimSpace(C.GoString(secureCodeA))
 	
 	if true { // secureCodeT != "" {
-		codeT = tkc.DealString(codeT, secureCodeT)
+		codeT = tkc.DealString(tkc.DealString(codeT, secureCodeT), secureCodeT)
 	}
 	
 	injectT := C.GoString(injectA)
@@ -56,6 +58,8 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA *C.char) *C.char
 	envT["versionG"] = charlang.String{Value: charlang.VersionG}
 	envT["scriptPathG"] = charlang.String{Value: ""}
 	envT["runModeG"] = charlang.String{Value: "dll"}
+//	envT["guiG"] = charlang.NewExternalDelegate(guiHandler)
+//	envT["argsG"] = charlang.Array{}
 
 	globalsT := strings.TrimSpace(C.GoString(globalsA))
 	

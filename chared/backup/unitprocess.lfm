@@ -1,0 +1,73 @@
+object Form3: TForm3
+  Left = 437
+  Height = 190
+  Top = 304
+  Width = 320
+  BorderIcons = [biSystemMenu]
+  Caption = 'Char Launcher'
+  ClientHeight = 190
+  ClientWidth = 320
+  Color = clWhite
+  Font.Height = -16
+  OnCreate = FormCreate
+  OnShow = FormShow
+  Position = poDesktopCenter
+  LCLVersion = '3.6.0.0'
+  object ProgressBar1: TProgressBar
+    Left = 56
+    Height = 20
+    Top = 72
+    Width = 212
+    Anchors = [akTop, akLeft, akRight]
+    TabOrder = 0
+    Visible = False
+  end
+  object SpeedButton1: TSpeedButton
+    Left = 280
+    Height = 22
+    Top = 8
+    Width = 23
+    Anchors = [akTop]
+    Images = Form1.ImageList1
+    ImageIndex = 1
+    Visible = False
+    OnClick = SpeedButton1Click
+  end
+  object StaticText1: TStaticText
+    Left = 96
+    Height = 22
+    Top = 32
+    Width = 136
+    Alignment = taCenter
+    Anchors = [akTop, akLeft, akRight]
+    AutoSize = True
+    Caption = 'Initializing...'
+    TabOrder = 1
+  end
+  object ButtonOk: TButton
+    Left = 80
+    Height = 25
+    Top = 120
+    Width = 75
+    Caption = 'Ok'
+    TabOrder = 2
+    OnClick = ButtonOkClick
+  end
+  object ButtonClose: TButton
+    Left = 176
+    Height = 25
+    Top = 120
+    Width = 75
+    Caption = 'Close'
+    TabOrder = 3
+    OnClick = ButtonCloseClick
+  end
+  object Edit1: TEdit
+    Left = 56
+    Height = 29
+    Top = 72
+    Width = 216
+    Anchors = [akTop, akLeft, akRight]
+    TabOrder = 4
+  end
+end
