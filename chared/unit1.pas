@@ -21,7 +21,7 @@ const
 type
   strHashMap = specialize TDictionary<string, string>;
 
-  TfuncCharlangBackG = function(codeA, paramA, secureCodeA, injectA, globalsA: PChar):
+  TfuncCharlangBackG = function(codeA, paramA, secureCodeA, injectA, globalsA, comBufA: PChar):
     PChar; stdcall;
 
   THTTPServerThread = class(TThread)
@@ -49,6 +49,28 @@ type
     procedure doGuiCmd;
     procedure onRequest(Sender: TObject; var ARequest: TFPHTTPConnectionRequest;
       var AResponse: TFPHTTPConnectionResponse);
+  end;
+
+  TMonitorCharThread = class(TThread)
+  private
+    procedure AddMessage;
+  protected
+    procedure Execute; override;
+  public
+    msgTextM: string;
+
+    guiCmdM: string;
+    guiValue1M: string;
+    guiValue2M: string;
+    guiValue3M: string;
+
+    guiOut1M: string;
+    guiOut2M: string;
+
+    procedure doGuiCmd;
+
+    constructor Create(CreateSuspended: boolean);
+    destructor Destroy; override;
   end;
 
   TRunCharThread = class(TThread)
@@ -209,6 +231,7 @@ type
     //procedure ATSynEdit1ChangeModified(Sender: TObject);
     procedure ComboBox1Change(Sender: TObject);
     procedure ComboBox1Select(Sender: TObject);
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: word; Shift: TShiftState);
@@ -266,6 +289,8 @@ var
   httpServerThreadG: THTTPServerThread;
   funcCharlangBackG: TfuncCharlangBackG;
 
+  monitorCharThreadG: TMonitorCharThread;
+
   runCharThreadG: TRunCharThread;
   runCharThreadSignalG: integer;
 
@@ -281,6 +306,8 @@ var
   examplesListG: TStringList;
 
   terminateFlagG: boolean = False;
+
+  comBufG: array [0..16777216] of Byte;
 
   injectG: string = 'pl := func(formatA, ...valuesA) { ' + #10 +
     '        rs1 := getWeb("http://127.0.0.1:7458", {"cmd": "pln", "value": spr(formatA, ...valuesA)})  '
@@ -422,6 +449,8 @@ begin
 
   TInit1Thread.Create(False);
 
+  monitorCharThreadG := TMonitorCharThread.Create(false);
+
   //addMessage(tk.getErrStr('TXERROR:safhkd方式客户反馈'));
   //addMessage(tk.strSlice('safhkd方式客户反馈', 0, 3));
   //addMessage(tk.strSlice('safhkd方式客户反馈', 1, 3));
@@ -442,6 +471,11 @@ begin
   //begin
 
   //end;
+end;
+
+procedure TForm1.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+begin
+  FormDestroy(nil);
 end;
 
 procedure TForm1.ComboBox1Change(Sender: TObject);
@@ -554,9 +588,14 @@ end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
-  httpServerThreadG.Server.Active := False;
+  //monitorCharThreadG.Terminate;
 
-  FreeAndNil(httpServerThreadG);
+  if httpServerThreadG <> nil then
+  begin
+    httpServerThreadG.Server.Active := False;
+    FreeAndNil(httpServerThreadG);
+  end;
+
 
   if examplesMapG <> nil then
   begin
@@ -1348,7 +1387,7 @@ begin
 
     rs := funcCharlangBackG(PChar(string(codeTextM)), PChar(IntToStr(WebPortG)),
       PChar(secureCodeM), PChar(''),
-      PChar('{"guiServerUrlG":"http://127.0.0.1:' + IntToStr(WebPortG) + '"}'));
+      PChar('{"guiServerUrlG":"http://127.0.0.1:' + IntToStr(WebPortG) + '"}'), PChar(@comBufG));
 
     if startsStr('TXERROR:', rs) then
     begin
@@ -1582,6 +1621,16 @@ begin
         ARequest.ContentFields.Values['value'];
       Synchronize(@doGuiCmd);
       rsValueT := '';
+    end;
+    'getInput':
+    begin
+      guiCmdM := 'getInput';
+      guiValue1M := ARequest.QueryFields.Values['title'] +
+        ARequest.ContentFields.Values['title'];
+      guiValue2M := ARequest.QueryFields.Values['value'] +
+        ARequest.ContentFields.Values['value'];
+      Synchronize(@doGuiCmd);
+      rsValueT := guiOut1M;
     end;
     'getPassword':
     begin
@@ -1948,6 +1997,255 @@ begin
         ') ' + E.Message;
       Synchronize(@AddMessage);
       exit;
+    end;
+  end;
+
+end;
+
+constructor TMonitorCharThread.Create(CreateSuspended: boolean);
+begin
+  inherited Create(CreateSuspended);
+
+  FreeOnTerminate := True;
+end;
+
+destructor TMonitorCharThread.Destroy;
+begin
+  inherited;
+end;
+
+procedure TMonitorCharThread.AddMessage;
+begin
+  Form1.Memo1.Lines.Add(msgTextM);
+  Form1.Memo1.selstart := MaxInt;
+end;
+
+procedure TMonitorCharThread.Execute;
+var
+  signalT: byte;
+  lenT: int32;
+  len2T: int32;
+  comStrT: string;
+  comObjT: TJSONData;
+  objT: TJSONObject;
+  cmdT: string;
+  statusValueT: string;
+  rs: string;
+  rsValueT: string;
+begin
+  while not application.Terminated do begin
+    signalT := comBufG[0];
+
+    if signalT = 1 then begin
+      msgTextM := '--- change to 1';
+      Synchronize(@AddMessage);
+
+      lenT := comBufG[1] * 65536 * 256 + comBufG[2] * 65536 + comBufG[3] * 256 + comBufG[4];
+      msgTextM := '--- size: ' + intToStr(lenT);
+      Synchronize(@AddMessage);
+
+      comStrT := string(PChar(@(comBufG[5])));
+      msgTextM := '--- str: ' + comStrT;
+      Synchronize(@AddMessage);
+
+      comObjT := getJson(comStrT);
+
+      cmdT := comObjT.GetPath('cmd').AsString;
+
+      statusValueT := 'success';
+
+      case cmdT of
+        'selectFile':
+        begin
+          guiCmdM := 'selectFile';
+          guiValue1M := comObjT.GetPath('title').AsString;
+          guiValue2M := comObjT.GetPath('opts').AsString;
+          Synchronize(@doGuiCmd);
+          rsValueT := guiOut1M;
+        end;
+        'quit':
+        begin
+          guiCmdM := 'quit';
+          Synchronize(@doGuiCmd);
+          rsValueT := '';
+        end;
+        'alert':
+        begin
+          guiCmdM := 'alert';
+          guiValue1M := comObjT.GetPath('value').AsString;
+          Synchronize(@doGuiCmd);
+          rsValueT := '';
+        end;
+        'showInfo':
+        begin
+          guiCmdM := 'showInfo';
+          guiValue1M := comObjT.GetPath('title').AsString;
+          guiValue2M := comObjT.GetPath('value').AsString;
+          Synchronize(@doGuiCmd);
+          rsValueT := '';
+        end;
+        'showError':
+        begin
+          guiCmdM := 'showError';
+          guiValue1M := comObjT.GetPath('title').AsString;
+          guiValue2M := comObjT.GetPath('value').AsString;
+          Synchronize(@doGuiCmd);
+          rsValueT := '';
+        end;
+        'getInput':
+        begin
+          guiCmdM := 'getInput';
+          guiValue1M := comObjT.GetPath('title').AsString;
+          guiValue2M := comObjT.GetPath('value').AsString;
+          Synchronize(@doGuiCmd);
+          rsValueT := guiOut1M;
+        end;
+        'getPassword':
+        begin
+          guiCmdM := 'getPassword';
+          guiValue1M := comObjT.GetPath('title').AsString;
+          guiValue2M := comObjT.GetPath('value').AsString;
+          Synchronize(@doGuiCmd);
+          rsValueT := guiOut1M;
+        end;
+        'selectItem':
+        begin
+          guiCmdM := 'selectItem';
+          guiValue1M := comObjT.GetPath('title').AsString;
+          guiValue2M := comObjT.GetPath('value').AsString;
+          Synchronize(@doGuiCmd);
+          rsValueT := guiOut1M;
+        end;
+        'pln':
+        begin
+          msgTextM := comObjT.GetPath('value').AsString;
+          Synchronize(@AddMessage);
+          rsValueT := IntToStr(length(msgTextM));
+        end;
+        'checkJson':
+        begin
+          msgTextM := comObjT.GetPath('value').AsString;
+          Synchronize(@AddMessage);
+          rsValueT := '';
+        end;
+        else
+        begin
+          //msgTextM := 'unknown command: ' + cmdT;
+          //Synchronize(@AddMessage);
+          statusValueT := 'fail';
+          rsValueT := 'unknown command: ' + cmdT;
+        end;
+
+      end;
+
+      freeAndNil(comObjT);
+
+      objT := TJSONObject.Create(['Status', statusValueT, 'Value', rsValueT]);
+      // 'abdkhds代付款很舒服开始'
+
+      rs := string(objT.asJson);
+
+      objT.Free();
+
+      len2T := length(rs);
+
+      StrCopy(Pchar(@(comBufG[5])), PChar(rs));
+
+      comBufG[1] := len2T div (65536*256);
+      comBufG[2] := (len2T mod (65536*256)) div 65536;
+      comBufG[3] := (len2T mod (65536)) div 256;
+      comBufG[4] := len2T mod (256);
+
+      comBufG[0] := 2;
+    end;
+
+    sleep(10);
+  end;
+end;
+
+procedure TMonitorCharThread.doGuiCmd;
+var
+  i: integer;
+  tmps: string;
+  jAryT: TJSONArray;
+  tmpDataT: TJSONEnum;
+begin
+  case guiCmdM of
+    'quit': begin
+      terminateFlagG := True;
+      //application.Terminate;
+    end;
+    'alert': begin
+      tk.showError('Alert', guiValue1M);
+    end;
+    'showInfo': begin
+      tk.showInfo(guiValue1M, guiValue2M);
+    end;
+    'showError': begin
+      tk.showError(guiValue1M, guiValue2M);
+    end;
+    'getInput': begin
+      if InputQuery(guiValue1M, guiValue2M, False, guiOut1M) then tk.pass()
+      else
+      begin
+        guiOut1M := tk.errStr('failed to get input');
+      end;
+    end;
+    'getPassword': begin
+      if InputQuery(guiValue1M, guiValue2M, True, guiOut1M) then tk.pass()
+      else
+      begin
+        guiOut1M := tk.errStr('failed to get input');
+      end;
+    end;
+    'selectItem': begin
+      Form4.Caption := guiValue1M;
+      jAryT := getJson(guiValue2M) as TJSONArray;
+
+      Form4.ListBox1.Clear;
+
+      for tmpDataT in jAryT do
+      begin
+        tmps := tmpDataT.Value.AsString;
+        Form4.ListBox1.Items.Add(tmps);
+      end;
+
+      FreeAndNil(jAryT);
+
+      if Form4.ShowModal = mrOk then
+      begin
+        if Form4.ListBox1.SelCount < 1 then
+        begin
+          guiOut1M := tk.errStr('no item selected');
+          exit;
+        end;
+
+        for i := 0 to Form4.ListBox1.Count - 1 do
+        begin
+          if Form4.ListBox1.Selected[i] then
+          begin
+            guiOut1M := Form4.ListBox1.Items[i];
+            exit;
+          end;
+        end;
+        guiOut1M := tk.errStr('failed to get selected item');
+      end
+      else
+      begin
+        guiOut1M := tk.errStr('canceled');
+      end;
+    end;
+    'selectFile': begin
+      Form1.OpenDialog2.Title := guiValue1M;
+
+      if not Form1.OpenDialog2.Execute then
+      begin
+        guiOut1M := tk.errStr('canceled');
+      end
+      else
+      begin
+        guiOut1M := Form1.OpenDialog2.FileName;
+      end;
     end;
   end;
 

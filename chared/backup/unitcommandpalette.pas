@@ -148,7 +148,7 @@ begin
 
       rs := funcCharlangBackG(PChar('global inputG' + #10 +
         'return getWeb("https://topget.org/ms/magic?auth=topxeq&valueonly=true&witherror=true&code="+inputG)'),
-        PChar(''), PChar(''), PChar(''), PChar(tk.toJson(mapT)));
+        PChar(''), PChar(''), PChar(''), PChar(tk.toJson(mapT)), PChar(@comBufG));
 
       FreeAndNil(mapT);
 
@@ -193,6 +193,11 @@ begin
   end;
 
   case cmdT of
+    'test': begin
+        Form3.showModal();
+
+
+    end;
     'encryptText': begin
       secodeT := tk.getArrayItem(listT, 1);
 
@@ -203,7 +208,7 @@ begin
 
         rs := funcCharlangBackG(PChar(
           'global inputG'#10'global secureCodeG'#10'return encryptText(inputG, secureCodeG)'), PChar(''), PChar(''),
-          PChar(''), PChar(tk.toJson(mapT)));
+          PChar(''), PChar(tk.toJson(mapT)), PChar(@comBufG));
 
         FreeAndNil(mapT);
 

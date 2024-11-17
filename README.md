@@ -298,6 +298,10 @@ Examples:
 - Run from local scripts directory: place a config file local.cfg in the subdirectory 'char' under the user's home directory, with text content such as `c:\scripts`, then `char -local basic.char` will run 'c:\script\basic.char'
 - Run from cloud/network: place a config file cloud.cfg in the subdirectory 'char' under the user's home directory, with text content such as `http://script.my.com/`, then `char -cloud basic.char` will be the same as `char -remote http://script.my.com/basic.char`
 - Select the script(or input the script file path in console mode) to run: `char -selectScript`
+- Load the script: `char -edit d:\scripts\test.char`, then run it in the editor(click the 'Quick Run' button) on Windows(WebView2)
+- Run it in the CharEd IDE(Lazarus), which can be downloaded from the official website, in the Windows package
+- Use it as an embeded script language engine, in any Golang compatible languages
+- Run it through other languages, with the compiled DLL of Charlang
 
 ### 7.5 Get the Examples
 

@@ -8,9 +8,11 @@ object Form1: TForm1
   ClientWidth = 967
   KeyPreview = True
   Menu = MainMenu1
+  OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnKeyUp = FormKeyUp
+  ShowInTaskBar = stAlways
   LCLVersion = '3.6.0.0'
   object ToolBar1: TToolBar
     Left = 0

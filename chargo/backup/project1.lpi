@@ -5,14 +5,14 @@
     <PathDelim Value="\"/>
     <General>
       <SessionStorage Value="InProjectDir"/>
-      <Title Value="chared"/>
+      <Title Value="project1"/>
       <Scaled Value="True"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
       <XPManifest>
         <DpiAware Value="True"/>
-        <TextName Value="org.topget.chared"/>
-        <TextDesc Value="Charlang Editor"/>
+        <TextName Value="org.topget.chargo"/>
+        <TextDesc Value="A Charlang launcher."/>
       </XPManifest>
       <Icon Value="0"/>
     </General>
@@ -28,13 +28,7 @@
     </RunParams>
     <RequiredPackages>
       <Item>
-        <PackageName Value="weblaz"/>
-      </Item>
-      <Item>
-        <PackageName Value="SynEditDsgn"/>
-      </Item>
-      <Item>
-        <PackageName Value="SynEdit"/>
+        <PackageName Value="cmdbox"/>
       </Item>
       <Item>
         <PackageName Value="LCL"/>
@@ -42,7 +36,7 @@
     </RequiredPackages>
     <Units>
       <Unit>
-        <Filename Value="chared.lpr"/>
+        <Filename Value="project1.lpr"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
@@ -57,41 +51,16 @@
         <Filename Value="tkunit.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
-      <Unit>
-        <Filename Value="unitcommandpalette.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="Form2"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="unitCommandPalette"/>
-      </Unit>
-      <Unit>
-        <Filename Value="unitprocess.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="Form3"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="unitProcess"/>
-      </Unit>
-      <Unit>
-        <Filename Value="unitselectlist.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="Form4"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="unitSelectList"/>
-      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="D:\goprjs\bin\chared"/>
+      <Filename Value="D:\goprjs\bin\chargo"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="D:\lzprjs\libs\"/>
       <UnitOutputDirectory Value="D:\lzprjs\tmplibs\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>

@@ -25,7 +25,7 @@ func guiHandler(argsA ...interface{}) interface{} {
 		return rs
 	}
 	// fmt.Printf("%v\n", "GUI engined disabled")
-	return fmt.Errorf("GUI engined disabled")
+	return fmt.Errorf("GUI engine disabled")
 }
 
 func SelectScript() string {

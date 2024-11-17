@@ -69,6 +69,7 @@
         <Filename Value="unitprocess.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="Form3"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitProcess"/>
       </Unit>
@@ -76,6 +77,7 @@
         <Filename Value="unitselectlist.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="Form4"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitSelectList"/>
       </Unit>
