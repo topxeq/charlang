@@ -12,7 +12,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="132"/>
       </Unit>
       <Unit>
         <Filename Value="unit1.pas"/>
@@ -21,156 +21,267 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Unit1"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="317"/>
-        <CursorPos X="22" Y="332"/>
-        <UsageCount Value="20"/>
+        <TopLine Value="200"/>
+        <CursorPos X="39" Y="214"/>
+        <UsageCount Value="132"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="D:\downtemp\cmdline-0.5.4\cmdline\wnmainform.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="97"/>
-        <CursorPos Y="112"/>
-        <UsageCount Value="10"/>
-      </Unit>
-      <Unit>
-        <Filename Value="unit1.lfm"/>
-        <EditorIndex Value="-1"/>
-        <UsageCount Value="10"/>
-        <DefaultSyntaxHighlighter Value="LFM"/>
-      </Unit>
-      <Unit>
         <Filename Value="tkunit.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="1523"/>
+        <CursorPos X="34" Y="1530"/>
+        <UsageCount Value="132"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\lcl\dialogs.pp"/>
+        <UnitName Value="Dialogs"/>
         <EditorIndex Value="-1"/>
-        <WindowIndex Value="-1"/>
-        <TopLine Value="-1"/>
-        <CursorPos X="-1" Y="-1"/>
+        <TopLine Value="23"/>
+        <CursorPos X="10" Y="42"/>
+        <UsageCount Value="22"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\lcl\forms.pp"/>
+        <UnitName Value="Forms"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="473"/>
+        <CursorPos X="3" Y="487"/>
+        <UsageCount Value="21"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\fpc\3.2.2\source\packages\rtl-objpas\src\inc\system.uitypes.pp"/>
+        <UnitName Value="System.UITypes"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="198"/>
+        <CursorPos X="10" Y="219"/>
+        <UsageCount Value="21"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\lcl\graphics.pp"/>
+        <UnitName Value="Graphics"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2523"/>
+        <CursorPos X="10" Y="2537"/>
+        <UsageCount Value="4"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lzprjs\libs\UnitGenericTools.pas"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="246"/>
+        <CursorPos X="19" Y="264"/>
+        <UsageCount Value="59"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\fpc\3.2.2\source\packages\rtl-objpas\src\inc\strutils.pp"/>
+        <UnitName Value="StrUtils"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="222"/>
+        <CursorPos X="11" Y="236"/>
+        <UsageCount Value="43"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\fpc\3.2.2\source\rtl\objpas\types.pp"/>
+        <UnitName Value="Types"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="52"/>
+        <CursorPos X="40" Y="66"/>
         <UsageCount Value="20"/>
       </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\fpc\3.2.2\source\rtl\objpas\classes\classesh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2248"/>
+        <CursorPos X="20" Y="2262"/>
+        <UsageCount Value="4"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\fpc\3.2.2\source\rtl\objpas\classes\classes.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1177"/>
+        <CursorPos X="3" Y="1182"/>
+        <UsageCount Value="4"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\fpc\3.2.2\source\rtl\objpas\sysutils\sysutilh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="85"/>
+        <CursorPos X="4" Y="104"/>
+        <UsageCount Value="5"/>
+      </Unit>
+      <Unit>
+        <Filename Value="C:\Users\Administrator\AppData\Local\lazarus\onlinepackagemanager\packages\cmdline\ucmdbox.pas"/>
+        <UnitName Value="uCmdBox"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="297"/>
+        <CursorPos X="48" Y="305"/>
+        <UsageCount Value="35"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\fpc\3.2.2\source\packages\rtl-generics\src\generics.collections.pas"/>
+        <UnitName Value="Generics.Collections"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="25"/>
+        <CursorPos X="24" Y="32"/>
+        <UsageCount Value="5"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\fpc\3.2.2\source\rtl\objpas\sysutils\syshelph.inc"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="3" Y="5"/>
+        <UsageCount Value="8"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\fpc\3.2.2\source\rtl\inc\objpash.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="192"/>
+        <CursorPos X="23" Y="206"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\fpc\3.2.2\source\packages\rtl-generics\src\inc\generics.dictionariesh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="251"/>
+        <CursorPos X="17" Y="264"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\fpc\3.2.2\source\packages\fcl-json\src\fpjson.pp"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1100"/>
+        <CursorPos X="8" Y="1124"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\lazarus\fpc\3.2.2\source\rtl\objpas\sysutils\datih.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="115"/>
+        <CursorPos X="13" Y="130"/>
+        <UsageCount Value="12"/>
+      </Unit>
     </Units>
-    <JumpHistory HistoryIndex="29">
+    <JumpHistory HistoryIndex="28">
       <Position>
         <Filename Value="unit1.pas"/>
-        <Caret Line="166" Column="55" TopLine="154"/>
+        <Caret Line="270" Column="38" TopLine="248"/>
+      </Position>
+      <Position>
+        <Filename Value="C:\Users\Administrator\AppData\Local\lazarus\onlinepackagemanager\packages\cmdline\ucmdbox.pas"/>
+        <Caret Line="2852" Column="35" TopLine="2836"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1583" Column="18" TopLine="1563"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1628" Column="60" TopLine="1625"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="37" Column="14" TopLine="10"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1644" Column="21" TopLine="1622"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1315" Column="26" TopLine="1301"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1363" Column="28" TopLine="1340"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1383" Column="26" TopLine="1359"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1444" Column="28" TopLine="1421"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1558" Column="23" TopLine="1534"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1560" Column="25" TopLine="1536"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1632" Column="24" TopLine="1618"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1636" Column="26" TopLine="1618"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1315" Column="26" TopLine="1300"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1632" Column="24" TopLine="1627"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1633" TopLine="1624"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1654" Column="30" TopLine="1637"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1644" Column="20" TopLine="1625"/>
       </Position>
       <Position>
         <Filename Value="unit1.pas"/>
-        <Caret Line="573" Column="24" TopLine="559"/>
+        <Caret Line="266" Column="36" TopLine="256"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1641" Column="35" TopLine="1627"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="33" Column="26" TopLine="24"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1470" Column="25" TopLine="1459"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="1498" Column="34" TopLine="1474"/>
+      </Position>
+      <Position>
+        <Filename Value="tkunit.pas"/>
+        <Caret Line="33" Column="17" TopLine="18"/>
       </Position>
       <Position>
         <Filename Value="unit1.pas"/>
-        <Caret Line="51" Column="16" TopLine="38"/>
+        <Caret Line="265" Column="96" TopLine="252"/>
       </Position>
       <Position>
         <Filename Value="unit1.pas"/>
-        <Caret Line="170" Column="31" TopLine="150"/>
+        <Caret Line="134" Column="3" TopLine="129"/>
       </Position>
       <Position>
         <Filename Value="unit1.pas"/>
-        <Caret Line="572" Column="28" TopLine="558"/>
+        <Caret Line="188" Column="43" TopLine="176"/>
       </Position>
       <Position>
         <Filename Value="unit1.pas"/>
-        <Caret Line="573" Column="24" TopLine="558"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="572" Column="28" TopLine="558"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="568" Column="24" TopLine="558"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="13" Column="21"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="85" Column="40" TopLine="64"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="568" Column="24" TopLine="547"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="572" Column="28" TopLine="551"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="13" Column="21"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="85" Column="40" TopLine="64"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="568" Column="24" TopLine="547"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="572" Column="28" TopLine="551"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="15"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="66" Column="24" TopLine="45"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="148" TopLine="134"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="87" Column="3" TopLine="74"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="148" Column="11" TopLine="134"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="192" Column="26" TopLine="189"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="341" TopLine="332"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="337" Column="24" TopLine="328"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="346" Column="10" TopLine="341"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="433" Column="12" TopLine="415"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="427" Column="13" TopLine="415"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="430" Column="34" TopLine="418"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="20" Column="27" TopLine="6"/>
-      </Position>
-      <Position>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="43" TopLine="30"/>
+        <Caret Line="214" Column="39" TopLine="200"/>
       </Position>
     </JumpHistory>
     <RunParams>

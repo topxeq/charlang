@@ -28,6 +28,9 @@
     </RunParams>
     <RequiredPackages>
       <Item>
+        <PackageName Value="rx"/>
+      </Item>
+      <Item>
         <PackageName Value="cmdbox"/>
       </Item>
       <Item>

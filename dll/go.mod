@@ -3,11 +3,17 @@ module github.com/topxeq/charlang/dll
 go 1.22.3
 
 require (
+	github.com/denisenkom/go-mssqldb v0.12.3
+	github.com/glebarez/go-sqlite v1.22.0
+	github.com/go-sql-driver/mysql v1.8.1
+	github.com/jackc/pgx/v5 v5.7.1
+	github.com/sijms/go-ora/v2 v2.8.22
 	github.com/topxeq/charlang v0.0.0
 	github.com/topxeq/tkc v0.0.0
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/ALTree/bigfloat v0.2.0 // indirect
 	github.com/aarzilli/sandblast v0.0.0-20151220083925-43f8fb998d06 // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
@@ -29,6 +35,8 @@ require (
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
 	github.com/gojp/kana v0.1.0 // indirect
+	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
+	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -38,6 +46,9 @@ require (
 	github.com/ikawaha/kagome-dict v1.0.10 // indirect
 	github.com/ikawaha/kagome-dict/ipa v1.0.11 // indirect
 	github.com/ikawaha/kagome/v2 v2.9.8 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 // indirect
 	github.com/jhillyerd/enmime v1.2.0 // indirect
 	github.com/jlaffaye/ftp v0.2.0 // indirect
@@ -48,6 +59,7 @@ require (
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mholt/archiver/v3 v3.5.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
@@ -62,6 +74,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/sftp v1.13.4 // indirect
 	github.com/pquerna/otp v1.4.0 // indirect
+	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/richardlehane/mscfb v1.0.4 // indirect
 	github.com/richardlehane/msoleps v1.0.3 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
@@ -87,12 +100,17 @@ require (
 	github.com/yeka/zip v0.0.0-20231116150916-03d6312748a9 // indirect
 	github.com/yuin/goldmark v1.7.2 // indirect
 	github.com/yuin/goldmark-highlighting v0.0.0-20220208100518-594be1970594 // indirect
-	golang.org/x/crypto v0.26.0 // indirect
+	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/image v0.20.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
+	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/term v0.23.0 // indirect
+	golang.org/x/term v0.24.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
+	modernc.org/libc v1.37.6 // indirect
+	modernc.org/mathutil v1.6.0 // indirect
+	modernc.org/memory v1.7.2 // indirect
+	modernc.org/sqlite v1.28.0 // indirect
 )
 
 replace github.com/topxeq/tkc v0.0.0 => ../../tkc

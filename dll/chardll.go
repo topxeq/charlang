@@ -61,6 +61,13 @@ import (
 	"time"
 	"github.com/topxeq/tkc"
 	"github.com/topxeq/charlang"
+	
+	_ "github.com/denisenkom/go-mssqldb"
+	_ "github.com/go-sql-driver/mysql"
+
+	_ "github.com/glebarez/go-sqlite"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	_ "github.com/sijms/go-ora/v2"
 )
 
 //export SumInt
@@ -98,8 +105,10 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA, comBufA *C.char
 	secureCodeT := strings.TrimSpace(C.GoString(secureCodeA))
 	
 	if true { // secureCodeT != "" {
-		codeT = tkc.DealString(tkc.DealString(codeT, secureCodeT), secureCodeT)
+		codeT = tkc.DealString(tkc.DealString(tkc.DealString(codeT, secureCodeT), secureCodeT), secureCodeT)
 	}
+	
+//	tkc.AppendStringToFile(tkc.Spr("\n codeT: %v\n", codeT), `c:\test\test.log`)
 	
 	injectT := C.GoString(injectA)
 	
@@ -109,6 +118,8 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA, comBufA *C.char
 	if errT != nil {
 		return C.CString("TXERROR:" + errT.Error())
 	}
+	
+	allowLenT := 16777216
 
 	cgsmHandler := func(argsA ...interface{}) interface{} {
 		actionA := tkc.ToStr(argsA[0])
@@ -154,13 +165,87 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA, comBufA *C.char
 			C.memset(unsafe.Add(unsafe.Pointer(comBufA), 5+lenT), C.int(0), C.size_t(1))
 
 			return ""
-		case "sendMessage":
+		case "send":
 			strT := tkc.ToStr(argsA[1])
 			
 			strBufT := []byte(strT)
 			
 			lenT := len(strBufT)
 			
+			for {
+				recvBufT := C.GoBytes(unsafe.Pointer(comBufA), 5)
+				
+				if recvBufT[0] == 99 {
+					return ""
+				}
+				
+				if recvBufT[0] == 2 {
+					C.memset(unsafe.Pointer(comBufA), C.int(0), C.size_t(1))
+
+					return fmt.Errorf("unexpected return left, cleared")
+				}
+				
+				if recvBufT[0] != 0 {
+					time.Sleep(time.Millisecond * 10)
+					continue
+				}
+				
+//				allowLenT := int(recvBufT[1]) * 65536 * 256 + int(recvBufT[2]) * 65536 + int(recvBufT[3]) * 256 + int(recvBufT[4])
+//				
+				if lenT > allowLenT {
+					return fmt.Errorf("length exceeds limit")
+				}
+				
+				break
+			}
+
+			bufT := make([]byte, 4)
+			
+			binary.BigEndian.PutUint32(bufT, uint32(lenT))
+			
+			C.memset(unsafe.Pointer(comBufA), C.int(1), C.size_t(1))
+
+			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 1), C.CBytes(bufT), C.size_t(4))
+
+			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 5), C.CBytes(strBufT), C.size_t(lenT))
+			
+			C.memset(unsafe.Add(unsafe.Pointer(comBufA), 5+lenT), C.int(0), C.size_t(1))
+			
+			return ""
+		case "talk":
+			strT := tkc.ToStr(argsA[1])
+			
+			strBufT := []byte(strT)
+			
+			lenT := len(strBufT)
+			
+			for {
+				recvBufT := C.GoBytes(unsafe.Pointer(comBufA), 5)
+				
+				if recvBufT[0] == 99 {
+					return ""
+				}
+				
+				if recvBufT[0] == 2 {
+					C.memset(unsafe.Pointer(comBufA), C.int(0), C.size_t(1))
+
+					return fmt.Errorf("unexpected return left, cleared")
+				}
+				
+				if recvBufT[0] != 0 {
+					time.Sleep(time.Millisecond * 10)
+					continue
+				}
+				
+//				allowLenT := int(recvBufT[1]) * 65536 * 256 + int(recvBufT[2]) * 65536 + int(recvBufT[3]) * 256 + int(recvBufT[4])
+				
+				if lenT > allowLenT {
+					return fmt.Errorf("length exceeds limit")
+				}
+				
+				break
+			}
+
 			bufT := make([]byte, 4)
 			
 			binary.BigEndian.PutUint32(bufT, uint32(lenT))
@@ -175,6 +260,14 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA, comBufA *C.char
 			
 			for {
 				recvBufT := C.GoBytes(unsafe.Pointer(comBufA), 5)
+				
+				if recvBufT[0] == 99 {
+					return ""
+				}
+				
+				if recvBufT[0] == 0 {
+					return fmt.Errorf("unexpected no return")
+				}
 				
 				if recvBufT[0] == 2 {
 					len2T := int(recvBufT[1]) * 65536 * 256 + int(recvBufT[2]) * 65536 + int(recvBufT[3]) * 256 + int(recvBufT[4])
@@ -205,7 +298,8 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA, comBufA *C.char
 	envT["versionG"] = charlang.String{Value: charlang.VersionG}
 	envT["scriptPathG"] = charlang.String{Value: ""}
 	envT["runModeG"] = charlang.String{Value: "dll"}
-	envT["cgsmG"] = charlang.NewExternalDelegate(cgsmHandler)
+	envT["secureCodeG"] = charlang.String{Value: tkc.MD5Encrypt(secureCodeT)}
+	envT["guiHandlerG"] = charlang.NewExternalDelegate(cgsmHandler)
 //	envT["argsG"] = charlang.Array{}
 
 	globalsT := strings.TrimSpace(C.GoString(globalsA))

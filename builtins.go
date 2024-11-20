@@ -67,6 +67,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinStatusToStr
 	BuiltinGuiServerCommand
 	BuiltinGetMapItem
 	BuiltinSetMapItem
@@ -438,8 +439,10 @@ const (
 	BuiltinExit
 	BuiltinSystemCmd
 	BuiltinIsErrX
+	BuiltinIsErrStr
 	BuiltinToJSON
 	BuiltinFromJSON
+	BuiltinStrsToJson
 	BuiltinPlo
 	BuiltinPlt
 	BuiltinPlErr
@@ -806,6 +809,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	// error related
 	"isErrX":     BuiltinIsErrX,
 	"isErr":      BuiltinIsErrX,
+	"isErrStr":      BuiltinIsErrStr,
 	"getErrStrX": BuiltinGetErrStrX,
 	"getErrStr":  BuiltinGetErrStrX,
 
@@ -889,6 +893,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"toJson":   BuiltinToJSON,
 	"fromJSON": BuiltinFromJSON,
 	"fromJson": BuiltinFromJSON,
+
+	"strsToJson": BuiltinStrsToJson,
 
 	// XML related
 	"xmlEncodeStr":  BuiltinStrXmlEncode,
@@ -1226,6 +1232,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"replaceHtmlByMap":    BuiltinReplaceHtmlByMap,
 	"processHtmlTemplate": BuiltinProcessHtmlTemplate,
+	
+	"statusToStr": BuiltinStatusToStr,
 
 	// "sortByFunc": BuiltinSortByFunc,
 
@@ -2168,6 +2176,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinIsErrXFunc),
 		ValueEx: builtinIsErrXFunc,
 	},
+	BuiltinIsErrStr: &BuiltinFunction{
+		Name:    "isErrStr", // usage: isErrStr(errStr1), check if errStr1 is error string(which starts with TXERROR:)
+		Value:   FnASRB(tk.IsErrStr),
+		ValueEx: FnASRBex(tk.IsErrStr),
+	},
 	BuiltinGetErrStrX: &BuiltinFunction{
 		Name:    "getErrStrX",
 		Value:   FnAARS(tk.GetErrStrX),
@@ -2432,6 +2445,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "fromJSON",
 		Value:   CallExAdapter(builtinFromJSONFunc),
 		ValueEx: builtinFromJSONFunc,
+	},
+	BuiltinStrsToJson: &BuiltinFunction{
+		Name:    "strsToJson",
+		Value:   FnAVsRS(tk.StringsToJson),
+		ValueEx: FnAVsRSex(tk.StringsToJson),
 	},
 
 	// XML related
@@ -3582,6 +3600,11 @@ var BuiltinObjects = [...]Object{
 		// ValueEx: builtinProcessHtmlTemplateFunc,
 		Value:   FnASSAVaRA(tk.ProcessHtmlTemplate),
 		ValueEx: FnASSAVaRAex(tk.ProcessHtmlTemplate),
+	},
+	BuiltinStatusToStr: &BuiltinFunction{
+		Name: "statusToStr",
+		Value:   FnASRS(tk.StatusToString),
+		ValueEx: FnASRSex(tk.StatusToString),
 	},
 
 	// original internal related

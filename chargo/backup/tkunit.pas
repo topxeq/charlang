@@ -1525,9 +1525,8 @@ begin
 
   len1T := length(list1T);
 
+  //setLength(self.items, len1T);
   baseLenT := length(self.items);
-
-  setLength(self.items, baseLenT+len1T);
 
   for i := 0 to len1T - 1 do
   begin

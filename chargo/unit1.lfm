@@ -6,23 +6,29 @@ object Form1: TForm1
   Caption = 'Chargo'
   ClientHeight = 583
   ClientWidth = 945
+  Color = clBlack
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   Position = poDesktopCenter
   LCLVersion = '3.6.0.0'
   object CmdBox1: TCmdBox
-    Left = 0
-    Height = 583
-    Top = 0
-    Width = 945
+    Left = 5
+    Height = 573
+    Top = 5
+    Width = 935
     Align = alClient
+    BorderSpacing.Left = 5
+    BorderSpacing.Top = 5
+    BorderSpacing.Right = 5
+    BorderSpacing.Bottom = 5
+    PopupMenu = PopupMenu1
     CaretColor = clWhite
     CaretType = cartUser
     CaretWidth = 1
     CaretHeight = 14
     CaretYShift = 3
     OnInput = CmdBox1Input
-    LineCount = 1000
+    LineCount = 100000
     Font.Color = clSilver
     Font.Height = -16
     BackGroundColor = clBlack
@@ -42,5 +48,31 @@ object Form1: TForm1
   object OpenDialog2: TOpenDialog
     Left = 188
     Top = 15
+  end
+  object PopupMenu1: TPopupMenu
+    Left = 441
+    Top = 83
+    object MenuItem1: TMenuItem
+      Caption = 'Save to file...'
+      OnClick = MenuItem1Click
+    end
+  end
+  object SaveDialog1: TSaveDialog
+    Left = 224
+    Top = 16
+  end
+  object Timer2: TTimer
+    Enabled = False
+    OnTimer = Timer2Timer
+    Left = 760
+    Top = 32
+  end
+  object StrHolder1: TStrHolder
+    Macros = <>
+    Left = 134
+    Top = 42
+    StrData = (
+      'topxeq'
+    )
   end
 end

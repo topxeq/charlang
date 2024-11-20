@@ -6,8 +6,13 @@ interface
 
 uses
   Classes, SysUtils, StrUtils, fpjson, fileutil, tkunit, Forms, Controls,
-  Graphics, Dialogs, ExtCtrls,
-  uCmdBox;
+  Graphics, Dialogs, ExtCtrls, Menus, Types,
+  uCmdBox, StrHolder;
+
+const
+  maxComBufLenG = 16777216;
+  versionG = '0.9.2';
+  webPortG = 7458;
 
 type
 
@@ -18,15 +23,21 @@ type
   private
     procedure AddMessage;
     procedure AddMessagePr;
+    procedure AddMessagePrColor;
+    procedure ChangeConsoleColor;
   protected
     procedure Execute; override;
   public
     msgTextM: string;
+    colorTextM: string;
+    colorM: TColor;
 
     guiCmdM: string;
     guiValue1M: string;
     guiValue2M: string;
     guiValue3M: string;
+    guiValue4M: string;
+    guiValue5M: string;
 
     guiOut1M: string;
     guiOut2M: string;
@@ -62,12 +73,19 @@ type
 
   TForm1 = class(TForm)
     CmdBox1: TCmdBox;
+    MenuItem1: TMenuItem;
     OpenDialog2: TOpenDialog;
+    PopupMenu1: TPopupMenu;
+    SaveDialog1: TSaveDialog;
+    StrHolder1: TStrHolder;
     Timer1: TTimer;
+    Timer2: TTimer;
     procedure CmdBox1Input(ACmdBox: TCmdBox; Input: string);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure MenuItem1Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
+    procedure Timer2Timer(Sender: TObject);
   private
 
   public
@@ -82,8 +100,6 @@ var
 
   // globals
 var
-  versionG: string = '0.9.1';
-  WebPortG: integer = 7458;
 
   libHandleG: THandle;
 
@@ -115,7 +131,13 @@ procedure TForm1.FormCreate(Sender: TObject);
 var
   rs: string;
   filePathT: string;
-  s1: string;
+  //s1: string;
+  listT: TStringArray;
+  titleT, promptT: string;
+  optsT: string;
+  sfoT: SimpleFlexObject;
+  tmps: string;
+  innerCodeT: string;
 begin
   Form1.Caption := 'Chargo V' + versionG + ' by TopXeQ';
 
@@ -163,7 +185,16 @@ begin
 
   filePathT := tk.joinPath([tk.getAppDir(), 'auto.char']);
 
-  if fileExists(filePathT) then
+  innerCodeT := ''                       ;
+
+  if (StrHolder1.Strings.Text.Trim <> '') then begin
+    innerCodeT := StrHolder1.Strings.Text;
+  end else if fileExists(filePathT) then begin
+        innerCodeT := trim(tk.loadStringFromFile(filePathT));
+
+  end;
+
+  if innerCodeT <> '' then
   begin
     if runCharThreadSignalG <> 0 then
     begin
@@ -174,21 +205,83 @@ begin
     runCharThreadSignalG := 1;
 
     runCharThreadG := TRunCharThread.Create(True);
-    s1 := trim(tk.loadStringFromFile(filePathT));
-    if startsStr('//TXTE#', s1) or tk.isHex(s1) then
+
+    if startsStr('//TXTE#', innerCodeT) or tk.isHex(innerCodeT) then
     begin
-      s1 := tk.decryptStringByTXTE(s1.remove(0, 7), '');
+      innerCodeT := tk.decryptStringByTXTE(innerCodeT.remove(0, 7), '');
     end;
 
-    runCharThreadG.codeTextM := s1;
-    runCharThreadG.secureCodeM := '';
+    if startsStr('//TXSR#', innerCodeT) then
+    begin
+      innerCodeT := innerCodeT.remove(0, 7);
+
+      listT := innerCodeT.Split(['|||']);
+
+      optsT := '';
+
+      if length(listT) < 3 then
+      begin
+        titleT := 'Please enter';
+        promptT := 'Secure code: ';
+      end
+      else
+      begin
+        sfoT := SimpleFlexObject.Create(listT[1]);
+
+        titleT := sfoT.getMapItem('title');
+        promptT := sfoT.getMapItem('prompt');
+        optsT := sfoT.getMapItem('opts');
+
+        FreeAndNil(sfoT);
+
+        innerCodeT := listT[2];
+
+      end;
+
+      tmps := tk.getPassword(titleT, promptT, optsT);
+
+      if tk.isErrStr(tmps) then
+      begin
+        runCharThreadG.Terminate;
+        //freeAndNil( runCharThreadG);
+
+        application.Terminate;
+        exit;
+      end;
+
+      runCharThreadG.secureCodeM := tmps;
+    end;
+
+    runCharThreadG.codeTextM := innerCodeT;
+    //runCharThreadG.secureCodeM := '';
 
     runCharThreadG.Start;
-  end else begin
+  end
+  else
+  begin
     CmdBox1.StartRead(clSilver, clBlack, '>', clYellow, clBlack);
   end;
 
   CmdBox1.TextColors(clWhite, clBlack);
+
+  // madarinStart
+  //timer2.Enabled:=true;
+  //Form1.CmdBox1.WriteLn(tk.encryptStringByTXDEF(
+  //  'a74khfdsk  答复客户福克斯hdksfhs@!*^#'));
+  //Form1.CmdBox1.WriteLn(tk.decryptStringByTXDEF(
+  //  '8C97B78D5F5E9E899496A19B59471BE5C81BE3BA1FECDC22CDEA27EACF27D0C42CE0F5B0B5AABFB6B4C197667CB475'));
+  ////Form1.CmdBox1.StartRead(clSilver, clBlack, '>', clYellow, clBlack);
+  //Form1.CmdBox1.WriteLn('|||title^^abc电缆敷设$$  468264832 dfdf$$msg^^ldsjfld记录到时间了$$jlsajflads|||');
+  //sfoT := SimpleFlexObject.Create(
+  //  '|||title^^abc电缆敷设$$  468264832 dfdf$$msg^^ldsjfld记录到时间了$$jlsajflads|||');
+  //Form1.CmdBox1.WriteLn(sfoT.toStr());
+  //Form1.CmdBox1.WriteLn(sfoT.encode());
+  //Form1.CmdBox1.WriteLn(
+  //  'a74khfabcdefg[hi]jk{lmno}pqrstuvwxyzdsk  答复客户福克斯hdksfhs@!*^#');
+  //Form1.CmdBox1.WriteLn(tk.encryptStringByTXDEF(
+    //'a74kgtzbcdefhfdsk  答复客户福克斯hdksfhs@!*^#'));
+  //Form1.CmdBox1.UpdateLineHeights   ;
+
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
@@ -202,6 +295,14 @@ begin
 
 end;
 
+procedure TForm1.MenuItem1Click(Sender: TObject);
+begin
+  if saveDialog1.Execute then
+  begin
+    CmdBox1.SaveToFile(saveDialog1.FileName);
+  end;
+end;
+
 procedure TForm1.Timer1Timer(Sender: TObject);
 begin
   if terminateFlagG then
@@ -210,6 +311,11 @@ begin
 
     application.Terminate;
   end;
+end;
+
+procedure TForm1.Timer2Timer(Sender: TObject);
+begin
+  //CmdBox1.Write(#8#8+tk.getNowStr());
 end;
 
 procedure TForm1.CmdBox1Input(ACmdBox: TCmdBox; Input: string);
@@ -335,6 +441,27 @@ begin
   Form1.CmdBox1.Write(msgTextM);
 end;
 
+procedure TMonitorCharThread.AddMessagePrColor;
+begin
+  Form1.CmdBox1.TextColors(colorM, clBlack);
+  Form1.CmdBox1.Write(msgTextM);
+end;
+
+procedure TMonitorCharThread.ChangeConsoleColor;
+var
+  colorT: TColor;
+begin
+  case colorTextM of
+    'silver': colorT := clSilver;
+    'black': colorT := clBlack;
+    'white': colorT := clWhite;
+    else
+      colorT := tk.hexToColor(colorTextM);
+  end;
+
+  Form1.CmdBox1.TextColors(colorT, clBlack);
+end;
+
 procedure TMonitorCharThread.Execute;
 var
   signalT: byte;
@@ -347,7 +474,17 @@ var
   statusValueT: string;
   rs: string;
   rsValueT: string;
+  pieces1: TStringDynArray;
+  pieces2: TStringDynArray;
+  tmps, tmps0, tmps1: string;
 begin
+  comBufG[1] := 1;
+  comBufG[2] := 0;
+  comBufG[3] := 0;
+  comBufG[4] := 0;
+
+  comBufG[0] := 0;
+
   while (application <> nil) and (not application.Terminated) do
   begin
     signalT := comBufG[0];
@@ -366,9 +503,12 @@ begin
       //msgTextM := '--- str: ' + comStrT;
       //Synchronize(@AddMessage);
 
+      //msgTextM := 'got: '+comStrT;
+      //Synchronize(@AddMessage);
+
       comObjT := getJson(comStrT);
 
-      cmdT := comObjT.GetPath('cmd').AsString;
+      cmdT := tk.getJsonPathString(comObjT, 'cmd');
 
       statusValueT := 'success';
 
@@ -376,10 +516,19 @@ begin
         'selectFile':
         begin
           guiCmdM := 'selectFile';
-          guiValue1M := comObjT.GetPath('title').AsString;
-          guiValue2M := comObjT.GetPath('opts').AsString;
+          guiValue1M := tk.getJsonPathString(comObjT, 'title');
+          guiValue2M := tk.getJsonPathString(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := guiOut1M;
+        end;
+        'fatal', 'confirmToQuit':
+        begin
+          guiCmdM := 'confirmToQuit';
+          guiValue1M := tk.getJsonPathString(comObjT, 'title');
+          guiValue2M := tk.getJsonPathString(comObjT, 'value');
+          guiValue3M := tk.getJsonPathString(comObjT, 'opts');
+          Synchronize(@doGuiCmd);
+          rsValueT := 'TX_nr_XT';
         end;
         'quit':
         begin
@@ -390,65 +539,132 @@ begin
         'alert':
         begin
           guiCmdM := 'alert';
-          guiValue1M := comObjT.GetPath('value').AsString;
+          guiValue1M := tk.getJsonPathString(comObjT, 'value');
+          guiValue2M := tk.getJsonPathString(comObjT, 'opts');
           Synchronize(@doGuiCmd);
-          rsValueT := '';
+          rsValueT := 'TX_nr_XT';
         end;
         'showInfo':
         begin
           guiCmdM := 'showInfo';
-          guiValue1M := comObjT.GetPath('title').AsString;
-          guiValue2M := comObjT.GetPath('value').AsString;
+          guiValue1M := tk.getJsonPathString(comObjT, 'title');
+          guiValue2M := tk.getJsonPathString(comObjT, 'value');
+          guiValue3M := tk.getJsonPathString(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := '';
         end;
         'showError':
         begin
           guiCmdM := 'showError';
-          guiValue1M := comObjT.GetPath('title').AsString;
-          guiValue2M := comObjT.GetPath('value').AsString;
+          guiValue1M := tk.getJsonPathString(comObjT, 'title');
+          guiValue2M := tk.getJsonPathString(comObjT, 'value');
+          guiValue3M := tk.getJsonPathString(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := '';
         end;
         'getInput':
         begin
           guiCmdM := 'getInput';
-          guiValue1M := comObjT.GetPath('title').AsString;
-          guiValue2M := comObjT.GetPath('value').AsString;
+          guiValue1M := tk.getJsonPathString(comObjT, 'title');
+          guiValue2M := tk.getJsonPathString(comObjT, 'value');
           Synchronize(@doGuiCmd);
           rsValueT := guiOut1M;
         end;
         'getPassword':
         begin
           guiCmdM := 'getPassword';
-          guiValue1M := comObjT.GetPath('title').AsString;
-          guiValue2M := comObjT.GetPath('value').AsString;
+          guiValue1M := tk.getJsonPathString(comObjT, 'title');
+          guiValue2M := tk.getJsonPathString(comObjT, 'value');
+          guiValue3M := tk.getJsonPathString(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := guiOut1M;
         end;
         'selectItem':
         begin
           guiCmdM := 'selectItem';
-          guiValue1M := comObjT.GetPath('title').AsString;
-          guiValue2M := comObjT.GetPath('value').AsString;
+          guiValue1M := tk.getJsonPathString(comObjT, 'title');
+          guiValue2M := tk.getJsonPathString(comObjT, 'value');
+          guiValue3M := tk.getJsonPathString(comObjT, 'items');
+          guiValue4M := tk.getJsonPathString(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := guiOut1M;
         end;
+        'setAppTitle':
+        begin
+          guiCmdM := 'setAppTitle';
+          guiValue1M := tk.getJsonPathString(comObjT, 'title');
+          Synchronize(@doGuiCmd);
+          rsValueT := 'TX_nr_XT';
+        end;
         'pln':
         begin
-          msgTextM := comObjT.GetPath('value').AsString;
+          msgTextM := tk.getJsonPathString(comObjT, 'value');
           Synchronize(@AddMessage);
-          rsValueT := IntToStr(length(msgTextM));
+          //rsValueT := IntToStr(length(msgTextM));
+          rsValueT := 'TX_nr_XT';
+        end;
+        'plnColor':
+        begin
+          msgTextM := tk.getJsonPathString(comObjT, 'value');
+          pieces1 := SplitString(msgTextM, '$$');
+
+          for tmps in pieces1 do
+          begin
+            pieces2 := SplitString(tmps, '^^');
+
+            if length(pieces2) < 2 then
+            begin
+              msgTextM := pieces2[0];
+              Synchronize(@AddMessagePr);
+            end
+            else
+            begin
+              msgTextM := pieces2[0];
+              tmps1 := pieces2[1];
+              case tmps1 of
+                'silver': colorM := clSilver;
+                'black': colorM := clBlack;
+                'white': colorM := clWhite;
+                else
+                  colorM := tk.hexToColor(tmps1);
+              end;
+
+              Synchronize(@AddMessagePrColor);
+            end;
+          end;
+
+          msgTextM := '';
+          Synchronize(@AddMessage);
+
+          Synchronize(@AddMessage);
+          //rsValueT := IntToStr(length(msgTextM));
+          rsValueT := 'TX_nr_XT';
         end;
         'pr':
         begin
-          msgTextM := comObjT.GetPath('value').AsString;
+          msgTextM := tk.getJsonPathString(comObjT, 'value');
           Synchronize(@AddMessagePr);
-          rsValueT := IntToStr(length(msgTextM));
+          //rsValueT := IntToStr(length(msgTextM));
+          rsValueT := 'TX_nr_XT';
+        end;
+        'prColor':
+        begin
+          msgTextM := tk.getJsonPathString(comObjT, 'value');
+          colorTextM := tk.getJsonPathString(comObjT, 'color');
+          Synchronize(@AddMessagePrColor);
+          //rsValueT := IntToStr(length(msgTextM));
+          rsValueT := 'TX_nr_XT';
+        end;
+        'changeConsoleColor':
+        begin
+          colorTextM := tk.getJsonPathString(comObjT, 'value');
+          Synchronize(@ChangeConsoleColor);
+          //rsValueT := IntToStr(length(msgTextM));
+          rsValueT := 'TX_nr_XT';
         end;
         'checkJson':
         begin
-          msgTextM := comObjT.GetPath('value').AsString;
+          msgTextM := tk.getJsonPathString(comObjT, 'value');
           Synchronize(@AddMessage);
           rsValueT := '';
         end;
@@ -464,8 +680,18 @@ begin
 
       FreeAndNil(comObjT);
 
+      if rsValueT = 'TX_nr_XT' then
+      begin
+        comBufG[1] := 1;
+        comBufG[2] := 0;
+        comBufG[3] := 0;
+        comBufG[4] := 0;
+
+        comBufG[0] := 0;
+        continue;
+      end;
+
       objT := TJSONObject.Create(['Status', statusValueT, 'Value', rsValueT]);
-      // 'abdkhds代付款很舒服开始'
 
       rs := string(objT.asJson);
 
@@ -485,6 +711,8 @@ begin
 
     sleep(10);
   end;
+
+  comBufG[0] := 99;
 end;
 
 procedure TMonitorCharThread.doGuiCmd;
@@ -500,13 +728,20 @@ begin
       //application.Terminate;
     end;
     'alert': begin
-      tk.showError('Alert', guiValue1M);
+      tk.showError('', guiValue1M, guiValue2M);
     end;
     'showInfo': begin
-      tk.showInfo(guiValue1M, guiValue2M);
+      tk.showInfo(guiValue1M, guiValue2M, guiValue3M);
     end;
     'showError': begin
-      tk.showError(guiValue1M, guiValue2M);
+      tk.showError(guiValue1M, guiValue2M, guiValue3M);
+    end;
+    'setAppTitle': begin
+      Form1.Caption := guiValue1M;
+    end;
+    'confirmToQuit': begin
+      tk.ShowMessage(guiValue1M, guiValue2M, guiValue3M);
+      terminateFlagG := True;
     end;
     'getInput': begin
       if InputQuery(guiValue1M, guiValue2M, False, guiOut1M) then tk.pass()
@@ -516,11 +751,13 @@ begin
       end;
     end;
     'getPassword': begin
-      if InputQuery(guiValue1M, guiValue2M, True, guiOut1M) then tk.pass()
-      else
-      begin
-        guiOut1M := tk.errStr('failed to get input');
-      end;
+      guiOut1M := tk.getPassword(guiValue1M, guiValue2M, guiValue3M);
+      //:= tk.errStr('failed to get input');
+    end;
+    'selectItem': begin
+      tmps := tk.selectItem(guiValue1M, guiValue2M, guiValue3M, guiValue4M);
+
+      guiOut1M := tmps;
     end;
     //'selectItem': begin
     //  Form4.Caption := guiValue1M;
@@ -622,9 +859,9 @@ begin
   begin
     //injectT := '';
 
-    rs := funcCharlangBackG(PChar(string(codeTextM)), PChar(IntToStr(WebPortG)),
+    rs := funcCharlangBackG(PChar(string(codeTextM)), PChar(IntToStr(webPortG)),
       PChar(secureCodeM), PChar(''),
-      PChar('{"guiServerUrlG":"http://127.0.0.1:' + IntToStr(WebPortG) + '"}'),
+      PChar('{"guiServerUrlG":"http://127.0.0.1:' + IntToStr(webPortG) + '"}'),
       PChar(@comBufG));
 
     if startsStr('TXERROR:', rs) then
