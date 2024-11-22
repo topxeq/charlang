@@ -5,8 +5,8 @@ unit Unit1;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, Forms, Controls, Graphics, Dialogs, Menus, ComCtrls,
-  StdCtrls, ExtCtrls, PairSplitter, Buttons, SynEdit,
+  Classes, SysUtils, StrUtils, Types, Forms, Controls, Graphics, Dialogs, Menus, ComCtrls,
+  StdCtrls, ExtCtrls, PairSplitter, Buttons, uCmdBox, SynEdit,
   SynHighlighterAny, SynHighlighterCpp, SynHighlighterSQL,
   SynHighlighterJScript, SynHighlighterPas, tkunit, fphttpserver, fileutil,
   RegExpr, fpjson, Process, LazUTF8, SynEditTypes, Generics.Collections,
@@ -54,15 +54,22 @@ type
   TMonitorCharThread = class(TThread)
   private
     procedure AddMessage;
+    procedure AddMessagePr;
+    procedure AddMessagePrColor;
+    procedure ChangeConsoleColor;
   protected
     procedure Execute; override;
   public
     msgTextM: string;
+    colorTextM: string;
+    colorM: TColor;
 
     guiCmdM: string;
     guiValue1M: string;
     guiValue2M: string;
     guiValue3M: string;
+    guiValue4M: string;
+    guiValue5M: string;
 
     guiOut1M: string;
     guiOut2M: string;
@@ -151,11 +158,11 @@ type
   { TForm1 }
 
   TForm1 = class(TForm)
+    CmdBox1: TCmdBox;
     ComboBox1: TComboBox;
     ImageList1: TImageList;
     LabeledEdit1: TLabeledEdit;
     MainMenu1: TMainMenu;
-    Memo1: TMemo;
     MenuItem1: TMenuItem;
     MenuItem10: TMenuItem;
     MenuItem11: TMenuItem;
@@ -174,7 +181,9 @@ type
     MenuItem24: TMenuItem;
     MenuItem25: TMenuItem;
     MenuItem26: TMenuItem;
+    MenuItem27: TMenuItem;
     OpenDialog2: TOpenDialog;
+    PopupMenu2: TPopupMenu;
     Separator6: TMenuItem;
     Separator5: TMenuItem;
     PopupMenu1: TPopupMenu;
@@ -245,6 +254,7 @@ type
     procedure MenuItem18Click(Sender: TObject);
     procedure MenuItem19Click(Sender: TObject);
     procedure MenuItem20Click(Sender: TObject);
+    procedure MenuItem27Click(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
     procedure MenuItem3Click(Sender: TObject);
     procedure MenuItem4Click(Sender: TObject);
@@ -451,7 +461,8 @@ begin
 
   monitorCharThreadG := TMonitorCharThread.Create(false);
 
-  //addMessage(tk.getErrStr('TXERROR:safhkd方式客户反馈'));
+  // madarinStart
+  addMessage(tk.getErrStr('TXERROR:safhkd方式客户反馈'));
   //addMessage(tk.strSlice('safhkd方式客户反馈', 0, 3));
   //addMessage(tk.strSlice('safhkd方式客户反馈', 1, 3));
   //addMessage(tk.strSlice('safhkd方式客户反馈', 1, 8));
@@ -680,7 +691,7 @@ end;
 
 procedure TForm1.MenuItem16Click(Sender: TObject);
 var
-  mapT: tkStrMap;
+  mapT: txStrMap;
 begin
   SynEdit1.Clear;
 
@@ -712,6 +723,14 @@ begin
   ToolButton19Click(Sender);
 end;
 
+procedure TForm1.MenuItem27Click(Sender: TObject);
+begin
+  if saveDialog1.Execute then
+  begin
+    CmdBox1.SaveToFile(saveDialog1.FileName);
+  end;
+end;
+
 procedure TForm1.MenuItem2Click(Sender: TObject);
 begin
   ToolButton1Click(Sender);
@@ -724,8 +743,10 @@ end;
 
 procedure TForm1.AddMessage(msgA: string);
 begin
-  Memo1.Lines.Add(msgA);
-  Memo1.selstart := MaxInt;
+  Form1.CmdBox1.TextColors(clWhite, clBlack);
+  Form1.CmdBox1.Writeln(msgA);
+  //Memo1.Lines.Add(msgA);
+  //Memo1.selstart := MaxInt;
   // Memo1.CaretPos := Point(0, Memo1.Lines.Count-1);
 
   //Form1.StatusBar1.Panels[1].Text := msgTextM;
@@ -1359,11 +1380,8 @@ end;
 procedure TRunCharThread.AddMessage;
 // this method is executed by the mainthread and can therefore access all GUI elements.
 begin
-  Form1.Memo1.Lines.Add(msgTextM);
-  Form1.Memo1.selstart := MaxInt;
-  // Memo1.CaretPos := Point(0, Memo1.Lines.Count-1);
-
-  //Form1.StatusBar1.Panels[1].Text := msgTextM;
+  Form1.CmdBox1.TextColors(clWhite, clBlack);
+  Form1.CmdBox1.Writeln(msgTextM);
 end;
 
 procedure TRunCharThread.ShowError;
@@ -1473,8 +1491,8 @@ end;
 
 procedure THTTPServerThread.AddMessage;
 begin
-  Form1.Memo1.Lines.Add(msgTextM);
-  Form1.Memo1.selstart := MaxInt;
+  Form1.CmdBox1.TextColors(clWhite, clBlack);
+  Form1.CmdBox1.Writeln(msgTextM);
 end;
 
 procedure THTTPServerThread.doGuiCmd;
@@ -1622,6 +1640,16 @@ begin
       Synchronize(@doGuiCmd);
       rsValueT := '';
     end;
+    'getInput':
+    begin
+      guiCmdM := 'getInput';
+      guiValue1M := ARequest.QueryFields.Values['title'] +
+        ARequest.ContentFields.Values['title'];
+      guiValue2M := ARequest.QueryFields.Values['value'] +
+        ARequest.ContentFields.Values['value'];
+      Synchronize(@doGuiCmd);
+      rsValueT := guiOut1M;
+    end;
     'getPassword':
     begin
       guiCmdM := 'getPassword';
@@ -1698,11 +1726,8 @@ end;
 
 procedure TRunCharExtThread.AddMessage;
 begin
-  Form1.Memo1.Lines.Add(msgTextM);
-  Form1.Memo1.selstart := MaxInt;
-  // Memo1.CaretPos := Point(0, Memo1.Lines.Count-1);
-
-  //Form1.StatusBar1.Panels[1].Text := msgTextM;
+  Form1.CmdBox1.TextColors(clWhite, clBlack);
+  Form1.CmdBox1.Writeln(msgTextM);
 end;
 
 procedure TRunCharExtThread.Execute;
@@ -1849,8 +1874,8 @@ end;
 
 procedure TInit1Thread.AddMessage;
 begin
-  Form1.Memo1.Lines.Add(msgTextM);
-  Form1.Memo1.selstart := MaxInt;
+  Form1.CmdBox1.TextColors(clWhite, clBlack);
+  Form1.CmdBox1.Writeln(msgTextM);
 end;
 
 procedure TInit1Thread.ClearCombo;
@@ -1947,8 +1972,8 @@ end;
 
 procedure TDownload1Thread.AddMessage;
 begin
-  Form1.Memo1.Lines.Add(msgTextM);
-  Form1.Memo1.selstart := MaxInt;
+  Form1.CmdBox1.TextColors(clWhite, clBlack);
+  Form1.CmdBox1.Writeln(msgTextM);
 end;
 
 procedure TDownload1Thread.DoGuiTask;
@@ -2006,8 +2031,36 @@ end;
 
 procedure TMonitorCharThread.AddMessage;
 begin
-  Form1.Memo1.Lines.Add(msgTextM);
-  Form1.Memo1.selstart := MaxInt;
+  Form1.CmdBox1.TextColors(clWhite, clBlack);
+  Form1.CmdBox1.Writeln(msgTextM);
+  //Form1.CmdBox1.AdjustScrollBarsOut(true);
+end;
+
+procedure TMonitorCharThread.AddMessagePr;
+begin
+  Form1.CmdBox1.TextColors(clWhite, clBlack);
+  Form1.CmdBox1.Write(msgTextM);
+end;
+
+procedure TMonitorCharThread.AddMessagePrColor;
+begin
+  Form1.CmdBox1.TextColors(colorM, clBlack);
+  Form1.CmdBox1.Write(msgTextM);
+end;
+
+procedure TMonitorCharThread.ChangeConsoleColor;
+var
+  colorT: TColor;
+begin
+  case colorTextM of
+    'silver': colorT := clSilver;
+    'black': colorT := clBlack;
+    'white': colorT := clWhite;
+    else
+      colorT := tk.hexToColor(colorTextM);
+  end;
+
+  Form1.CmdBox1.TextColors(colorT, clBlack);
 end;
 
 procedure TMonitorCharThread.Execute;
@@ -2016,31 +2069,52 @@ var
   lenT: int32;
   len2T: int32;
   comStrT: string;
-  comObjT: TJSONData;
+  comObjT: SimpleFlexObject;// txStrMap; // TJSONData;
   objT: TJSONObject;
   cmdT: string;
   statusValueT: string;
   rs: string;
   rsValueT: string;
+  pieces1: TStringDynArray;
+  pieces2: TStringDynArray;
+  tmps, tmps0, tmps1: string;
 begin
-  while not application.Terminated do begin
+  comBufG[1] := 1;
+  comBufG[2] := 0;
+  comBufG[3] := 0;
+  comBufG[4] := 0;
+
+  comBufG[0] := 0;
+
+  while (application <> nil) and (not application.Terminated) do
+  begin
     signalT := comBufG[0];
 
-    if signalT = 1 then begin
-      msgTextM := '--- change to 1';
-      Synchronize(@AddMessage);
+    if signalT = 1 then
+    begin
+      //msgTextM := '--- change to 1';
+      //Synchronize(@AddMessage);
 
-      lenT := comBufG[1] * 65536 * 256 + comBufG[2] * 65536 + comBufG[3] * 256 + comBufG[4];
-      msgTextM := '--- size: ' + intToStr(lenT);
-      Synchronize(@AddMessage);
+      lenT := comBufG[1] * 65536 * 256 + comBufG[2] * 65536 +
+        comBufG[3] * 256 + comBufG[4];
+      //msgTextM := '--- size: ' + IntToStr(lenT);
+      //Synchronize(@AddMessage);
 
       comStrT := string(PChar(@(comBufG[5])));
-      msgTextM := '--- str: ' + comStrT;
-      Synchronize(@AddMessage);
+      //msgTextM := '--- str: ' + comStrT;
+      //Synchronize(@AddMessage);
 
-      comObjT := getJson(comStrT);
+      //msgTextM := 'got: '+comStrT;
+      //Synchronize(@AddMessage);
 
-      cmdT := comObjT.GetPath('cmd').AsString;
+      if comStrT.StartsWith('|||') then begin
+        comObjT := SimpleFlexObject.Create(comStrT);
+      end else begin
+        comObjT := tk.jsonDicToSimpleFlexObject(comStrT); // getJson(comStrT);
+      end;
+
+
+      cmdT := tk.getMapItem(comObjT, 'cmd'); // tk.getJsonPathString(comObjT, 'cmd');
 
       statusValueT := 'success';
 
@@ -2048,10 +2122,20 @@ begin
         'selectFile':
         begin
           guiCmdM := 'selectFile';
-          guiValue1M := comObjT.GetPath('title').AsString;
-          guiValue2M := comObjT.GetPath('opts').AsString;
+          //guiValue1M := tk.getJsonPathString(comObjT, 'title');
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := guiOut1M;
+        end;
+        'fatal', 'confirmToQuit':
+        begin
+          guiCmdM := 'confirmToQuit';
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'value');
+          guiValue3M := tk.getMapItem(comObjT, 'opts');
+          Synchronize(@doGuiCmd);
+          rsValueT := 'TX_nr_XT';
         end;
         'quit':
         begin
@@ -2062,51 +2146,132 @@ begin
         'alert':
         begin
           guiCmdM := 'alert';
-          guiValue1M := comObjT.GetPath('value').AsString;
+          guiValue1M := tk.getMapItem(comObjT, 'value');
+          guiValue2M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
-          rsValueT := '';
+          rsValueT := 'TX_nr_XT';
         end;
         'showInfo':
         begin
           guiCmdM := 'showInfo';
-          guiValue1M := comObjT.GetPath('title').AsString;
-          guiValue2M := comObjT.GetPath('value').AsString;
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'value');
+          guiValue3M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := '';
         end;
         'showError':
         begin
           guiCmdM := 'showError';
-          guiValue1M := comObjT.GetPath('title').AsString;
-          guiValue2M := comObjT.GetPath('value').AsString;
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'value');
+          guiValue3M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := '';
+        end;
+        'getInput':
+        begin
+          guiCmdM := 'getInput';
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'value');
+          Synchronize(@doGuiCmd);
+          rsValueT := guiOut1M;
         end;
         'getPassword':
         begin
           guiCmdM := 'getPassword';
-          guiValue1M := comObjT.GetPath('title').AsString;
-          guiValue2M := comObjT.GetPath('value').AsString;
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'value');
+          guiValue3M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := guiOut1M;
         end;
         'selectItem':
         begin
           guiCmdM := 'selectItem';
-          guiValue1M := comObjT.GetPath('title').AsString;
-          guiValue2M := comObjT.GetPath('value').AsString;
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'value');
+          guiValue3M := tk.getMapItem(comObjT, 'items');
+          guiValue4M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := guiOut1M;
         end;
+        'setAppTitle':
+        begin
+          guiCmdM := 'setAppTitle';
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          Synchronize(@doGuiCmd);
+          rsValueT := 'TX_nr_XT';
+        end;
         'pln':
         begin
-          msgTextM := comObjT.GetPath('value').AsString;
+          msgTextM := tk.getMapItem(comObjT, 'value');
           Synchronize(@AddMessage);
-          rsValueT := IntToStr(length(msgTextM));
+          //rsValueT := IntToStr(length(msgTextM));
+          rsValueT := 'TX_nr_XT';
+        end;
+        'plnColor':
+        begin
+          msgTextM := tk.getMapItem(comObjT, 'value');
+          pieces1 := SplitString(msgTextM, '@@@');
+
+          for tmps in pieces1 do
+          begin
+            pieces2 := SplitString(tmps, '+++');
+
+            if length(pieces2) < 2 then
+            begin
+              msgTextM := pieces2[0];
+              Synchronize(@AddMessagePr);
+            end
+            else
+            begin
+              msgTextM := pieces2[0];
+              tmps1 := pieces2[1];
+              case tmps1 of
+                'silver': colorM := clSilver;
+                'black': colorM := clBlack;
+                'white': colorM := clWhite;
+                else
+                  colorM := tk.hexToColor(tmps1);
+              end;
+
+              Synchronize(@AddMessagePrColor);
+            end;
+          end;
+
+          msgTextM := '';
+          Synchronize(@AddMessage);
+
+          //Synchronize(@AddMessage);
+          //rsValueT := IntToStr(length(msgTextM));
+          rsValueT := 'TX_nr_XT';
+        end;
+        'pr':
+        begin
+          msgTextM := tk.getMapItem(comObjT, 'value');
+          Synchronize(@AddMessagePr);
+          //rsValueT := IntToStr(length(msgTextM));
+          rsValueT := 'TX_nr_XT';
+        end;
+        'prColor':
+        begin
+          msgTextM := tk.getMapItem(comObjT, 'value');
+          colorTextM := tk.getMapItem(comObjT, 'color');
+          Synchronize(@AddMessagePrColor);
+          //rsValueT := IntToStr(length(msgTextM));
+          rsValueT := 'TX_nr_XT';
+        end;
+        'changeConsoleColor':
+        begin
+          colorTextM := tk.getMapItem(comObjT, 'value');
+          Synchronize(@ChangeConsoleColor);
+          //rsValueT := IntToStr(length(msgTextM));
+          rsValueT := 'TX_nr_XT';
         end;
         'checkJson':
         begin
-          msgTextM := comObjT.GetPath('value').AsString;
+          msgTextM := tk.getMapItem(comObjT, 'value');
           Synchronize(@AddMessage);
           rsValueT := '';
         end;
@@ -2120,10 +2285,20 @@ begin
 
       end;
 
-      freeAndNil(comObjT);
+      FreeAndNil(comObjT);
+
+      if rsValueT = 'TX_nr_XT' then
+      begin
+        comBufG[1] := 1;
+        comBufG[2] := 0;
+        comBufG[3] := 0;
+        comBufG[4] := 0;
+
+        comBufG[0] := 0;
+        continue;
+      end;
 
       objT := TJSONObject.Create(['Status', statusValueT, 'Value', rsValueT]);
-      // 'abdkhds代付款很舒服开始'
 
       rs := string(objT.asJson);
 
@@ -2131,10 +2306,10 @@ begin
 
       len2T := length(rs);
 
-      StrCopy(Pchar(@(comBufG[5])), PChar(rs));
+      StrCopy(PChar(@(comBufG[5])), PChar(rs));
 
-      comBufG[1] := len2T div (65536*256);
-      comBufG[2] := (len2T mod (65536*256)) div 65536;
+      comBufG[1] := len2T div (65536 * 256);
+      comBufG[2] := (len2T mod (65536 * 256)) div 65536;
       comBufG[3] := (len2T mod (65536)) div 256;
       comBufG[4] := len2T mod (256);
 
@@ -2143,6 +2318,8 @@ begin
 
     sleep(10);
   end;
+
+  comBufG[0] := 99;
 end;
 
 procedure TMonitorCharThread.doGuiCmd;
@@ -2158,13 +2335,20 @@ begin
       //application.Terminate;
     end;
     'alert': begin
-      tk.showError('Alert', guiValue1M);
+      tk.showError('', guiValue1M, guiValue2M);
     end;
     'showInfo': begin
-      tk.showInfo(guiValue1M, guiValue2M);
+      tk.showInfo(guiValue1M, guiValue2M, guiValue3M);
     end;
     'showError': begin
-      tk.showError(guiValue1M, guiValue2M);
+      tk.showError(guiValue1M, guiValue2M, guiValue3M);
+    end;
+    'setAppTitle': begin
+      Form1.Caption := guiValue1M;
+    end;
+    'confirmToQuit': begin
+      tk.ShowMessage(guiValue1M, guiValue2M, guiValue3M);
+      terminateFlagG := True;
     end;
     'getInput': begin
       if InputQuery(guiValue1M, guiValue2M, False, guiOut1M) then tk.pass()
@@ -2174,49 +2358,51 @@ begin
       end;
     end;
     'getPassword': begin
-      if InputQuery(guiValue1M, guiValue2M, True, guiOut1M) then tk.pass()
-      else
-      begin
-        guiOut1M := tk.errStr('failed to get input');
-      end;
+      guiOut1M := tk.getPassword(guiValue1M, guiValue2M, guiValue3M);
+      //:= tk.errStr('failed to get input');
     end;
     'selectItem': begin
-      Form4.Caption := guiValue1M;
-      jAryT := getJson(guiValue2M) as TJSONArray;
+      tmps := tk.selectItem(guiValue1M, guiValue2M, guiValue3M, guiValue4M);
 
-      Form4.ListBox1.Clear;
-
-      for tmpDataT in jAryT do
-      begin
-        tmps := tmpDataT.Value.AsString;
-        Form4.ListBox1.Items.Add(tmps);
-      end;
-
-      FreeAndNil(jAryT);
-
-      if Form4.ShowModal = mrOk then
-      begin
-        if Form4.ListBox1.SelCount < 1 then
-        begin
-          guiOut1M := tk.errStr('no item selected');
-          exit;
-        end;
-
-        for i := 0 to Form4.ListBox1.Count - 1 do
-        begin
-          if Form4.ListBox1.Selected[i] then
-          begin
-            guiOut1M := Form4.ListBox1.Items[i];
-            exit;
-          end;
-        end;
-        guiOut1M := tk.errStr('failed to get selected item');
-      end
-      else
-      begin
-        guiOut1M := tk.errStr('canceled');
-      end;
+      guiOut1M := tmps;
     end;
+    //'selectItem': begin
+    //  Form4.Caption := guiValue1M;
+    //  jAryT := getJson(guiValue2M) as TJSONArray;
+
+    //  Form4.ListBox1.Clear;
+
+    //  for tmpDataT in jAryT do
+    //  begin
+    //    tmps := tmpDataT.Value.AsString;
+    //    Form4.ListBox1.Items.Add(tmps);
+    //  end;
+
+    //  FreeAndNil(jAryT);
+
+    //  if Form4.ShowModal = mrOk then
+    //  begin
+    //    if Form4.ListBox1.SelCount < 1 then
+    //    begin
+    //      guiOut1M := tk.errStr('no item selected');
+    //      exit;
+    //    end;
+
+    //    for i := 0 to Form4.ListBox1.Count - 1 do
+    //    begin
+    //      if Form4.ListBox1.Selected[i] then
+    //      begin
+    //        guiOut1M := Form4.ListBox1.Items[i];
+    //        exit;
+    //      end;
+    //    end;
+    //    guiOut1M := tk.errStr('failed to get selected item');
+    //  end
+    //  else
+    //  begin
+    //    guiOut1M := tk.errStr('canceled');
+    //  end;
+    //end;
     'selectFile': begin
       Form1.OpenDialog2.Title := guiValue1M;
 
@@ -2232,6 +2418,5 @@ begin
   end;
 
 end;
-
 
 end.

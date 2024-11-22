@@ -35,7 +35,7 @@ implementation
 
 {$R *.lfm}
 
-uses unit1, unitProcess;
+uses unit1;
 
   { TForm2 }
 
@@ -193,17 +193,12 @@ begin
   end;
 
   case cmdT of
-    'test': begin
-        Form3.showModal();
-
-
-    end;
     'encryptText': begin
       secodeT := tk.getArrayItem(listT, 1);
 
       if @funcCharlangBackG <> nil then
       begin
-        mapT := tk.newStrMap(['inputG', Form1.SynEdit1.Text,
+        mapT := tk.newStrMap(['inputG', tk.getArrayItem(listT, 2),
           'secureCodeG', secodeT]);
 
         rs := funcCharlangBackG(PChar(
@@ -214,9 +209,7 @@ begin
 
         if rs <> 'TXERROR:undefined' then
         begin
-          Form1.SynEdit1.Text := rs;
-          //Form1.AddMessage('--- Result:');
-          //Form1.AddMessage(rs);
+          Form1.AddMessage(rs);
         end;
       end;
 
@@ -226,7 +219,7 @@ begin
 
       if @funcCharlangBackG <> nil then
       begin
-        mapT := tk.newStrMap(['inputG', trim(Form1.SynEdit1.Text),
+        mapT := tk.newStrMap(['inputG', tk.getArrayItem(listT, 2),
           'secureCodeG', secodeT]);
 
         rs := funcCharlangBackG(PChar(
@@ -237,7 +230,7 @@ begin
 
         if rs <> 'TXERROR:undefined' then
         begin
-          Form1.SynEdit1.Text := rs;
+          Form1.AddMessage(rs);
         end;
       end;
 

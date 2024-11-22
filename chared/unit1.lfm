@@ -12,7 +12,6 @@ object Form1: TForm1
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnKeyUp = FormKeyUp
-  ShowInTaskBar = stAlways
   LCLVersion = '3.6.0.0'
   object ToolBar1: TToolBar
     Left = 0
@@ -745,27 +744,41 @@ object Form1: TForm1
         Top = 0
         Width = 967
         Align = alClient
-        Caption = 'Panel2'
         ClientHeight = 100
         ClientWidth = 967
-        Color = 8421631
+        Color = clBlack
         ParentBackground = False
         ParentColor = False
         TabOrder = 0
-        object Memo1: TMemo
-          Left = 1
-          Height = 98
-          Top = 1
-          Width = 965
+        object CmdBox1: TCmdBox
+          Left = 4
+          Height = 92
+          Top = 4
+          Width = 959
           Align = alClient
-          Color = 1184274
+          BorderSpacing.Left = 3
+          BorderSpacing.Top = 3
+          BorderSpacing.Right = 3
+          BorderSpacing.Bottom = 3
+          PopupMenu = PopupMenu2
+          CaretColor = clWhite
+          CaretType = cartUser
+          CaretWidth = 1
+          CaretHeight = 14
+          CaretYShift = 3
+          LineCount = 100000
           Font.Color = clSilver
-          Font.Height = -19
+          Font.Height = -17
           Font.Name = 'Consolas'
-          Font.Quality = fqDraft
-          ParentFont = False
-          ScrollBars = ssAutoVertical
-          TabOrder = 0
+          BackGroundColor = clBlack
+          TabWidth = 60
+          HistoryMax = 10
+          InputSelColor = clBlue
+          InputSelBackGround = clWhite
+          CaretInterval = 500
+          EscapeCodeType = esctCmdBox
+          GraphicalCharacterWidth = 10
+          WrapMode = wwmChar
         end
       end
     end
@@ -1714,5 +1727,13 @@ object Form1: TForm1
   object OpenDialog2: TOpenDialog
     Left = 559
     Top = 100
+  end
+  object PopupMenu2: TPopupMenu
+    Left = 302
+    Top = 553
+    object MenuItem27: TMenuItem
+      Caption = 'Save to file...'
+      OnClick = MenuItem27Click
+    end
   end
 end

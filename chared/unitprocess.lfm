@@ -12,6 +12,7 @@ object Form3: TForm3
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poDesktopCenter
+  ShowInTaskBar = stNever
   LCLVersion = '3.6.0.0'
   object ProgressBar1: TProgressBar
     Left = 56

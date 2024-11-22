@@ -33,6 +33,7 @@ type
     procedure decode(strA: string; mustA: boolean = True);
     function toStr(): string;
 
+    function setMapItem(keyA: string; valueA: string): string;
     function getMapItem(strA: string; defaultA: string = ''): string;
     function encode(defaultA: string = ''): string;
   end;
@@ -69,6 +70,10 @@ type
 
     // map/dictionary related
     class function newStrMap(pairsA: array of string): txStrMap;
+    class function getMapItem(mapA: txStrMap; keyA: string;
+      defaultA: string = ''): string;
+    class function getMapItem(mapA: SimpleFlexObject; keyA: string;
+      defaultA: string = ''): string;
 
     // random related
     class function realRandom(range: integer): integer;
@@ -87,6 +92,8 @@ type
     class function toJson(valueA: TObject): string;
     class function getJsonPathString(jsonDataA: TJSONData; pathA: string;
       defaultA: string = ''): string;
+    class function jsonToStrMap(jsonA: string): txStrMap;
+    class function jsonDicToSimpleFlexObject(jsonA: string): SimpleFlexObject;
 
     // encrypt/decrypt related
     class function encryptStringByTXTE(originStr: string; code: string = ''): string;
@@ -96,7 +103,8 @@ type
     class function decryptStringByTXDEF(strA: string; codeA: string = ''): string;
 
     // command-line related
-    class function getParams(): TStringList;
+    class function getCliParams(): TStringList;
+    class function getCliParam(idxA: integer): string;
     class function getSwitch(listA: TStringList; keyA: string;
       defaultA: string): string;
     class function getCliSwitch(keyA: string; defaultA: string): string;
@@ -287,7 +295,7 @@ begin
   Result := False;
 end;
 
-class function tk.getParams(): TStringList;
+class function tk.getCliParams(): TStringList;
 var
   i: longint;
   paramsT: TStringList;
@@ -301,6 +309,30 @@ begin
 
   Result := paramsT;
   //FreeAndNil(paramsT);
+end;
+
+class function tk.getCliParam(idxA: integer): string;
+var
+  i: integer;
+  cntT: integer;
+begin
+  result := '';
+
+  cntT := 0;
+
+  for i := 0 to ParamCount do
+  begin
+    if ParamStr(i).StartsWith('-') then begin
+      continue;
+    end;
+
+    if cntT = idxA then begin
+      exit(ParamStr(i));
+    end;
+
+    cntT += 1;
+  end;
+
 end;
 
 class function tk.trim(strA: string): string;
@@ -480,6 +512,8 @@ begin
   Result := concatPaths(argsA);
 end;
 
+// uses TypInfo
+//addMessage('FormKeyUp: ' + IntToStr(Key) + ' ' + tk.toStr(Shift, typeInfo(Shift)));
 class function tk.toStr(const AValue; ATypeInfo: PTypeInfo): string;
 type
   TArray = array of byte;
@@ -488,6 +522,10 @@ var
   FormatSettings: TFormatSettings;
   FirstField, Field: PManagedField;
   ElementSize: SizeInt;
+  typeNameT: string;
+  map1T: txStrMap;
+  tmps: string;
+  sbufT: TStringBuilder;
 begin
   FormatSettings := DefaultFormatSettings;
   case ATypeInfo^.Kind of
@@ -500,7 +538,65 @@ begin
     tkAString: Result := QuotedStr(ansistring(AValue));
     tkWString: Result := QuotedStr(ansistring(WideString(AValue)));
     tkUString: Result := QuotedStr(ansistring(unicodestring(AValue)));
-    tkClass: Result := TObject(AValue).ToString;
+    tkClass: begin
+      typeNameT := TObject(AValue).ToString;
+
+      if typeNameT = 'TDictionary<System.AnsiString,System.AnsiString>' then
+        //'TDictionary<System.AnsiString,System.AnsiString>':
+      begin
+        //Result := '{';
+        //with GetTypeData(ATypeInfo)^ do
+        //begin
+        //  {$IFNDEF VER3_0}//ifdef needed because of a field rename in trunk (ManagedFldCount to TotalFieldCount)
+        //  FirstField := PManagedField(pbyte(@TotalFieldCount) + SizeOf(TotalFieldCount));
+        //  for I := 0 to TotalFieldCount - 1 do
+        //    {$ELSE}
+        //    FirstField := PManagedField(pbyte(@ManagedFldCount) + SizeOf(ManagedFldCount));
+        //  for I := 0 to ManagedFldCount - 1 do
+        //    {$ENDIF}
+        //  begin
+        //    if I > 0 then Result += ', ';
+        //    Field := PManagedField(pbyte(FirstField) + (I * SizeOf(TManagedField)));
+        //    Result += ToStr((pbyte(@AValue) + Field^.FldOffset)^, Field^.TypeRef);
+        //  end;
+        //end;
+        //Result += '}';
+
+        map1T := txStrMap(AValue);
+
+        sbufT := TStringBuilder.Create;
+
+        sbufT.append('{');
+
+        i := 0;
+        for tmps in map1T.Keys do
+        begin
+          if i > 0 then
+          begin
+            sbufT.append(', ');
+          end;
+
+          sbufT.append(tmps.QuotedString('"'));
+          sbufT.append(': ');
+          sbufT.append(map1T[tmps].QuotedString('"'));
+
+          i += 1;
+        end;
+
+
+        sbufT.append('}');
+
+        Result := sbufT.ToString();
+        FreeAndNil(sbufT);
+
+      end
+      else
+      begin
+        Result := TObject(AValue).ToString;
+        //Result := Format('%s@%p', [typeNameT, @AValue]);
+      end;
+
+    end;
     tkEnumeration: Result := GetEnumName(ATypeInfo, integer(AValue));
     tkSet: Result := SetToString(ATypeInfo, integer(AValue), True).Replace(',', ', ');
     tkVariant: Result := VarToStr(variant(AValue));
@@ -575,7 +671,8 @@ begin
       Result += ']';
     end;
     else
-      Result := Format('%s@%p', [ATypeInfo^.Name, @AValue]);
+      Result := Format('%s@%p', [typeNameT, @AValue]);
+
   end;
 end;
 
@@ -1527,7 +1624,7 @@ begin
 
   baseLenT := length(self.items);
 
-  setLength(self.items, baseLenT+len1T);
+  setLength(self.items, baseLenT + len1T);
 
   for i := 0 to len1T - 1 do
   begin
@@ -1535,13 +1632,13 @@ begin
 
     if length(list2T) > 1 then
     begin
-      self.items[i+baseLenT] := list2T[1];
-      self.itemsMap.AddOrSetValue(list2T[0], i+baseLenT);
-      self.keysMap.AddOrSetValue(i+baseLenT, list2T[0]);
+      self.items[i + baseLenT] := list2T[1];
+      self.itemsMap.AddOrSetValue(list2T[0], i + baseLenT);
+      self.keysMap.AddOrSetValue(i + baseLenT, list2T[0]);
     end
     else
     begin
-      self.items[i+baseLenT] := list2T[0];
+      self.items[i + baseLenT] := list2T[0];
     end;
 
     setLength(list2T, 0);
@@ -1604,7 +1701,7 @@ begin
     if i <> 0 then
       bufT.append(', ');
 
-    bufT.append(self.items[i].QuotedString);
+    bufT.append(self.items[i].QuotedString('"'));
 
   end;
   bufT.append(']');
@@ -1627,6 +1724,33 @@ begin
   if (tmpi < 0) or (tmpi >= length(self.items)) then exit(defaultA);
 
   Result := self.items[tmpi];
+end;
+
+function SimpleFlexObject.setMapItem(keyA: string; valueA: string): string;
+var
+  tmpi: integer;
+  b: boolean;
+  baseLenT: integer;
+begin
+  if not self.isValid then exit(('TXERROR:object is invalid'));
+
+  b := self.itemsMap.TryGetValue(keyA, tmpi);
+
+  if b then
+  begin
+    self.items[tmpi] := valueA;
+    exit('');
+  end;
+
+  baseLenT := length(self.items);
+
+  setLength(self.items, baseLenT + 1);
+
+  self.items[baseLenT] := valueA;
+  self.itemsMap.AddOrSetValue(keyA, baseLenT);
+  self.keysMap.AddOrSetValue(baseLenT, keyA);
+
+  exit('');
 end;
 
 function SimpleFlexObject.encode(defaultA: string): string;
@@ -1684,6 +1808,95 @@ begin
   DateTimeToString(tmps, 'yyyymmddhhnnss', Now);
 
   Result := tmps;
+end;
+
+// remember to free the return value after use
+class function tk.jsonToStrMap(jsonA: string): txStrMap;
+var
+  i: integer;
+  tmps: string;
+  //data1T: TJSONData;
+  obj1T: TJSONObject;
+  map1T: txStrMap;
+  itemT: TJSONObject;
+begin
+  map1T := txStrMap.Create;
+
+  try
+    obj1T := GetJSON(jsonA) as TJSONObject;
+
+    for i := 0 to obj1T.Count - 1 do
+    begin
+      tmps := obj1T.Names[i];
+      map1T.AddOrSetValue(tmps, obj1T.FindPath(tmps).AsString);
+    end;
+
+  except
+    on E: Exception do
+    begin
+      FreeAndNil(map1T);
+      exit(nil);
+    end;
+  end;
+
+  FreeAndNil(map1T);
+
+  exit(map1T);
+end;
+
+// remember to free the return value after use
+class function tk.jsonDicToSimpleFlexObject(jsonA: string): SimpleFlexObject;
+var
+  i: integer;
+  tmps: string;
+  //data1T: TJSONData;
+  obj1T: TJSONObject;
+  map1T: SimpleFlexObject;
+  itemT: TJSONObject;
+begin
+  map1T := SimpleFlexObject.Create;
+
+  try
+    obj1T := GetJSON(jsonA) as TJSONObject;
+
+    for i := 0 to obj1T.Count - 1 do
+    begin
+      tmps := obj1T.Names[i];
+      map1T.setMapItem(tmps, obj1T.FindPath(tmps).AsString);
+    end;
+
+  except
+    on E: Exception do
+    begin
+      if obj1T <> nil then  FreeAndNil(obj1T);
+      FreeAndNil(map1T);
+      exit(nil);
+    end;
+  end;
+
+  if obj1T <> nil then  FreeAndNil(obj1T);
+
+
+  exit(map1T);
+end;
+
+class function tk.getMapItem(mapA: txStrMap; keyA: string;
+  defaultA: string = ''): string;
+var
+  tmps: string;
+  b: boolean;
+begin
+  b := mapA.TryGetValue(keyA, tmps);
+
+  if not b then exit(defaultA);
+
+  exit(tmps);
+end;
+
+class function tk.getMapItem(mapA: SimpleFlexObject; keyA: string;
+  defaultA: string = ''): string;
+begin
+  exit(mapA.getMapItem(keyA, defaultA));
 end;
 
 end.

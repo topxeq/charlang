@@ -231,7 +231,7 @@ begin
 
         rs := funcCharlangBackG(PChar(
           'global inputG'#10'global secureCodeG'#10'return decryptText(inputG, secureCodeG)'), PChar(''), PChar(''),
-          PChar(''), PChar(tk.toJson(mapT)));
+          PChar(''), PChar(tk.toJson(mapT)), PChar(@comBufG));
 
         FreeAndNil(mapT);
 

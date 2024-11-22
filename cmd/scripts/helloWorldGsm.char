@@ -1,0 +1,4 @@
+global guiHandlerG
+
+guiHandlerG.send(`{"cmd": "pln", "value": "Hello world!"}`)
+

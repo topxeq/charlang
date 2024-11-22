@@ -50,6 +50,7 @@ object Form3: TForm3
     Top = 120
     Width = 75
     Caption = 'Ok'
+    Default = True
     TabOrder = 2
     OnClick = ButtonOkClick
   end

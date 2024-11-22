@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, StrUtils, fpjson, fileutil, tkunit, Forms, Controls,
   Graphics, Dialogs, ExtCtrls, Menus, Types,
-  uCmdBox, StrHolder;
+  uCmdBox, StrHolder, TypInfo, UnitCommandPalette;
 
 const
   maxComBufLenG = 16777216;
@@ -18,6 +18,20 @@ type
 
   TfuncCharlangBackG = function(codeA, paramA, secureCodeA, injectA,
     globalsA, comBufA: PChar): PChar; stdcall;
+
+  TStartCommandPaletteThread = class(TThread)
+    //private
+    //  procedure AddMessage;
+  protected
+    procedure Execute; override;
+  public
+    msgTextM: string;
+
+    procedure doGuiCmd;
+
+    constructor Create(CreateSuspended: boolean);
+    destructor Destroy; override;
+  end;
 
   TMonitorCharThread = class(TThread)
   private
@@ -110,6 +124,9 @@ var
   runCharThreadG: TRunCharThread;
   runCharThreadSignalG: integer;
 
+  startCommandPaletteThreadG: TStartCommandPaletteThread;
+  startCommandPaletteThreadSignalG: integer;
+
   terminateFlagG: boolean = False;
 
   filePathG: string;
@@ -138,8 +155,11 @@ var
   sfoT: SimpleFlexObject;
   tmps: string;
   innerCodeT: string;
+  scriptPathT: string;
 begin
   Form1.Caption := 'Chargo V' + versionG + ' by TopXeQ';
+
+  Application.CreateForm(TForm2, Form2);
 
   filePathG := '';
 
@@ -175,7 +195,11 @@ begin
 
   runCharThreadSignalG := 0;
 
+  startCommandPaletteThreadSignalG := 0;
+
   monitorCharThreadG := TMonitorCharThread.Create(False);
+
+  CmdBox1.TextColors(clWhite, clBlack);
 
   //CmdBox1.StartRead(clSilver, clBlack, '>', clYellow, clBlack);
   //CmdBox1.TextColors(clWhite, clBlack);
@@ -183,15 +207,37 @@ begin
   //CmdBox1.Writeln(#27#179'Type "help" to see a short list of available commands.'#27#10#179);
   //CmdBox1.Writeln(#27#217#27#10#217);
 
+  scriptPathT := tk.getCliParam(1);
+
   filePathT := tk.joinPath([tk.getAppDir(), 'auto.char']);
 
-  innerCodeT := ''                       ;
+  innerCodeT := '';
 
-  if (StrHolder1.Strings.Text.Trim <> '') then begin
+  if (scriptPathT <> '') then
+  begin
+    innerCodeT := trim(tk.loadStringFromFile(scriptPathT));
+
+    if tk.isErrStr(innerCodeT) then
+    begin
+      tk.showError('error', 'failed to load script: ' + tk.getErrStr(innerCodeT));
+      application.Terminate;
+      exit;
+    end;
+  end
+  else if (StrHolder1.Strings.Text.Trim <> '') then
+  begin
     innerCodeT := StrHolder1.Strings.Text;
-  end else if fileExists(filePathT) then begin
-        innerCodeT := trim(tk.loadStringFromFile(filePathT));
+  end
+  else if fileExists(filePathT) then
+  begin
+    innerCodeT := trim(tk.loadStringFromFile(filePathT));
 
+    if tk.isErrStr(innerCodeT) then
+    begin
+      tk.showError('error', 'failed to load script: ' + tk.getErrStr(innerCodeT));
+      application.Terminate;
+      exit;
+    end;
   end;
 
   if innerCodeT <> '' then
@@ -259,12 +305,25 @@ begin
   end
   else
   begin
-    CmdBox1.StartRead(clSilver, clBlack, '>', clYellow, clBlack);
+    //CmdBox1.StartRead(clSilver, clBlack, '>', clYellow, clBlack);
+    //Form2.Memo1.Text := '';
+    //Form2.showModal;
+    if startCommandPaletteThreadSignalG <> 0 then
+    begin
+      ShowMessage('A command palette session is already running now.');
+      exit;
+    end else begin
+      startCommandPaletteThreadSignalG := 1;
+
+      startCommandPaletteThreadG := TStartCommandPaletteThread.Create(false);
+    end;
+
+
   end;
 
-  CmdBox1.TextColors(clWhite, clBlack);
-
   // madarinStart
+  //Form1.CmdBox1.WriteLn(scriptPathT);
+  //Form1.CmdBox1.WriteLn(tk.toStr(tk.jsonToStrMap('{"cmd": "plnColor", "value": "value1", "opts": "abc"}'), typeInfo(txStrMap)));
   //timer2.Enabled:=true;
   //Form1.CmdBox1.WriteLn(tk.encryptStringByTXDEF(
   //  'a74khfdsk  答复客户福克斯hdksfhs@!*^#'));
@@ -279,8 +338,8 @@ begin
   //Form1.CmdBox1.WriteLn(
   //  'a74khfabcdefg[hi]jk{lmno}pqrstuvwxyzdsk  答复客户福克斯hdksfhs@!*^#');
   //Form1.CmdBox1.WriteLn(tk.encryptStringByTXDEF(
-    //'a74kgtzbcdefhfdsk  答复客户福克斯hdksfhs@!*^#'));
-  //Form1.CmdBox1.UpdateLineHeights   ;
+  //  'a74kgtzbcdefhfdsk  答复客户福克斯hdksfhs@!*^#'));
+  ////Form1.CmdBox1.UpdateLineHeights   ;
 
 end;
 
@@ -417,6 +476,29 @@ begin
     CmdBox1.StartRead(clSilver, clBlack, '>', clYellow, clBlack);
 end;
 
+constructor TStartCommandPaletteThread.Create(CreateSuspended: boolean);
+begin
+  inherited Create(CreateSuspended);
+
+  FreeOnTerminate := True;
+end;
+
+destructor TStartCommandPaletteThread.Destroy;
+begin
+  inherited;
+end;
+
+procedure TStartCommandPaletteThread.doGuiCmd;
+begin
+  Form2.Memo1.Text := '';
+  Form2.showModal;
+end;
+
+procedure TStartCommandPaletteThread.Execute;
+begin
+  Synchronize(@doGuiCmd);
+end;
+
 constructor TMonitorCharThread.Create(CreateSuspended: boolean);
 begin
   inherited Create(CreateSuspended);
@@ -468,7 +550,7 @@ var
   lenT: int32;
   len2T: int32;
   comStrT: string;
-  comObjT: TJSONData;
+  comObjT: SimpleFlexObject;// txStrMap; // TJSONData;
   objT: TJSONObject;
   cmdT: string;
   statusValueT: string;
@@ -506,9 +588,17 @@ begin
       //msgTextM := 'got: '+comStrT;
       //Synchronize(@AddMessage);
 
-      comObjT := getJson(comStrT);
+      if comStrT.StartsWith('|||') then
+      begin
+        comObjT := SimpleFlexObject.Create(comStrT);
+      end
+      else
+      begin
+        comObjT := tk.jsonDicToSimpleFlexObject(comStrT); // getJson(comStrT);
+      end;
 
-      cmdT := tk.getJsonPathString(comObjT, 'cmd');
+
+      cmdT := tk.getMapItem(comObjT, 'cmd'); // tk.getJsonPathString(comObjT, 'cmd');
 
       statusValueT := 'success';
 
@@ -516,17 +606,18 @@ begin
         'selectFile':
         begin
           guiCmdM := 'selectFile';
-          guiValue1M := tk.getJsonPathString(comObjT, 'title');
-          guiValue2M := tk.getJsonPathString(comObjT, 'opts');
+          //guiValue1M := tk.getJsonPathString(comObjT, 'title');
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := guiOut1M;
         end;
         'fatal', 'confirmToQuit':
         begin
           guiCmdM := 'confirmToQuit';
-          guiValue1M := tk.getJsonPathString(comObjT, 'title');
-          guiValue2M := tk.getJsonPathString(comObjT, 'value');
-          guiValue3M := tk.getJsonPathString(comObjT, 'opts');
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'value');
+          guiValue3M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := 'TX_nr_XT';
         end;
@@ -539,78 +630,78 @@ begin
         'alert':
         begin
           guiCmdM := 'alert';
-          guiValue1M := tk.getJsonPathString(comObjT, 'value');
-          guiValue2M := tk.getJsonPathString(comObjT, 'opts');
+          guiValue1M := tk.getMapItem(comObjT, 'value');
+          guiValue2M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := 'TX_nr_XT';
         end;
         'showInfo':
         begin
           guiCmdM := 'showInfo';
-          guiValue1M := tk.getJsonPathString(comObjT, 'title');
-          guiValue2M := tk.getJsonPathString(comObjT, 'value');
-          guiValue3M := tk.getJsonPathString(comObjT, 'opts');
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'value');
+          guiValue3M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := '';
         end;
         'showError':
         begin
           guiCmdM := 'showError';
-          guiValue1M := tk.getJsonPathString(comObjT, 'title');
-          guiValue2M := tk.getJsonPathString(comObjT, 'value');
-          guiValue3M := tk.getJsonPathString(comObjT, 'opts');
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'value');
+          guiValue3M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := '';
         end;
         'getInput':
         begin
           guiCmdM := 'getInput';
-          guiValue1M := tk.getJsonPathString(comObjT, 'title');
-          guiValue2M := tk.getJsonPathString(comObjT, 'value');
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'value');
           Synchronize(@doGuiCmd);
           rsValueT := guiOut1M;
         end;
         'getPassword':
         begin
           guiCmdM := 'getPassword';
-          guiValue1M := tk.getJsonPathString(comObjT, 'title');
-          guiValue2M := tk.getJsonPathString(comObjT, 'value');
-          guiValue3M := tk.getJsonPathString(comObjT, 'opts');
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'value');
+          guiValue3M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := guiOut1M;
         end;
         'selectItem':
         begin
           guiCmdM := 'selectItem';
-          guiValue1M := tk.getJsonPathString(comObjT, 'title');
-          guiValue2M := tk.getJsonPathString(comObjT, 'value');
-          guiValue3M := tk.getJsonPathString(comObjT, 'items');
-          guiValue4M := tk.getJsonPathString(comObjT, 'opts');
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'value');
+          guiValue3M := tk.getMapItem(comObjT, 'items');
+          guiValue4M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
           rsValueT := guiOut1M;
         end;
         'setAppTitle':
         begin
           guiCmdM := 'setAppTitle';
-          guiValue1M := tk.getJsonPathString(comObjT, 'title');
+          guiValue1M := tk.getMapItem(comObjT, 'title');
           Synchronize(@doGuiCmd);
           rsValueT := 'TX_nr_XT';
         end;
         'pln':
         begin
-          msgTextM := tk.getJsonPathString(comObjT, 'value');
+          msgTextM := tk.getMapItem(comObjT, 'value');
           Synchronize(@AddMessage);
           //rsValueT := IntToStr(length(msgTextM));
           rsValueT := 'TX_nr_XT';
         end;
         'plnColor':
         begin
-          msgTextM := tk.getJsonPathString(comObjT, 'value');
-          pieces1 := SplitString(msgTextM, '$$');
+          msgTextM := tk.getMapItem(comObjT, 'value');
+          pieces1 := SplitString(msgTextM, '@@@');
 
           for tmps in pieces1 do
           begin
-            pieces2 := SplitString(tmps, '^^');
+            pieces2 := SplitString(tmps, '+++');
 
             if length(pieces2) < 2 then
             begin
@@ -636,35 +727,35 @@ begin
           msgTextM := '';
           Synchronize(@AddMessage);
 
-          Synchronize(@AddMessage);
+          //Synchronize(@AddMessage);
           //rsValueT := IntToStr(length(msgTextM));
           rsValueT := 'TX_nr_XT';
         end;
         'pr':
         begin
-          msgTextM := tk.getJsonPathString(comObjT, 'value');
+          msgTextM := tk.getMapItem(comObjT, 'value');
           Synchronize(@AddMessagePr);
           //rsValueT := IntToStr(length(msgTextM));
           rsValueT := 'TX_nr_XT';
         end;
         'prColor':
         begin
-          msgTextM := tk.getJsonPathString(comObjT, 'value');
-          colorTextM := tk.getJsonPathString(comObjT, 'color');
+          msgTextM := tk.getMapItem(comObjT, 'value');
+          colorTextM := tk.getMapItem(comObjT, 'color');
           Synchronize(@AddMessagePrColor);
           //rsValueT := IntToStr(length(msgTextM));
           rsValueT := 'TX_nr_XT';
         end;
         'changeConsoleColor':
         begin
-          colorTextM := tk.getJsonPathString(comObjT, 'value');
+          colorTextM := tk.getMapItem(comObjT, 'value');
           Synchronize(@ChangeConsoleColor);
           //rsValueT := IntToStr(length(msgTextM));
           rsValueT := 'TX_nr_XT';
         end;
         'checkJson':
         begin
-          msgTextM := tk.getJsonPathString(comObjT, 'value');
+          msgTextM := tk.getMapItem(comObjT, 'value');
           Synchronize(@AddMessage);
           rsValueT := '';
         end;

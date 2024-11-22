@@ -1,0 +1,5 @@
+global guiHandlerG
+
+guiHandlerG.send(`|||cmd^^plnColor$$value^^H@@@e+++#99CCFF@@@ll@@@o+++#99CCFF@@@ w@@@or+++#99CCFF@@@ld@@@!+++#FF99CC|||`)
+
+guiHandlerG.send(`{"cmd": "plnColor", "value": "H@@@e+++#99CCFF@@@ll@@@o+++#99CCFF@@@ w@@@or+++#99CCFF@@@ld, again@@@!+++#FF99CC"}`)
