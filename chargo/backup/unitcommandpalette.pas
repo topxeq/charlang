@@ -15,6 +15,7 @@ type
   TForm2 = class(TForm)
     BitBtn1: TBitBtn;
     BitBtn2: TBitBtn;
+    Button1: TButton;
     Memo1: TMemo;
     Panel1: TPanel;
     Panel2: TPanel;
@@ -113,6 +114,7 @@ var
   cmdT: string;
   secodeT: string;
   mapT: txStrMap;
+  secureCodeT: string;
 begin
   tmps := trim(memo1.Text);
 
@@ -140,7 +142,9 @@ begin
 
   //Form1.addMessage('cmdT: ' + cmdT);
 
-  if startsStr('mc', cmdT) then
+  secureCodeT := trim(tk.GetSwitch(listT, '-secureCode=', ''));
+
+  if startsStr('mc', cmdT.ToLower) then
   begin
     if @funcCharlangBackG <> nil then
     begin
@@ -148,7 +152,7 @@ begin
 
       rs := funcCharlangBackG(PChar('global inputG' + #10 +
         'return getWeb("https://topget.org/ms/magic?auth=topxeq&valueonly=true&witherror=true&code="+inputG)'),
-        PChar(''), PChar(''), PChar(''), PChar(tk.toJson(mapT)), PChar(@comBufG));
+        PChar(''), PChar(secureCodeT), PChar(''), PChar(tk.toJson(mapT)), PChar(@comBufG));
 
       FreeAndNil(mapT);
 
@@ -172,7 +176,7 @@ begin
         runCharThreadG := TRunCharThread.Create(True);
 
         runCharThreadG.codeTextM := rs;
-        //runCharThreadG.secureCodeM := trim(Form1.LabeledEdit1.Text);
+        runCharThreadG.secureCodeM := secureCodeT;
 
         runCharThreadG.Start;
 
@@ -209,7 +213,8 @@ begin
 
         if rs <> 'TXERROR:undefined' then
         begin
-          Form1.AddMessage(rs);
+          Form1.CmdBox1.TextColors(clWhite, clBlack);
+          Form1.CmdBox1.Writeln(rs);
         end;
       end;
 
@@ -230,7 +235,8 @@ begin
 
         if rs <> 'TXERROR:undefined' then
         begin
-          Form1.AddMessage(rs);
+          Form1.CmdBox1.TextColors(clWhite, clBlack);
+          Form1.CmdBox1.Writeln(rs);
         end;
       end;
 

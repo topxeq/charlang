@@ -312,11 +312,12 @@ begin
     begin
       ShowMessage('A command palette session is already running now.');
       exit;
+    end else begin
+      startCommandPaletteThreadSignalG := 1;
+
+      startCommandPaletteThreadG := TStartCommandPaletteThread.Create(false);
     end;
 
-    startCommandPaletteThreadSignalG := 1;
-
-    startCommandPaletteThreadG := TStartCommandPaletteThread.Create(false);
 
   end;
 
@@ -624,7 +625,7 @@ begin
         begin
           guiCmdM := 'quit';
           Synchronize(@doGuiCmd);
-          rsValueT := '';
+          rsValueT := 'TX_nr_XT';
         end;
         'alert':
         begin
@@ -641,7 +642,7 @@ begin
           guiValue2M := tk.getMapItem(comObjT, 'value');
           guiValue3M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
-          rsValueT := '';
+          rsValueT := 'TX_nr_XT';
         end;
         'showError':
         begin
@@ -650,7 +651,7 @@ begin
           guiValue2M := tk.getMapItem(comObjT, 'value');
           guiValue3M := tk.getMapItem(comObjT, 'opts');
           Synchronize(@doGuiCmd);
-          rsValueT := '';
+          rsValueT := 'TX_nr_XT';
         end;
         'getInput':
         begin
@@ -663,6 +664,15 @@ begin
         'getPassword':
         begin
           guiCmdM := 'getPassword';
+          guiValue1M := tk.getMapItem(comObjT, 'title');
+          guiValue2M := tk.getMapItem(comObjT, 'value');
+          guiValue3M := tk.getMapItem(comObjT, 'opts');
+          Synchronize(@doGuiCmd);
+          rsValueT := guiOut1M;
+        end;
+        'login':
+        begin
+          guiCmdM := 'login';
           guiValue1M := tk.getMapItem(comObjT, 'title');
           guiValue2M := tk.getMapItem(comObjT, 'value');
           guiValue3M := tk.getMapItem(comObjT, 'opts');
@@ -778,6 +788,7 @@ begin
         comBufG[4] := 0;
 
         comBufG[0] := 0;
+
         continue;
       end;
 
@@ -842,6 +853,10 @@ begin
     end;
     'getPassword': begin
       guiOut1M := tk.getPassword(guiValue1M, guiValue2M, guiValue3M);
+      //:= tk.errStr('failed to get input');
+    end;
+    'login': begin
+      guiOut1M := tk.login(guiValue1M, guiValue2M, guiValue3M);
       //:= tk.errStr('failed to get input');
     end;
     'selectItem': begin

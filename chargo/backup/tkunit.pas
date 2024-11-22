@@ -94,6 +94,7 @@ type
       defaultA: string = ''): string;
     class function jsonToStrMap(jsonA: string): txStrMap;
     class function jsonDicToSimpleFlexObject(jsonA: string): SimpleFlexObject;
+    class function arrayMapToJson(aryA: array of const): string;
 
     // encrypt/decrypt related
     class function encryptStringByTXTE(originStr: string; code: string = ''): string;
@@ -149,6 +150,7 @@ type
     class function getPassword(captionA, promptA: string; optsA: string = ''): string;
     class function selectItem(captionA: string; promptA: string;
       itemsA: string; optsA: string = ''): string;
+    class function login(captionA, promptA: string; optsA: string): string;
 
     // misc related
     class procedure pass;
@@ -302,7 +304,7 @@ var
 begin
   paramsT := TStringList.Create;
 
-  for i := 0 to ParamCount-1 do
+  for i := 0 to ParamCount do
   begin
     paramsT.Add(ParamStr(i));
   end;
@@ -320,7 +322,7 @@ begin
 
   cntT := 0;
 
-  for i := 0 to ParamCount - 1 do
+  for i := 0 to ParamCount do
   begin
     if ParamStr(i).StartsWith('-') then begin
       continue;
@@ -1238,6 +1240,7 @@ begin
   Edit.Left := 20;
   Edit.Width := Width - 40;
   Edit.PasswordChar := '*';
+  Edit.Text := '';
 
   Cancel := TBitBtn.Create(aForm);
   Cancel.Parent := aForm;
@@ -1259,6 +1262,112 @@ begin
 
   aForm.Free;
 
+end;
+
+class function tk.login(captionA, promptA: string; optsA: string): string;
+var
+  aForm: TForm;
+  aLabel: TLabel;
+  editUserT, editPasswordT: TEdit;
+  Cancel: TBitBtn;
+  Ok: TBitBtn;
+  Top, Left, Width: integer;
+  cliListT: TStringList;
+  okLabelT, closeLabelT: string;
+  userLabelT, passwordLabelT: string;
+  defaultUserT, defaultPasswordT: string;
+  rs, tmps: string;
+begin
+
+  cliListT := TStringList.Create;
+
+  tk.parseCommandLine(optsA, cliListT);
+
+  okLabelT := tk.getSwitch(cliListT, '-okLabel=', 'OK');
+  closeLabelT := tk.getSwitch(cliListT, '-closeLabel=', 'Close');
+
+  userLabelT := tk.getSwitch(cliListT, '-userLabel=', 'User: ');
+  passwordLabelT := tk.getSwitch(cliListT, '-passwordLabel=', 'Password: ');
+
+  defaultUserT := tk.getSwitch(cliListT, '-defaultUser=', '');
+  defaultPasswordT := tk.getSwitch(cliListT, '-defaultPassword=', '');
+
+  FreeAndNil(cliListT);
+
+  Top := 0;
+  Left := 0;
+  Width := 300;
+
+
+  aForm := TForm.Create(nil);
+  aForm.Top := Top;
+  aForm.Left := Left;
+  aForm.Width := Width;
+  aForm.Height := 150;
+  aForm.Constraints.MinWidth := 200;
+  aForm.Caption := captionA;
+  aForm.Position := poDesktopCenter;
+
+  aLabel := TLabel.Create(aForm);
+  aLabel.Parent := aForm;
+  aLabel.Top := 10;
+  aLabel.Left := 20;
+  aLabel.Caption := promptA;
+  aLabel.AutoSize := True;
+
+  editUserT := TEdit.Create(aForm);
+  editUserT.Parent := aForm;
+  editUserT.Top := 30;
+  editUserT.Left := 20;
+  editUserT.Width := Width - 40;
+  //editUserT.PasswordChar := '#0';
+  editUserT.Text := defaultUserT;
+  editUserT.TextHint := userLabelT;
+
+  editPasswordT := TEdit.Create(aForm);
+  editPasswordT.Parent := aForm;
+  editPasswordT.Top := 60;
+  editPasswordT.Left := 20;
+  editPasswordT.Width := Width - 40;
+  editPasswordT.PasswordChar := '*';
+  editPasswordT.Text := defaultPasswordT;
+  editPasswordT.TextHint := passwordLabelT;
+
+  Cancel := TBitBtn.Create(aForm);
+  Cancel.Parent := aForm;
+  Cancel.Top := 105;
+  Cancel.Left := Width - 95;
+  Cancel.Kind := bkCancel;
+  Cancel.Caption := closeLabelT;
+
+  ok := TBitBtn.Create(aForm);
+  ok.Parent := aForm;
+  ok.Top := 105;
+  ok.Left := Width - 180;
+  Ok.Kind := bkOK;
+  Ok.Caption := okLabelT;
+
+  Result := 'TXERROR:canceled';
+  if not (aForm.ShowModal = mrCancel) then
+    Result := tk.arrayMapToJson(['user', editUserT.Text, "password", editPasswordT.Text]);
+
+  aForm.Free;
+
+end;
+
+class function tk.arrayMapToJson(aryA: array of const): string;
+var
+  tmps: string;
+  objT: TJSONObject;
+begin
+  objT := TJSONObject.Create(aryA);
+
+  result := objT.AsJSON;
+
+  freeAndNil(objT);
+  //for tmps in strsA do begin
+  //
+  //end;
 end;
 
 class function tk.ShowMessage(titleA, promptA: string; optsA: string = ''): string;

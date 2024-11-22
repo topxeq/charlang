@@ -68,6 +68,7 @@ const (
 	BuiltinAppend BuiltinType = iota
 
 	BuiltinStatusToStr
+	BuiltinStatusToMap
 	BuiltinGuiServerCommand
 	BuiltinGetMapItem
 	BuiltinSetMapItem
@@ -1234,6 +1235,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"processHtmlTemplate": BuiltinProcessHtmlTemplate,
 	
 	"statusToStr": BuiltinStatusToStr,
+	"statusToMap": BuiltinStatusToMap,
 
 	// "sortByFunc": BuiltinSortByFunc,
 
@@ -3606,6 +3608,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASRS(tk.StatusToString),
 		ValueEx: FnASRSex(tk.StatusToString),
 	},
+	BuiltinStatusToMap: &BuiltinFunction{
+		Name: "statusToMap",
+		Value:   FnASRA(tk.StatusToMap),
+		ValueEx: FnASRAex(tk.StatusToMap),
+	},
 
 	// original internal related
 	BuiltinCopy: &BuiltinFunction{
@@ -5041,6 +5048,31 @@ func FnASRSex(fn func(string) string) CallableExFunc {
 		return ToStringObject(rs), nil
 	}
 }
+
+//// like tkc.StatusToMap
+//func FnASRM(fn func(string) interface) CallableFunc {
+//	return func(args ...Object) (ret Object, err error) {
+//		if len(args) < 1 {
+//			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+//		}
+//
+//		rs := fn(args[0].String())
+//		return ConvertToObject(rs), nil
+//	}
+//}
+//
+//func FnASRMex(fn func(string) map[string]string) CallableExFunc {
+//	return func(c Call) (ret Object, err error) {
+//		args := c.GetArgs()
+//
+//		if len(args) < 1 {
+//			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+//		}
+//
+//		rs := fn(args[0].String())
+//		return ConvertToObject(rs), nil
+//	}
+//}
 
 // like tk.ProcessHtmlTemplate
 func FnASSAVaRA(fn func(string, string, interface{}, ...string) interface{}) CallableFunc {
