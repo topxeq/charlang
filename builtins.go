@@ -10144,7 +10144,7 @@ func builtinWriteCsvFunc(c Call) (Object, error) {
 	if !ok {
 		filePathT := args[1].String()
 
-		rsT := tk.OpenFile(filePathT, vs...)
+		rsT := tk.OpenFile(filePathT, append([]string{"-create", "-truncate"}, vs...)...)
 
 		if tk.IsError(rsT) {
 			return NewCommonErrorWithPos(c, "failed to open file: %v", rsT), nil

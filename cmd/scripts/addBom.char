@@ -1,0 +1,19 @@
+global argsG
+
+file1T := getSwitch(argsG, "-file=", "")
+
+if file1T == "" {
+	fatalf("empty file path")
+}
+
+outputFileT := getSwitch(argsG, "-output=", file1T)
+
+fcT := loadText(file1T)
+
+fcT = "\uFEFF" + fcT
+
+rs := saveText(fcT, outputFileT)
+
+checkErr(rs)
+
+pln("done save to " + outputFileT)
