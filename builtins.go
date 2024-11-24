@@ -7861,6 +7861,13 @@ func builtinLockFunc(c Call) (Object, error) {
 		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
+	nv1, ok := args[0].(Int)
+
+	if ok {
+		tk.LockN(int(nv1))
+		return Undefined, nil
+	}
+
 	nv, ok := args[0].(*Mutex)
 
 	if !ok {
@@ -7881,6 +7888,13 @@ func builtinUnlockFunc(c Call) (Object, error) {
 
 	if len(args) < 1 {
 		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	nv1, ok := args[0].(Int)
+
+	if ok {
+		tk.UnlockN(int(nv1))
+		return Undefined, nil
 	}
 
 	nv, ok := args[0].(*Mutex)
