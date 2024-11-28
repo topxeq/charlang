@@ -245,6 +245,7 @@ const (
 	BuiltinStrSplit
 	BuiltinGenToken
 	BuiltinStrContains
+	BuiltinStrContainsAny
 	BuiltinStrContainsIn
 	BuiltinStrIndex
 	BuiltinGetNowStr
@@ -683,6 +684,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"toLower":       BuiltinToLower,
 	"strToLower":    BuiltinToLower,
 	"strContains":   BuiltinStrContains,
+	"strContainsAny":   BuiltinStrContainsAny, // as strings.ContainsAny, reports whether any Unicode code points in chars are within s. 
 	"strContainsIn": BuiltinStrContainsIn,
 	"strIndex":      BuiltinStrIndex,
 	"strStartsWith": BuiltinStrStartsWith,
@@ -1738,6 +1740,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASSRB(strings.Contains),
 		ValueEx: FnASSRBex(strings.Contains),
 		Remark:  `usage: if strContains("abD", "bD") {...}`,
+	},
+	BuiltinStrContainsAny: &BuiltinFunction{
+		Name:    "strContainsAny",
+		Value:   FnASSRB(strings.ContainsAny),
+		ValueEx: FnASSRBex(strings.ContainsAny),
 	},
 	BuiltinStrContainsIn: &BuiltinFunction{
 		Name:    "strContainsIn",
