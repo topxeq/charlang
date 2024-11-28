@@ -243,6 +243,7 @@ const (
 	BuiltinStrStartsWith
 	BuiltinStrEndsWith
 	BuiltinStrSplit
+	BuiltinStrSplitN
 	BuiltinGenToken
 	BuiltinStrContains
 	BuiltinStrContainsAny
@@ -691,6 +692,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strEndsWith":   BuiltinStrEndsWith,
 	"strReplace":    BuiltinStrReplace,
 	"strSplit":      BuiltinStrSplit,
+	"strSplitN":      BuiltinStrSplitN,
 	"strSplitLines": BuiltinStrSplitLines,
 	"strJoin":       BuiltinStrJoin,
 	"strRepeat":     BuiltinStrRepeat,
@@ -1777,6 +1779,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strSplit",
 		Value:   CallExAdapter(builtinStrSplitFunc),
 		ValueEx: builtinStrSplitFunc,
+	},
+	BuiltinStrSplitN: &BuiltinFunction{
+		Name:    "strSplitN",
+		Value:   CallExAdapter(builtinStrSplitNFunc),
+		ValueEx: builtinStrSplitNFunc,
 	},
 	BuiltinStrSplitLines: &BuiltinFunction{
 		Name:    "strSplitLines",
@@ -14741,6 +14748,22 @@ func builtinStrSplitFunc(c Call) (Object, error) {
 	if len(args) > 2 {
 		limitT = ToGoIntWithDefault(args[2], -1)
 	}
+
+	return ConvertToObject(strings.SplitN(nv1, nv2, limitT)), nil
+}
+
+func builtinStrSplitNFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	nv1 := args[0].String()
+
+	nv2 := args[1].String()
+
+	limitT := ToGoIntWithDefault(args[2], -1)
 
 	return ConvertToObject(strings.SplitN(nv1, nv2, limitT)), nil
 }
