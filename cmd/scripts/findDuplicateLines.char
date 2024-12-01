@@ -1,0 +1,29 @@
+// char -exam findDuplicateLines.char -file=d:\tmpx\Untitled1.csv -trim
+global argsG
+
+filePathT := getSwitch(argsG, "-file=", "")
+
+trimT := ifSwitchExists(argsG, "-trim")
+
+checkEmpty(filePathT, "-format=empty path")
+
+fcT := loadText(filePathT)
+
+checkErr(fcT)
+
+linesT := strSplitLines(fcT)
+
+aryT := []
+
+for i, v in linesT {
+	for j := i + 1; j < len(linesT); j ++ {
+		if v == linesT[j] {
+			aryT = append(aryT, [i, j])
+		}
+	}
+}
+
+for i, v in aryT {
+	pl("line %v is the same as line %v", v[0]+1, v[1]+1)
+}
+

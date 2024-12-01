@@ -1,0 +1,10 @@
+// plot the first data series
+data1T := [[1, 4, 9]]
+
+// plot to png format bytes
+rs1 := plotDataToImage(data1T, "-caption=Plot Example", "-width=600", "-height=400", "-showLegend=true", "-legendLeft=right", "-legendTop=10", "-legendData=y = x * x", "-showYAxis=true", "-showYAxisSplitLine=true")
+
+// save the bytes to png file
+saveBytes(rs1, `c:\test\imagePlot1.png`)
+
+

@@ -1,0 +1,7 @@
+// checkErr: check if the object is error or error string, if is, exit the program with output, usage: checkErr(result, "-format=Failed to process: %v\n"), the default format is "Error: %v\n"
+
+result := fromJson(`{"abc": 1 23}`)
+
+checkErr(result, "-format=" + spr("[%v] %v err: %%v\n", getNowStr(), undefined))
+
+pl("done 3")

@@ -41,6 +41,7 @@
       - [- Charlang's Embedded Fully Functional Web/Microservices/Application Server](#--charlangs-embedded-fully-functional-webmicroservicesapplication-server)
       - [Charlang as System Service](#charlang-as-system-service)
     - [7.7 More Examples](#77-more-examples)
+      - [Builtin Function: checkErr](#builtin-function-checkerr)
       - [Anonymous Function](#anonymous-function)
       - [More About Array](#more-about-array)
       - [More About Map](#more-about-map)
@@ -60,6 +61,10 @@
       - [Base64 Encoding of Images](#base64-encoding-of-images)
       - [Plot Data Graph in Console](#plot-data-graph-in-console)
       - [Plot Data Graph in Console with Realtime Data Update](#plot-data-graph-in-console-with-realtime-data-update)
+      - [Plot Simple Data Graph to Image](#plot-simple-data-graph-to-image)
+      - [Plot Simple Data Graph to Web View](#plot-simple-data-graph-to-web-view)
+      - [Plot Line Charts](#plot-line-charts)
+      - [Calculator in WebView2](#calculator-in-webview2)
       - [Byte Queue](#byte-queue)
     - [7.8 Advance Topics](#78-advance-topics)
       - [Language Considerations](#language-considerations)
@@ -1857,6 +1862,12 @@ rs := appendText("\nautoRemoveTask001.char\n", logPathT)
 
 ### 7.7 More Examples
 
+#### Builtin Function: checkErr
+
+checkErr: check if the object is error or error string, if true, exit the program with output, usage: checkErr(result, "-format=Failed to process: %v\n"), the default format is "Error: %v\n"
+
+file: [checkErr.char](https://topget.org/dc/c/charlang/example/checkErr.char)
+
 #### Anonymous Function
 
 file: [anonymousFunc.char](https://topget.org/dc/c/charlang/example/anonymousFunc.char)
@@ -1996,6 +2007,30 @@ file: [asciiPlot.char](https://topget.org/dc/c/charlang/example/asciiPlot.char)
 file: [asciiPlotRealTime.char](https://topget.org/dc/c/charlang/example/asciiPlotRealTime.char)
 
 Demonstrate multi-thread, update one area of console...
+
+#### Plot Simple Data Graph to Image
+
+file: [basicPlot.char](https://topget.org/dc/c/charlang/example/basicPlot.char)
+
+Demonstrate plotting a simple line chart with data in an array...
+
+#### Plot Simple Data Graph to Web View
+
+file: [basicPlotToWebView.char](https://topget.org/dc/c/charlang/example/basicPlotToWebView.char)
+
+Demonstrate plotting a simple line chart with data in an array, then render it into an IMG element in WebView2...
+
+#### Plot Line Charts
+
+file: [imagePlot.char](https://topget.org/dc/c/charlang/example/imagePlot.char)
+
+More examples of plotting line charts to images...
+
+#### Calculator in WebView2
+
+file: [calculatorInWebView.char](https://topget.org/dc/c/charlang/example/calculatorInWebView.char)
+
+A tiny GUI calculator running in WebView2, use the HTML/CSS/JavaScript example code from github.com/WebDevSimplified/Vanilla-JavaScript-Calculator. Demonstrate how to embed WEB applications in Charlang.
 
 #### Byte Queue
 

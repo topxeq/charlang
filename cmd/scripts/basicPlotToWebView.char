@@ -1,0 +1,47 @@
+global guiG
+
+// plot the first data series
+data1T := [[1, 4, 9]]
+
+// plot to png format bytes
+bytesT := plotDataToImage(data1T, "-caption=Plot Example", "-width=600", "-height=400", "-showLegend=true", "-legendLeft=right", "-legendTop=10", "-legendData=y = x * x", "-showYAxis=true", "-showYAxisSplitLine=true")
+
+imageT := loadImageFromBytes(bytesT, "-type=.png")
+
+htmlT := `
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Plot Viewer</title>
+</head>
+<body style="margin: 0px; padding: 0px; overflow-x: hidden; overflow-y: hidden;">
+	<div style="margin: 0px; padding: 0px; width: 100vw; height: 100vh; text-align: center; overflow-x: hidden; overflow-y: hidden;">
+		<img id="imageId" src="TX_image_XT" style="width: 100%; height: 100%; object-fit: contain;" />
+	</div>
+
+</body>
+</html>
+`
+
+windowT := guiG.newWindow("-title=Plot Viewer", "-width=960", "-height=720", "-center")
+
+base64StrT := "data:image/png;base64," + base64Encode(bytesT)
+
+htmlT = strReplace(htmlT, "TX_image_XT", base64StrT)
+
+rs := windowT.setHtml(htmlT)
+
+checkErr(rs)
+
+rs = windowT("show")
+
+checkErr(rs)
+
+rs = windowT("close")
+
+checkErr(rs)
+
+
+
