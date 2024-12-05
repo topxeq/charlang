@@ -2733,12 +2733,35 @@ func ConvertToObject(vA interface{}) Object {
 		rsT := make(Map, len(nv))
 
 		for k, v := range nv {
-			mapT := make(Map, len(nv))
+			mapT := make(Map, len(v))
 			for jk, jv := range v {
 				mapT[jk] = ToStringObject(jv)
 			}
 
 			rsT[k] = mapT
+		}
+
+		return rsT
+	case map[string][]map[string]string:
+		if nv == nil {
+			return Undefined
+		}
+
+		rsT := make(Map, len(nv))
+
+		for k, v := range nv {
+			aryT := make(Array, 0, len(v))
+			
+			for _, jjv := range v {
+				mapT := make(Map, len(jjv))
+				for jk, jv := range jjv {
+					mapT[jk] = ToStringObject(jv)
+				}
+
+				aryT = append(aryT, mapT)
+			}
+			
+			rsT[k] = aryT
 		}
 
 		return rsT
