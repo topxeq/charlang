@@ -80,6 +80,9 @@ require (
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
+	github.com/tidwall/gjson v1.18.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff // indirect
 	github.com/topxeq/countingwriter v0.0.0-20230115115152-84660be6de09 // indirect
 	github.com/topxeq/gods v0.0.0-20220125023913-b5718bb0c704 // indirect

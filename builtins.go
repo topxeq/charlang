@@ -445,7 +445,10 @@ const (
 	BuiltinIsErrStr
 	BuiltinToJSON
 	BuiltinFromJSON
+	BuiltinFormatJson
+	BuiltinCompactJson
 	BuiltinGetJsonNodeStr
+	BuiltinGetJsonNodeStrs
 	BuiltinStrsToJson
 	BuiltinPlo
 	BuiltinPlt
@@ -900,7 +903,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	"fromJSON": BuiltinFromJSON,
 	"fromJson": BuiltinFromJSON,
 	
-	"getJsonNodeStr": BuiltinGetJsonNodeStr,
+	"formatJson": BuiltinFormatJson,
+	"compactJson": BuiltinCompactJson,
+	
+	"getJsonNodeStr": BuiltinGetJsonNodeStr, // getJsonNodeStr(jsonA, pathA), pathA refer to github.com/tidwall/gjson
+	"getJsonNodeStrs": BuiltinGetJsonNodeStrs, // getJsonNodeStrs(jsonA, pathA), pathA refer to github.com/tidwall/gjson
 
 	"strsToJson": BuiltinStrsToJson,
 
@@ -2465,10 +2472,25 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinFromJSONFunc),
 		ValueEx: builtinFromJSONFunc,
 	},
+	BuiltinFormatJson: &BuiltinFunction{
+		Name:    "formatJson",
+		Value:   FnASVsRS(tk.FormatJson),
+		ValueEx: FnASVsRSex(tk.FormatJson),
+	},
+	BuiltinCompactJson: &BuiltinFunction{
+		Name:    "compactJson",
+		Value:   FnASVsRS(tk.CompactJson),
+		ValueEx: FnASVsRSex(tk.CompactJson),
+	},
 	BuiltinGetJsonNodeStr: &BuiltinFunction{
 		Name:    "getJsonNodeStr",
-		Value:   FnASVaRS(tk.GetJSONNodeString),
-		ValueEx: FnASVaRSex(tk.GetJSONNodeString),
+		Value:   FnASSRS(tk.GetJSONNodeString),
+		ValueEx: FnASSRSex(tk.GetJSONNodeString),
+	},
+	BuiltinGetJsonNodeStrs: &BuiltinFunction{
+		Name:    "getJsonNodeStrs",
+		Value:   FnASSRA(tk.GetJSONNodeStrings),
+		ValueEx: FnASSRAex(tk.GetJSONNodeStrings),
 	},
 	BuiltinStrsToJson: &BuiltinFunction{
 		Name:    "strsToJson",
@@ -5684,6 +5706,31 @@ func FnASSRSex(fn func(string, string) string) CallableExFunc {
 
 		rs := fn(c.Get(0).String(), c.Get(1).String())
 		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.GetJSONNodeStrings
+func FnASSRA(fn func(string, string) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASSRAex(fn func(string, string) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(args[0].String(), args[1].String())
+		return ConvertToObject(rs), nil
 	}
 }
 
