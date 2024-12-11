@@ -445,6 +445,7 @@ const (
 	BuiltinIsErrStr
 	BuiltinToJSON
 	BuiltinFromJSON
+	BuiltinGetJsonNodeStr
 	BuiltinStrsToJson
 	BuiltinPlo
 	BuiltinPlt
@@ -898,6 +899,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"toJson":   BuiltinToJSON,
 	"fromJSON": BuiltinFromJSON,
 	"fromJson": BuiltinFromJSON,
+	
+	"getJsonNodeStr": BuiltinGetJsonNodeStr,
 
 	"strsToJson": BuiltinStrsToJson,
 
@@ -2461,6 +2464,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "fromJSON",
 		Value:   CallExAdapter(builtinFromJSONFunc),
 		ValueEx: builtinFromJSONFunc,
+	},
+	BuiltinGetJsonNodeStr: &BuiltinFunction{
+		Name:    "getJsonNodeStr",
+		Value:   FnASVaRS(tk.GetJSONNodeString),
+		ValueEx: FnASVaRSex(tk.GetJSONNodeString),
 	},
 	BuiltinStrsToJson: &BuiltinFunction{
 		Name:    "strsToJson",
