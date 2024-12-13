@@ -69,6 +69,7 @@ const (
 
 	BuiltinStatusToStr
 	BuiltinStatusToMap
+	BuiltinDocxToStrs
 	BuiltinGuiServerCommand
 	BuiltinGetMapItem
 	BuiltinSetMapItem
@@ -1250,6 +1251,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	
 	"statusToStr": BuiltinStatusToStr,
 	"statusToMap": BuiltinStatusToMap,
+
+	"docxToStrs": BuiltinDocxToStrs,
 
 	// "sortByFunc": BuiltinSortByFunc,
 
@@ -3656,6 +3659,11 @@ var BuiltinObjects = [...]Object{
 		Name: "statusToMap",
 		Value:   FnASRA(tk.StatusToMap),
 		ValueEx: FnASRAex(tk.StatusToMap),
+	},
+	BuiltinDocxToStrs: &BuiltinFunction{
+		Name: "docxToStrs",
+		Value:   FnASVsRA(tk.DocxToText),
+		ValueEx: FnASVsRAex(tk.DocxToText),
 	},
 
 	// original internal related
