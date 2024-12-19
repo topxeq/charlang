@@ -133,6 +133,11 @@ var namedValueMapG = map[string]interface{}{
 	"time.DateOnly": time.DateOnly,
 	"time.TimeOnly": time.TimeOnly,
 
+	"time.Millisecond": time.Millisecond,
+	"time.Second": time.Second,
+	"time.Minute": time.Minute,
+	"time.Hour": time.Hour,
+
 	"maxInt":   math.MaxInt,
 	"minInt":   math.MinInt,
 	"maxFloat": math.MaxFloat64,

@@ -1,0 +1,8 @@
+time1 := time()
+
+pl("%v", time1.format())
+
+t2 := time1.add(2.6)
+
+pl("%v", t2)
+
