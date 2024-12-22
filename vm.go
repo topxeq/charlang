@@ -1475,15 +1475,26 @@ func (vm *VM) xOpSliceIndex() error {
 	default:
 		return ErrType.NewError("invalid second index type", right.TypeName())
 	}
-
-	if low > high {
-		return ErrInvalidIndex.NewError(fmt.Sprintf("[%d:%d]", low, high))
-	}
+	
 	if isbytes {
 		objlen = cap(obj.(Bytes))
 	} else if ischars {
 		objlen = cap(obj.(Chars))
 	}
+
+	if low < 0 {
+		low = objlen + low
+	}
+
+	if high < 0 {
+		high = objlen + high
+	}
+
+	if low > high {
+		return ErrInvalidIndex.NewError(fmt.Sprintf("[%d:%d]", low, high))
+	}
+
+//	fmt.Printf("low: %v, high: %v, len: %v\n", low, high, objlen)
 
 	if low < 0 || high < 0 || high > objlen {
 		return ErrIndexOutOfBounds.NewError(fmt.Sprintf("[%d:%d]", low, high))

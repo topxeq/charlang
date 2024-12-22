@@ -56,6 +56,11 @@ d := a[3:5]
 
 plt(d)
 
+// slice with negative index
+d1 := a[3:-1]
+
+pl("d1: %v", d1)
+
 // remove items
 e := removeItems(a, 1, 3)
 
