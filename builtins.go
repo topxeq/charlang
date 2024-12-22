@@ -4937,7 +4937,7 @@ func FnARTex(fn func() time.Time) CallableExFunc {
 func FnATRS(fn func(time.Time) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv, ok := args[0].(*Time)
@@ -4956,7 +4956,7 @@ func FnATRSex(fn func(time.Time) string) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 1 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
 
 		nv, ok := args[0].(*Time)
@@ -4974,7 +4974,7 @@ func FnATRSex(fn func(time.Time) string) CallableExFunc {
 func FnATVsRS(fn func(time.Time, ...string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv, ok := args[0].(*Time)
@@ -4995,7 +4995,7 @@ func FnATVsRSex(fn func(time.Time, ...string) string) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv, ok := args[0].(*Time)
@@ -5015,7 +5015,7 @@ func FnATVsRSex(fn func(time.Time, ...string) string) CallableExFunc {
 func FnATFRT(fn func(time.Time, float64) time.Time) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv, ok := args[0].(*Time)
@@ -5036,7 +5036,7 @@ func FnATFRTex(fn func(time.Time, float64) time.Time) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv, ok := args[0].(*Time)
@@ -5056,7 +5056,7 @@ func FnATFRTex(fn func(time.Time, float64) time.Time) CallableExFunc {
 func FnATIIIRT(fn func(time.Time, int, int, int) time.Time) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 4 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv, ok := args[0].(*Time)
@@ -5079,7 +5079,7 @@ func FnATIIIRTex(fn func(time.Time, int, int, int) time.Time) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 4 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv, ok := args[0].(*Time)
@@ -5124,7 +5124,7 @@ func FnAARSex(fn func(interface{}) string) CallableExFunc {
 func FnAWtRdRI64E(fn func(io.Writer, io.Reader) (int64, error)) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv1, ok := args[0].(io.Writer)
@@ -5154,7 +5154,7 @@ func FnAWtRdRI64Eex(fn func(io.Writer, io.Reader) (int64, error)) CallableExFunc
 		args := c.GetArgs()
 
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv1, ok := args[0].(io.Writer)
@@ -5231,7 +5231,7 @@ func FnASRSex(fn func(string) string) CallableExFunc {
 func FnASSAVaRA(fn func(string, string, interface{}, ...string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 3 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vs := ObjectsToS(args[3:])
@@ -5287,7 +5287,7 @@ func FnASRIex(fn func(string) int) CallableExFunc {
 func FnASRA(fn func(string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		rs := fn(args[0].String())
@@ -5312,7 +5312,7 @@ func FnASRAex(fn func(string) interface{}) CallableExFunc {
 func FnASSRSE(fn func(string, string) (string, error)) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		rs, errT := fn(args[0].String(), args[1].String())
@@ -5330,7 +5330,7 @@ func FnASSRSEex(fn func(string, string) (string, error)) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		rs, errT := fn(args[0].String(), args[1].String())
@@ -5347,7 +5347,7 @@ func FnASSRSEex(fn func(string, string) (string, error)) CallableExFunc {
 func FnASRSE(fn func(string) (string, error)) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		rs, errT := fn(args[0].String())
@@ -5365,7 +5365,7 @@ func FnASRSEex(fn func(string) (string, error)) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		rs, errT := fn(args[0].String())
@@ -5482,7 +5482,7 @@ func FnAFRFex(fn func(float64) float64) CallableExFunc {
 func FnAFRS(fn func(float64) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		rs := fn(ToFloatQuick(args[0]))
@@ -5496,7 +5496,7 @@ func FnAFRSex(fn func(float64) string) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 1 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
 
 		rs := fn(ToFloatQuick(args[0]))
@@ -5847,7 +5847,7 @@ func FnASSRAex(fn func(string, string) interface{}) CallableExFunc {
 func FnARSWRE(fn func(io.Reader, string, io.Writer) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 3 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv1, ok := args[0].(*Reader)
@@ -5877,7 +5877,7 @@ func FnARSWREex(fn func(io.Reader, string, io.Writer) error) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 3 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
 
 		nv1, ok := args[0].(*Reader)
@@ -6145,7 +6145,7 @@ func FnARAex(fn func() interface{}) CallableExFunc {
 func FnASVsRS(fn func(string, ...string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToS(args[1:])
@@ -6160,7 +6160,7 @@ func FnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToS(args[1:])
@@ -6183,7 +6183,7 @@ func FnALyVsRLy(fn func([]byte, ...string) []byte) CallableFunc {
 		nv1, ok := args[0].(Bytes)
 
 		if !ok {
-			return NewCommonError("unsupported type: %T", args[0]), nil
+			return Undefined, NewCommonError("unsupported type: %T", args[0])
 		}
 
 		vargs := ObjectsToS(args[1:])
@@ -6198,7 +6198,7 @@ func FnALyVsRLyex(fn func([]byte, ...string) []byte) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv1, ok := args[0].(Bytes)
@@ -6219,13 +6219,13 @@ func FnALyVsRLyex(fn func([]byte, ...string) []byte) CallableExFunc {
 func FnALyVsRA(fn func([]byte, ...string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv1, ok := args[0].(Bytes)
 
 		if !ok {
-			return NewCommonError("unsupported type: %T", args[0]), nil
+			return Undefined, NewCommonError("unsupported type: %T", args[0])
 		}
 
 		vargs := ObjectsToS(args[1:])
@@ -6240,13 +6240,13 @@ func FnALyVsRAex(fn func([]byte, ...string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv1, ok := args[0].(Bytes)
 
 		if !ok {
-			return NewCommonError("unsupported type: %T", args[0]), nil
+			return Undefined, NewCommonError("unsupported type: %T", args[0])
 		}
 
 		vargs := ObjectsToS(args[1:])
@@ -6261,7 +6261,7 @@ func FnALyVsRAex(fn func([]byte, ...string) interface{}) CallableExFunc {
 func FnALyARB(fn func([]byte, interface{}) bool) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv1, ok := args[0].(Bytes)
@@ -6280,7 +6280,7 @@ func FnALyARBex(fn func([]byte, interface{}) bool) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv1, ok := args[0].(Bytes)
@@ -6299,7 +6299,7 @@ func FnALyARBex(fn func([]byte, interface{}) bool) CallableExFunc {
 func FnALyRB(fn func([]byte) bool) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv1, ok := args[0].(Bytes)
@@ -6318,7 +6318,7 @@ func FnALyRBex(fn func([]byte) bool) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv1, ok := args[0].(Bytes)
@@ -6337,7 +6337,7 @@ func FnALyRBex(fn func([]byte) bool) CallableExFunc {
 func FnASVsRA(fn func(string, ...string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToS(args[1:])
@@ -6369,7 +6369,7 @@ func FnASVsRAex(fn func(string, ...string) interface{}) CallableExFunc {
 func FnASSVsRE(fn func(string, string, ...string) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToS(args[2:])
@@ -6385,7 +6385,7 @@ func FnASSVsREex(fn func(string, string, ...string) error) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToS(args[2:])
@@ -6400,7 +6400,7 @@ func FnASSVsREex(fn func(string, string, ...string) error) CallableExFunc {
 func FnASVsRB(fn func(string, ...string) bool) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToS(args[1:])
@@ -6413,7 +6413,7 @@ func FnASVsRBex(fn func(string, ...string) bool) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToS(args[1:])
@@ -6426,7 +6426,7 @@ func FnASVsRBex(fn func(string, ...string) bool) CallableExFunc {
 func FnASSVsRB(fn func(string, string, ...string) bool) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToS(args[2:])
@@ -6439,7 +6439,7 @@ func FnASSVsRBex(fn func(string, string, ...string) bool) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToS(args[2:])
@@ -6452,7 +6452,7 @@ func FnASSVsRBex(fn func(string, string, ...string) bool) CallableExFunc {
 func FnASSSVsRS(fn func(string, string, string, ...string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 3 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToS(args[1:])
@@ -6468,7 +6468,7 @@ func FnASSSVsRSex(fn func(string, string, string, ...string) string) CallableExF
 		args := c.GetArgs()
 
 		if len(args) < 3 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToS(args[1:])
@@ -6483,7 +6483,7 @@ func FnASSSVsRSex(fn func(string, string, string, ...string) string) CallableExF
 func FnASVsRLmss(fn func(string, ...string) []map[string]string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToS(args[1:])
@@ -6497,7 +6497,7 @@ func FnASVsRLmssex(fn func(string, ...string) []map[string]string) CallableExFun
 		args := c.GetArgs()
 
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToS(args[1:])
@@ -6510,7 +6510,7 @@ func FnASVsRLmssex(fn func(string, ...string) []map[string]string) CallableExFun
 func FnASVaRS(fn func(string, ...interface{}) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToI(args[1:])
@@ -6525,7 +6525,7 @@ func FnASVaRSex(fn func(string, ...interface{}) string) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToI(args[1:])
@@ -6560,7 +6560,7 @@ func FnAVaRSex(fn func(...interface{}) string) CallableExFunc {
 func FnASVaRE(fn func(string, ...interface{}) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToI(args[1:])
@@ -6575,7 +6575,7 @@ func FnASVaREex(fn func(string, ...interface{}) error) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToI(args[1:])
@@ -6589,7 +6589,7 @@ func FnASVaREex(fn func(string, ...interface{}) error) CallableExFunc {
 func FnAAVaRS(fn func(interface{}, ...interface{}) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToI(args[1:])
@@ -6604,7 +6604,7 @@ func FnAAVaRSex(fn func(interface{}, ...interface{}) string) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToI(args[1:])
@@ -6618,7 +6618,7 @@ func FnAAVaRSex(fn func(interface{}, ...interface{}) string) CallableExFunc {
 func FnAAVaRA(fn func(interface{}, ...interface{}) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToI(args[1:])
@@ -6633,7 +6633,7 @@ func FnAAVaRAex(fn func(interface{}, ...interface{}) interface{}) CallableExFunc
 		args := c.GetArgs()
 
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToI(args[1:])
@@ -6647,7 +6647,7 @@ func FnAAVaRAex(fn func(interface{}, ...interface{}) interface{}) CallableExFunc
 func FnASViRA(fn func(string, ...int) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToN(args[1:])
@@ -6659,7 +6659,7 @@ func FnASViRA(fn func(string, ...int) interface{}) CallableFunc {
 func FnASViRAex(fn func(string, ...int) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
 		vargs := toArgsN(1, c)
 		rs := fn(c.Get(0).String(), vargs...)
@@ -6671,7 +6671,7 @@ func FnASViRAex(fn func(string, ...int) interface{}) CallableExFunc {
 func FnASViRI(fn func(string, ...int) int) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToN(args[1:])
@@ -6683,7 +6683,7 @@ func FnASViRI(fn func(string, ...int) int) CallableFunc {
 func FnASViRIex(fn func(string, ...int) int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
 		vargs := toArgsN(1, c)
 		rs := fn(c.Get(0).String(), vargs...)
@@ -6695,7 +6695,7 @@ func FnASViRIex(fn func(string, ...int) int) CallableExFunc {
 func FnALbySRE(fn func([]byte, string) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv, ok := args[0].(Bytes)
@@ -6711,7 +6711,7 @@ func FnALbySRE(fn func([]byte, string) error) CallableFunc {
 func FnALbySREex(fn func([]byte, string) error) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 2 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
 
 		nv, ok := c.Get(0).(Bytes)
@@ -6728,7 +6728,7 @@ func FnALbySREex(fn func([]byte, string) error) CallableExFunc {
 func FnALbyLbyViRLLi(fn func([]byte, []byte, ...int) [][]int) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv1, ok := args[0].(Bytes)
@@ -6751,7 +6751,7 @@ func FnALbyLbyViRLLiex(fn func([]byte, []byte, ...int) [][]int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
 		if c.Len() < 2 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
 
 		nv1, ok := args[0].(Bytes)
@@ -6774,7 +6774,7 @@ func FnALbyLbyViRLLiex(fn func([]byte, []byte, ...int) [][]int) CallableExFunc {
 func FnALsSViRI(fn func([]string, string, ...int) int) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv, ok := args[0].(Array)
@@ -6791,7 +6791,7 @@ func FnALsSViRIex(fn func([]string, string, ...int) int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
 		if len(args) < 2 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
 
 		nv, ok := args[0].(Array)
@@ -6808,7 +6808,7 @@ func FnALsSViRIex(fn func([]string, string, ...int) int) CallableExFunc {
 func FnALsRLs(fn func([]string) []string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		nv, ok := args[0].(Array)
@@ -6826,7 +6826,7 @@ func FnALsRLsex(fn func([]string) []string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
 		if len(args) < 1 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
 
 		nv, ok := args[0].(Array)
@@ -6844,7 +6844,7 @@ func FnALsRLsex(fn func([]string) []string) CallableExFunc {
 func FnASIVsRS(fn func(string, int, ...string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		v2, ok := ToGoInt(args[1])
@@ -6862,7 +6862,7 @@ func FnASIVsRS(fn func(string, int, ...string) string) CallableFunc {
 func FnASIVsRSex(fn func(string, int, ...string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 2 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
 
 		v2, ok := ToGoInt(c.Get(1))
@@ -6881,7 +6881,7 @@ func FnASIVsRSex(fn func(string, int, ...string) string) CallableExFunc {
 func FnADSVaRA(fn func(*sql.DB, string, ...interface{}) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 			// return Undefined, ErrWrongNumArguments.NewError(
 			// 	"want>=1 got=" + strconv.Itoa(len(args)))
 		}
@@ -6903,7 +6903,7 @@ func FnADSVaRAex(fn func(*sql.DB, string, ...interface{}) interface{}) CallableE
 		args := c.GetArgs()
 
 		if len(args) < 2 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 			// return Undefined, ErrWrongNumArguments.NewError(
 			// 	"want>=1 got=" + strconv.Itoa(c.Len()))
 		}
@@ -6924,7 +6924,7 @@ func FnADSVaRAex(fn func(*sql.DB, string, ...interface{}) interface{}) CallableE
 func FnADSSVaRA(fn func(*sql.DB, string, string, ...interface{}) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 3 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 			// return Undefined, ErrWrongNumArguments.NewError(
 			// 	"want>=1 got=" + strconv.Itoa(len(args)))
 		}
@@ -6946,7 +6946,7 @@ func FnADSSVaRAex(fn func(*sql.DB, string, string, ...interface{}) interface{}) 
 		args := c.GetArgs()
 
 		if len(args) < 3 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 			// return Undefined, ErrWrongNumArguments.NewError(
 			// 	"want>=1 got=" + strconv.Itoa(c.Len()))
 		}
@@ -6967,7 +6967,7 @@ func FnADSSVaRAex(fn func(*sql.DB, string, string, ...interface{}) interface{}) 
 func FnASVaRA(fn func(string, ...interface{}) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToI(args[1:])
@@ -6983,7 +6983,7 @@ func FnASVaRAex(fn func(string, ...interface{}) interface{}) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToI(args[1:])
@@ -7034,7 +7034,7 @@ func FnAVaRAex(fn func(...interface{}) interface{}) CallableExFunc {
 func FnAARA(fn func(interface{}) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		rs := fn(ConvertFromObject(args[0]))
@@ -7048,7 +7048,7 @@ func FnAARAex(fn func(interface{}) interface{}) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		rs := fn(ConvertFromObject(args[0]))
@@ -7091,7 +7091,7 @@ func FnAVaRIEex(fn func(...interface{}) (int, error)) CallableExFunc {
 func FnAAR(fn func(interface{})) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		fn(ConvertFromObject(args[0]))
@@ -7103,7 +7103,7 @@ func FnAAR(fn func(interface{})) CallableFunc {
 func FnAARex(fn func(interface{})) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		fn(ConvertFromObject(c.Get(0)))
@@ -7116,7 +7116,7 @@ func FnAARex(fn func(interface{})) CallableExFunc {
 func FnASVaR(fn func(string, ...interface{})) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 
 		vargs := ObjectsToI(args[1:])
@@ -7132,7 +7132,7 @@ func FnASVaRex(fn func(string, ...interface{})) CallableExFunc {
 		args := c.GetArgs()
 
 		if len(args) < 1 {
-			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
 
 		vargs := toArgsA(1, c)
@@ -7147,7 +7147,7 @@ func FnASVaRex(fn func(string, ...interface{})) CallableExFunc {
 func FnAWSVaRIE(fn func(io.Writer, string, ...interface{}) (int, error)) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 		// fmt.Fprintf()
 
@@ -7174,7 +7174,7 @@ func FnAWSVaRIEex(fn func(io.Writer, string, ...interface{}) (int, error)) Calla
 		args := c.GetArgs()
 
 		if len(args) < 2 {
-			return NewCommonError("not enough parameters"), nil
+			return Undefined, NewCommonError("not enough parameters")
 		}
 		// fmt.Fprintf()
 
@@ -7216,7 +7216,7 @@ func builtinTestByTextFunc(c Call) (ret Object, err error) {
 	lenT := len(argsA)
 
 	if lenT < 2 {
-		return nil, fmt.Errorf("not enough parameters")
+		return Undefined, fmt.Errorf("not enough parameters")
 	}
 
 	v1 := argsA[0]
@@ -7260,7 +7260,7 @@ func builtinTestByStartsWithFunc(c Call) (Object, error) {
 	lenT := len(argsA)
 
 	if lenT < 2 {
-		return nil, fmt.Errorf("not enough parameters")
+		return Undefined, fmt.Errorf("not enough parameters")
 	}
 
 	v1 := argsA[0]
@@ -7304,7 +7304,7 @@ func builtinTestByEndsWithFunc(c Call) (Object, error) {
 	lenT := len(argsA)
 
 	if lenT < 2 {
-		return nil, fmt.Errorf("not enough parameters")
+		return Undefined, fmt.Errorf("not enough parameters")
 	}
 
 	v1 := argsA[0]
@@ -7348,7 +7348,7 @@ func builtinTestByContainsFunc(c Call) (Object, error) {
 	lenT := len(argsA)
 
 	if lenT < 2 {
-		return nil, fmt.Errorf("not enough parameters")
+		return Undefined, fmt.Errorf("not enough parameters")
 	}
 
 	v1 := argsA[0]
@@ -7392,7 +7392,7 @@ func builtinTestByRegContainsFunc(c Call) (Object, error) {
 	lenT := len(argsA)
 
 	if lenT < 2 {
-		return nil, fmt.Errorf("not enough parameters")
+		return Undefined, fmt.Errorf("not enough parameters")
 	}
 
 	v1 := argsA[0]
@@ -7436,7 +7436,7 @@ func builtinTestByRegFunc(c Call) (Object, error) {
 	lenT := len(argsA)
 
 	if lenT < 2 {
-		return nil, fmt.Errorf("not enough parameters")
+		return Undefined, fmt.Errorf("not enough parameters")
 	}
 
 	v1 := argsA[0]
