@@ -3267,15 +3267,24 @@ func (o Array) IndexSet(index, value Object) error {
 	switch v := index.(type) {
 	case Int:
 		idx := int(v)
+		
+		if idx < 0 {
+			idx = len(o) + idx
+		}
+		
 		if idx >= 0 && idx < len(o) {
-			o[v] = value
+			o[idx] = value
 			return nil
 		}
 		return ErrIndexOutOfBounds
 	case Uint:
 		idx := int(v)
+		if idx < 0 {
+			idx = len(o) + idx
+		}
+		
 		if idx >= 0 && idx < len(o) {
-			o[v] = value
+			o[idx] = value
 			return nil
 		}
 		return ErrIndexOutOfBounds
@@ -3285,17 +3294,26 @@ func (o Array) IndexSet(index, value Object) error {
 
 // IndexGet implements Object interface.
 func (o Array) IndexGet(index Object) (Object, error) {
+//	tk.Pln("Array", "IndexGet", index)
 	switch v := index.(type) {
 	case Int:
 		idx := int(v)
+		if idx < 0 {
+			idx = len(o) + idx
+		}
+		
 		if idx >= 0 && idx < len(o) {
-			return o[v], nil
+			return o[idx], nil
 		}
 		return nil, ErrIndexOutOfBounds
 	case Uint:
 		idx := int(v)
+		if idx < 0 {
+			idx = len(o) + idx
+		}
+		
 		if idx >= 0 && idx < len(o) {
-			return o[v], nil
+			return o[idx], nil
 		}
 		return nil, ErrIndexOutOfBounds
 	case String:
@@ -3561,6 +3579,112 @@ func (o Map) String() string {
 
 func (o Map) HasMemeber() bool {
 	return false
+}
+
+func (o Map) CallName(nameA string, c Call) (Object, error) {
+//	tk.Pl("call: %#v", c)
+	rs, ok := o[nameA]
+	
+	if ok {
+		fn, ok := rs.(*Function)
+		
+		if ok {
+			return fn.CallEx(c)
+		}
+		
+		cfn, ok := rs.(*CompiledFunction)
+		
+		if ok {
+			retT, errT := NewInvoker(c.VM(), cfn).Invoke(c.GetArgs()...)
+
+			return retT, errT
+		}
+		
+		return NewCommonErrorWithPos(c, "member is not a function: %v", nameA), nil
+	}
+	
+	switch nameA {
+	case "Set", "set":
+		args := c.GetArgs()
+		
+		if len(args) < 2 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+
+		o[args[0].String()] = args[1]
+		
+		return Undefined, nil
+		
+	case "Get", "get":
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+		
+		rs := o[args[0].String()]
+		
+		if rs == nil {
+			return Undefined, nil
+		}
+
+		return rs, nil
+	case "size":
+		return ToIntObject(len(o)), nil
+	case "toOrdered":
+		lenT := len(o)
+		
+		rs := tk.NewOrderedMap()
+
+		if lenT < 1 {
+			return &OrderedMap{Value: rs}, nil
+		}
+
+		for k, v := range o {
+			rs.Set(k, v)
+		}
+
+		return &OrderedMap{Value: rs}, nil
+	case "keys":
+		lenT := len(o)
+		
+		rs := Array{}
+
+		if lenT < 1 {
+			return rs, nil
+		}
+
+		for k, _ := range o {
+			rs = append(rs, String{Value: k})
+		}
+
+		return rs, nil
+	case "values":
+		lenT := len(o)
+		
+		rs := Array{}
+
+		if lenT < 1 {
+			return rs, nil
+		}
+
+		for _, v := range o {
+			rs = append(rs, v)
+		}
+
+		return rs, nil
+	}
+
+//	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
+//	
+//	if errT != nil || tk.IsError(rs1) {
+//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
+//		return ConvertToObject(rs3), nil
+//	}
+//	
+//	return rs1, errT
+	
+	return Undefined, ErrInvalidIndex.NewError(nameA)
 }
 
 func (o Map) CallMethod(nameA string, argsA ...Object) (Object, error) {

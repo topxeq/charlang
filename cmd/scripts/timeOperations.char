@@ -2,7 +2,15 @@ time1 := time()
 
 pl("%v", time1.format())
 
-t2 := time1.add(2.6)
+time2 := time1.add(2.6)
 
-pl("%v", t2)
+pl("%v", formatTime(time2))
+
+time3 := timeAddSecs(time2, 23.5)
+
+pl("%v", formatTime(time3, "-compact"))
+
+time4 := timeAddDate(time3, 0, -1, 0)
+
+pl("%v", formatTime(time4, "2006-01-02 15:04:05.000"))
 

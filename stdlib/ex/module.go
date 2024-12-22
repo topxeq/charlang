@@ -245,6 +245,11 @@ func builtinSortByFuncQuickFunc(c charlang.Call) (ret charlang.Object, err error
 	if !ok {
 		return charlang.NewCommonErrorWithPos(c, "invalid type: (%T)%v", args[0], args[0]), nil
 	}
+	
+	vmT := c.VM()
+	if vmT == nil {
+		return charlang.NewCommonErrorWithPos(c, "VM empty"), nil
+	}
 
 	sort.SliceStable(arg0, func(i, j int) bool {
 		retT, errT := charlang.NewInvoker(c.VM(), arg1).Invoke(charlang.Int(i), charlang.Int(j))
@@ -624,7 +629,7 @@ var Module = map[string]charlang.Object{
 
 		// funcs
 		"sqrt": &charlang.Function{
-			Name:    "compile", // compile a piece of code
+			Name:    "sqrt", // sqrt
 			Value:   charlang.FnAFRF(math.Sqrt),
 			ValueEx: charlang.FnAFRFex(math.Sqrt),
 		},

@@ -31,9 +31,34 @@
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="4"/>
         <TopLine Value="1338"/>
-        <CursorPos X="31" Y="1344"/>
+        <CursorPos X="22" Y="1344"/>
         <UsageCount Value="182"/>
         <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unitcommandpalette.lfm"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="33"/>
+        <DefaultSyntaxHighlighter Value="LFM"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unitcommandpalette.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form2"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="unitCommandPalette"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="146"/>
+        <CursorPos X="52" Y="151"/>
+        <UsageCount Value="33"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="D:\lazarus\lcl\dialogs.pp"/>
@@ -63,7 +88,7 @@
         <Filename Value="D:\lzprjs\libs\UnitGenericTools.pas"/>
         <EditorIndex Value="3"/>
         <TopLine Value="246"/>
-        <CursorPos X="19" Y="264"/>
+        <CursorPos X="5" Y="264"/>
         <UsageCount Value="83"/>
         <Loaded Value="True"/>
       </Unit>
@@ -155,31 +180,6 @@
         <TopLine Value="134"/>
         <CursorPos X="111" Y="140"/>
         <UsageCount Value="9"/>
-      </Unit>
-      <Unit>
-        <Filename Value="unitcommandpalette.lfm"/>
-        <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <WindowIndex Value="-1"/>
-        <TopLine Value="-1"/>
-        <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="33"/>
-        <DefaultSyntaxHighlighter Value="LFM"/>
-      </Unit>
-      <Unit>
-        <Filename Value="unitcommandpalette.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="Form2"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="unitCommandPalette"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="146"/>
-        <CursorPos X="52" Y="154"/>
-        <UsageCount Value="33"/>
-        <Loaded Value="True"/>
-        <LoadedDesigner Value="True"/>
       </Unit>
     </Units>
     <JumpHistory HistoryIndex="29">
@@ -311,12 +311,11 @@
       </Modes>
     </RunParams>
     <HistoryLists>
-      <List Name="WorkingDirectory" Type="File" Count="1"/>
       <List Name="LaunchingApplication" Type="File" Count="1">
         <Item1 Value="C:\WINDOWS\system32\cmd.exe /C ${TargetCmdLine}"/>
       </List>
-      <List Name="CommandLineParameters" Count="2">
-        <Item2 Value="d:\goprjs\src\github.com\topxeq\charlang\cmd\scripts\helloWorldGsm.char"/>
+      <List Name="CommandLineParameters" Count="1">
+        <Item1 Value="d:\goprjs\src\github.com\topxeq\charlang\cmd\scripts\helloWorldGsm.char"/>
       </List>
     </HistoryLists>
   </ProjectSession>

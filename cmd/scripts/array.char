@@ -149,5 +149,7 @@ n1 := ex.sortByFunc(n, func2)
 
 plt(n, n1)
 
+item9 := n[-2]
 
+plt(item9)
 

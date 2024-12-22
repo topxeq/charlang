@@ -175,6 +175,8 @@ const (
 	BuiltinNow
 	BuiltinTimeToTick
 	BuiltinFormatTime
+	BuiltinTimeAddSecs
+	BuiltinTimeAddDate
 	BuiltinGetNowTimeStamp
 	BuiltinBase64Encode
 	BuiltinBase64Decode
@@ -780,6 +782,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"timeToTick":       BuiltinTimeToTick,
 
 	"formatTime": BuiltinFormatTime,
+
+	"timeAddSecs": BuiltinTimeAddSecs, // add seconds(could be float) to time and return the result, usage: time2 := timeAddSecs(time1, 1.2)
+	"timeAddDate": BuiltinTimeAddDate, // add years, months, days to time and return the result, usage: time2 := timeAddDate(time1, 0, -1, 0), will add -1 month to time1
 
 	// binary/bytes related
 	"bytesStartsWith": BuiltinBytesStartsWith,
@@ -2055,6 +2060,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "formatTime",
 		Value:   FnATVsRS(tk.FormatTime),
 		ValueEx: FnATVsRSex(tk.FormatTime),
+	},
+	BuiltinTimeAddSecs: &BuiltinFunction{
+		Name:    "timeAddSecs",
+		Value:   FnATFRT(tk.TimeAddSecs),
+		ValueEx: FnATFRTex(tk.TimeAddSecs),
+	},
+	BuiltinTimeAddDate: &BuiltinFunction{
+		Name:    "timeAddDate",
+		Value:   FnATIIIRT(tk.TimeAddDate),
+		ValueEx: FnATIIIRTex(tk.TimeAddDate),
 	},
 	BuiltinGetNowTimeStamp: &BuiltinFunction{
 		Name:    "getNowTimeStamp",
@@ -4993,6 +5008,92 @@ func FnATVsRSex(fn func(time.Time, ...string) string) CallableExFunc {
 
 		rs := fn(nv.Value, vs...)
 		return String{Value: rs}, nil
+	}
+}
+
+// like tk.TimeAddSecs
+func FnATFRT(fn func(time.Time, float64) time.Time) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv, ok := args[0].(*Time)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		v2 := ToFloatQuick(args[1])
+
+		rs := fn(nv.Value, v2)
+		return &Time{Value: rs}, nil
+	}
+}
+
+func FnATFRTex(fn func(time.Time, float64) time.Time) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv, ok := args[0].(*Time)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		v2 := ToFloatQuick(args[1])
+
+		rs := fn(nv.Value, v2)
+		return &Time{Value: rs}, nil
+	}
+}
+
+// like tk.TimeAddDate
+func FnATIIIRT(fn func(time.Time, int, int, int) time.Time) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 4 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv, ok := args[0].(*Time)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		v2 := ToIntQuick(args[1])
+		v3 := ToIntQuick(args[2])
+		v4 := ToIntQuick(args[3])
+
+		rs := fn(nv.Value, v2, v3, v4)
+		return &Time{Value: rs}, nil
+	}
+}
+
+func FnATIIIRTex(fn func(time.Time, int, int, int) time.Time) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 4 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv, ok := args[0].(*Time)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		v2 := ToIntQuick(args[1])
+		v3 := ToIntQuick(args[2])
+		v4 := ToIntQuick(args[3])
+
+		rs := fn(nv.Value, v2, v3, v4)
+		return &Time{Value: rs}, nil
 	}
 }
 

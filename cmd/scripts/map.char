@@ -74,4 +74,31 @@ delete(c, 18)
 
 println("c:", c)
 
+// use methods
+c.Set("new", true)
 
+println("c:", c)
+
+rs := c.set("another")
+
+println("rs:", rs)
+
+println(`c["new"]`, c.get("new"))
+
+pl(`c["none"]: %v`, c.get("none"))
+
+pln("size:", c.size())
+
+pln("keys:", c.keys())
+
+pln("values:", c.values())
+
+pln("toOrdered:", c.toOrdered())
+
+try {
+	pln("unknown method:", c.unknown())
+} catch e {
+	pln("exception:", e)
+} finally {
+	pln("do finally")
+}
