@@ -177,6 +177,7 @@ const (
 	BuiltinFormatTime
 	BuiltinTimeAddSecs
 	BuiltinTimeAddDate
+	BuiltinTimeBefore
 	BuiltinGetNowTimeStamp
 	BuiltinBase64Encode
 	BuiltinBase64Decode
@@ -785,6 +786,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"timeAddSecs": BuiltinTimeAddSecs, // add seconds(could be float) to time and return the result, usage: time2 := timeAddSecs(time1, 1.2)
 	"timeAddDate": BuiltinTimeAddDate, // add years, months, days to time and return the result, usage: time2 := timeAddDate(time1, 0, -1, 0), will add -1 month to time1
+	
+	"timeBefore": BuiltinTimeBefore, // usage: b1 := timeBefore(time1, time2)
 
 	// binary/bytes related
 	"bytesStartsWith": BuiltinBytesStartsWith,
@@ -2070,6 +2073,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "timeAddDate",
 		Value:   FnATIIIRT(tk.TimeAddDate),
 		ValueEx: FnATIIIRTex(tk.TimeAddDate),
+	},
+	BuiltinTimeBefore: &BuiltinFunction{
+		Name:    "timeBefore",
+		Value:   CallExAdapter(builtinTimeBeforeFunc),
+		ValueEx: builtinTimeBeforeFunc,
 	},
 	BuiltinGetNowTimeStamp: &BuiltinFunction{
 		Name:    "getNowTimeStamp",
@@ -7929,6 +7937,28 @@ func isErrX(objA Object) bool {
 
 func builtinGetNowTimeStampFunc(c Call) (Object, error) {
 	return String{Value: tk.GetTimeStampMid(time.Now())}, nil
+}
+
+func builtinTimeBeforeFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	v1, ok := args[0].(*Time)
+	
+	if !ok {
+		return Undefined, NewCommonErrorWithPos(c, "unsupported type of param1: %T", args[0])
+	}
+
+	v2, ok := args[1].(*Time)
+	
+	if !ok {
+		return Undefined, NewCommonErrorWithPos(c, "unsupported type of param2: %T", args[1])
+	}
+
+	return Bool(v1.Value.Before(v2.Value)), nil
 }
 
 func builtinIsNilFunc(c Call) (Object, error) {
