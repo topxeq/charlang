@@ -603,6 +603,8 @@ VMLoop:
 						err = ErrIndexOutOfBounds.NewError(index.String())
 					}
 					if err = vm.throwGenErr(err); err != nil {
+//						fmt.Printf("target.IndexGet err: %v\n", err)
+						err = fmt.Errorf("[pos: %v] %v", vm.GetSrcPos(), err)
 						vm.err = err
 						return
 					}
