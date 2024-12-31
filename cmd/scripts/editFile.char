@@ -89,6 +89,10 @@ htmlT := `
 			}
 		});
 
+		mainTextAreaT.addEventListener("input", function (e) {
+			delegateDo("setModified", "*");
+		});
+
         var rs;
 
         rs = delegateDo("initContent");
@@ -107,6 +111,9 @@ htmlT := `
 
             document.getElementById('mainTextID').value = res;
 			document.getElementById('mainTextID').dispatchEvent(new Event('input'));
+
+			delegateDo("setModified", "");
+
             document.getElementById("mainTextID").focus();
 		});
 
@@ -123,7 +130,24 @@ htmlT := `
 
 		rs.then(res => {
 			if (res.trim() == "") {
-				alert("Successfully saved.")
+//				alert("Successfully saved.")
+			} else {
+			 	if (res.indexOf("TXERROR:") == 0) {
+					res = res.substring(8);
+				}
+
+				alert("failed to save: " + res);
+			}
+		});
+
+	}
+
+	function saveAsIt() {
+		var rs = delegateDo("saveTextAs", document.getElementById('mainTextID').value);
+
+		rs.then(res => {
+			if (res.trim() == "") {
+//				alert("Successfully saved.")
 			} else {
 			 	if (res.indexOf("TXERROR:") == 0) {
 					res = res.substring(8);
@@ -146,6 +170,10 @@ htmlT := `
 
 	}
 
+	function consoleRunIt() {
+		delegateDo("consoleRun", document.getElementById('mainTextID').value);
+	}
+
 	function compileIt() {
 		var rs = delegateDo("compile", document.getElementById('mainTextID').value);
 
@@ -157,6 +185,9 @@ htmlT := `
 
 	}
 
+	function setModifiedIt(strA) {
+	}
+
 	function loadIt() {
 		var rs = delegateDo("loadText");
 
@@ -165,9 +196,12 @@ htmlT := `
 				alert("failed to load: " + res.substring(8));
 				return;
 			}
-
+			
             document.getElementById('mainTextID').value = res;
 			document.getElementById('mainTextID').dispatchEvent(new Event('input'));
+
+			delegateDo("setModified", "");
+
             document.getElementById("mainTextID").focus();
 		});
 
@@ -212,8 +246,10 @@ htmlT := `
 	<button onclick="javascript:checkJSON();">Check JSON</button>
 	<button onclick="javascript:loadIt();">Load</button>
 	<button onclick="javascript:saveIt();">Save</button>
+	<button onclick="javascript:saveAsIt();">Save as...</button>
 	<button onclick="javascript:compileIt();">Compile</button>
 	<button onclick="javascript:quickRunIt();">Quick Run</button>
+	<button onclick="javascript:consoleRunIt();">Console Run</button>
 	<button onclick="javascript:runIt();" style="display: none;">Run</button>
 	<button onclick="javascript:setParamIt();" style="display: none;">Param</button>
 </div>
@@ -287,10 +323,45 @@ dele1 := delegate(strReplace(`
 
 		setProcessVar("editFileNameG", getFileAbs(rs1))
 
-		windowT("setTitle", "Tmp Editor - " + trim(getProcessVar("editFileNameG")))
+		setProcessVar("editFileModifiedG", "")
+
+		windowT("setTitle", "Tmp Editor - " + trim(getProcessVar("editFileModifiedG")) + trim(getProcessVar("editFileNameG")))
 
 		return rs2
 	} else if cmdT == "saveText" {
+		v1 := trim(vargs[1])
+		
+		fnT := trim(getProcessVar("editFileNameG"))
+		// pl("current file path: %v", fnT)
+		
+		if fnT == "" {
+			fnT = guiG.selectFileToSave("-confirmOverwrite", "-title=Save file to...", "-default="+trim(getProcessVar("editFileNameG")))
+
+			if isErr(fnT) {
+				return spr("TXERROR:failed to select file: %v", fnT)
+			}
+			
+			if !fnT {
+				return spr("TXERROR:no file selected")
+			}
+		}
+
+		rs2 := saveText(v1, fnT)
+
+		if isErr(rs2) {
+			return spr("TXERROR:%v", rs2)
+		}
+		
+		windowT := inputG[0]
+
+		setProcessVar("editFileNameG", getFileAbs(fnT))
+
+		setProcessVar("editFileModifiedG", "")
+
+		windowT("setTitle", "Tmp Editor - " + trim(getProcessVar("editFileModifiedG")) + trim(getProcessVar("editFileNameG")))
+
+		return ""
+	} else if cmdT == "saveTextAs" {
 		v1 := trim(vargs[1])
 		// pl("current file path: %v", getProcessVar("editFileNameG"))
 
@@ -314,7 +385,9 @@ dele1 := delegate(strReplace(`
 
 		setProcessVar("editFileNameG", getFileAbs(rs1))
 
-		windowT("setTitle", "Tmp Editor - " + trim(getProcessVar("editFileNameG")))
+		setProcessVar("editFileModifiedG", "")
+
+		windowT("setTitle", "Tmp Editor - " + trim(getProcessVar("editFileModifiedG")) + trim(getProcessVar("editFileNameG")))
 
 		return ""
 	} else if cmdT == "quickRun" {
@@ -339,8 +412,72 @@ dele1 := delegate(strReplace(`
 		rs := c1.run(...(vargs[2:]))
 		
 		// plv(rs)
+		
+		if isUndef(rs) {
+			return ""
+		}
 
 		return toStr(rs)
+	} else if cmdT == "consoleRun" {
+		v1 := trim(vargs[1])
+
+		modifiedT := trim(getProcessVar("editFileModifiedG"))
+		
+		if modifiedT != "" {
+			rs := guiG.getConfirm("Code modified, save first?")
+			
+			if rs != "" {
+				return ""
+			}
+			
+			if rs == "" {
+				rs1 := trim(getProcessVar("editFileNameG"))
+				
+				if rs != "" {
+					rs1 = guiG.selectFileToSave("-confirmOverwrite", "-title=Save file to...", "-default="+trim(getProcessVar("editFileNameG")))
+
+					if isErr(rs1) {
+						return spr("TXERROR:failed to select file: %v", rs1)
+					}
+					
+					if !rs1 {
+						return spr("TXERROR:no file selected")
+					}
+				}
+
+				rs2 := saveText(v1, rs1)
+
+				if isErr(rs2) {
+					return spr("TXERROR:%v", rs2)
+				}
+				
+				setProcessVar("editFileNameG", rs1)
+				
+				setProcessVar("editFileModifiedG", "")
+
+				windowT := inputG[0]
+
+				windowT("setTitle", "Tmp Editor - " + trim(getProcessVar("editFileModifiedG")) + trim(getProcessVar("editFileNameG")))
+				
+			}
+		}
+
+		fnT := trim(getProcessVar("editFileNameG"))
+		
+		//rs := systemCmd("cmd.exe", "/K", "start", "char.exe", fnT)
+		rs := systemCmdDetached("cmd.exe", "/K", "start", "cmd.exe", "/K", "char.exe", fnT)
+		
+		// plv(rs)
+
+		return toStr(rs)
+	} else if cmdT == "setModified" {
+		setProcessVar("editFileModifiedG", trim(vargs[1]))
+		
+		windowT := inputG[0]
+
+		windowT("setTitle", "Tmp Editor - " + trim(getProcessVar("editFileModifiedG")) + trim(getProcessVar("editFileNameG")))
+		
+		return ""
 	} else if cmdT == "compile" {
 		v1 := trim(vargs[1])
 

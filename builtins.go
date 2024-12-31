@@ -342,6 +342,7 @@ const (
 	BuiltinErrStrf
 	BuiltinErrf
 	BuiltinCharCode
+	BuiltinEvalMachine
 	BuiltinGel
 	BuiltinDelegate
 	BuiltinGetReqBody
@@ -445,6 +446,8 @@ const (
 	BuiltinSleep
 	BuiltinExit
 	BuiltinSystemCmd
+	BuiltinSystemCmdDetached
+	BuiltinSystemStart
 	BuiltinIsErrX
 	BuiltinIsErrStr
 	BuiltinToJSON
@@ -624,6 +627,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"image": BuiltinImage, // new an image object, usage: imageT := image("-width=480", "-height=640", "-color=#FF0000")
 
 	"charCode": BuiltinCharCode,
+	"evalMachine": BuiltinEvalMachine,
 	"gel":      BuiltinGel,
 	"delegate": BuiltinDelegate,
 
@@ -951,6 +955,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// os/system related
 	"systemCmd": BuiltinSystemCmd,
+	"systemCmdDetached": BuiltinSystemCmdDetached,
+	"systemStart": BuiltinSystemStart,
 
 	"getEnv": BuiltinGetEnv,
 	"setEnv": BuiltinSetEnv,
@@ -1553,6 +1559,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "charCode",
 		Value:   CallExAdapter(builtinCharCodeFunc),
 		ValueEx: builtinCharCodeFunc,
+	},
+	BuiltinEvalMachine: &BuiltinFunction{
+		Name:    "evalMachine",
+		Value:   CallExAdapter(NewEvalMachine),
+		ValueEx: NewEvalMachine,
 	},
 	BuiltinGel: &BuiltinFunction{
 		Name:    "gel",
@@ -2627,6 +2638,18 @@ var BuiltinObjects = [...]Object{
 		Name:    "systemCmd",
 		Value:   FnASVsRS(tk.SystemCmd),
 		ValueEx: FnASVsRSex(tk.SystemCmd),
+	},
+
+	BuiltinSystemCmdDetached: &BuiltinFunction{
+		Name:    "systemCmdDetached",
+		Value:   FnASVsRS(tk.SystemCmdDetached),
+		ValueEx: FnASVsRSex(tk.SystemCmdDetached),
+	},
+
+	BuiltinSystemStart: &BuiltinFunction{
+		Name:    "systemStart",
+		Value:   FnASRS(tk.RunWinFileWithSystemDefault),
+		ValueEx: FnASRSex(tk.RunWinFileWithSystemDefault),
 	},
 
 	BuiltinGetEnv: &BuiltinFunction{

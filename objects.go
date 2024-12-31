@@ -2,6 +2,7 @@ package charlang
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -51,7 +52,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, *MutableString: 106, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Stack: 161, *Queue: 163, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *Any: 999, *Etable: 1001, *Excel: 1003
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, *MutableString: 106, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Stack: 161, *Queue: 163, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *EvalMachine: 888, *Any: 999, *Etable: 1001, *Excel: 1003
 
 // Object represents an object in the VM.
 type Object interface {
@@ -12045,3 +12046,188 @@ func NewQueue(c Call) (Object, error) {
 
 	return &Queue{Value: rs}, nil
 }
+
+// EvalMachine represents an Charlang Virtual Machine could run script once or more
+type EvalMachine struct {
+	// ObjectImpl
+
+	Value *Eval
+	
+	Members map[string]Object `json:"-"`
+}
+
+func (*EvalMachine) TypeCode() int {
+	return 888
+}
+
+func (*EvalMachine) TypeName() string {
+	return "evalMachine"
+}
+
+func (o *EvalMachine) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+func (o *EvalMachine) HasMemeber() bool {
+	return true
+}
+
+func (o *EvalMachine) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *EvalMachine) GetValue() Object {
+	return o
+}
+
+func (o *EvalMachine) SetValue(valueA Object) error {
+	switch nv := valueA.(type) {
+	case *EvalMachine:
+		o.Value = nv.Value
+		return nil
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *EvalMachine) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *EvalMachine) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (o *EvalMachine) Equal(right Object) bool {
+	switch v := right.(type) {
+	case *EvalMachine:
+		return o.Value == v.Value
+	}
+
+	return false
+}
+
+func (o *EvalMachine) IsFalsy() bool {
+	return o.Value == nil
+}
+
+func (o *EvalMachine) CanCall() bool {
+	return false
+}
+
+func (o *EvalMachine) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (*EvalMachine) CanIterate() bool {
+	return false
+}
+
+func (*EvalMachine) Iterate() Iterator {
+	return nil
+}
+
+func (o *EvalMachine) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+func (o *EvalMachine) IndexGet(index Object) (Object, error) {
+	return nil, ErrNotIndexable
+}
+
+func (o *EvalMachine) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return Undefined, NewCommonError("unsupported type: %T", right)
+}
+
+func (o *EvalMachine) CallName(nameA string, c Call) (Object, error) {
+//	tk.Pl("EvalMachine call: %#v", c)
+	switch nameA {
+	case "eval", "run":
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		lastResultT, _, errT := o.Value.Run(ctx, []byte(args[0].String()))
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		}
+
+		if lastResultT != nil && lastResultT.TypeCode() != 0 {
+//			fmt.Println(lastResultT)
+			return lastResultT, nil
+		}
+
+		return Undefined, nil
+	}
+
+//	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
+//	
+//	if errT != nil || tk.IsError(rs1) {
+//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
+//		return ConvertToObject(rs3), nil
+//	}
+//	
+//	return rs1, errT
+	
+	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+}
+
+func NewEvalMachine(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	moduleMap := NewModuleMap()
+
+	compilerOptionsT := &CompilerOptions{
+		ModulePath:        "", //"(repl)",
+		ModuleMap:         moduleMap,
+		SymbolTable:       NewSymbolTable(),
+		OptimizerMaxCycle: TraceCompilerOptions.OptimizerMaxCycle,
+		// TraceParser:       traceParser,
+		// TraceOptimizer:    traceOptimizer,
+		// TraceCompiler:     traceCompiler,
+		// OptimizeConst:     !noOptimizer,
+		// OptimizeExpr:      !noOptimizer,
+	}
+	
+	argsT := ObjectsToS(argsA)
+
+	evalT := NewEvalQuick(map[string]interface{}{"versionG": VersionG, "argsG": argsT, "scriptPathG": "", "runModeG": "eval"}, compilerOptionsT)
+
+	return &EvalMachine{Value: evalT}, nil
+}
+
