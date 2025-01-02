@@ -170,6 +170,17 @@ htmlT := `
 
 	}
 
+	function evalIt() {
+		var rs = delegateDo("eval", document.getElementById('mainTextID').value);
+
+		rs.then(res => {
+            if (!(!res)) {
+                alert("eval result: " + JSON.stringify(res));
+            }
+		});
+
+	}
+
 	function consoleRunIt() {
 		delegateDo("consoleRun", document.getElementById('mainTextID').value);
 	}
@@ -249,6 +260,7 @@ htmlT := `
 	<button onclick="javascript:saveAsIt();">Save as...</button>
 	<button onclick="javascript:compileIt();">Compile</button>
 	<button onclick="javascript:quickRunIt();">Quick Run</button>
+	<button onclick="javascript:evalIt();">Eval</button>
 	<button onclick="javascript:consoleRunIt();">Console Run</button>
 	<button onclick="javascript:runIt();" style="display: none;">Run</button>
 	<button onclick="javascript:setParamIt();" style="display: none;">Param</button>
@@ -261,6 +273,8 @@ htmlT := `
 </body>
 </html>
 `
+
+vmT := evalMachine()
 
 windowT := guiG.newWindow("-title=Tmp Editor - " + fileNameT, "-width=1280", "-height=928", "-center", "-debug")
 
@@ -418,6 +432,22 @@ dele1 := delegate(strReplace(`
 		}
 
 		return toStr(rs)
+	} else if cmdT == "eval" {
+		v1 := trim(vargs[1])
+
+		vmT := inputG[3]
+
+		rs := vmT.eval(v1)
+
+		if isErr(rs) {
+			return spr("TXERROR:failed to eval: %v", rs)
+		}
+
+		if isUndef(rs) {
+			return "TXERROR:no result"
+		}
+
+		return toStr(rs)
 	} else if cmdT == "consoleRun" {
 		v1 := trim(vargs[1])
 
@@ -505,7 +535,7 @@ dele1 := delegate(strReplace(`
 
 checkErr(dele1)
 
-rs := dele1.compile(windowT, guiG, fcT)
+rs := dele1.compile(windowT, guiG, fcT, vmT)
 
 checkErr(rs)
 
