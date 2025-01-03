@@ -1,0 +1,11 @@
+global guiG
+
+fnT := guiG.selectFile()
+
+efT := excelOpenFile(fnT)
+
+dataT := excelReadAll(efT)
+
+close(efT)
+
+pl("%v", toJson(dataT, "-sort", "-indent"))

@@ -105,6 +105,7 @@ const (
 	BuiltinExcelWriteTo
 	BuiltinExcelClose
 	BuiltinExcelNewSheet
+	BuiltinExcelReadAll
 	BuiltinExcelGetSheetCount
 	BuiltinExcelGetSheetList
 	BuiltinExcelGetSheetName
@@ -1158,6 +1159,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"excelWriteTo":       BuiltinExcelWriteTo,
 	"excelClose":         BuiltinExcelClose,
 	"excelNewSheet":      BuiltinExcelNewSheet,
+	"excelReadAll":     BuiltinExcelReadAll,
 	"excelGetSheetCount": BuiltinExcelGetSheetCount,
 	"excelGetSheetList":  BuiltinExcelGetSheetList,
 	"excelGetSheetName":  BuiltinExcelGetSheetName,
@@ -3284,6 +3286,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "excelNewSheet",
 		Value:   CallExAdapter(builtinExcelNewSheetFunc),
 		ValueEx: builtinExcelNewSheetFunc,
+	},
+	BuiltinExcelReadAll: &BuiltinFunction{
+		Name:    "excelReadAll",
+		Value:   CallExAdapter(builtinExcelReadAllFunc),
+		ValueEx: builtinExcelReadAllFunc,
 	},
 	BuiltinExcelGetSheetCount: &BuiltinFunction{
 		Name:    "excelGetSheetCount",
@@ -9981,6 +9988,81 @@ func builtinExcelReadSheetFunc(c Call) (Object, error) {
 	}
 
 	return ConvertToObject(rowsT), nil
+
+}
+
+func builtinExcelReadAllFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	var f *excelize.File
+	var err error
+
+	r0, ok := args[0].(*Excel)
+
+	if !ok {
+		r1, ok := args[0].(*Reader)
+
+		if !ok {
+			filePathT := args[0].String()
+
+			f, err = excelize.OpenFile(filePathT)
+
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+			}
+
+			defer f.Close()
+
+		} else {
+			f, err = excelize.OpenReader(r1.Value)
+
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+			}
+
+			defer f.Close()
+		}
+
+	} else {
+		f = r0.Value
+	}
+	
+	sheetListT := f.GetSheetList()
+	
+	sheetLenT := len(sheetListT)
+
+	aryT := make(Array, 0, sheetLenT)
+	
+	for _, iv := range sheetListT {
+		rowsT, errT := f.GetRows(iv)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to get rows: %v", errT), nil
+		}
+		
+		rsT := make(Array, 0, len(rowsT))
+
+		for _, v := range rowsT {
+			lineListT := make(Array, 0, len(v))
+			for _, jv := range v {
+				lineListT = append(lineListT, ToStringObject(jv))
+			}
+
+			rsT = append(rsT, lineListT)
+		}
+		
+		aryT = append(aryT, rsT)
+
+	}
+
+	// tk.Pl("nameT: %#v", nameT)
+
+
+	return aryT, nil
 
 }
 
