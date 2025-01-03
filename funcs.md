@@ -110,6 +110,8 @@
 
 **charCode**
 
+**evalMachine**
+
 **gel**
 
 **delegate**
@@ -218,6 +220,8 @@
 
 **strContains**
 
+**strContainsAny**: as strings.ContainsAny, reports whether any Unicode code points in chars are within s.
+
 **strContainsIn**
 
 **strIndex**
@@ -229,6 +233,8 @@
 **strReplace**
 
 **strSplit**
+
+**strSplitN**
 
 **strSplitLines**
 
@@ -354,6 +360,12 @@
 
 **formatTime**
 
+**timeAddSecs**: add seconds(could be float) to time and return the result, usage: time2 := timeAddSecs(time1, 1.2)
+
+**timeAddDate**: add years, months, days to time and return the result, usage: time2 := timeAddDate(time1, 0, -1, 0), will add -1 month to time1
+
+**timeBefore**: usage: b1 := timeBefore(time1, time2)
+
 ### --- binary/bytes related ---
 
 **bytesStartsWith**
@@ -420,6 +432,8 @@
 
 **isErr**
 
+**isErrStr**
+
 **getErrStrX**
 
 **getErrStr**
@@ -427,6 +441,8 @@
 **checkErrX**: check if the object is error or error string, if is, exit the program with output, usage: checkErrX(result, "-format=Failed to process: %v\n"), the default format is "Error: %v\n"
 
 **checkErr**: the same as checkErrX, check if the object is error or error string, if is, exit the program with output, usage: checkErr(result, "-format=Failed to process: %v\n"), the default format is "Error: %v\n"
+
+**checkEmpty**: similar to checkErr, check if the object is undefined or empty string(for other objects, will use its string representation), if is, exit the program with output, usage: checkEmpty(result, "-format=Failed to process: %v\n"), the default format is "Empty: %v\n"
 
 **errStrf**
 
@@ -457,6 +473,8 @@
 **fatalf**
 
 **spr**
+
+**spln**
 
 ### --- scan related ---
 
@@ -546,11 +564,25 @@
 
 **fromJson**
 
+**formatJson**
+
+**compactJson**
+
+**getJsonNodeStr**: getJsonNodeStr(jsonA, pathA), pathA refer to github.com/tidwall/gjson
+
+**getJsonNodeStrs**: getJsonNodeStrs(jsonA, pathA), pathA refer to github.com/tidwall/gjson
+
+**strsToJson**
+
 ### --- XML related ---
 
 **xmlEncodeStr**
 
 **xmlGetNodeStr**
+
+**fromXml**
+
+**formatXml**
 
 ### --- command-line related ---
 
@@ -593,6 +625,10 @@
 ### --- os/system related ---
 
 **systemCmd**
+
+**systemCmdDetached**
+
+**systemStart**
 
 **getEnv**
 
@@ -848,7 +884,17 @@
 
 **plotLoadFont**: load a font file in ttf format for plot, usage: plotLoadFont("c:\windows\tahoma.ttf", "tahoma", true), the secode parameter gives the font name(default is the file name), pass true for the third parameter to set the font as default font used in plot(default is false)
 
-### --- ssh related ---
+### --- ssh/ftp related ---
+
+**ftpList**
+
+**ftpCreateDir**
+
+**ftpSize**: could used to determine if file exists, by check the result if is error and contains certain text
+
+**ftpUpload**
+
+**ftpUploadFromReader**
 
 **sshUpload**
 
@@ -877,6 +923,8 @@
 **excelClose**
 
 **excelNewSheet**
+
+**excelReadAll**
 
 **excelGetSheetCount**
 
@@ -1004,6 +1052,12 @@
 
 **sendMail**
 
+### --- GUI server related ---
+
+**guiServerCommand**: send command to GUI server, usage: rs := cgsCmd("pln", "-url="+trim(guiServerUrlG), "value", "18")
+
+**cgsCmd**
+
 ### --- s3 related ---
 
 **s3GetObjectBytes**
@@ -1011,6 +1065,8 @@
 **s3GetObjectText**
 
 **s3PutObject**
+
+**s3GetObjectToFile**
 
 **s3GetObjectReader**
 
@@ -1021,6 +1077,10 @@
 **s3GetObjectStat**
 
 **s3StatObject**
+
+**s3CopyObject**
+
+**s3MoveObject**
 
 **s3RemoveObject**
 
@@ -1043,6 +1103,12 @@
 **replaceHtmlByMap**
 
 **processHtmlTemplate**
+
+**statusToStr**
+
+**statusToMap**
+
+**docxToStrs**
 
 // "sortByFunc": BuiltinSortByFunc,
 
