@@ -32,13 +32,14 @@
       - [Run Charlang Script/Code](#run-charlang-scriptcode)
       - [Multi-Threading](#multi-threading)
       - [Gel](#gel)
+      - [Eval Machine(Virtual Machine to Run More Than One Piece of Script)](#eval-machinevirtual-machine-to-run-more-than-one-piece-of-script)
       - [Implement a Common Web Server](#implement-a-common-web-server)
         - [Start a Simple Web Server(with SSL Support) to Serve Static Files](#start-a-simple-web-serverwith-ssl-support-to-serve-static-files)
         - [Start a Common Web Server](#start-a-common-web-server)
         - [Web Server with Multi-thread](#web-server-with-multi-thread)
         - [Request Handler Running in a New Virtual Machine](#request-handler-running-in-a-new-virtual-machine)
         - [Serve Static and Dynamic HTML Pages at the Same Time](#serve-static-and-dynamic-html-pages-at-the-same-time)
-      - [- Charlang's Embedded Fully Functional Web/Microservices/Application Server](#--charlangs-embedded-fully-functional-webmicroservicesapplication-server)
+      - [Charlang's Embedded Fully Functional Web/Microservices/Application Server](#charlangs-embedded-fully-functional-webmicroservicesapplication-server)
       - [Charlang as System Service](#charlang-as-system-service)
     - [7.7 More Examples](#77-more-examples)
       - [Builtin Function: checkErr](#builtin-function-checkerr)
@@ -1393,6 +1394,65 @@ plo(rs2)
 
 ```
 
+#### Eval Machine(Virtual Machine to Run More Than One Piece of Script)
+
+Demonstrate how to create a new virtual machine to run scripts and/or eval the result value.
+
+```go
+ev1 := evalMachine("value1", "value2", 2, true)
+
+// params could only be used once
+rs1 := ev1.eval(`
+global argsG
+
+param (...vargs)
+
+pln(vargs)
+
+pln(argsG)
+
+`)
+
+plt(rs1)
+
+rs := ev1.eval("3.6 * 12.5")
+
+plt(rs)
+
+rs = ev1.eval("a := 1.2")
+
+plt(rs)
+
+rs = ev1.eval("mathSqrt(16 * a)")
+
+plt(rs)
+
+// global values could be used more than once
+rs = ev1.eval(`
+global inputG
+
+pln(inputG)
+
+`)
+
+plt(rs)
+
+```
+
+Running result:
+
+```shell
+D:\tmpx>char -exam eval1.char
+["value1", "value2", 2, true]
+["value1", "value2", "2", "true"]
+(undefined)undefined
+(float)45
+(undefined)undefined
+(float)4.381780460041329
+["value1", "value2", 2, true]
+(undefined)undefined
+```
+
 #### Implement a Common Web Server
 
 Demonstrate how to implement a more flexible Web server, with support of static files, dynamic pages(as PHP, JSP, ASPX...) and micro-services.
@@ -1639,7 +1699,7 @@ pl("result: %v", rs)
 
 ```
 
-#### - Charlang's Embedded Fully Functional Web/Microservices/Application Server
+#### Charlang's Embedded Fully Functional Web/Microservices/Application Server
 
 &nbsp;
 
