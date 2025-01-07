@@ -1,0 +1,7 @@
+maT := mapArray(1, "2")
+
+pln(maT)
+
+pln(toJson(maT, "-indent", "-sort"))
+
+

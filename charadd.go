@@ -2846,6 +2846,9 @@ func ConvertToObject(vA interface{}) Object {
 	case *tk.AnyQueue:
 		return &Queue{Value: nv}
 
+	case *tk.SimpleFlexObject:
+		return &MapArray{Value: nv}
+
 	case []*tk.OrderedMap:
 		aryT := make(Array, 0, len(nv))
 
@@ -3013,6 +3016,8 @@ func ConvertFromObject(vA Object) interface{} {
 	case *Stack:
 		return nv.Value
 	case *Queue:
+		return nv.Value
+	case *MapArray:
 		return nv.Value
 	case *Database:
 		return nv.Value

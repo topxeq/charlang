@@ -367,3 +367,32 @@ func (it *QueueIterator) Value() Object {
 
 	return Undefined
 }
+
+// MapArrayIterator represents an iterator for the array.
+type MapArrayIterator struct {
+	V *MapArray
+	i int
+}
+
+var _ Iterator = (*MapArrayIterator)(nil)
+
+// Next implements Iterator interface.
+func (it *MapArrayIterator) Next() bool {
+	it.i++
+	return it.i-1 < it.V.Value.Size()
+}
+
+// Key implements Iterator interface.
+func (it *MapArrayIterator) Key() Object {
+	return Int(it.i - 1)
+}
+
+// Value implements Iterator interface.
+func (it *MapArrayIterator) Value() Object {
+	i := it.i - 1
+	if i > -1 && i < it.V.Value.Size() {
+		return String{Value: it.V.Value.Items[i]}
+	}
+	return Undefined
+}
+

@@ -78,6 +78,7 @@ const (
 	BuiltinLeSshInfo
 	BuiltinStack
 	BuiltinQueue
+	BuiltinMapArray
 	BuiltinPlotClearConsole
 	BuiltinPlotDataToStr
 	BuiltinPlotDataToImage
@@ -603,6 +604,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"stack": BuiltinStack, // create a stack object(first-in-last-out), usage: st1 := stack() , st2 := stack(1, 2.5, true, "abc123"), the objects passed as parameters for builtin stack function will be pushed in sequence after the creation of the stack
 	"queue": BuiltinQueue, // create a queue object(first-in-first-out), usage: que1 := queue() , que2 := queue(10), the integer value passed as parameters for builtin queue function will set the capacity(default infinite) of the queue, the first item will be discarded while a new item is pushing into the queue and the queue is full
+	
+	"mapArray": BuiltinMapArray, // create an MapArray/SimpleFlexObject which is an array with some items have keys
 
 	"error": BuiltinError, // manually create an error object, usage: err1 := error("failed to do something")
 
@@ -611,8 +614,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"excel": BuiltinExcel, // create an Excel object
 
-	"statusResult": BuiltinStatusResult,
-	"seq":          BuiltinSeq,
+	"statusResult": BuiltinStatusResult, // create a statusResult object(i.e. {"Status": "success", "Value": "some value"}, or {"Status": "fail", "Value": "failed reason/description"})
+	"seq":          BuiltinSeq, // create a sequence object
 	"mutex":        BuiltinMutex,
 
 	"mux":         BuiltinMux,
@@ -1480,6 +1483,12 @@ var BuiltinObjects = [...]Object{
 		Name:    "queue",
 		Value:   CallExAdapter(NewQueue),
 		ValueEx: NewQueue,
+	},
+
+	BuiltinMapArray: &BuiltinFunction{
+		Name:    "mapArray",
+		Value:   CallExAdapter(NewMapArray),
+		ValueEx: NewMapArray,
 	},
 
 	BuiltinError: &BuiltinFunction{
@@ -8554,6 +8563,8 @@ func builtinAnyFunc(c Call) (Object, error) {
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *Queue:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+	case *MapArray:
+		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *BigInt:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case *BigFloat:
@@ -11866,6 +11877,8 @@ func builtinMakeFunc(c Call) (Object, error) {
 		return NewStack(Call{Args: args[1:]})
 	case "queue":
 		return NewQueue(Call{Args: args[1:]})
+	case "mapArray":
+		return NewMapArray(Call{Args: args[1:]})
 	case "bigInt":
 		return NewBigInt(Call{Args: args[1:]})
 	case "bigFloat":

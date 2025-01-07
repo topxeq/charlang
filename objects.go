@@ -52,7 +52,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, *MutableString: 106, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Stack: 161, *Queue: 163, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *EvalMachine: 888, *Any: 999, *Etable: 1001, *Excel: 1003
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, *MutableString: 106, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, *MapArray: 136, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Stack: 161, *Queue: 163, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *EvalMachine: 888, *Any: 999, *Etable: 1001, *Excel: 1003
 
 // Object represents an object in the VM.
 type Object interface {
@@ -12229,5 +12229,190 @@ func NewEvalMachine(c Call) (Object, error) {
 	evalT := NewEvalQuick(map[string]interface{}{"versionG": VersionG, "argsG": argsT, "inputG": argsA, "scriptPathG": "", "runModeG": "eval"}, compilerOptionsT, argsA...)
 
 	return &EvalMachine{Value: evalT}, nil
+}
+
+// MapArray represents an SimpleFlexObject which is an array with some items have keys
+type MapArray struct {
+	// ObjectImpl
+
+	Value *tk.SimpleFlexObject
+}
+
+func (*MapArray) TypeCode() int {
+	return 136
+}
+
+func (*MapArray) TypeName() string {
+	return "mapArray"
+}
+
+func (o *MapArray) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+func (o *MapArray) HasMemeber() bool {
+	return false
+}
+
+func (o *MapArray) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *MapArray) GetValue() Object {
+	return o
+}
+
+func (o *MapArray) SetValue(valueA Object) error {
+	switch nv := valueA.(type) {
+	case *MapArray:
+		o.Value = nv.Value
+		return nil
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *MapArray) GetMember(idxA string) Object {
+	return Undefined
+//	if o.Members == nil {
+//		return Undefined
+//	}
+//
+//	v1, ok := o.Members[idxA]
+//
+//	if !ok {
+//		return Undefined
+//	}
+//
+//	return v1
+}
+
+func (o *MapArray) SetMember(idxA string, valueA Object) error {
+//	if o.Members == nil {
+//		o.Members = map[string]Object{}
+//	}
+//
+//	if IsUndefInternal(valueA) {
+//		delete(o.Members, idxA)
+//		return nil
+//	}
+//
+//	o.Members[idxA] = valueA
+
+	 return fmt.Errorf("unsupported action(set member)")
+//	return nil
+}
+
+func (o *MapArray) Equal(right Object) bool {
+	switch v := right.(type) {
+	case *MapArray:
+		return o.Value == v.Value
+	}
+
+	return false
+}
+
+func (o *MapArray) IsFalsy() bool {
+	return o.Value == nil
+}
+
+func (o *MapArray) CanCall() bool {
+	return false
+}
+
+func (o *MapArray) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (*MapArray) CanIterate() bool {
+	return true
+}
+
+func (o *MapArray) Iterate() Iterator {
+	return &MapArrayIterator{V: o}
+}
+
+// Len implements LengthGetter interface.
+func (o *MapArray) Len() int {
+	return o.Value.Size()
+}
+
+func (o *MapArray) IndexSet(index, value Object) error {
+	var idxT int
+	
+	switch v := index.(type) {
+	case Int:
+		idxT = int(v)
+	case Uint:
+		idxT = int(v)
+	default:
+		keyT := index.String()
+		
+		idxT = o.Value.GetIndexByKey(keyT)
+	}
+
+	if idxT < 0 || idxT >= o.Value.Size() {
+		return NewCommonError("index out of range: %v/%v", idxT, o.Value.Size())
+	}
+
+	o.Value.Items[idxT] = value.String()
+	
+	return nil
+}
+
+func (o *MapArray) IndexGet(index Object) (Object, error) {
+	var idxT int
+	
+	switch v := index.(type) {
+	case Int:
+		idxT = int(v)
+	case Uint:
+		idxT = int(v)
+	default:
+		keyT := index.String()
+		
+		idxT = o.Value.GetIndexByKey(keyT)
+	}
+
+	if idxT < 0 || idxT >= o.Value.Size() {
+		return nil, NewCommonError("index out of range: %v/%v", idxT, o.Value.Size())
+	}
+
+	return ToStringObject(o.Value.Items[idxT]), nil
+}
+
+func (o *MapArray) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return Undefined, NewCommonError("unsupported type: %T", right)
+}
+
+func (o *MapArray) CallName(nameA string, c Call) (Object, error) {
+//	tk.Pl("EvalMachine call: %#v", c)
+	switch nameA {
+	case "encode":
+		args := c.GetArgs()
+		
+//		if len(args) < 1 {
+//			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+//		}
+		
+		rs := o.Value.Encode(ObjectsToS(args)...)
+
+		return ToStringObject(rs), nil
+	}
+
+	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+}
+
+func NewMapArray(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	return &MapArray{Value: tk.NewSimpleFlexObject(ObjectsToI(argsA))}, nil
 }
 
