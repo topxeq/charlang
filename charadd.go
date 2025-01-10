@@ -27,7 +27,7 @@ import (
 )
 
 // global vars
-var VersionG = "1.7.5"
+var VersionG = "1.7.6"
 
 var CodeTextG = ""
 
@@ -2357,6 +2357,8 @@ func NewEvalQuick(globalsA map[string]interface{}, optsA *CompilerOptions, local
 	// // moduleMap.AddBuiltinModule("time", ugotime.Module).
 	// // 	AddBuiltinModule("strings", ugostrings.Module).
 	// moduleMap.AddBuiltinModule("fmt", ugofmt.Module)
+	
+//	fmt.Printf("localsA: %#v\n", localsA)
 
 	var optsT CompilerOptions
 

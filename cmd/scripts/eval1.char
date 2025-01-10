@@ -1,13 +1,12 @@
 ev1 := evalMachine("value1", "value2", 2, true)
 
-// params could only be used once
+// parameters could be passed in global variable inputG
+// and argsG which all values will be converted to string
 rs1 := ev1.eval(`
+global inputG
 global argsG
 
-param (...vargs)
-
-pln(vargs)
-
+pln(inputG)
 pln(argsG)
 
 `)
@@ -18,7 +17,7 @@ rs := ev1.eval("3.6 * 12.5")
 
 plt(rs)
 
-rs = ev1.eval("a := 1.2")
+rs = ev1.eval("a := 4")
 
 plt(rs)
 
@@ -26,12 +25,11 @@ rs = ev1.eval("mathSqrt(16 * a)")
 
 plt(rs)
 
-// global values could be used more than once
+// modify one of the paramter
+ev1.eval("inputG[2] = 3.1415926")
+
 rs = ev1.eval(`
-global inputG
-
-pln(inputG)
-
+return inputG
 `)
 
 plt(rs)

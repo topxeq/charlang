@@ -616,15 +616,15 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"statusResult": BuiltinStatusResult, // create a statusResult object(i.e. {"Status": "success", "Value": "some value"}, or {"Status": "fail", "Value": "failed reason/description"})
 	"seq":          BuiltinSeq, // create a sequence object
-	"mutex":        BuiltinMutex,
+	"mutex":        BuiltinMutex, // create a mutex object for threads
 
-	"mux":         BuiltinMux,
-	"httpHandler": BuiltinHttpHandler,
+	"mux":         BuiltinMux, // create a mux object for http routing
+	"httpHandler": BuiltinHttpHandler, // create a httpHandler object for handling http routes
 
-	"httpReq": BuiltinHttpReq,
+	"httpReq": BuiltinHttpReq, // create a http request object
 
-	"reader": BuiltinReader,
-	"writer": BuiltinWriter,
+	"reader": BuiltinReader, // create a reader object from bytes, string, file or other objects
+	"writer": BuiltinWriter, // create a writer object from bytes, string, file or other objects
 
 	"file": BuiltinFile, // usage: file("c:\\tmp\abc.txt"), file(`/home/user1/a.json`), file("stdin"), file("stdout"), file("stderr"),  another example: fileT := file(`c:\test\a.json`, "-create"), options include: -flag=0, -readOnly, -append, -truncate, -perm=0777 (only octec format is supported)
 

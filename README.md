@@ -1401,14 +1401,13 @@ Demonstrate how to create a new virtual machine to run scripts and/or eval the r
 ```go
 ev1 := evalMachine("value1", "value2", 2, true)
 
-// params could only be used once
+// parameters could be passed in global variable inputG
+// and argsG which all values will be converted to string
 rs1 := ev1.eval(`
+global inputG
 global argsG
 
-param (...vargs)
-
-pln(vargs)
-
+pln(inputG)
 pln(argsG)
 
 `)
@@ -1419,7 +1418,7 @@ rs := ev1.eval("3.6 * 12.5")
 
 plt(rs)
 
-rs = ev1.eval("a := 1.2")
+rs = ev1.eval("a := 4")
 
 plt(rs)
 
@@ -1427,12 +1426,11 @@ rs = ev1.eval("mathSqrt(16 * a)")
 
 plt(rs)
 
-// global values could be used more than once
+// modify one of the paramter
+ev1.eval("inputG[2] = 3.1415926")
+
 rs = ev1.eval(`
-global inputG
-
-pln(inputG)
-
+return inputG
 `)
 
 plt(rs)
@@ -1448,9 +1446,59 @@ D:\tmpx>char -exam eval1.char
 (undefined)undefined
 (float)45
 (undefined)undefined
-(float)4.381780460041329
-["value1", "value2", 2, true]
-(undefined)undefined
+(float)8
+(array)["value1", "value2", 3.1415926, true]
+```
+
+- to modify and/or add value to parameters
+
+```go
+// pass parameters through evaluations of an evalMachine
+aryT := [[1, 2, 3]]
+
+ev1 := evalMachine(1, 2, aryT)
+
+rs1 := ev1.eval(`
+global inputG
+
+ary1 := inputG[2][0]
+
+ary1[0] + ary1[1] + ary1[2]
+
+`)
+
+plt(rs1)
+
+// change the value
+aryT[0][2] = 5
+
+rs := ev1.eval("return ary1[0] + ary1[1] + ary1[2]")
+
+plt(rs)
+
+// append a value
+aryT[0] = append(aryT[0], 18)
+
+rs = ev1.eval(`
+
+ary1 = inputG[2][0]
+
+plt(ary1)
+
+return ary1[0] + ary1[1] + ary1[2] + ary1[3]
+`)
+
+plt(rs)
+
+```
+
+Output:
+
+```shell
+(int)6
+(int)8
+(array)[1, 2, 5, 18]
+(int)26
 ```
 
 #### Implement a Common Web Server

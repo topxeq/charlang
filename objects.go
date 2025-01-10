@@ -12225,8 +12225,8 @@ func NewEvalMachine(c Call) (Object, error) {
 	}
 	
 	argsT := ObjectsToS(argsA)
-
-	evalT := NewEvalQuick(map[string]interface{}{"versionG": VersionG, "argsG": argsT, "inputG": argsA, "scriptPathG": "", "runModeG": "eval"}, compilerOptionsT, argsA...)
+	
+	evalT := NewEvalQuick(map[string]interface{}{"versionG": VersionG, "argsG": argsT, "inputG": argsA, "scriptPathG": "", "runModeG": "eval"}, compilerOptionsT)
 
 	return &EvalMachine{Value: evalT}, nil
 }

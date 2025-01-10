@@ -6,6 +6,18 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", seqT.get(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "funcVargs.char")
+
+testByText(rs, "(string)\\home\\dir1\\dir2\\dir3\n(array)[\"xxxx-xx-xx\", \"abc\"]\nt: xxxx-xx-xx, abc\nt: xxxx-xx-xx, abc\n", seqT.get(), "funcVargs.char")
+
+rs = systemCmd("char", "-gopath", "eval1.char")
+
+testByText(rs, "[\"value1\", \"value2\", 2, true]\n[\"value1\", \"value2\", \"2\", \"true\"]\n(undefined)undefined\n(float)45\n(undefined)undefined\n(float)8\n(array)[\"value1\", \"value2\", 3.1415926, true]\n", seqT.get(), "eval1.char")
+
+rs = systemCmd("char", "-gopath", "eval2.char")
+
+testByText(rs, "(int)6\n(int)8\n(array)[1, 2, 5, 18]\n(int)26\n", seqT.get(), "eval2.char")
+
 rs = systemCmd("char", "-gopath", "byteQueue.char")
 
 rs = regReplace(rs, `\(\*tkc\.ByteQueue\)\(0x[0-9a-f]+?\)`, `(*tkc.ByteQueue)(0xDDDDDDDDDD)`)

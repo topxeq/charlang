@@ -188,6 +188,8 @@ func (vm *VM) Aborted() bool {
 func (vm *VM) Run(globals Object, args ...Object) (Object, error) {
 	vm.mu.Lock()
 	defer vm.mu.Unlock()
+//	fmt.Printf("vm run args: %#v\n", args)
+
 
 	return vm.init(globals, args...)
 }
@@ -818,6 +820,8 @@ func (vm *VM) initLocals(args []Object) {
 	numParams := vm.bytecode.Main.NumParams
 	locals := vm.stack[:vm.bytecode.Main.NumLocals]
 
+//	fmt.Printf("vm initLocals args: %#v, numParams: %v, locals: %#v\n", args, numParams, locals)
+
 	// TODO (ozan): check why setting numParams fails some tests!
 	for i := 0; i < vm.bytecode.Main.NumLocals; i++ {
 		locals[i] = Undefined
@@ -835,6 +839,8 @@ func (vm *VM) initLocals(args []Object) {
 	}
 
 	if vm.bytecode.Main.Variadic {
+//		fmt.Printf("vm.bytecode.Main.Variadic\n")
+	
 		vargs := args[numParams-1:]
 		arr := make(Array, 0, len(vargs))
 		locals[numParams-1] = append(arr, vargs...)
@@ -842,6 +848,8 @@ func (vm *VM) initLocals(args []Object) {
 		locals[numParams-1] = args[numParams-1]
 	}
 	copy(locals, args[:numParams-1])
+	
+//	fmt.Printf("vm initLocals args: %#v, numParams: %v, locals: %#v\n", args, numParams, locals)
 }
 
 func (vm *VM) initCurrentFrame() {

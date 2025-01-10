@@ -1,6 +1,6 @@
 ary1 := ["dir1", "dir2", "dir3"]
 
-rs := joinPath(getHomeDir(), ...ary1)
+rs := joinPath("/home", ...ary1)
 
 plt(rs)
 
@@ -12,4 +12,4 @@ xpl := func(formatA, ...valuesA) {
 	return s1
 }
 
-pln(xpl("t: %v, %v", getNowStr(), "abc"))
+pln(xpl("t: %v, %v", "xxxx-xx-xx", "abc"))
