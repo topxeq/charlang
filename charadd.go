@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -923,7 +924,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 				argsT := c.GetArgs()
 
-				var globalsA map[string]interface{} = nil
+				var globalsA map[string]interface{} = map[string]interface{}{"inputG": argsT}
 
 				envT := NewBaseEnv(globalsA) // Map{}
 
@@ -3282,3 +3283,78 @@ func WrapError(errA error) *Error {
 
 	return &Error{Name: "Error", Message: errA.Error(), Cause: errA}
 }
+
+func GetMagic(numberA int) string {
+	if numberA < 0 {
+		return tk.GenerateErrorString("invalid magic number")
+	}
+
+	var fcT string
+
+	fcT = tk.DownloadPageUTF8(tk.Spr("https://script.topget.org/scripts/magic/%v.char", numberA), nil, "", 30)
+
+	return fcT
+}
+
+func ToIntQuick(o Object) int {
+	switch o := o.(type) {
+	case Bool:
+		if o {
+			return 1
+		} else {
+			return 0
+		}
+	case Byte:
+		return int(o)
+	case Char:
+		return int(o)
+	case Int:
+		return int(o)
+	case Uint:
+		return int(o)
+	case Float:
+		return int(o)
+	case String:
+		if vv, err := strconv.ParseInt(o.Value, 0, 0); err == nil {
+			return int(vv)
+		}
+	case *MutableString:
+		if vv, err := strconv.ParseInt(o.Value, 0, 0); err == nil {
+			return int(vv)
+		}
+	}
+
+	return 0
+}
+
+func ToFloatQuick(o Object) float64 {
+	switch o := o.(type) {
+	case Bool:
+		if o {
+			return 1.0
+		} else {
+			return 0.0
+		}
+	case Byte:
+		return float64(o)
+	case Char:
+		return float64(o)
+	case Int:
+		return float64(o)
+	case Uint:
+		return float64(o)
+	case Float:
+		return float64(o)
+	case String:
+		if vv, err := strconv.ParseFloat(o.Value, 64); err == nil {
+			return float64(vv)
+		}
+	case *MutableString:
+		if vv, err := strconv.ParseFloat(o.Value, 64); err == nil {
+			return float64(vv)
+		}
+	}
+
+	return 0.0
+}
+

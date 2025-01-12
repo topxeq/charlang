@@ -9556,7 +9556,7 @@ func (*Gel) TypeName() string {
 }
 
 func (o *Gel) String() string {
-	return fmt.Sprintf("%v", o.Value)
+	return fmt.Sprintf("(gel)%v", o.Value)
 }
 
 // func (o *Reader) SetValue(valueA Object) error {

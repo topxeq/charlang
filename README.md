@@ -1769,7 +1769,7 @@ Then open a browser to access the address http://127.0.0.1:80 to access the all-
 
 Assuming that the specified directory contains three files: charmsIndex.char, charmsTmpl.html, and charmsApi.char, various modes supported by the application server established by Charlang can be displayed.
 
-First, access it with a browser http://127.0.0.1/charmsTmpl.html This will be accessing general web services, as the web directory defaults to the same as the server root directory. Therefore, the static file xmsTmpl.html under the root directory will be displayed, which is an example web page.
+First, access it with a browser http://127.0.0.1/charmsTmpl.html This will be accessing general web services, as the web directory defaults to the same as the server root directory. Therefore, the static file charmsTmpl.html under the root directory will be displayed, which is an example web page.
 
 ![Screenshot](https://topget.org/dc/s/images/pic2719068761.png)
 

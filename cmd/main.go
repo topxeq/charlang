@@ -463,10 +463,12 @@ func runInteractiveShell() int {
 		if !scanner.Scan() {
 			break
 		}
+		
 		source += scanner.Text()
 		if source == "" {
 			continue
 		}
+		
 		if source == "quit()" {
 			break
 		}
@@ -496,6 +498,8 @@ func runInteractiveShell() int {
 		// gox.RetG = gox.NotFoundG
 
 		// err := gox.QlVMG.SafeEval(source)
+		
+		source = tk.DealString(tk.DealString(strings.TrimSpace(source)))
 
 		lastResultT, lastBytecodeT, errT := evalT.Run(ctx, []byte(source))
 
@@ -970,6 +974,18 @@ func doCharmsContent(res http.ResponseWriter, req *http.Request) {
 
 }
 
+func runLine(strA string) interface{} {
+	argsT, errT := tk.ParseCommandLine(strA)
+
+	if errT != nil {
+		return errT
+	}
+	
+	argsT = append([]string{tk.GetApplicationPath()}, argsT...)
+
+	return runArgs(argsT...)
+}
+
 func runArgs(argsA ...string) interface{} {
 	argsT := argsA
 
@@ -1166,16 +1182,13 @@ func runArgs(argsA ...string) interface{} {
 	}
 
 	if scriptT == "" && (!ifClipT) && (!ifSelectScriptT) && (!ifEditT) && (!ifEmbedT) && (!ifInExeT) && (!ifPipeT) {
-
-		// autoPathT := filepath.Join(tk.GetApplicationPath(), "auto.gox")
-		// autoGxbPathT := filepath.Join(tk.GetApplicationPath(), "auto.gxb")
 		autoPathT := "auto.char"
-		autoGxbPathT := "auto.charb"
+		autoCxbPathT := "auto.cxb"
 
 		if tk.IfFileExists(autoPathT) {
 			scriptT = autoPathT
-		} else if tk.IfFileExists(autoGxbPathT) {
-			scriptT = autoGxbPathT
+		} else if tk.IfFileExists(autoCxbPathT) {
+			scriptT = autoCxbPathT
 		} else {
 			// gox.InitQLVM()
 
@@ -1252,7 +1265,7 @@ func runArgs(argsA ...string) interface{} {
 	ifBatchT := tk.IfSwitchExistsWhole(argsT, "-batch")
 
 	if !ifBatchT {
-		if tk.EndsWithIgnoreCase(scriptT, ".gxb") {
+		if tk.EndsWithIgnoreCase(scriptT, ".cxb") {
 			ifBatchT = true
 		}
 	}
@@ -1275,12 +1288,12 @@ func runArgs(argsA ...string) interface{} {
 
 	charlang.VerboseG = tk.IfSwitchExistsWhole(argsT, "-verbose")
 
-	// ifMagicT := false
-	// magicNumberT, errT := tk.StrToIntE(scriptT)
+	 ifMagicT := false
+	 magicNumberT, errT := tk.StrToIntE(scriptT)
 
-	// if errT == nil {
-	// 	ifMagicT = true
-	// }
+	 if errT == nil {
+	 	ifMagicT = true
+	 }
 
 	if ifViewPageT {
 		if !ifInExeT {
@@ -1304,10 +1317,10 @@ func runArgs(argsA ...string) interface{} {
 		}
 
 		scriptPathT = ""
-		// } else if ifMagicT {
-		// 	fcT = gox.GetMagic(magicNumberT)
+	} else if ifMagicT {
+		fcT = charlang.GetMagic(magicNumberT)
 
-		// 	scriptPathT = ""
+		scriptPathT = ""
 	} else if ifRunT {
 		if tk.IfSwitchExistsWhole(argsT, "-urlDecode") {
 			fcT = tk.UrlDecode(scriptT)
@@ -1574,43 +1587,47 @@ func runArgs(argsA ...string) interface{} {
 	// }
 
 	if !ifBatchT {
-		if tk.RegStartsWith(fcT, `//\s*(CHARB|charb)`) {
+		if tk.RegStartsWith(fcT, `//\s*(CXB|cxb)`) {
 			ifBatchT = true
 		}
 	}
 	
 	fcT = tk.DealString(fcT, tk.GetSwitchWithDefaultValue(argsT, "-secureCode=", ""))
 
-	// if ifBatchT {
-	// 	listT := tk.SplitLinesRemoveEmpty(fcT)
+	if ifBatchT {
+	 	listT := tk.SplitLinesRemoveEmpty(fcT)
 
-	// 	// tk.Plv(fcT)
-	// 	// tk.Plv(listT)
+	 	// tk.Plv(fcT)
+	 	// tk.Plv(listT)
 
-	// 	for _, v := range listT {
-	// 		// tk.Pl("Run line: %#v", v)
-	// 		v = tk.Trim(v)
+	 	for _, v := range listT {
+	 		// tk.Pl("Run line: %#v", v)
+	 		v = tk.Trim(v)
 
-	// 		if tk.StartsWith(v, "//") {
-	// 			continue
-	// 		}
+	 		if tk.StartsWith(v, "//") {
+	 			continue
+	 		}
 
-	// 		rsT := runLine(v)
+	 		rsT := runLine(v)
 
-	// 		if rsT != nil {
-	// 			valueT, ok := rsT.(error)
+	 		if rsT != nil {
+	 			valueT, ok := rsT.(error)
 
-	// 			if ok {
-	// 				return valueT
-	// 			} else {
-	// 				tk.Pl("%v", rsT)
-	// 			}
-	// 		}
+	 			if ok {
+	 				return valueT
+	 			} else {
+					_, ok := rsT.(*charlang.UndefinedType)
 
-	// 	}
+					if !ok {
+		 				tk.Pl("%#v(%T)", rsT, rsT)
+					}
+	 			}
+	 		}
 
-	// 	return nil
-	// }
+	 	}
+
+	 	return nil
+	 }
 
 	// if ifXieT {
 	// 	var guiHandlerG tk.TXDelegate = guiHandler

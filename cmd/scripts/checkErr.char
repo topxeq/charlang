@@ -4,4 +4,5 @@ result := fromJson(`{"abc": 1 23}`)
 
 checkErr(result, "-format=" + spr("[%v] %v err: %%v\n", getNowStr(), undefined))
 
+// this line will not run, since checkErr will stop the script while result is error or TXERROR string
 pl("done 3")

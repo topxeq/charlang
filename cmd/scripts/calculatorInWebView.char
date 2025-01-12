@@ -228,7 +228,7 @@ htmlT := `
 </html>
 `
 
-windowT := guiG.newWindow("-title=Plot Viewer", "-width=960", "-height=720", "-center", "-debug")
+windowT := guiG.newWindow("-title=Calculator", "-width=960", "-height=720", "-center", "-debug")
 
 rs := windowT.setHtml(htmlT)
 

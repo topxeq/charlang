@@ -486,6 +486,7 @@ const (
 	BuiltinTestByRegContains
 	BuiltinTestByReg
 	BuiltinGetSeq
+	BuiltinMagic
 	BuiltinGetUuid
 	BuiltinPass
 
@@ -1259,6 +1260,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"awsSign": BuiltinAwsSign,
 
 	// misc related
+	"magic":  BuiltinMagic,
+
 	"getSeq":  BuiltinGetSeq,
 	"getUuid": BuiltinGetUuid,
 	"genUuid": BuiltinGetUuid,
@@ -3683,6 +3686,11 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// misc related
+	BuiltinMagic: &BuiltinFunction{
+		Name: "magic",
+		Value:   CallExAdapter(builtinMagicFunc),
+		ValueEx: builtinMagicFunc,
+	},
 	BuiltinGetSeq: &BuiltinFunction{
 		Name: "getSeq",
 		Value: func(args ...Object) (Object, error) {
@@ -13506,6 +13514,26 @@ func builtinAwsSignFunc(c Call) (Object, error) {
 	rsT := awsapi.Sign(postDataT, nv2)
 
 	return String{Value: rsT}, nil
+}
+
+func builtinMagicFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	nv1 := ToIntQuick(args[0])
+
+//	vs := ObjectsToS(args[1:])
+
+	fcT := GetMagic(nv1)
+	
+	if tk.IsErrStr(fcT) {
+		return NewCommonErrorWithPos(c, "failed to get magic script: %v", tk.GetErrStr(fcT)), nil
+	}
+
+	return &Gel{Value: NewCharCode(fcT, nil)}, nil
 }
 
 func builtinS3PutObjectFunc(c Call) (Object, error) {
