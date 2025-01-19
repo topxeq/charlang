@@ -230,6 +230,8 @@ const (
 	BuiltinDecryptText
 	BuiltinEncryptTextByTXTE
 	BuiltinDecryptTextByTXTE
+	BuiltinAesEncrypt
+	BuiltinAesDecrypt
 	BuiltinHtmlEncode
 	BuiltinHtmlDecode
 	BuiltinServeFile
@@ -1108,6 +1110,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"encryptStream": BuiltinEncryptStream,
 	"decryptStream": BuiltinDecryptStream,
+
+	"aesEncrypt": BuiltinAesEncrypt, // AES encrypt string or bytes
+	"aesDecrypt": BuiltinAesDecrypt, // AES decrypt string or bytes
 
 	// image related
 	"loadImageFromBytes": BuiltinLoadImageFromBytes, // usage: imageT := loadImageFromBytes(bytesT, "-type=png")
@@ -3102,6 +3107,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "decryptStream",
 		Value:   FnARSWRE(tk.DecryptStreamByTXDEF),
 		ValueEx: FnARSWREex(tk.DecryptStreamByTXDEF),
+	},
+	BuiltinAesEncrypt: &BuiltinFunction{
+		Name:    "aesEncrypt",
+		Value:   CallExAdapter(builtinAesEncryptFunc),
+		ValueEx: builtinAesEncryptFunc,
+	},
+	BuiltinAesDecrypt: &BuiltinFunction{
+		Name:    "aesDecrypt",
+		Value:   CallExAdapter(builtinAesDecryptFunc),
+		ValueEx: builtinAesDecryptFunc,
 	},
 
 	// image related
@@ -15729,6 +15744,63 @@ func builtinGenQrFunc(c Call) (Object, error) {
 	}
 
 	return &Image{Value: qrCodeT}, nil
+}
+
+func builtinAesEncryptFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+	
+	var vp []byte
+
+	v, ok := args[0].(Bytes)
+	if !ok {
+		vp = []byte(args[0].String())
+//		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	} else {
+		vp = []byte(v)
+	}
+
+	keyT := args[1].String()
+	
+	rs, errT := tk.AESEncrypt(vp, []byte(keyT))
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to decrypt with AES: %v", errT), nil
+	}
+
+	return String{Value: string(rs)}, nil
+}
+
+
+func builtinAesDecryptFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+	
+	var vp []byte
+
+	v, ok := args[0].(Bytes)
+	if !ok {
+		vp = []byte(args[0].String())
+//		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	} else {
+		vp = []byte(v)
+	}
+
+	keyT := args[1].String()
+	
+	rs, errT := tk.AESDecrypt(vp, []byte(keyT))
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to decrypt with AES: %v", errT), nil
+	}
+
+	return String{Value: string(rs)}, nil
 }
 
 func builtinSaveImageToFileFunc(c Call) (Object, error) {
