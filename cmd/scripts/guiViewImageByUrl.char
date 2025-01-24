@@ -1,0 +1,71 @@
+// char -exam guiViewImageByUrl.char -url=https://change.to.your.host/pathto.png -ext=.png
+global argsG
+global guiG
+
+urlT := getSwitch(argsG, "-url=", "")
+
+if urlT == "" {
+	fatalf("empty url")
+}
+
+bytesT := getWebBytes(urlT)
+
+lenT := len(bytesT)
+
+if lenT < 1 {
+	fatalf("empty file content")
+}
+
+if isEncrypted(bytesT) {
+	pl("encrypted content")
+	bytesT = decryptBytes(bytesT, "-code="+getSwitch(argsG, "-code=", ""))
+}
+
+imageExtT := getFileExt(urlT)
+
+extT := getSwitch(argsG, "-ext=", "")
+
+if extT != "" {
+	imageExtT = extT
+}
+
+imageT := loadImageFromBytes(bytesT, "-type="+getSwitch(argsG, "-type=", imageExtT))
+
+htmlT := `
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Image Viewer</title>
+</head>
+<body style="margin: 0px; padding: 0px; overflow-x: hidden; overflow-y: hidden;">
+	<div style="margin: 0px; padding: 0px; width: 100vw; height: 100vh; text-align: center; overflow-x: hidden; overflow-y: hidden;">
+		<img id="imageId" src="TX_image_XT" style="width: 100%; height: 100%; object-fit: contain;" />
+	</div>
+
+</body>
+</html>
+`
+
+windowT := guiG.newWindow("-title=Image Viewer", "-width=960", "-height=720", "-center", "-debug")
+
+bytesNewT := saveImageToBytes(imageT, ".jpg")
+
+base64StrT := "data:image/jpeg;base64," + base64Encode(bytesNewT)
+
+htmlT = strReplace(htmlT, "TX_image_XT", base64StrT)
+
+rs := windowT.setHtml(htmlT)
+
+checkErr(rs)
+
+rs = windowT("show")
+
+checkErr(rs)
+
+rs = windowT("close")
+
+checkErr(rs)
+
+

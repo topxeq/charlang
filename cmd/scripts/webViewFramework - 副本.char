@@ -1,0 +1,274 @@
+global guiG
+
+htmlT := `
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Webview Framework</title>
+	<style>
+	</style>
+	<script>
+		function addWebMessage(msgA) {
+			var scrollDom = document.getElementById('messageBoxID');
+			var parentT = document.getElementById('main');
+			var lastT = document.getElementById('endblock');
+
+			var newNodeT = document.createElement('span');
+
+			parentT.insertBefore(newNodeT, lastT); 
+
+			newNodeT.outerHTML = msgA;
+
+			scrollDom.scrollTop = scrollDom.scrollHeight;
+
+			return;
+		}
+
+		function addLine(msgA) {
+			addWebMessage(msgA + '<br />')
+		}
+
+		function cleanDiv() {
+			endblockhtml = $('#endblock').clone();
+
+			$('#main').empty().append(endblockhtml);
+		}
+
+
+		function showStatus(strA) {
+			// $("#statusBarDivID").show();
+			$("#statusBarID").html(strA);
+			addLine(strA);
+		}
+
+		function showErrorStatus(strA) {
+			$("#statusBarID").html('<span style="color: red;">' + strA + '</span>');
+		}
+
+        function closeWindowClick() {
+            delegateDo("closeWindow");
+        }
+
+		function login() {
+			if (typeof loginDialogT.showModal === "function") {
+				loginDialogT.showModal();
+			} else {
+			 	loginDialogT.hidden = true;
+
+				addLine("<span style='color: red;'>Sorry, the <dialog> API is not supported by this browser.</span>");
+			}
+		}
+
+		var loginDialogT;
+ 
+        window.onload = function() {
+			loginDialogT = document.getElementById("loginDialogId");
+			const loginSelectT = loginDialogT.querySelector("select");
+			const loginConfirmBtnT = loginDialogT.querySelector("#loginMainBtnId");
+
+			loginSelectT.addEventListener("change", (e) => {
+				loginConfirmBtnT.value = loginSelectT.value;
+			});
+
+			loginDialogT.addEventListener("close", () => {
+				addLine(loginDialogT.returnValue + " selected.");
+			});
+
+	        document.getElementById("btnStart").addEventListener("click", function() {
+				var result = ""; // eval(document.getElementById("mainInputID").value);
+
+				delegateDo("start", result);
+
+				document.getElementById("mainInputID").value = result;
+
+			});
+
+			addLine('<span style="color: red;">Initializing...</span>');
+
+			// console.log("fontSize:", getComputedStyle(document.body).fontSize);
+
+			login();
+        }
+
+	</script>
+</head>
+<body>
+	<dialog id="loginDialogId">
+		<form method="dialog">
+			<p>
+				<label>Login to system:
+					<select>
+						<option value="default">Choose…</option>
+						<option value="OA Actions">OA Actions</option>
+						<option value="Contract Actions">Contract Actions</option>
+						<option value="HR Actions">HR Actions</option>
+					</select>
+				</label>
+			</p>
+			<div>
+				<button id="loginMainBtnId" value="default">Login</button>
+				<button id="loginCancelBtnId" value="cancel">Cancel</button>
+			</div>
+		</form>
+	</dialog>
+
+	<div id="titleDivId" style="margin-top: 0px; height: 40px; text-align: center">
+		<span style="font-size: 18px; font-weight: bold;">Webview Framework</span>
+	</div>
+ 	<hr>
+    <div id="progressID" style="display: none; text-align: center; color:brown;">Loading, please wait...</div>
+	<div id="messageBoxID" style="background: trasparent; width: calc(100vw - 34px); height: 380px; overflow-x: hidden; overflow-y: scroll; padding: 10px;">
+		<div id="main" style="width: 100%; height: 100%; text-align: left; font-size: 16px;">
+			<p id="endblock" class="addline"> &nbsp;</p>
+		</div>
+
+	</div>
+ 	<hr>
+    <div id="queryCodeDivId" style="margin-top: 5px; text-align: center; ">
+        <select id="queryCodeSelectId" onchange="javascript:queryCodeSelectChanged();">
+            <option value="">Choose Query Code...</option>
+            <optgroup label="Common">
+                <option value="Current Time">Current Time</option>
+                <option value="Pi">Pi</option>
+            </optgroup>
+            <optgroup label="OA Related">
+                <option value="Sessions">Sessions</option>
+            </optgroup>
+        </select>
+        <input type="text" name="queryCodeID" placeholder="query code(*required)" id="queryCodeID" value=""  autocomplete="off" />
+    </div>
+	<div id="paramsDivId" style="margin-top: 0px; padding: 5px; text-align: center;">
+		<div>
+			<input type="password" name="secureCodeID" placeholder="auth code(not required)" id="secureCodeID" value=""  autocomplete="off" />
+			<input type="text" name="queryParam1ID" placeholder="parameter 1(not required)" id="queryParam1ID" value=""  autocomplete="off" />
+			<input type="text" name="queryParam2ID" placeholder="parameter 2(not required)" id="queryParam2ID" value=""  autocomplete="off" />
+			<input type="text" name="queryParam3ID" placeholder="parameter 3(not required)" id="queryParam3ID" value=""  autocomplete="off" />
+		</div>
+		<div style="margin-top: 10px; margin-right: 10px;">
+			<textarea id="queryParam4ID" name="queryParam4ID" class="weui-textarea fields" placeholder="parameter 4(not required)" rows="3" style="width: 100%; padding: 5px;"></textarea>
+		</div>
+		<div style="display: block; margin-top: 10px; ">
+			<input type="file" name="queryParamFileID" placeholder="upload file(not required)" id="queryParamFileID" value=""  autocomplete="off" />
+		</div>
+
+		<div id="hidValuesID" style="display: none;">
+			<input id="reqID" name="subReq" value="bind" />
+			<input id="txtokenID" name="txtoken" value="TX_txtoken_XT" />
+		</div>
+
+		<div style="margin-top: 10px;"></div>
+
+	</div>
+ 	<hr>
+	<div id="toolbarDivId" style="margin-top: 0px; padding: 5px;">
+		<button id="btnLogin" onclick="javascript:login();">login</button>
+        <select id="codeSelectId" class="js-example-basic-single" onchange="javascript:selectChanged();">
+            <option value=""></option>
+            <optgroup label="common">
+                <option value="test">test</option>
+                <option value="login">login</option>
+            </optgroup>
+            <optgroup label="special">
+                <option value="current time">current time</option>
+            </optgroup>
+        </select>
+		<button id="btnStart">Go</button>
+		<button id="btnClose" onclick="javascript:closeWindowClick();">Close</button>
+	</div>
+
+</body>
+</html>
+`
+
+windowT := guiG.newWindow("-title=Webview Framework", "-width=960", "-height=720", "-center", "-debug")
+
+// plo(windowT)
+
+dele1 := delegate(strReplace(`
+	param ...vargs
+	
+	global inputG
+
+	pln(vargs)
+
+	pln(inputG)
+
+	cmdT := vargs[0]
+
+    if cmdT == "start" {
+		pl("result: %v", vargs[1])
+
+		windowT := inputG[0]
+
+		sourceT := ~~~
+			param ...vargs
+
+			windowT := vargs[0]
+			v0 := vargs[1]
+
+			for i := 0; i < 50; i++ {
+				v0[0] ++
+
+				pl("(thread) v0=%v", v0[0])
+
+				windowT.eval("addLine('"+getNowStr()+"')")
+
+				sleep(0.2)
+			}
+
+			return
+
+			~~~
+
+		c1 := charCode(sourceT).compile()
+
+		if isErr(c1) {
+			fatalf("failed to compile code: %v", c1)
+		}
+
+		a := [5]
+
+		c1.threadRun(windowT, a)
+
+		return cmdT
+	} else if cmdT == "closeWindow" {
+		pl("close window")
+
+		windowT := inputG[0]
+
+		windowT("close")
+
+		return cmdT
+	}
+	
+    pl("cmd: %v", cmdT)
+
+    return cmdT
+`, "~~~", "`"))
+
+checkErr(dele1)
+
+rs := dele1.compile(windowT)
+
+checkErr(rs)
+
+rs = windowT.setDelegate(dele1)
+
+checkErr(rs)
+
+rs = windowT.setHtml(strReplace(htmlT, "~~~", "`"))
+
+checkErr(rs)
+
+rs = windowT("show")
+
+checkErr(rs)
+
+rs = windowT("close")
+
+checkErr(rs)
+
+exit()
+
