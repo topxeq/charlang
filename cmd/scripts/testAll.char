@@ -6,6 +6,10 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", seqT.get(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "bytes2.char")
+
+testByText(rs, "1\n(bytes)[1 2 9 8 7]\n(bytes)[9 8]\n(bytes)[]\n(bytes)[3 4 5 6]\n(bytes)[3 255 254 6]\n(bytes)[0 0 0 0 0 0 0 0 0 0]\n(bytes)[1 2 1 2 9 8 7 0 0 0]\n", seqT.get(), "bytes2.char")
+
 rs = systemCmd("char", "-gopath", "checkErr.char")
 
 testByText(rs[21:], " <nil> err: ReadMapCB: object not ended with }, error found in #10 byte of ...|\"abc\": 1 23}|..., bigger context ...|{\"abc\": 1 23}|...\n", seqT.get(), "checkErr.char")

@@ -385,6 +385,8 @@ func ToGoByteSlice(o Object) (v []byte, ok bool) {
 		v, ok = nv, true
 	case Chars:
 		v, ok = []byte(string(nv)), true
+	case *BytesBuffer:
+		v, ok = nv.Value.Bytes(), true
 	case String:
 		v, ok = make([]byte, len(nv.Value)), true
 		copy(v, nv.Value)

@@ -1,0 +1,45 @@
+buf1 := bytesWithSize(5)
+
+writeBytes(buf1, bytes(1, 2, 3))
+
+writeBytesAt(buf1, 2, bytes(9, 8))
+
+n := writeBytesAt(buf1, 4, bytes(7, 7, 7))
+
+pln(n)
+
+plt(buf1)
+
+plt(buf1[2:4])
+
+buf2 := bytesWithCap(6)
+
+// empty slice could not be written to
+writeBytes(buf2, bytes(3, 4, 5, 6))
+
+plt(buf2)
+
+// append or appendList is ok
+buf2 = appendList(buf2, bytes(3, 4, 5, 6))
+
+plt(buf2)
+
+// then writeBytes or writeBytesAt is ok
+writeBytesAt(buf2, 1, bytes(-1, -2))
+
+// -1 in Bytes is 255, -2 is 254, ...
+plt(buf2)
+
+// reset buf2 to size 10, capacity 20
+buf2 = reset(buf2, 10, 20)
+
+plt(buf2)
+
+copyBytes(buf2, buf1)
+
+writeBytesAt(buf2, 2, buf1)
+
+plt(buf2)
+
+
+

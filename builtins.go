@@ -67,6 +67,7 @@ type BuiltinType int
 const (
 	BuiltinAppend BuiltinType = iota
 
+	BuiltinReset
 	BuiltinStatusToStr
 	BuiltinStatusToMap
 	BuiltinDocxToStrs
@@ -200,6 +201,7 @@ const (
 	BuiltinBytesStartsWith
 	BuiltinBytesEndsWith
 	BuiltinBytesContains
+	BuiltinBytesIndex
 	BuiltinIsEncrypted
 	BuiltinEncryptData
 	BuiltinDecryptData
@@ -384,8 +386,10 @@ const (
 	BuiltinRegFindFirstGroups
 	BuiltinReadAllStr
 	BuiltinReadAllBytes
+	BuiltinReadBytes
 	BuiltinWriteStr
 	BuiltinWriteBytes
+	BuiltinWriteBytesAt
 	BuiltinIoCopy
 	BuiltinStrSplitLines
 	BuiltinNew
@@ -495,6 +499,7 @@ const (
 	BuiltinDelete
 	BuiltinGetArrayItem
 	BuiltinCopy
+	BuiltinCopyBytes
 	BuiltinRepeat
 	BuiltinContains
 	BuiltinLen
@@ -510,6 +515,8 @@ const (
 	BuiltinString
 	BuiltinMutableString
 	BuiltinBytes
+	BuiltinBytesWithSize
+	BuiltinBytesWithCap
 	BuiltinChars
 	BuiltinPrintf
 	BuiltinPrintln
@@ -596,6 +603,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"string":        BuiltinString,        // create a string value(with type 'string'), usage: s1 := string(),  s2 := string("abc")
 	"mutableString": BuiltinMutableString, // create a mutable string value(with type 'mutableString'), mutableString could change value at run time, usage: s1 := mutableString(),  s2 := mutableString("abc")
 	"bytes":         BuiltinBytes,         // create a bytes value(with type 'bytes'), usage: b1 := bytes([0xef, 0xbc, 0x81]), b2 := bytes("abc123")
+	"bytesWithSize":         BuiltinBytesWithSize,         // create a bytes value(with type 'bytes') with specified size, usage: b1 := bytesWithSize(5)
+	"bytesWithCap":         BuiltinBytesWithCap,         // create a bytes value(with type 'bytes') with specified capacity(init with zero size), usage: b1 := bytesWithCap(5)
 	"chars":         BuiltinChars,         // create a chars/runes value(with type 'chars'), usage: c1 := chars([0xefab, 0xbc01, 0x81cf]) , c2 := ("abc123")
 
 	"bytesBuffer": BuiltinBytesBuffer, // create a bytes buffer, usage: buf1 := bytesBuffer() , buf2 := bytesBuffer(bytes("abc123"))
@@ -657,6 +666,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"appendArray": BuiltinAppendList,
 	"appendSlice": BuiltinAppendList,
 	"delete":      BuiltinDelete,
+
+	"reset":  BuiltinReset,
 
 	"getArrayItem": BuiltinGetArrayItem,
 
@@ -804,6 +815,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"bytesStartsWith": BuiltinBytesStartsWith,
 	"bytesEndsWith":   BuiltinBytesEndsWith,
 	"bytesContains":   BuiltinBytesContains,
+	"bytesIndex":   BuiltinBytesIndex,
 
 	// compare related
 	"compareBytes": BuiltinCompareBytes,
@@ -899,8 +911,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	// read/write related
 	"readAllStr":   BuiltinReadAllStr,
 	"readAllBytes": BuiltinReadAllBytes,
+	"readBytes": BuiltinReadBytes,
 	"writeStr":     BuiltinWriteStr,
 	"writeBytes":   BuiltinWriteBytes,
+	"writeBytesAt":   BuiltinWriteBytesAt, // write bytes at the specified index in Bytes, return the result buffer(maybe the same), if not enough size, enlarge the buffer and reture the new buffer(i.e. the Bytes object), usage: buf1 = writeBytesAt(bytes([1, 2, 3]), 1, bytes([4, 5, 6, 7]))
+	"copyBytes":   BuiltinCopyBytes,
 
 	"ioCopy": BuiltinIoCopy,
 
@@ -1458,6 +1473,16 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinBytesFunc),
 		ValueEx: builtinBytesFunc,
 	},
+	BuiltinBytesWithSize: &BuiltinFunction{
+		Name:    "bytesWithSize",
+		Value:   CallExAdapter(builtinBytesWithSizeFunc),
+		ValueEx: builtinBytesWithSizeFunc,
+	},
+	BuiltinBytesWithCap: &BuiltinFunction{
+		Name:    "bytesWithCap",
+		Value:   CallExAdapter(builtinBytesWithCapFunc),
+		ValueEx: builtinBytesWithCapFunc,
+	},
 	BuiltinChars: &BuiltinFunction{
 		Name:    "chars",
 		Value:   funcPOROe(builtinCharsFunc),
@@ -1639,6 +1664,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "delete",
 		Value:   funcPOsRe(builtinDeleteFunc),
 		ValueEx: funcPOsReEx(builtinDeleteFunc),
+	},
+	BuiltinReset: &BuiltinFunction{
+		Name:    "reset",
+		Value:   CallExAdapter(builtinResetFunc),
+		ValueEx: builtinResetFunc,
 	},
 	BuiltinGetArrayItem: &BuiltinFunction{
 		Name:    "getArrayItem",
@@ -2131,6 +2161,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnALyARB(tk.BytesContains),
 		ValueEx: FnALyARBex(tk.BytesContains),
 	},
+	BuiltinBytesIndex: &BuiltinFunction{
+		Name:    "bytesIndex",
+		Value:   FnALyARI(tk.BytesIndex),
+		ValueEx: FnALyARIex(tk.BytesIndex),
+	},
 
 	// compare related
 	BuiltinCompareBytes: &BuiltinFunction{
@@ -2449,6 +2484,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinReadAllBytesFunc),
 		ValueEx: builtinReadAllBytesFunc,
 	},
+	BuiltinReadBytes: &BuiltinFunction{
+		Name:    "readBytes",
+		Value:   CallExAdapter(builtinReadBytesFunc),
+		ValueEx: builtinReadBytesFunc,
+	},
 	BuiltinWriteStr: &BuiltinFunction{
 		Name:    "writeStr",
 		Value:   CallExAdapter(builtinWriteStrFunc),
@@ -2458,6 +2498,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "writeBytes",
 		Value:   CallExAdapter(builtinWriteBytesFunc),
 		ValueEx: builtinWriteBytesFunc,
+	},
+	BuiltinWriteBytesAt: &BuiltinFunction{
+		Name:    "writeBytesAt",
+		Value:   CallExAdapter(builtinWriteBytesAtFunc),
+		ValueEx: builtinWriteBytesAtFunc,
+	},
+	BuiltinCopyBytes: &BuiltinFunction{
+		Name:    "copyBytes",
+		Value:   CallExAdapter(builtinCopyBytesFunc),
+		ValueEx: builtinCopyBytesFunc,
 	},
 	BuiltinIoCopy: &BuiltinFunction{
 		Name:    "ioCopy",
@@ -3997,6 +4047,8 @@ func builtinAppendListFunc(c Call) (Object, error) {
 		if ok {
 			obj = append(obj, nv1...)
 		}
+		
+//		fmt.Printf("obj: %#v\n", obj)
 
 		return obj, nil
 	case Chars:
@@ -4019,6 +4071,69 @@ func builtinAppendListFunc(c Call) (Object, error) {
 		}
 
 		return Undefined, NewCommonErrorWithPos(c, "unsupported type: (%T)%v", src, src)
+	default:
+		return Undefined, NewArgumentTypeError(
+			"1st",
+			"array",
+			obj.TypeName(),
+		)
+	}
+}
+
+func builtinResetFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+	
+	lenT := len(args)
+
+	if lenT < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	target := args[0]
+
+	switch obj := target.(type) {
+	case Array:
+		if lenT > 2 {
+			obj = make(Array, ToIntQuick(args[1]), ToIntQuick(args[2]))
+		} else if lenT > 1 {
+			obj = make(Array, ToIntQuick(args[1]))
+		} else {
+			obj = make(Array, 0)
+		}
+
+		return obj, nil
+	case Bytes:
+		if lenT > 2 {
+			obj = make(Bytes, ToIntQuick(args[1]), ToIntQuick(args[2]))
+		} else if lenT > 1 {
+			obj = make(Bytes, ToIntQuick(args[1]))
+		} else {
+			obj = make(Bytes, 0)
+		}
+
+		return obj, nil
+	case Chars:
+		if lenT > 2 {
+			obj = make(Chars, ToIntQuick(args[1]), ToIntQuick(args[2]))
+		} else if lenT > 1 {
+			obj = make(Chars, ToIntQuick(args[1]))
+		} else {
+			obj = make(Chars, 0)
+		}
+
+		return obj, nil
+	case String:
+		obj.Value = ""
+
+		return obj, nil
+	case Map:
+		if lenT > 1 {
+			obj = make(Map, ToIntQuick(args[1]))
+		} else {
+			obj = make(Map, 0)
+		}
+
+		return obj, nil
 	default:
 		return Undefined, NewArgumentTypeError(
 			"1st",
@@ -4652,6 +4767,24 @@ func builtinBytesFunc(c Call) (Object, error) {
 		}
 	}
 	return out, nil
+}
+
+func builtinBytesWithSizeFunc(c Call) (Object, error) {
+	sizeT := 0
+	if c.Len() > 0 {
+		sizeT = ToIntQuick(c.Get(0))
+	}
+
+	return Bytes(make([]byte, sizeT)), nil
+}
+
+func builtinBytesWithCapFunc(c Call) (Object, error) {
+	capT := 0
+	if c.Len() > 0 {
+		capT = ToIntQuick(c.Get(0))
+	}
+
+	return Bytes(make([]byte, 0, capT)), nil
 }
 
 func builtinCharsFunc(arg Object) (ret Object, err error) {
@@ -6362,6 +6495,44 @@ func FnALyARBex(fn func([]byte, interface{}) bool) CallableExFunc {
 		rs := fn([]byte(nv1), ConvertFromObject(args[1]))
 
 		return Bool(rs), nil
+	}
+}
+
+// like tk.BytesIndex
+func FnALyARI(fn func([]byte, interface{}) int) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		rs := fn([]byte(nv1), ConvertFromObject(args[1]))
+
+		return Int(rs), nil
+	}
+}
+
+func FnALyARIex(fn func([]byte, interface{}) int) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		if len(args) < 2 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return NewCommonError("unsupported type: %T", args[0]), nil
+		}
+
+		rs := fn([]byte(nv1), ConvertFromObject(args[1]))
+
+		return Int(rs), nil
 	}
 }
 
@@ -12031,6 +12202,104 @@ func builtinReadAllBytesFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type for read all: %T", args[0]), nil
 }
 
+func builtinReadBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+	
+	lenT := len(args)
+
+	if lenT < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	nv1, ok := args[0].(*Reader)
+	
+	bufLenT := 100
+	
+	if lenT > 1 {
+		bufLenT = ToIntQuick(args[1])
+	}
+	
+	bufT := make([]byte, bufLenT)
+	
+//	resultBufT := make([]byte, 0, bufLenT)
+
+	if ok {
+		n, errT := nv1.Value.Read(bufT)
+		if errT != nil {
+			if errT == io.EOF {
+				if n <= 0 {
+					return NewCommonError("EOF"), nil
+				} else {
+					return Bytes(bufT[:n]), nil
+				}
+			} else {
+				return NewCommonErrorWithPos(c, "failed to read bytes: %v", errT), nil
+			}
+		}
+
+		if n <= 0 {
+			return Bytes([]byte{}), nil
+		}
+		
+//		resultBufT = append(resultBufT, bufT[:n]...)
+
+		return Bytes(bufT[:n]), nil
+	}
+
+	nv1a, ok := args[0].(*File)
+
+	if ok {
+		n, errT := nv1a.Value.Read(bufT)
+		if errT != nil {
+			if errT == io.EOF {
+				return NewCommonError("EOF"), nil
+			}
+			
+			return NewCommonErrorWithPos(c, "failed to read bytes: %v", errT), nil
+		}
+		
+		if n <= 0 {
+			return Bytes([]byte{}), nil
+		}
+		
+//		resultBufT = append(resultBufT, bufT[:n]...)
+
+		return Bytes(bufT[:n]), nil
+	}
+
+	nv2, ok := args[0].(io.Reader)
+
+	if ok {
+		n, errT := nv2.Read(bufT)
+		if errT != nil {
+			if errT == io.EOF {
+				return NewCommonError("EOF"), nil
+			}
+			
+			return NewCommonErrorWithPos(c, "failed to read bytes: %v", errT), nil
+		}
+		
+		if n <= 0 {
+			return Bytes([]byte{}), nil
+		}
+		
+//		resultBufT = append(resultBufT, bufT[:n]...)
+
+		return Bytes(bufT[:n]), nil
+	}
+
+	nv3, ok := args[0].(*Any)
+
+	switch nv := nv3.Value.(type) {
+	case string:
+		return Bytes(nv), nil
+	default:
+		return NewCommonErrorWithPos(c, "invalid type in any: %T", nv3.Value), nil
+	}
+
+	return NewCommonErrorWithPos(c, "unsupported type for read all: %T", args[0]), nil
+}
+
 func builtinWriteStrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12129,6 +12398,14 @@ func builtinWriteBytesFunc(c Call) (Object, error) {
 		bufT = []byte(nv.Value)
 	default:
 		return NewCommonErrorWithPos(c, "unsupport content type to write: %T", args[1]), nil
+	}
+
+	nv0, ok := args[0].(Bytes)
+
+	if ok {
+		n := copy(nv0, bufT)
+
+		return Int(n), nil
 	}
 
 	nv1, ok := args[0].(*Writer)
@@ -12276,6 +12553,91 @@ func builtinWriteBytesFunc(c Call) (Object, error) {
 	}
 
 	return NewCommonErrorWithPos(c, "%v", "invalid data"), nil
+}
+
+func builtinWriteBytesAtFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	var oldBufT []byte
+	var bufT []byte
+//	var errT error
+//	var n int
+
+	nv0, ok := args[0].(Bytes)
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupport type of arg 1: %T", args[0]), nil
+	}
+	
+	oldBufT = []byte(nv0)
+	
+	switch nv := args[2].(type) {
+	case Bytes:
+		bufT = []byte(nv)
+	case String:
+		bufT = []byte(nv.Value)
+	case *MutableString:
+		bufT = []byte(nv.Value)
+	default:
+		return NewCommonErrorWithPos(c, "unsupport type of arg 3: %T", args[2]), nil
+	}
+	
+	idxT := ToIntQuick(args[1])
+	
+//	oldLenT := len(oldBufT)
+//	writeLenT := len(bufT)
+	
+	n := copy(oldBufT[idxT:], bufT)
+	
+//	if oldLenT < 1 {
+//		return Bytes(bufT), nil
+//	}
+//
+//	if idxT < 0 {
+//		idxT = oldLenT - idxT
+//		
+//		if idxT < 0 {
+//			return NewCommonErrorWithPos(c, "invalid index: %v", args[1]), nil
+//		}
+//	} else if idxT == oldLenT {
+//	} else if idxT > oldLenT {
+//		return NewCommonErrorWithPos(c, "invalid index: %v", args[1]), nil
+//	}
+//	
+//	
+
+	return Int(n), nil
+}
+
+func builtinCopyBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+//	var oldBufT []byte
+//	var bufT []byte
+	
+//	var errT error
+	var n int
+
+	nv0, ok := args[0].(Bytes)
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupport type of arg 1: %T", args[0]), nil
+	}
+	
+	nv1, ok := args[1].(Bytes)
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupport type of arg 2: %T", args[1]), nil
+	}
+	
+	n = copy(nv0, nv1)
+
+	return Int(n), nil
 }
 
 func builtinDatabaseFunc(c Call) (Object, error) {
