@@ -537,6 +537,7 @@ func chpHandler(strA string, w http.ResponseWriter, r *http.Request) {
 	var errT error
 
 	r.ParseForm()
+	r.ParseMultipartForm(100000000)
 
 	vo := tk.GetFormValueWithDefaultValue(r, "vo", "")
 
@@ -668,6 +669,9 @@ func doServer() {
 
 	muxG.HandleFunc("/charms/", doCharms)
 	muxG.HandleFunc("/charms", doCharms)
+
+	muxG.HandleFunc("/ms/", doCharms)
+	muxG.HandleFunc("/ms", doCharms)
 
 	// dynamic content
 	muxG.HandleFunc("/dc/", doCharmsContent)
