@@ -756,13 +756,19 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 		req.ParseMultipartForm(100000000)
 	}
 
-	reqT := tk.GetFormValueWithDefaultValue(req, "charms", "")
+	reqT := tk.GetFormValueWithDefaultValue(req, "ms", "")
+	if reqT == "" {
+		reqT = tk.GetFormValueWithDefaultValue(req, "charms", "")
+	}
+	
 	if verboseG {
 		tk.Pl("RequestURI: %v", req.RequestURI)
 	}
 
 	if reqT == "" {
-		if tk.StartsWith(req.RequestURI, "/charms") {
+		if tk.StartsWith(req.RequestURI, "/ms") {
+			reqT = req.RequestURI[3:]
+		} else if tk.StartsWith(req.RequestURI, "/charms") {
 			reqT = req.RequestURI[7:]
 		}
 	}
