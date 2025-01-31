@@ -1,8 +1,32 @@
-sb := make("stringBuilder")
+sb := stringBuilder()
 
-n1 := writeStr(sb, "abc")
+n1 := writeStr(sb, "abc\n")
 
-n2 := writeStr(sb, "123")
+n2 := sb.writeStr("123")
 
-plv(sb, n1, n2)
+plt(sb, n1, n2)
 pl("sb: %v", sb)
+
+sb.write(`
+2 + 2 + 5 = 9
+`)
+
+pln(sb.toStr())
+
+// to keep Golang compatibility
+sb.WriteString("-----")
+
+// some available formats to write
+sb.write([32, byte(32), 0x20, 65, '天', "很蓝"])
+
+// write bytes of various formats
+sb.writeBytes(bytes([0x2b, 0x2d, 0x2a, 0x2f]))
+
+sb.writeBytes("\n\t")
+
+sb.writeBytes([0x3d, 0x3f])
+
+// to keep Golang compatibility
+pln(sb.String())
+
+

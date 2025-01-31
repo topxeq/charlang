@@ -6,6 +6,10 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", seqT.get(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "stringBuilder.char")
+
+testByText(rs, "[0] (stringBuilder)(stringBuilder)abc\n123\n[1] (int)4\n[2] (int)3\nsb: (stringBuilder)abc\n123\nabc\n123\n2 + 2 + 5 = 9\n\nabc\n123\n2 + 2 + 5 = 9\n-----   A天很蓝+-*/\n\t=?\n", seqT.get(), "stringBuilder.char")
+
 rs = systemCmd("char", "-gopath", "bytes2.char")
 
 testByText(rs, "1\n(bytes)[1 2 9 8 7]\n(bytes)[9 8]\n(bytes)[]\n(bytes)[3 4 5 6]\n(bytes)[3 255 254 6]\n(bytes)[0 0 0 0 0 0 0 0 0 0]\n(bytes)[1 2 1 2 9 8 7 0 0 0]\n", seqT.get(), "bytes2.char")

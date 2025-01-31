@@ -6548,6 +6548,196 @@ func (*StringBuilder) CanIterate() bool { return false }
 
 func (*StringBuilder) Iterate() Iterator { return nil }
 
+func (o *StringBuilder) CallName(nameA string, c Call) (Object, error) {
+//	tk.Pl("EvalMachine call: %#v", c)
+	switch nameA {
+	case "toStr":
+		return ToStringObject(o.Value.String()), nil
+	case "String": // to keep Golang compatibility
+		return ToStringObject(o.Value.String()), nil
+	case "writeStr", "WriteString":
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+		
+		rsT, errT := o.Value.WriteString(args[0].String())
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		}
+
+		return Int(rsT), nil
+	case "writeBytes":
+		var errT error
+
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+		
+		nv, ok := args[0].(Bytes)
+		if ok {
+			rsT, errT := o.Value.Write([]byte(nv))
+			if errT != nil {
+				return NewCommonErrorWithPos(c, "%v", errT), nil
+			}
+
+			return Int(rsT), nil
+		}
+
+		nv1, ok := args[0].(Array)
+		if ok {
+			countT := 0
+			
+			for _, jv := range nv1 {
+				jnv := byte(ToIntQuick(jv))
+				
+				errT = o.Value.WriteByte(jnv)
+
+				if errT != nil {
+					return NewCommonErrorWithPos(c, "failed to write byte: %v", errT), nil
+				} else {
+					countT++
+				}
+			}
+			
+			return Int(countT), nil
+		}
+		
+		nv2, ok := args[0].(String)
+		if ok {
+			rsT, errT := o.Value.Write([]byte(nv2.Value))
+			if errT != nil {
+				return NewCommonErrorWithPos(c, "%v", errT), nil
+			}
+
+			return Int(rsT), nil
+		}
+
+		return NewCommonError("invalid parameter type: %v", args[0].TypeName()), nil
+		
+	case "write": 
+		var errT error
+
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+		
+		countT := 0
+
+		for _, v := range args {
+			tmpCountT := 0
+			switch nv := v.(type) {
+			case String:
+				tmpCountT, errT = o.Value.WriteString(nv.Value)
+
+				if errT != nil {
+					tmpCountT = 0
+				}
+			case Bytes:
+				tmpCountT, errT = o.Value.Write([]byte(nv))
+
+				if errT != nil {
+					tmpCountT = 0
+				}
+			case Char:
+				tmpCountT, errT = o.Value.WriteRune(rune(nv))
+
+				if errT != nil {
+					tmpCountT = 0
+				}
+			case Byte:
+				errT = o.Value.WriteByte(byte(nv))
+
+				if errT != nil {
+					tmpCountT = 0
+				} else {
+					tmpCountT = 1
+				}
+			case Int:
+				tmpCountT, errT = o.Value.WriteRune(rune(nv))
+
+				if errT != nil {
+					tmpCountT = 0
+				}
+			case Array:
+				for _, jv := range nv {
+					switch jnv := jv.(type) {
+					case String:
+						tmpCountT, errT = o.Value.WriteString(jnv.Value)
+
+						if errT != nil {
+							tmpCountT = 0
+						}
+					case Bytes:
+						tmpCountT, errT = o.Value.Write([]byte(jnv))
+
+						if errT != nil {
+							tmpCountT = 0
+						}
+					case Byte:
+						errT = o.Value.WriteByte(byte(jnv))
+
+						if errT != nil {
+							tmpCountT = 0
+						} else {
+							tmpCountT = 1
+						}
+					case Char:
+						tmpCountT, errT = o.Value.WriteRune(rune(jnv))
+
+						if errT != nil {
+							tmpCountT = 0
+						}
+					case Int:
+						tmpCountT, errT = o.Value.WriteRune(rune(jnv))
+
+						if errT != nil {
+							tmpCountT = 0
+						}
+					}
+					
+					countT += tmpCountT
+				}
+				
+				tmpCountT = 0
+			default:
+				tmpCountT, errT = o.Value.WriteString(nv.String())
+
+				if errT != nil {
+					tmpCountT = 0
+				}
+
+			}
+
+			countT += tmpCountT
+		}
+
+		return Int(countT), nil
+	case "clear", "reset":
+		o.Value.Reset()
+		return Undefined, nil
+	}
+
+	args := c.GetArgs()
+	
+	rs1, errT := CallObjectMethodFunc(o, nameA, args...)
+	
+	if errT != nil || tk.IsError(rs1) {
+		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
+		return ConvertToObject(rs3), nil
+	}
+	
+	return rs1, errT
+	
+//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+}
+
 func (o *StringBuilder) IndexGet(index Object) (value Object, err error) {
 	switch v := index.(type) {
 	case String:
