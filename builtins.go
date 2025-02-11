@@ -71,6 +71,7 @@ const (
 	BuiltinStatusToStr
 	BuiltinStatusToMap
 	BuiltinDocxToStrs
+	BuiltinDocxReplacePattern
 	BuiltinGuiServerCommand
 	BuiltinGetMapItem
 	BuiltinSetMapItem
@@ -1295,6 +1296,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"statusToMap": BuiltinStatusToMap,
 
 	"docxToStrs": BuiltinDocxToStrs,
+
+	"docxReplacePattern": BuiltinDocxReplacePattern,
 
 	// "sortByFunc": BuiltinSortByFunc,
 
@@ -3799,6 +3802,11 @@ var BuiltinObjects = [...]Object{
 		Name: "docxToStrs",
 		Value:   FnASVsRA(tk.DocxToText),
 		ValueEx: FnASVsRAex(tk.DocxToText),
+	},
+	BuiltinDocxReplacePattern: &BuiltinFunction{
+		Name: "docxReplacePattern",
+		Value:   CallExAdapter(builtinDocxReplacePatternFunc),
+		ValueEx: builtinDocxReplacePatternFunc,
 	},
 
 	// original internal related
@@ -10007,7 +10015,7 @@ func builtinExcelOpenFunc(c Call) (Object, error) {
 
 	r1, ok := args[0].(*Reader)
 
-	if !ok {
+	if ok {
 		f, err = excelize.OpenReader(r1.Value)
 
 		if err != nil {
@@ -14972,6 +14980,45 @@ func builtinReplaceHtmlByMapFunc(c Call) (Object, error) {
 	}
 
 	return ToStringObject(s), nil
+}
+
+func builtinDocxReplacePatternFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	s, ok := args[0].(Bytes)
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupported parameter 1 type(expect bytes): %v", args[0].TypeName()), nil
+	}
+
+	m, ok := args[1].(Array)
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupported parameter 2 type(expect array): %v", args[1].TypeName()), nil
+	}
+
+	if m == nil {
+		return args[0], nil
+	}
+	
+	lenT := len(m)
+	
+	aryT := make([]string, lenT)
+
+	for i := 0; i < lenT; i ++ {
+		aryT[i] = m[i].String()
+	}
+	
+	rs := tk.ReplacePatternsInDocxBytes([]byte(s), aryT)
+	
+	errT, ok := rs.(error)
+	if ok && errT != nil {
+		return NewCommonErrorWithPos(c, "%v", errT), nil
+	}
+
+	return Bytes(rs.([]byte)), nil
 }
 
 func builtinSendMailFunc(c Call) (Object, error) {
