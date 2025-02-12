@@ -13270,12 +13270,20 @@ func builtinLeViewLinesFunc(c Call) (Object, error) {
 
 	endA := tk.ToInt(ConvertFromObject(args[1]), -1)
 
+	if startA < 0 {
+		startA = len(vmT.LeBuf) + startA
+	}
+
 	if startA >= len(vmT.LeBuf) {
 		return NewCommonError("start index out of range: %v/%v", startA, len(vmT.LeBuf)), nil
 	}
 
 	if startA < 0 {
 		return NewCommonError("start index out of range: %v/%v", startA, len(vmT.LeBuf)), nil
+	}
+
+	if endA < 0 {
+		endA = len(vmT.LeBuf) + endA
 	}
 
 	if endA < 0 {
