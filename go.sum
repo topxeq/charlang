@@ -159,8 +159,8 @@ github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff h1:8GSdYAugHcOI9k5X3
 github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff/go.mod h1:4OH+jvJsOmDlZo0w/14dBxg/zQ6jnbrxdUdasWdgoR8=
 github.com/topxeq/countingwriter v0.0.0-20230115115152-84660be6de09 h1:JtCULmOHEQb12ZWMFBCYec4gvbt9POZQN3ncD+2509Q=
 github.com/topxeq/countingwriter v0.0.0-20230115115152-84660be6de09/go.mod h1:S/DxGB7MRImGIuTaMZNJpWgguYvMD4a6OGrejBph0xI=
-github.com/topxeq/docxrepl v0.0.0-20250211062419-6c73ca46a3c2 h1:nWL5378oLT1uJQLrBkrtgvV+bkco0x3cC5C8OAd4mJ8=
-github.com/topxeq/docxrepl v0.0.0-20250211062419-6c73ca46a3c2/go.mod h1:dv9nr0GOeIC+9K2+YAfQrwCx0BaZoL243J7zmJ93FxQ=
+github.com/topxeq/docxrepl v0.0.0-20250212063339-ba67f7344b69 h1:YVFc80MjfrBidjvpWGp0Xwx+Nhy7fstzDx55vNDU76Y=
+github.com/topxeq/docxrepl v0.0.0-20250212063339-ba67f7344b69/go.mod h1:dv9nr0GOeIC+9K2+YAfQrwCx0BaZoL243J7zmJ93FxQ=
 github.com/topxeq/gods v0.0.0-20220125023913-b5718bb0c704 h1:UDjm5BOCQ4slQmGLHR9jL/0ldJDHy2CriDdqYbcI5o8=
 github.com/topxeq/gods v0.0.0-20220125023913-b5718bb0c704/go.mod h1:pwCuhd06kBt3NUKc3BQwXbh6DOznm8sbFyMixA1Im/M=
 github.com/topxeq/goph v0.0.0-20240813015542-ebac0794140b h1:N5id1qwkwAelUb5A3bFJlQHnc2inOMI81ElS7I1Cpfg=
