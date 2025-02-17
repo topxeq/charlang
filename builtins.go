@@ -162,6 +162,7 @@ const (
 	BuiltinLeGetList
 	BuiltinLeAppendFromStr
 	BuiltinLeClear
+	BuiltinLeInfo
 	BuiltinS3GetObjectBytes
 	BuiltinS3GetObjectText
 	BuiltinS3PutObject
@@ -1221,6 +1222,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// line editor related
 	"leClear":          BuiltinLeClear,
+	"leInfo":          BuiltinLeInfo, // show lines count, chars count, ...
 	"leLoadFromStr":    BuiltinLeLoadFromStr,
 	"leAppendFromStr":  BuiltinLeAppendFromStr,
 	"leSaveToStr":      BuiltinLeSaveToStr,
@@ -3492,6 +3494,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "leClear",
 		Value:   CallExAdapter(builtinLeClearFunc),
 		ValueEx: builtinLeClearFunc,
+	},
+	BuiltinLeInfo: &BuiltinFunction{
+		Name:    "leInfo",
+		Value:   CallExAdapter(builtinLeInfoFunc),
+		ValueEx: builtinLeInfoFunc,
 	},
 	BuiltinLeLoadFromStr: &BuiltinFunction{
 		Name:    "leLoadFromStr",
@@ -12927,6 +12934,16 @@ func builtinLeSshInfoFunc(c Call) (Object, error) {
 	}
 
 	return ToStringObject(fmt.Sprintf("%v", vmT.LeSshInfo)), nil
+}
+
+func builtinLeInfoFunc(c Call) (Object, error) {
+	vmT := c.VM()
+
+	if vmT == nil {
+		return NewCommonErrorWithPos(c, "no VM specified"), nil
+	}
+
+	return ToStringObject(fmt.Sprintf("line count: %v, char count: %v, rune count: %v", len(vmT.LeBuf), len(tk.JoinLines(vmT.LeBuf, "\n")), len([]rune(tk.JoinLines(vmT.LeBuf, "\n"))))), nil
 }
 
 func builtinLeLoadFromSshFunc(c Call) (Object, error) {
