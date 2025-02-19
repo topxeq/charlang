@@ -1,0 +1,26 @@
+global argsG
+
+s1 := getClipText()
+
+lines1 := strSplitLines(s1)
+
+startLevelT := toInt(getSwitch(argsG, "-startLevel=", "4"), 4)
+
+sb1 := stringBuilder()
+
+for i, v in lines1 {
+	if strStartsWith(v, strRepeat("#", startLevelT) + " ") {
+		vv := trim(v[startLevelT+1:])
+		sb1.writeStr("- [" + vv + "](#" + strReplace(vv, " ", "_") + ")\n")
+		continue
+	}
+
+	if strStartsWith(v, strRepeat("#", startLevelT+1) + " ") {
+		vv := trim(v[startLevelT+1+1:])
+		sb1.writeStr("  - [" + vv + "](#" + strReplace(vv, " ", "_") + ")\n")
+		continue
+	}
+
+}
+
+pl("%v", sb1.toStr())
