@@ -18,6 +18,7 @@ import (
 	"io"
 	"math"
 	"math/big"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"net/url"
@@ -192,6 +193,8 @@ const (
 	BuiltinFormatXml
 	BuiltinMd5
 	BuiltinPostRequest
+	BuiltinPrepareMultiPartFieldFromBytes
+	BuiltinPrepareMultiPartFileFromBytes
 	BuiltinHttpRedirect
 	BuiltinReader
 	BuiltinWriter
@@ -1071,6 +1074,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getWebRespBody":         BuiltinGetWebRespBody, // rs := getWebRespBody(urlT, "-withLen"); if isErr(rs) {...}; readerT := rs[0]; lenT := rs[1]; rs = s3PutObject(readerT, "tmpbucket", keyT, "-endPoint=xxxxx", "-accessKey=xxxxx", "-secretAccessKey=xxxxx", "-ssl", "-force", "-size="+toStr(lenT), "-contentType=application/octet-stream", "-timeout=600");  close(readerT)
 
 	"postRequest": BuiltinPostRequest,
+	"prepareMultiPartFieldFromBytes": BuiltinPrepareMultiPartFieldFromBytes, // prepareMultiPartFieldFromBytes("file", bytes[0x65, 0x66, 0x67]), return ["for content-type", bytes generated]
+	"prepareMultiPartFileFromBytes": BuiltinPrepareMultiPartFileFromBytes, // prepareMultiPartFileFromBytes("file", "a.txt", bytes[0x65, 0x66, 0x67]), return ["for content-type", bytes generated]
 
 	"urlExists": BuiltinUrlExists,
 
@@ -2998,6 +3003,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "postRequest",
 		Value:   CallExAdapter(builtinPostRequestFunc),
 		ValueEx: builtinPostRequestFunc,
+	},
+	BuiltinPrepareMultiPartFieldFromBytes: &BuiltinFunction{
+		Name:    "prepareMultiPartFieldFromBytes",
+		Value:   CallExAdapter(builtinPrepareMultiPartFieldFromBytesFunc),
+		ValueEx: builtinPrepareMultiPartFieldFromBytesFunc,
+	},
+	BuiltinPrepareMultiPartFileFromBytes: &BuiltinFunction{
+		Name:    "prepareMultiPartFileFromBytes",
+		Value:   CallExAdapter(builtinPrepareMultiPartFileFromBytesFunc),
+		ValueEx: builtinPrepareMultiPartFileFromBytesFunc,
 	},
 	BuiltinUrlExists: &BuiltinFunction{
 		Name:    "urlExists",
@@ -11792,6 +11807,81 @@ func builtinIsHttpsFunc(c Call) (Object, error) {
 	return Bool(rs), nil
 }
 
+func builtinPrepareMultiPartFieldFromBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	bytesT, ok := args[1].(Bytes)
+	
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[1], args[1]), nil
+	}
+	
+	fieldNameT := args[0].String()
+	
+	var b bytes.Buffer
+    w := multipart.NewWriter(&b)
+	
+	r := bytes.NewReader([]byte(bytesT))
+	
+	var fw io.Writer
+	
+	var err error
+
+	if fw, err = w.CreateFormField(fieldNameT); err != nil {
+		return NewCommonErrorWithPos(c, "failed to create field: (%v) %v", args[0], err), nil
+	}
+	
+	if _, err = io.Copy(fw, r); err != nil {
+		return NewCommonErrorWithPos(c, "failed to set field: (%v) %v", args[0], err), nil
+	}
+	
+    w.Close()
+	
+	return Array{ToStringObject(w.FormDataContentType()), Bytes(b.Bytes())}, nil
+}
+
+func builtinPrepareMultiPartFileFromBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	bytesT, ok := args[2].(Bytes)
+	
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[2], args[2]), nil
+	}
+	
+	fieldNameT := args[0].String()
+	fileNameT := args[1].String()
+	
+	var b bytes.Buffer
+    w := multipart.NewWriter(&b)
+	
+	r := bytes.NewReader([]byte(bytesT))
+	
+	var fw io.Writer
+	
+	var err error
+
+	if fw, err = w.CreateFormFile(fieldNameT, fileNameT); err != nil {
+		return NewCommonErrorWithPos(c, "failed to create field: (%v) %v", args[0], err), nil
+	}
+	
+	if _, err = io.Copy(fw, r); err != nil {
+		return NewCommonErrorWithPos(c, "failed to set field: (%v) %v", args[0], err), nil
+	}
+	
+    w.Close()
+	
+	return Array{ToStringObject(w.FormDataContentType()), Bytes(b.Bytes())}, nil
+}
+
 func builtinPostRequestFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11803,6 +11893,18 @@ func builtinPostRequestFunc(c Call) (Object, error) {
 	// if !ok {
 	// 	return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
 	// }
+	
+	bytesT, ok := args[1].(Bytes)
+	
+	if ok {
+		rs, errT := tk.PostRequestBytesX(args[0].String(), []byte(bytesT), args[2].String(), time.Duration(ToGoIntWithDefault(args[3], 30)))
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, errT.Error()), nil
+		}
+
+		return ToStringObject(rs), nil
+	}
 
 	rs, errT := tk.PostRequestX(args[0].String(), args[1].String(), args[2].String(), time.Duration(ToGoIntWithDefault(args[3], 30)), ObjectsToS(args[4:])...)
 
