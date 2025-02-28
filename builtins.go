@@ -387,6 +387,7 @@ const (
 	BuiltinUnref
 	BuiltinSetValueByRef
 	BuiltinGetWeb
+	BuiltinDownloadFile
 	BuiltinGetWebBytes
 	BuiltinGetWebBytesWithHeaders
 	BuiltinGetWebRespBody
@@ -415,6 +416,9 @@ const (
 	BuiltinArchiveFilesToZip
 	BuiltinGetFileListInArchive
 	BuiltinGetFileListInZip
+	BuiltinLoadBytesInArchive
+	BuiltinExtractFileInArchive
+	BuiltinExtractArchive
 	BuiltinGetOSName
 	BuiltinGetOSArch
 	BuiltinGetOSArgs
@@ -747,7 +751,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"strIn": BuiltinStrIn,
 
-	"strGetLastComponent": BuiltinStrGetLastComponent,
+	"strGetLastComponent": BuiltinStrGetLastComponent, // strGetLastComponent("/root/abc", "/"), default separator is \ in Windows or / in Linux/MacOS
 
 	"strFindDiffPos": BuiltinStrFindDiffPos, // return -1 if 2 strings are identical
 
@@ -1081,8 +1085,13 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getFileListInArchive": BuiltinGetFileListInArchive,
 	"getFileListInZip": BuiltinGetFileListInZip,
 
+	"loadBytesInArchive": BuiltinLoadBytesInArchive, // loadBytesInArchive("example.zip", "subdir1/a.txt", "-limit=3")
+	"extractFileInArchive": BuiltinExtractFileInArchive, // extractFileInArchive("example.zip", "subdir1/a.txt", "toDir/a.txt")
+	"extractArchive": BuiltinExtractArchive, // extractArchive("example.zip", "toDir", "-noFileDir", "-force")
+
 	// network/web related
 	"getWeb":                 BuiltinGetWeb,
+	"downloadFile":                 BuiltinDownloadFile,
 	"getWebBytes":            BuiltinGetWebBytes,
 	"getWebBytesWithHeaders": BuiltinGetWebBytesWithHeaders,
 	"getWebRespBody":         BuiltinGetWebRespBody, // rs := getWebRespBody(urlT, "-withLen"); if isErr(rs) {...}; readerT := rs[0]; lenT := rs[1]; rs = s3PutObject(readerT, "tmpbucket", keyT, "-endPoint=xxxxx", "-accessKey=xxxxx", "-secretAccessKey=xxxxx", "-ssl", "-force", "-size="+toStr(lenT), "-contentType=application/octet-stream", "-timeout=600");  close(readerT)
@@ -3021,12 +3030,32 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASVsRA(tk.GetFileListInZip),
 		ValueEx: FnASVsRAex(tk.GetFileListInZip),
 	},
+	BuiltinLoadBytesInArchive: &BuiltinFunction{
+		Name:    "loadBytesInArchive",
+		Value:   FnASSVsRA(tk.LoadBytesInArchive),
+		ValueEx: FnASSVsRAex(tk.LoadBytesInArchive),
+	},
+	BuiltinExtractFileInArchive: &BuiltinFunction{
+		Name:    "extractFileInArchive",
+		Value:   FnASSSVsRA(tk.ExtractFileInArchive),
+		ValueEx: FnASSSVsRAex(tk.ExtractFileInArchive),
+	},
+	BuiltinExtractArchive: &BuiltinFunction{
+		Name:    "extractArchive",
+		Value:   FnASSVsRA(tk.ExtractArchive),
+		ValueEx: FnASSVsRAex(tk.ExtractArchive),
+	},
 
 	// network/web related
 	BuiltinGetWeb: &BuiltinFunction{
 		Name:    "getWeb",
 		Value:   FnASVaRA(tk.GetWeb),
 		ValueEx: FnASVaRAex(tk.GetWeb),
+	},
+	BuiltinDownloadFile: &BuiltinFunction{
+		Name:    "downloadFile",
+		Value:   FnASSSVsRS(tk.DownloadFile),
+		ValueEx: FnASSSVsRSex(tk.DownloadFile),
 	},
 	BuiltinGetWebBytes: &BuiltinFunction{
 		Name:    "getWebBytes",
@@ -6714,6 +6743,68 @@ func FnASVsRAex(fn func(string, ...string) interface{}) CallableExFunc {
 		tmps := args[0].String()
 
 		rs := fn(tmps, vargs...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.LoadBytesInArchive
+func FnASSVsRA(fn func(string, string, ...string) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		vargs := ObjectsToS(args[2:])
+
+		rs := fn(args[0].String(), args[1].String(), vargs...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASSVsRAex(fn func(string, string, ...string) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		
+		if len(args) < 2 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		vargs := ObjectsToS(args[2:])
+
+		rs := fn(args[0].String(), args[1].String(), vargs...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.ExtractFileInArchive
+func FnASSSVsRA(fn func(string, string, string, ...string) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 3 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		vargs := ObjectsToS(args[3:])
+
+		rs := fn(args[0].String(), args[1].String(), args[2].String(), vargs...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASSSVsRAex(fn func(string, string, string, ...string) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		
+		if len(args) < 3 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		vargs := ObjectsToS(args[3:])
+
+		rs := fn(args[0].String(), args[1].String(), args[2].String(), vargs...)
 
 		return ConvertToObject(rs), nil
 	}
@@ -15500,7 +15591,7 @@ func builtinArrayContainsFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		return NewCommonError("not enough parameters"), nil
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
 	nv1, ok := args[0].(Array)
