@@ -1204,7 +1204,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// eTable related
 	"readCsv":  BuiltinReadCsv,
+	"csvRead":  BuiltinReadCsv,
 	"writeCsv": BuiltinWriteCsv,
+	"csvWrite": BuiltinWriteCsv,
 
 	"excelNew":           BuiltinExcelNew,
 	"excelOpen":          BuiltinExcelOpen,
