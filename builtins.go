@@ -415,8 +415,10 @@ const (
 	BuiltinSshRun
 	BuiltinArchiveFilesToZip
 	BuiltinGetFileListInArchive
+	BuiltinGetFileListInArchiveBytes
 	BuiltinGetFileListInZip
 	BuiltinLoadBytesInArchive
+	BuiltinLoadBytesInArchiveBytes
 	BuiltinExtractFileInArchive
 	BuiltinExtractArchive
 	BuiltinGetOSName
@@ -1083,9 +1085,11 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"archiveFilesToZip": BuiltinArchiveFilesToZip, // Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
 	"getFileListInArchive": BuiltinGetFileListInArchive,
+	"getFileListInArchiveBytes": BuiltinGetFileListInArchiveBytes,
 	"getFileListInZip": BuiltinGetFileListInZip,
 
 	"loadBytesInArchive": BuiltinLoadBytesInArchive, // loadBytesInArchive("example.zip", "subdir1/a.txt", "-limit=3")
+	"loadBytesInArchiveBytes": BuiltinLoadBytesInArchiveBytes, // loadBytesInArchiveBytes(bytesT)
 	"extractFileInArchive": BuiltinExtractFileInArchive, // extractFileInArchive("example.zip", "subdir1/a.txt", "toDir/a.txt")
 	"extractArchive": BuiltinExtractArchive, // extractArchive("example.zip", "toDir", "-noFileDir", "-force")
 
@@ -3027,6 +3031,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASVsRA(tk.GetFileListInArchive),
 		ValueEx: FnASVsRAex(tk.GetFileListInArchive),
 	},
+	BuiltinGetFileListInArchiveBytes: &BuiltinFunction{
+		Name:    "getFileListInArchiveBytes",
+		Value:   FnALyVsRA(tk.GetFileListInArchiveBytes),
+		ValueEx: FnALyVsRAex(tk.GetFileListInArchiveBytes),
+	},
 	BuiltinGetFileListInZip: &BuiltinFunction{
 		Name:    "getFileListInZip",
 		Value:   FnASVsRA(tk.GetFileListInZip),
@@ -3036,6 +3045,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "loadBytesInArchive",
 		Value:   FnASSVsRA(tk.LoadBytesInArchive),
 		ValueEx: FnASSVsRAex(tk.LoadBytesInArchive),
+	},
+	BuiltinLoadBytesInArchiveBytes: &BuiltinFunction{
+		Name:    "loadBytesInArchiveBytes",
+		Value:   FnALySVsRA(tk.GetFileContentInArchiveBytes),
+		ValueEx: FnALySVsRAex(tk.GetFileContentInArchiveBytes),
 	},
 	BuiltinExtractFileInArchive: &BuiltinFunction{
 		Name:    "extractFileInArchive",
@@ -6599,6 +6613,49 @@ func FnALyVsRAex(fn func([]byte, ...string) interface{}) CallableExFunc {
 		vargs := ObjectsToS(args[1:])
 
 		rs := fn([]byte(nv1), vargs...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.GetFileContentInArchiveBytes
+func FnALySVsRA(fn func([]byte, string, ...string) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return Undefined, NewCommonError("unsupported type: %T", args[0])
+		}
+
+		vargs := ObjectsToS(args[2:])
+
+		rs := fn([]byte(nv1), args[1].String(), vargs...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnALySVsRAex(fn func([]byte, string, ...string) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		
+		if len(args) < 2 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return Undefined, NewCommonErrorWithPos(c, "unsupported type: %T", args[0])
+		}
+
+		vargs := ObjectsToS(args[2:])
+
+		rs := fn([]byte(nv1), args[1].String(), vargs...)
 
 		return ConvertToObject(rs), nil
 	}
