@@ -275,6 +275,7 @@ const (
 	BuiltinToKMG
 	BuiltinFloatToStr
 	BuiltinStrToUtf8
+	BuiltinStrUtf8ToGb
 	BuiltinIsUtf8
 	BuiltinGetFileList
 	BuiltinMathAbs
@@ -421,6 +422,7 @@ const (
 	BuiltinLoadBytesInArchiveBytes
 	BuiltinExtractFileInArchive
 	BuiltinExtractArchive
+	BuiltinIsFileNameUtf8InZipBytes
 	BuiltinGetOSName
 	BuiltinGetOSArch
 	BuiltinGetOSArgs
@@ -720,6 +722,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"floatToStr": BuiltinFloatToStr,
 	
 	"strToUtf8": BuiltinStrToUtf8,
+	"strUtf8ToGb": BuiltinStrUtf8ToGb,
 	"isUtf8": BuiltinIsUtf8,
 
 	// string related
@@ -1092,6 +1095,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"loadBytesInArchiveBytes": BuiltinLoadBytesInArchiveBytes, // loadBytesInArchiveBytes(bytesT)
 	"extractFileInArchive": BuiltinExtractFileInArchive, // extractFileInArchive("example.zip", "subdir1/a.txt", "toDir/a.txt")
 	"extractArchive": BuiltinExtractArchive, // extractArchive("example.zip", "toDir", "-noFileDir", "-force")
+	"isFileNameUtf8InZipBytes": BuiltinIsFileNameUtf8InZipBytes, // return boolean value or error
 
 	// network/web related
 	"getWeb":                 BuiltinGetWeb,
@@ -1817,6 +1821,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strToUtf8",
 		Value:   CallExAdapter(builtinStrToUtf8Func),
 		ValueEx: builtinStrToUtf8Func,
+	},
+	BuiltinStrUtf8ToGb: &BuiltinFunction{
+		Name:    "strUtf8ToGb",
+		Value:   FnASRS(tk.ConvertToGB18030),
+		ValueEx: FnASRSex(tk.ConvertToGB18030),
 	},
 	BuiltinIsUtf8: &BuiltinFunction{
 		Name:    "isUtf8",
@@ -3060,6 +3069,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "extractArchive",
 		Value:   FnASSVsRA(tk.ExtractArchive),
 		ValueEx: FnASSVsRAex(tk.ExtractArchive),
+	},
+	BuiltinIsFileNameUtf8InZipBytes: &BuiltinFunction{
+		Name:    "isFileNameUtf8InZipBytes",
+		Value:   FnALyVsRA(tk.IsFileNameUtf8InZipBytes),
+		ValueEx: FnALyVsRAex(tk.IsFileNameUtf8InZipBytes),
 	},
 
 	// network/web related
