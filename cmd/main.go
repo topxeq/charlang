@@ -1325,6 +1325,8 @@ func runArgs(argsA ...string) interface{} {
 		if tk.IfSwitchExistsWhole(argsT, "-urlDecode") {
 			fcT = tk.UrlDecode(fcT)
 		}
+		
+		fcT = tk.DealString(fcT, "char")
 
 		scriptPathT = ""
 	} else if ifMagicT {

@@ -413,6 +413,7 @@ const (
 	BuiltinSshUpload
 	BuiltinSshUploadBytes
 	BuiltinSshDownload
+	BuiltinSshDownloadBytes
 	BuiltinSshRun
 	BuiltinArchiveFilesToZip
 	BuiltinGetFileListInArchive
@@ -1208,6 +1209,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"sshUpload":      BuiltinSshUpload,
 	"sshUploadBytes": BuiltinSshUploadBytes,
 	"sshDownload":    BuiltinSshDownload,
+	"sshDownloadBytes":    BuiltinSshDownloadBytes,
 	"sshRun":         BuiltinSshRun,
 
 	// eTable related
@@ -3434,6 +3436,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "sshDownload",
 		Value:   CallExAdapter(builtinSshDownloadFunc),
 		ValueEx: builtinSshDownloadFunc,
+	},
+	BuiltinSshDownloadBytes: &BuiltinFunction{
+		Name:    "sshDownloadBytes",
+		Value:   CallExAdapter(builtinSshDownloadBytesFunc),
+		ValueEx: builtinSshDownloadBytesFunc,
 	},
 	BuiltinSshRun: &BuiltinFunction{
 		Name:    "sshRun",
@@ -11639,6 +11646,68 @@ func builtinSshDownloadFunc(c Call) (Object, error) {
 	}
 
 	return Undefined, nil
+}
+
+func builtinSshDownloadBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v6 string
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+	}
+
+	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	defer sshT.Close()
+
+	bytesT, errT := sshT.GetFileContent(v6, pa...)
+
+	// fmt.Println()
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	return Bytes(bytesT), nil
 }
 
 func builtinSshRunFunc(c Call) (Object, error) {
