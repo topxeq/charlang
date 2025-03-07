@@ -464,12 +464,20 @@ func runInteractiveShell() int {
 			break
 		}
 		
-		source += scanner.Text()
+		strT := scanner.Text()
+		
+		if strings.HasSuffix(strT, "\\") {
+			source += strT[:len(strT)-1] + "\n"
+			following = true
+			continue
+		}
+		
+		source += strT
 		if source == "" {
 			continue
 		}
 		
-		if source == "quit()" {
+		if source == "q" || source == "quit()" {
 			break
 		}
 
