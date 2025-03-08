@@ -117,6 +117,8 @@ const (
 	BuiltinExcelReadCell
 	BuiltinExcelWriteSheet
 	BuiltinExcelWriteCell
+	BuiltinExcelGetColumnIndexByName
+	BuiltinExcelGetColumnNameByIndex
 	BuiltinWriteCsv
 	BuiltinRemovePath
 	BuiltinRemoveDir
@@ -278,6 +280,9 @@ const (
 	BuiltinStrToUtf8
 	BuiltinStrUtf8ToGb
 	BuiltinIsUtf8
+	BuiltinSimpleStrToMap
+	BuiltinSimpleStrToMapReverse
+	BuiltinReverseMap
 	BuiltinGetFileList
 	BuiltinMathAbs
 	BuiltinMathSqrt
@@ -356,6 +361,7 @@ const (
 	BuiltinParseQuery
 	BuiltinErrStrf
 	BuiltinErrf
+	BuiltinErrToEmpty
 	BuiltinCharCode
 	BuiltinEvalMachine
 	BuiltinGel
@@ -726,6 +732,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strToUtf8": BuiltinStrToUtf8,
 	"strUtf8ToGb": BuiltinStrUtf8ToGb,
 	"isUtf8": BuiltinIsUtf8,
+	
+	"simpleStrToMap": BuiltinSimpleStrToMap,
+	"simpleStrToMapReverse": BuiltinSimpleStrToMapReverse,
+
+	"reverseMap": BuiltinReverseMap,
 
 	// string related
 	"trim":          BuiltinTrim,         // trim spaces of the string, also convert undefined value to empty string
@@ -887,6 +898,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"errStrf": BuiltinErrStrf,
 	"errf":    BuiltinErrf,
 
+	"errToEmpty":    BuiltinErrToEmpty,
+	
 	// output/print related
 	"pr":     BuiltinPr,
 	"prf":    BuiltinPrf,
@@ -1235,6 +1248,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"excelWriteSheet":    BuiltinExcelWriteSheet,
 	"excelReadCell":      BuiltinExcelReadCell,
 	"excelWriteCell":     BuiltinExcelWriteCell,
+	"excelGetColumnIndexByName":  BuiltinExcelGetColumnIndexByName,
+	"excelGetColumnNameByIndex":  BuiltinExcelGetColumnNameByIndex,
 
 	// database related
 	"formatSQLValue": BuiltinFormatSQLValue,
@@ -1836,6 +1851,21 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinIsUtf8Func),
 		ValueEx: builtinIsUtf8Func,
 	},
+	BuiltinSimpleStrToMap: &BuiltinFunction{
+		Name:    "simpleStrToMap",
+		Value:   CallExAdapter(builtinSimpleStrToMapFunc),
+		ValueEx: builtinSimpleStrToMapFunc,
+	},
+	BuiltinSimpleStrToMapReverse: &BuiltinFunction{
+		Name:    "simpleStrToMapReverse",
+		Value:   CallExAdapter(builtinSimpleStrToMapReverseFunc),
+		ValueEx: builtinSimpleStrToMapReverseFunc,
+	},
+	BuiltinReverseMap: &BuiltinFunction{
+		Name:    "reverseMap",
+		Value:   CallExAdapter(builtinReverseMapFunc),
+		ValueEx: builtinReverseMapFunc,
+	},
 
 	// string related
 	BuiltinTrim: &BuiltinFunction{
@@ -2384,6 +2414,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "errf",
 		Value:   FnASVaRE(tk.Errf),
 		ValueEx: FnASVaREex(tk.Errf),
+	},
+	BuiltinErrToEmpty: &BuiltinFunction{
+		Name:    "errToEmpty",
+		Value:   CallExAdapter(builtinErrToEmptyFunc),
+		ValueEx: builtinErrToEmptyFunc,
 	},
 
 	// output/print related
@@ -3540,6 +3575,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "excelWriteCell",
 		Value:   CallExAdapter(builtinExcelWriteCellFunc),
 		ValueEx: builtinExcelWriteCellFunc,
+	},
+	BuiltinExcelGetColumnIndexByName: &BuiltinFunction{
+		Name:    "excelGetColumnIndexByName",
+		Value:   CallExAdapter(builtinExcelGetColumnIndexByNameFunc),
+		ValueEx: builtinExcelGetColumnIndexByNameFunc,
+	},
+	BuiltinExcelGetColumnNameByIndex: &BuiltinFunction{
+		Name:    "excelGetColumnNameByIndex",
+		Value:   CallExAdapter(builtinExcelGetColumnNameByIndexFunc),
+		ValueEx: builtinExcelGetColumnNameByIndexFunc,
 	},
 
 	// database related
@@ -9596,6 +9641,45 @@ func builtinCheckEmptyFunc(c Call) (Object, error) {
 	return args[0], nil
 }
 
+func builtinErrToEmptyFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	switch nv := args[0].(type) {
+	case *Error, *RuntimeError:
+		return String{Value: ""}, nil
+	case String:
+		if strings.HasPrefix(nv.Value, "TXERROR:") {
+			return String{Value: ""}, nil
+		}
+	case *MutableString:
+		if strings.HasPrefix(nv.Value, "TXERROR:") {
+			return String{Value: ""}, nil
+		}
+	case *Any:
+		_, ok := nv.Value.(error)
+
+		if ok {
+			return String{Value: ""}, nil
+		}
+
+		s1, ok := nv.Value.(string)
+
+		if ok {
+			if strings.HasPrefix(s1, "TXERROR:") {
+				return String{Value: ""}, nil
+			}
+		}
+
+		return args[0], nil
+	}
+
+	return args[0], nil
+}
+
 func builtinTrimFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10905,6 +10989,38 @@ func builtinExcelWriteCellFunc(c Call) (Object, error) {
 	}
 
 	return Undefined, nil
+
+}
+
+func builtinExcelGetColumnIndexByNameFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	rs, errT := excelize.ColumnNameToNumber(args[0].String())
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to convert: %v", errT), nil
+	}
+
+	return Int(rs), nil
+
+}
+
+func builtinExcelGetColumnNameByIndexFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	rs, errT := excelize.ColumnNumberToName(ToIntQuick(args[0]))
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to convert: %v", errT), nil
+	}
+
+	return String{Value: rs}, nil
 
 }
 
@@ -13928,6 +14044,81 @@ func builtinIsUtf8Func(c Call) (Object, error) {
 
 	return NewCommonErrorWithPos(c, "invalid parameter type: (%T)%v", args[0], args[0]), nil
 //	return Bool(utf8.ValidString(args[0].String())), nil
+}
+
+func builtinSimpleStrToMapFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+	
+	nv1 := args[0].String()
+
+	var mapT map[string]string = make(map[string]string)
+
+	listT := strings.Split(nv1, "|")
+	
+	for _, v := range listT {
+		list1T := strings.SplitN(v, ":", 2)
+		
+		if len(list1T) < 2 {
+			continue
+		}
+		
+		mapT[list1T[0]] = list1T[1]
+	}
+
+	return ConvertToObject(mapT), nil
+}
+
+func builtinSimpleStrToMapReverseFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+	
+	nv1 := args[0].String()
+
+	var mapT map[string]string = make(map[string]string)
+
+	listT := strings.Split(nv1, "|")
+	
+	for _, v := range listT {
+		list1T := strings.SplitN(v, ":", 2)
+		
+		if len(list1T) < 2 {
+			continue
+		}
+		
+		mapT[list1T[1]] = list1T[0]
+	}
+
+	return ConvertToObject(mapT), nil
+}
+
+func builtinReverseMapFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+	
+	nv1, ok := args[0].(Map)
+	
+	if !ok {
+		return NewCommonError("unsupported parameter type: %v", args[0].TypeName()), nil
+	}
+
+	mapT := make(Map, len(nv1))
+
+	for k, v := range nv1 {
+//		fmt.Printf("k: %#v, v: %#v\n", k, v)
+		mapT[v.String()] = String{Value: k}
+	}
+
+	return mapT, nil
 }
 
 func builtinLeGetLineFunc(c Call) (Object, error) {
