@@ -123,6 +123,7 @@ const (
 	BuiltinGetInput
 	BuiltinGetInputf
 	BuiltinGetChar
+	BuiltinGetMultiLineInput
 	BuiltinSetStdin
 	BuiltinSetStdout
 	BuiltinSetStderr
@@ -1032,6 +1033,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getInput":  BuiltinGetInput,
 	"getInputf": BuiltinGetInputf,
 	"getChar":   BuiltinGetChar,
+	"getMultiLineInput":   BuiltinGetMultiLineInput,
 
 	"setStdin":  BuiltinSetStdin,
 	"setStdout": BuiltinSetStdout,
@@ -2862,6 +2864,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getChar",
 		Value:   FnARA(tk.GetChar),
 		ValueEx: FnARAex(tk.GetChar),
+	},
+	BuiltinGetMultiLineInput: &BuiltinFunction{
+		Name:    "getMultiLineInput",
+		Value:   FnAVsRS(tk.GetMultiLineInput),
+		ValueEx: FnAVsRSex(tk.GetMultiLineInput),
 	},
 	BuiltinSetStdin: &BuiltinFunction{
 		Name:    "setStdin",
