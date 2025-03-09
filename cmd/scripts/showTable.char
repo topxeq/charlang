@@ -1,0 +1,50 @@
+// press 'q' to close the table and return the selected result, 'Esc' or 'Ctrl-c' to exit( return 'TXERROR:cancel')
+
+// if no 'cols' arg defined, the first line will be the column names
+data1 := [
+	["title1", "title2", "title3"],
+	["value1-1", "value1-2", "value1-3"],
+	["value2-1", "value2-2", "value2-3"],
+	["value3-1", "value3-2", "value3-3"],
+]
+
+rs := showTable(data1)
+
+pl("rs: %#v", rs)
+
+// use 'cols' to set column names and column width of each
+// '-keep' to keep the table visible while close
+// if with a callback
+// must set at least one key stroke to handle return/exit from the control
+dele1 := delegate(`
+param ...vargs
+
+//pl("vargs: %#v", vargs)
+
+if vargs[0] == "key" {
+	if vargs[5] == "v" { // V
+		return "show" // to show the row content
+	} else if vargs[5] == "ctrl+q" || vargs[5] == "enter" { // Ctrl-Q or Enter
+		return "select" // select and return
+	} else if vargs[5] == "esc" || vargs[5] == "ctrl-c" { // Esc or Ctrl-C
+		return "exit" // exit
+	}
+}
+
+return ""
+`)
+
+ers1 := dele1.compile()
+
+checkErr(ers1)
+
+
+data2 := [
+	["value1-1", "value1-2", "value1-3"],
+	["value2-1", "value2-2", "value2-3"],
+	["value3-1", "value3-2", "value3-3"],
+]
+
+rs2 := showTable(data2, dele1, "-keep", `-cols=[{"Title": "title1", "Width": "5"}, {"Title": "title2", "Width": "10"}, {"Title": "title3", "Width": "15"}]`)
+
+pl("rs2: %#v", rs2)

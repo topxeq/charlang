@@ -73,6 +73,7 @@ const (
 	BuiltinStatusToMap
 	BuiltinDocxToStrs
 	BuiltinDocxReplacePattern
+	BuiltinShowTable
 	BuiltinGuiServerCommand
 	BuiltinGetMapItem
 	BuiltinSetMapItem
@@ -1357,6 +1358,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"docxToStrs": BuiltinDocxToStrs,
 
 	"docxReplacePattern": BuiltinDocxReplacePattern,
+
+	"showTable": BuiltinShowTable,
 
 	// "sortByFunc": BuiltinSortByFunc,
 
@@ -3991,6 +3994,11 @@ var BuiltinObjects = [...]Object{
 		Name: "docxReplacePattern",
 		Value:   CallExAdapter(builtinDocxReplacePatternFunc),
 		ValueEx: builtinDocxReplacePatternFunc,
+	},
+	BuiltinShowTable: &BuiltinFunction{
+		Name: "showTable",
+		Value:   CallExAdapter(builtinShowTableFunc),
+		ValueEx: builtinShowTableFunc,
 	},
 
 	// original internal related
@@ -15747,6 +15755,64 @@ func builtinDocxReplacePatternFunc(c Call) (Object, error) {
 	}
 
 	return Bytes(rs.([]byte)), nil
+}
+
+func builtinShowTableFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	var ok bool = false
+	
+	nv1, ok1 := args[0].(Array)
+	if !ok1 {
+		return NewCommonErrorWithPos(c, "unsupported parameter 1 type(expect array): %v", args[0].TypeName()), nil
+	}
+	
+	len1 := len(nv1)
+	
+	var funcT func(...interface{}) interface{} = nil
+	
+	vs := []string{}
+	
+	var nv2 *Delegate
+	
+	for i, v := range args {
+		if i < 1 {
+			continue
+		}
+		
+		if !ok {
+			nv2, ok = v.(*Delegate)
+			
+			if ok {
+//				fmt.Printf("nv2 type: %T, %#v\n", nv2.Value, nv2.Value)
+				funcT = nv2.Value
+			} else {
+				vs = append(vs, v.String())
+			}
+		} else {
+			vs = append(vs, v.String())
+		}
+	}
+
+	aryT := make([][]string, 0, len1)
+	
+	for i := 0; i < len1; i ++ {
+		nv2, ok := nv1[i].(Array)
+		
+		if !ok {
+			return NewCommonErrorWithPos(c, "unsupported row %v type(expect array): %v", i, nv1[i].TypeName()), nil
+		}
+		
+		aryT = append(aryT, ObjectsToS(nv2))
+	}
+
+	rs := tk.ShowTableCompact(aryT, funcT, vs...)
+	
+	return String{Value: rs}, nil
 }
 
 func builtinDocxToStrsFunc(c Call) (Object, error) {
