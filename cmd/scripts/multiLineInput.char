@@ -1,9 +1,10 @@
 // basic multi-line input
-rs1 := getMultiLineInput("-placeholder=Enter text here...", "-title=Please enter...", "-bottom=Press Ctrl-Q to finish, Ctrl-X to exit", "-width=100", "-height=10")
+rs1 := getMultiLineInput("-placeholder=Enter text here...", "-title=Please enter...", "-bottom=Press Ctrl-Q to finish, Ctrl-X to exit", "-width=100", "-height=10", "-keep")
 
 pl("rs1: %v", rs1)
 
 // no parameters
+// without "-keep" switch will clear/hide the input control with its content
 rs2 := getMultiLineInput()
 
 pl("rs2: %v", rs2)
