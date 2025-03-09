@@ -1,0 +1,40 @@
+// basic multi-line input
+rs1 := getMultiLineInput("-placeholder=Enter text here...", "-title=Please enter...", "-bottom=Press Ctrl-Q to finish, Ctrl-X to exit", "-width=100", "-height=10")
+
+pl("rs1: %v", rs1)
+
+// no parameters
+rs2 := getMultiLineInput()
+
+pl("rs2: %v", rs2)
+
+// with a callback
+// must set at least one key stroke to handle return/exit from the control
+dele1 := delegate(`
+param ...vargs
+
+//pl("vargs: %#v", vargs)
+
+if vargs[0] == "key" {
+	if vargs[1] == 18 { // Ctrl-R
+		return "clear" // to clear the input
+	} else if vargs[1] == 17 { // Ctrl-Q
+		return "return" // finish the input
+	} else if vargs[1] == 24 { // Ctrl-X
+		return "exit" // exit the input
+	}
+}
+
+return ""
+`)
+
+ers1 := dele1.compile()
+
+checkErr(ers1)
+
+// with callback function
+rs3 := getMultiLineInput("-bottom=Press Ctrl-R to clear, Ctrl-Q to finish, Ctrl-X to exit", dele1)
+
+pl("rs3: %v", rs3)
+
+

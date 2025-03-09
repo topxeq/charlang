@@ -2902,8 +2902,8 @@ var BuiltinObjects = [...]Object{
 	},
 	BuiltinGetMultiLineInput: &BuiltinFunction{
 		Name:    "getMultiLineInput",
-		Value:   FnAVsRS(tk.GetMultiLineInput),
-		ValueEx: FnAVsRSex(tk.GetMultiLineInput),
+		Value:   CallExAdapter(builtinGetMultiLineInputFunc),
+		ValueEx: builtinGetMultiLineInputFunc,
 	},
 	BuiltinSetStdin: &BuiltinFunction{
 		Name:    "setStdin",
@@ -9948,6 +9948,50 @@ func builtinSetStdinFunc(c Call) (Object, error) {
 	os.Stdin = readerT.Value
 
 	return Undefined, nil
+}
+
+func builtinGetMultiLineInputFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	var funcT func(...interface{}) interface{} = nil
+	
+	vs := []string{}
+	
+	var ok bool = false
+	
+	var nv1 *Delegate
+	
+	for _, v := range args {
+		if !ok {
+			nv1, ok = v.(*Delegate)
+			
+			if ok {
+//				fmt.Printf("nv1 type: %T, %#v\n", nv1.Value, nv1.Value)
+				funcT = nv1.Value
+			} else {
+				vs = append(vs, v.String())
+			}
+		} else {
+			vs = append(vs, v.String())
+		}
+	}
+
+//	if len(args) < 1 {
+//	} else {
+//		nv1, ok := args[0].(*Delegate)
+//		
+//		if !ok {
+//			return NewCommonErrorWithPos(c, "unsupported parameter type: %v", args[0].TypeName()), nil
+//		}
+//		
+//		funcT = nv1.Value
+//		
+//		vs = ObjectsToS(args[1:])
+//	}
+//	fmt.Printf("funcT: %#v\n", funcT)
+	rs := tk.GetMultiLineInput(funcT, vs...)
+
+	return String{Value: rs}, nil
 }
 
 func builtinSetStdoutFunc(c Call) (Object, error) {
