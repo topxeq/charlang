@@ -1199,6 +1199,25 @@ func runArgs(argsA ...string) interface{} {
 		}
 	}
 
+	ifCEditT := tk.IfSwitchExistsWhole(argsT, "-cedit")
+	
+	if ifCEditT {
+		tmps := tk.GetMultiLineInput(nil, "-title="+fmt.Sprintf("Charlang by TopXeQ V%v", charlang.VersionG), "-bottom=Press Ctrl-Q to finish, Ctrl-X to exit.", "-width=78", "-height=10")
+		
+		if strings.HasPrefix(tmps, "TXERROR:") {
+			if tmps == "TXERROR:cancel" {
+				return nil
+			} else {
+				tk.Pl("failed to get input: %v", tmps[8:])
+				return nil
+			}
+		} else {
+			scriptT = "CMD"
+			cmdT = tmps
+			scriptPathT = ""
+		}
+	}
+
 	if scriptT == "" && (!ifClipT) && (!ifSelectScriptT) && (!ifEditT) && (!ifEmbedT) && (!ifInExeT) && (!ifPipeT) {
 		autoPathT := "auto.char"
 		autoCxbPathT := "auto.cxb"
