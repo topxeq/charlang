@@ -1,6 +1,8 @@
 module github.com/topxeq/charlang/cmd/char
 
-go 1.22.3
+go 1.23.0
+
+toolchain go1.24.1
 
 // replace github.com/topxeq/gods v0.0.0 => ../../../gods
 
@@ -122,7 +124,7 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff // indirect
 	github.com/topxeq/countingwriter v0.0.0-20230115115152-84660be6de09 // indirect
-	github.com/topxeq/docxrepl v0.0.0-20250213015321-4bb6fda31782 // indirect
+	github.com/topxeq/docxrepl v0.0.0-20250311080137-aa66335eab2e // indirect
 	github.com/topxeq/gods v0.0.0-20220125023913-b5718bb0c704 // indirect
 	github.com/topxeq/goph v0.0.0-20240813015542-ebac0794140b // indirect
 	github.com/topxeq/mahonia v0.0.0-20190828060648-12b0599ddd1a // indirect
@@ -142,13 +144,13 @@ require (
 	github.com/yuin/goldmark v1.7.2 // indirect
 	github.com/yuin/goldmark-highlighting v0.0.0-20220208100518-594be1970594 // indirect
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
-	golang.org/x/crypto v0.33.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/image v0.18.0 // indirect
-	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/term v0.29.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/term v0.30.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	modernc.org/libc v1.37.6 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect

@@ -73,6 +73,7 @@ const (
 	BuiltinStatusToMap
 	BuiltinDocxToStrs
 	BuiltinDocxReplacePattern
+	BuiltinDocxGetPlaceholders
 	BuiltinShowTable
 	BuiltinGuiServerCommand
 	BuiltinGetMapItem
@@ -241,6 +242,8 @@ const (
 	BuiltinDecryptText
 	BuiltinEncryptTextByTXTE
 	BuiltinDecryptTextByTXTE
+	BuiltinEncryptDataByTXDEE
+	BuiltinDecryptDataByTXDEE
 	BuiltinAesEncrypt
 	BuiltinAesDecrypt
 	BuiltinHtmlEncode
@@ -1173,6 +1176,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"encryptTextByTXTE": BuiltinEncryptTextByTXTE,
 	"decryptTextByTXTE": BuiltinDecryptTextByTXTE,
 
+	"encryptDataByTXDEE": BuiltinEncryptDataByTXDEE,
+	"decryptDataByTXDEE": BuiltinDecryptDataByTXDEE,
+
 	"encryptData":  BuiltinEncryptData,
 	"encryptBytes": BuiltinEncryptData,
 	"decryptData":  BuiltinDecryptData,
@@ -1358,6 +1364,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"docxToStrs": BuiltinDocxToStrs,
 
 	"docxReplacePattern": BuiltinDocxReplacePattern,
+	"docxGetPlaceholders": BuiltinDocxGetPlaceholders,
 
 	"showTable": BuiltinShowTable,
 
@@ -3308,6 +3315,16 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASSRS(tk.DecryptStringByTXTE),
 		ValueEx: FnASSRSex(tk.DecryptStringByTXTE),
 	},
+	BuiltinEncryptDataByTXDEE: &BuiltinFunction{
+		Name:    "encryptDataByTXDEE",
+		Value:   FnALySRLy(tk.EncryptDataByTXDEE),
+		ValueEx: FnALySRLyex(tk.EncryptDataByTXDEE),
+	},
+	BuiltinDecryptDataByTXDEE: &BuiltinFunction{
+		Name:    "decryptDataByTXDEE",
+		Value:   FnALySRLy(tk.DecryptDataByTXDEE),
+		ValueEx: FnALySRLyex(tk.DecryptDataByTXDEE),
+	},
 	BuiltinEncryptData: &BuiltinFunction{
 		Name:    "encryptData",
 		Value:   FnALyVsRLy(tk.EncryptDataByTXDEF),
@@ -3994,6 +4011,11 @@ var BuiltinObjects = [...]Object{
 		Name: "docxReplacePattern",
 		Value:   CallExAdapter(builtinDocxReplacePatternFunc),
 		ValueEx: builtinDocxReplacePatternFunc,
+	},
+	BuiltinDocxGetPlaceholders: &BuiltinFunction{
+		Name: "docxGetPlaceholders",
+		Value:   CallExAdapter(builtinDocxGetPlaceholdersFunc),
+		ValueEx: builtinDocxGetPlaceholdersFunc,
 	},
 	BuiltinShowTable: &BuiltinFunction{
 		Name: "showTable",
@@ -6652,6 +6674,45 @@ func FnALyVsRLyex(fn func([]byte, ...string) []byte) CallableExFunc {
 		vargs := ObjectsToS(args[1:])
 
 		rs := fn([]byte(nv1), vargs...)
+
+		return Bytes(rs), nil
+	}
+}
+
+// like tk.EncryptDataByTXDEE
+func FnALySRLy(fn func([]byte, string) []byte) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return Undefined, NewCommonError("unsupported type: %T", args[0])
+		}
+
+		rs := fn([]byte(nv1), args[1].String())
+
+		return Bytes(rs), nil
+	}
+}
+
+func FnALySRLyex(fn func([]byte, string) []byte) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		
+		if len(args) < 2 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return Undefined, NewCommonError("unsupported type: %T", args[0])
+		}
+
+		rs := fn([]byte(nv1), args[1].String())
 
 		return Bytes(rs), nil
 	}
@@ -15755,6 +15816,28 @@ func builtinDocxReplacePatternFunc(c Call) (Object, error) {
 	}
 
 	return Bytes(rs.([]byte)), nil
+}
+
+func builtinDocxGetPlaceholdersFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	s, ok := args[0].(Bytes)
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupported parameter 1 type(expect bytes): %v", args[0].TypeName()), nil
+	}
+
+	rs := tk.GetPlaceholderInDocxBytes([]byte(s))
+	
+	errT, ok := rs.(error)
+	if ok && errT != nil {
+		return NewCommonErrorWithPos(c, "%v", errT), nil
+	}
+
+	return ConvertToObject(rs), nil
 }
 
 func builtinShowTableFunc(c Call) (Object, error) {
