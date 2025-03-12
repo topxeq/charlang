@@ -244,6 +244,8 @@ const (
 	BuiltinDecryptTextByTXTE
 	BuiltinEncryptDataByTXDEE
 	BuiltinDecryptDataByTXDEE
+	BuiltinEncryptTextByTXDEE
+	BuiltinDecryptTextByTXDEE
 	BuiltinAesEncrypt
 	BuiltinAesDecrypt
 	BuiltinHtmlEncode
@@ -372,6 +374,7 @@ const (
 	BuiltinDelegate
 	BuiltinGetReqBody
 	BuiltinGetReqHeader
+	BuiltinGetReqHeaders
 	BuiltinWriteRespHeader
 	BuiltinSetRespHeader
 	BuiltinParseReqForm
@@ -1139,6 +1142,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// server/service related
 	"getReqHeader":    BuiltinGetReqHeader,
+	"getReqHeaders":    BuiltinGetReqHeaders,
 	"getReqBody":      BuiltinGetReqBody,
 	"parseReqForm":    BuiltinParseReqForm,
 	"parseReqFormEx":  BuiltinParseReqFormEx,
@@ -1178,6 +1182,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"encryptDataByTXDEE": BuiltinEncryptDataByTXDEE,
 	"decryptDataByTXDEE": BuiltinDecryptDataByTXDEE,
+
+	"encryptTextByTXDEE": BuiltinEncryptTextByTXDEE,
+	"decryptTextByTXDEE": BuiltinDecryptTextByTXDEE,
 
 	"encryptData":  BuiltinEncryptData,
 	"encryptBytes": BuiltinEncryptData,
@@ -3203,6 +3210,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinGetReqHeaderFunc),
 		ValueEx: builtinGetReqHeaderFunc,
 	},
+	BuiltinGetReqHeaders: &BuiltinFunction{
+		Name:    "getReqHeaders",
+		Value:   CallExAdapter(builtinGetReqHeadersFunc),
+		ValueEx: builtinGetReqHeadersFunc,
+	},
 	BuiltinGetReqBody: &BuiltinFunction{
 		Name:    "getReqBody",
 		Value:   CallExAdapter(builtinGetReqBodyFunc),
@@ -3324,6 +3336,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "decryptDataByTXDEE",
 		Value:   FnALySRLy(tk.DecryptDataByTXDEE),
 		ValueEx: FnALySRLyex(tk.DecryptDataByTXDEE),
+	},
+	BuiltinEncryptTextByTXDEE: &BuiltinFunction{
+		Name:    "encryptTextByTXDEE",
+		Value:   FnASSRS(tk.EncryptStringByTXDEE),
+		ValueEx: FnASSRSex(tk.EncryptStringByTXDEE),
+	},
+	BuiltinDecryptTextByTXDEE: &BuiltinFunction{
+		Name:    "decryptTextByTXDEE",
+		Value:   FnASSRS(tk.DecryptStringByTXDEE),
+		ValueEx: FnASSRSex(tk.DecryptStringByTXDEE),
 	},
 	BuiltinEncryptData: &BuiltinFunction{
 		Name:    "encryptData",
@@ -12340,6 +12362,30 @@ func builtinGetReqHeaderFunc(c Call) (Object, error) {
 	reqT := nv1.Value
 
 	return ToStringObject(reqT.Header.Get(args[1].String())), nil
+}
+
+func builtinGetReqHeadersFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		rs := NewCommonErrorWithPos(c, "not enough parameters")
+		return rs, nil
+	}
+
+	nv1, ok := args[0].(*HttpReq)
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
+	}
+
+	reqT := nv1.Value
+	
+	mapT := make(Map)
+	
+	for k, v := range reqT.Header {
+		mapT[k] = String{Value: v[0]}
+	}
+
+	return mapT, nil
 }
 
 func builtinIsHttpsFunc(c Call) (Object, error) {
