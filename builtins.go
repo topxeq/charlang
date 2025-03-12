@@ -17119,10 +17119,21 @@ func builtinAesEncryptFunc(c Call) (Object, error) {
 	} else {
 		vp = []byte(v)
 	}
-
+	
 	keyT := args[1].String()
 	
-	rs, errT := tk.AESEncrypt(vp, []byte(keyT))
+	vs := ObjectsToS(args[2:])
+	
+	modeT := tk.GetSwitch(vs, "-mode=", "")
+
+	var rs []byte
+	var errT error
+	
+	if modeT == "cbc" {
+		rs, errT = tk.AESEncryptCBC(vp, []byte(keyT))
+	} else {
+		rs, errT = tk.AESEncrypt(vp, []byte(keyT))
+	}
 
 	if errT != nil {
 		return NewCommonErrorWithPos(c, "failed to decrypt with AES: %v", errT), nil
@@ -17151,7 +17162,18 @@ func builtinAesDecryptFunc(c Call) (Object, error) {
 
 	keyT := args[1].String()
 	
-	rs, errT := tk.AESDecrypt(vp, []byte(keyT))
+	vs := ObjectsToS(args[2:])
+	
+	modeT := tk.GetSwitch(vs, "-mode=", "")
+
+	var rs []byte
+	var errT error
+	
+	if modeT == "cbc" {
+		rs, errT = tk.AESDecryptCBC(vp, []byte(keyT))
+	} else {
+		rs, errT = tk.AESDecrypt(vp, []byte(keyT))
+	}
 
 	if errT != nil {
 		return NewCommonErrorWithPos(c, "failed to decrypt with AES: %v", errT), nil
