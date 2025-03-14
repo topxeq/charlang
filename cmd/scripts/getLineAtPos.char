@@ -1,0 +1,19 @@
+global argsG
+
+idxT := toInt(trim(getSwitch(argsG, "-idx=", "0")))
+
+s1 := getClipText()
+
+s1 = strReplace(s1, "\r", "")
+
+s2 := s1[:idxT]
+
+linesCountT := strCount(s2, "\n")
+
+startT := idxT - 10
+
+if startT < 0 {
+	startT = 0
+}
+
+plv(linesCountT, strSplit(s1, "\n")[linesCountT], s1[startT:idxT])
