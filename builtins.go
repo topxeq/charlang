@@ -192,6 +192,8 @@ const (
 	BuiltinGetNowTimeStamp
 	BuiltinBase64Encode
 	BuiltinBase64Decode
+	BuiltinBase64EncodeByRawUrl
+	BuiltinBase64DecodeByRawUrl
 	BuiltinXmlGetNodeStr
 	BuiltinStrXmlEncode
 	BuiltinFromXml
@@ -269,6 +271,8 @@ const (
 	BuiltinStrSplit
 	BuiltinStrSplitN
 	BuiltinGenToken
+	BuiltinGenJwtToken
+	BuiltinParseJwtToken
 	BuiltinStrContains
 	BuiltinStrContainsAny
 	BuiltinStrContainsIn
@@ -978,6 +982,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"base64Encode": BuiltinBase64Encode,
 	"base64Decode": BuiltinBase64Decode,
 
+	"base64EncodeByRawUrl": BuiltinBase64EncodeByRawUrl,
+	"base64DecodeByRawUrl": BuiltinBase64DecodeByRawUrl,
+
 	"toJSON":   BuiltinToJSON,
 	"toJson":   BuiltinToJSON,
 	"fromJSON": BuiltinFromJSON,
@@ -1166,6 +1173,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"genToken":   BuiltinGenToken,
 	"checkToken": BuiltinCheckToken,
 
+	"genJwtToken":   BuiltinGenJwtToken, // genJwtToken({"sub":"user1","exp":1742450426,"userId":116}, "my_secret", "-noType", "-base64Secret"), genJwtToken({"sub":"user1","exp":1742450426,"userId":116}, base64DecodeByRawUrl("my_secret"), "-noType")
+	"parseJwtToken":   BuiltinParseJwtToken, 
+
 	"getOtpCode":   BuiltinGetOtpCode,
 	"genOtpCode":   BuiltinGetOtpCode,
 	"checkOtpCode": BuiltinCheckOtpCode,
@@ -1194,8 +1204,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"encryptStream": BuiltinEncryptStream,
 	"decryptStream": BuiltinDecryptStream,
 
-	"aesEncrypt": BuiltinAesEncrypt, // AES encrypt string or bytes
-	"aesDecrypt": BuiltinAesDecrypt, // AES decrypt string or bytes
+	"aesEncrypt": BuiltinAesEncrypt, // AES encrypt string or bytes, "-cbc" to use cbc
+	"aesDecrypt": BuiltinAesDecrypt, // AES decrypt string or bytes, "-cbc" to use cbc
 
 	// image related
 	"loadImageFromBytes": BuiltinLoadImageFromBytes, // usage: imageT := loadImageFromBytes(bytesT, "-type=png")
@@ -2682,6 +2692,16 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASRA(tk.FromBase64),
 		ValueEx: FnASRAex(tk.FromBase64),
 	},
+	BuiltinBase64EncodeByRawUrl: &BuiltinFunction{
+		Name:    "base64EncodeByRawUrl",
+		Value:   CallExAdapter(builtinBase64EncodeByRawUrlFunc),
+		ValueEx: builtinBase64EncodeByRawUrlFunc,
+	},
+	BuiltinBase64DecodeByRawUrl: &BuiltinFunction{
+		Name:    "base64DecodeByRawUrl",
+		Value:   CallExAdapter(builtinBase64DecodeByRawUrlFunc),
+		ValueEx: builtinBase64DecodeByRawUrlFunc,
+	},
 	BuiltinToJSON: &BuiltinFunction{
 		Name:    "toJSON",
 		Value:   CallExAdapter(builtinToJSONFunc),
@@ -3291,6 +3311,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "checkToken",
 		Value:   FnASVsRS(tk.CheckToken),
 		ValueEx: FnASVsRSex(tk.CheckToken),
+	},
+	BuiltinGenJwtToken: &BuiltinFunction{
+		Name:    "genJwtToken",
+		Value:   CallExAdapter(builtinGenJwtTokenFunc),
+		ValueEx: builtinGenJwtTokenFunc,
+	},
+	BuiltinParseJwtToken: &BuiltinFunction{
+		Name:    "parseJwtToken",
+		Value:   CallExAdapter(builtinParseJwtTokenFunc),
+		ValueEx: builtinParseJwtTokenFunc,
 	},
 	BuiltinGetOtpCode: &BuiltinFunction{
 		Name:    "getOtpCode",
@@ -8441,6 +8471,60 @@ func builtinBase64EncodeFunc(c Call) (Object, error) {
 	}
 }
 
+func builtinBase64EncodeByRawUrlFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	lenT := len(args)
+
+	if lenT < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	vs := ObjectsToS(args[1:])
+
+	switch nv := args[0].(type) {
+	case String:
+		return String{Value: base64.RawURLEncoding.EncodeToString([]byte(nv.Value))}, nil
+	case Bytes:
+		return String{Value: base64.RawURLEncoding.EncodeToString([]byte(nv))}, nil
+	case *StringBuilder:
+		return String{Value: base64.RawURLEncoding.EncodeToString([]byte(nv.String()))}, nil
+	case *BytesBuffer:
+		return String{Value: base64.RawURLEncoding.EncodeToString([]byte(nv.Value.Bytes()))}, nil
+	case *Image:
+		formatT := strings.TrimSpace(tk.GetSwitch(vs, "-format=", ".png"))
+		bytesT := tk.SaveImageToBytes(nv.Value, formatT)
+
+		tmps := base64.RawURLEncoding.EncodeToString(bytesT)
+
+		if tk.IfSwitchExists(vs, "-addHead") {
+			tmps = "data:image/" + strings.Trim(formatT, ".") + ";base64," + tmps
+		}
+
+		return String{Value: tmps}, nil
+	default:
+		return String{Value: base64.RawURLEncoding.EncodeToString([]byte(nv.String()))}, nil
+	}
+}
+
+func builtinBase64DecodeByRawUrlFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	lenT := len(args)
+
+	if lenT < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	bufT, errT := base64.RawURLEncoding.DecodeString(args[0].String())
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to decode base64-raw-url: %v", errT), nil
+	}
+
+	return Bytes(bufT), nil
+}
+
 func builtinFromJSONFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12263,6 +12347,92 @@ func builtinIsEncryptedFunc(c Call) (Object, error) {
 	}
 
 	return NewCommonErrorWithPos(c, "unsupport object type: %T", args[0]), nil
+}
+
+func builtinGenJwtTokenFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+	
+//	var v1Str string
+//
+//	v1, ok := args[0].(Map)
+//	if ok {
+//		v1Str = tk.ToJSONX(v1, "-sort")
+//	} else {
+//		v1Str = args[0].String()
+//	}
+
+	vs := ObjectsToS(args[2:])
+
+	var v2Bytes []byte
+	var errT error
+	
+	v2, ok := args[1].(Bytes)
+	if ok {
+		v2Bytes = []byte(v2)
+	} else {
+		if tk.IfSwitchExists(vs, "-base64Secret") {
+			v2Bytes, errT = base64.RawURLEncoding.DecodeString(args[1].String())
+
+			if errT != nil {
+				return NewCommonErrorWithPos(c, "failed to decode base64-raw-url: %v", errT), nil
+			}
+
+		} else {
+			v2Bytes = []byte(args[1].String())
+		}
+		
+	}
+	
+	rs := tk.GenerateJwtToken(args[0], v2Bytes, vs...)
+
+	return String{Value: rs}, nil
+}
+
+func builtinParseJwtTokenFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+	
+//	var v1Str string
+//
+//	v1, ok := args[0].(Map)
+//	if ok {
+//		v1Str = tk.ToJSONX(v1, "-sort")
+//	} else {
+//		v1Str = args[0].String()
+//	}
+
+	vs := ObjectsToS(args[2:])
+
+	var v2Bytes []byte
+	var errT error
+	
+	v2, ok := args[1].(Bytes)
+	if ok {
+		v2Bytes = []byte(v2)
+	} else {
+		if tk.IfSwitchExists(vs, "-base64Secret") {
+			v2Bytes, errT = base64.RawURLEncoding.DecodeString(args[1].String())
+
+			if errT != nil {
+				return NewCommonErrorWithPos(c, "failed to decode base64-raw-url: %v", errT), nil
+			}
+
+		} else {
+			v2Bytes = []byte(args[1].String())
+		}
+		
+	}
+	
+	rs := tk.ParseJwtToken(args[0].String(), v2Bytes, vs...)
+
+	return ConvertToObject(rs), nil
 }
 
 func builtinParseReqFormFunc(c Call) (Object, error) {
