@@ -17306,7 +17306,7 @@ func builtinAesEncryptFunc(c Call) (Object, error) {
 	}
 
 	if errT != nil {
-		return NewCommonErrorWithPos(c, "failed to decrypt with AES: %v", errT), nil
+		return NewCommonErrorWithPos(c, "failed to encrypt with AES: %v", errT), nil
 	}
 
 	return String{Value: string(rs)}, nil
