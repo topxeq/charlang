@@ -1271,7 +1271,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"excelReadSheet":     BuiltinExcelReadSheet,
 	"excelWriteSheet":    BuiltinExcelWriteSheet,
 	"excelReadCell":      BuiltinExcelReadCell,
+	"excelGetCellValue":      BuiltinExcelReadCell,
 	"excelWriteCell":     BuiltinExcelWriteCell,
+	"excelSetCellValue":     BuiltinExcelWriteCell,
 	"excelGetColumnIndexByName":  BuiltinExcelGetColumnIndexByName,
 	"excelGetColumnNameByIndex":  BuiltinExcelGetColumnNameByIndex,
 
@@ -10677,6 +10679,18 @@ func builtinExcelWriteToFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "invalid type: %T", args[0]), nil
 	} else {
 		f = r0.Value
+	}
+
+	respT, ok := args[1].(*HttpResp)
+
+	if ok {
+		cntT, errT := f.WriteTo(respT.Value)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to write excel data: %v", errT), nil
+		}
+
+		return Int(cntT), nil
 	}
 
 	writerT, ok := args[1].(*Writer)
