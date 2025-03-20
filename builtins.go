@@ -732,6 +732,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"toFloat":           BuiltinToFloat,
 	"toTime":            BuiltinToTime,
 	"toHex":             BuiltinToHex,
+	"strToHex":             BuiltinToHex,
 	"hexEncode":         BuiltinToHex,
 	"unhex":             BuiltinUnhex,
 	"hexDecode":         BuiltinUnhex,
