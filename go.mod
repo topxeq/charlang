@@ -12,7 +12,7 @@ require (
 	github.com/minio/minio-go/v7 v7.0.76
 	github.com/stretchr/testify v1.10.0
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff
-	github.com/topxeq/sqltk v0.0.0-20241222022816-b39dde4c2ebe
+	github.com/topxeq/sqltk v0.0.0-20250321071853-ac6f8f228108
 	github.com/topxeq/tkc v0.0.0
 )
 
@@ -43,7 +43,7 @@ require (
 	github.com/ebitengine/purego v0.8.2 // indirect
 	github.com/eiannone/keyboard v0.0.0-20220611211555-0d226195f203 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
-	github.com/expr-lang/expr v1.16.9 // indirect
+	github.com/expr-lang/expr v1.17.1 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
