@@ -1034,7 +1034,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"systemCmdDetached": BuiltinSystemCmdDetached,
 	"systemStart": BuiltinSystemStart,
 
-	"getSysInfo": BuiltinGetSysInfo,
+	"getSysInfo": BuiltinGetSysInfo, // getSysInfo("-disk=/", "-cpuTime=0.5"), by default, disk info will not be retrieved
 
 	"getEnv": BuiltinGetEnv,
 	"setEnv": BuiltinSetEnv,
