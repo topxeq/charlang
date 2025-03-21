@@ -474,6 +474,7 @@ const (
 	BuiltinSaveText
 	BuiltinAppendText
 	BuiltinJoinPath
+	BuiltinGetSysInfo
 	BuiltinGetEnv
 	BuiltinSetEnv
 	BuiltinTypeOfAny
@@ -1032,6 +1033,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"systemCmd": BuiltinSystemCmd,
 	"systemCmdDetached": BuiltinSystemCmdDetached,
 	"systemStart": BuiltinSystemStart,
+
+	"getSysInfo": BuiltinGetSysInfo,
 
 	"getEnv": BuiltinGetEnv,
 	"setEnv": BuiltinSetEnv,
@@ -2858,6 +2861,11 @@ var BuiltinObjects = [...]Object{
 		ValueEx: FnASRSex(tk.RunWinFileWithSystemDefault),
 	},
 
+	BuiltinGetSysInfo: &BuiltinFunction{
+		Name:    "getSysInfo",
+		Value:   FnAVsRA(tk.GetSystemInfo),
+		ValueEx: FnAVsRAex(tk.GetSystemInfo),
+	},
 	BuiltinGetEnv: &BuiltinFunction{
 		Name:    "getEnv",
 		Value:   CallExAdapter(builtinGetEnvFunc),
@@ -6610,6 +6618,23 @@ func FnAVsRSex(fn func(...string) string) CallableExFunc {
 
 		rs := fn(ObjectsToS(args)...)
 		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.GetSystemInfo
+func FnAVsRA(fn func(...string) interface{}) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		rs := fn(ObjectsToS(args)...)
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnAVsRAex(fn func(...string) interface{}) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		rs := fn(ObjectsToS(args)...)
+		return ConvertToObject(rs), nil
 	}
 }
 
