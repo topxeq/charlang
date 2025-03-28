@@ -2,7 +2,7 @@
 
 - [The Char Language (Charlang)](#the-char-language-charlang)
   - [1. Features](#1-features)
-  - [2. New Features](#2-new-features)
+  - [2. More Features](#2-more-features)
   - [3. Quick Links](#3-quick-links)
   - [4. Download](#4-download)
   - [5. Installation](#5-installation)
@@ -133,7 +133,7 @@ Charlang is inspired by and based on awesome script language [uGo](https://githu
 * Module support.
 * Go like syntax with additions.
 
-## 2. New Features
+## 2. More Features
 
 - New types such as Byte, Image, Any...
 - New functions: NewCommonError, NewError and more...
@@ -141,6 +141,7 @@ Charlang is inspired by and based on awesome script language [uGo](https://githu
 - New global variables and resources.
 - A new thread-model.
 - Runtime/dynamically script compiling and running capability.
+- Builtin Console and GUI Code Editor.
 - Server mode: quickly start a WEB and/or application server.
 - Run as system service.
 
@@ -304,7 +305,8 @@ Examples:
 - Run from local scripts directory: place a config file local.cfg in the subdirectory 'char' under the user's home directory, with text content such as `c:\scripts`, then `char -local basic.char` will run 'c:\script\basic.char'
 - Run from cloud/network: place a config file cloud.cfg in the subdirectory 'char' under the user's home directory, with text content such as `http://script.my.com/`, then `char -cloud basic.char` will be the same as `char -remote http://script.my.com/basic.char`
 - Select the script(or input the script file path in console mode) to run: `char -selectScript`
-- Load the script: `char -edit d:\scripts\test.char`, then run it in the editor(click the 'Quick Run' button) on Windows(WebView2)
+- Load the script in the builtin console(multi-line) editor: `char -cedit d:\scripts\test.char`, then press Ctrl-Q to run, Ctrl-X to exit
+- Load the script in the builtin GUI editor: `char -edit d:\scripts\test.char`, then modify or run it in the editor(click the 'Quick Run' button) on Windows(WebView2)
 - Run it in the CharEd IDE(Lazarus), which can be downloaded from the official website, in the Windows package
 - Use it as an embeded script language engine, in any Golang compatible languages
 - Run it through other languages, with the compiled DLL of Charlang

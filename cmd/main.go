@@ -1199,25 +1199,6 @@ func runArgs(argsA ...string) interface{} {
 		}
 	}
 
-	ifCEditT := tk.IfSwitchExistsWhole(argsT, "-cedit")
-	
-	if ifCEditT {
-		tmps := tk.GetMultiLineInput(nil, "-title="+fmt.Sprintf("Charlang by TopXeQ V%v", charlang.VersionG), "-bottom=Press Ctrl-Q to finish, Ctrl-X to exit.", "-width=78", "-height=10")
-		
-		if strings.HasPrefix(tmps, "TXERROR:") {
-			if tmps == "TXERROR:cancel" {
-				return nil
-			} else {
-				tk.Pl("failed to get input: %v", tmps[8:])
-				return nil
-			}
-		} else {
-			scriptT = "CMD"
-			cmdT = tmps
-			scriptPathT = ""
-		}
-	}
-
 	if scriptT == "" && (!ifClipT) && (!ifSelectScriptT) && (!ifEditT) && (!ifEmbedT) && (!ifInExeT) && (!ifPipeT) {
 		autoPathT := "auto.char"
 		autoCxbPathT := "auto.cxb"
@@ -1325,12 +1306,12 @@ func runArgs(argsA ...string) interface{} {
 
 	charlang.VerboseG = tk.IfSwitchExistsWhole(argsT, "-verbose")
 
-	 ifMagicT := false
-	 magicNumberT, errT := tk.StrToIntE(scriptT)
+	ifMagicT := false
+	magicNumberT, errT := tk.StrToIntE(scriptT)
 
-	 if errT == nil {
-	 	ifMagicT = true
-	 }
+	if errT == nil {
+		ifMagicT = true
+	}
 
 	if ifViewPageT {
 		if !ifInExeT {
@@ -1666,7 +1647,33 @@ func runArgs(argsA ...string) interface{} {
 	 	}
 
 	 	return nil
-	 }
+	}
+
+	ifCEditT := tk.IfSwitchExistsWhole(argsT, "-cedit")
+	
+	if ifCEditT {
+		var tmps string
+		
+		if fcT != "" {
+			tmps = tk.GetMultiLineInput(nil, "-title="+fmt.Sprintf("Charlang by TopXeQ V%v", charlang.VersionG), "-bottom=Press Ctrl-Q to finish, Ctrl-X to exit.", "-width=78", "-height=10", "-text="+fcT)
+		} else {
+			tmps = tk.GetMultiLineInput(nil, "-title="+fmt.Sprintf("Charlang by TopXeQ V%v", charlang.VersionG), "-bottom=Press Ctrl-Q to finish, Ctrl-X to exit.", "-width=78", "-height=10")
+		}
+		
+		if strings.HasPrefix(tmps, "TXERROR:") {
+			if tmps == "TXERROR:cancel" {
+				return nil
+			} else {
+				tk.Pl("failed to get input: %v", tmps[8:])
+				return nil
+			}
+		} else {
+//			scriptT = tmps
+//			scriptT = "CMD"
+//			cmdT = tmps
+//			scriptPathT = ""
+		}
+	}
 
 	// if ifXieT {
 	// 	var guiHandlerG tk.TXDelegate = guiHandler
