@@ -346,6 +346,7 @@ const (
 	// BuiltinSortByFunc
 	BuiltinLimitStr
 	BuiltinStrFindDiffPos
+	BuiltinStrDiff
 	BuiltinStrFindAllSub
 	BuiltinRemoveItems
 	BuiltinAppendList
@@ -374,6 +375,7 @@ const (
 	BuiltinErrToEmpty
 	BuiltinCharCode
 	BuiltinEvalMachine
+	BuiltinJsVm
 	BuiltinGel
 	BuiltinDelegate
 	BuiltinGetReqBody
@@ -686,6 +688,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"gel":      BuiltinGel,
 	"delegate": BuiltinDelegate,
 
+	"jsVm": BuiltinJsVm, // new a JavaScript VM
+
 	"database": BuiltinDatabase,
 
 	// new related
@@ -785,6 +789,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strGetLastComponent": BuiltinStrGetLastComponent, // strGetLastComponent("/root/abc", "/"), default separator is \ in Windows or / in Linux/MacOS
 
 	"strFindDiffPos": BuiltinStrFindDiffPos, // return -1 if 2 strings are identical
+	
+	"strDiff": BuiltinStrDiff,
 
 	"strFindAllSub": BuiltinStrFindAllSub,
 
@@ -1714,6 +1720,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(BuiltinDelegateFunc),
 		ValueEx: BuiltinDelegateFunc,
 	},
+	BuiltinJsVm: &BuiltinFunction{
+		Name:    "jsVm",
+		Value:   CallExAdapter(NewJsVm),
+		ValueEx: NewJsVm,
+	},
 
 	BuiltinDatabase: &BuiltinFunction{
 		Name:    "database",
@@ -2035,6 +2046,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strFindDiffPos",
 		Value:   FnASSRI(tk.FindFirstDiffIndex),
 		ValueEx: FnASSRIex(tk.FindFirstDiffIndex),
+	},
+	BuiltinStrDiff: &BuiltinFunction{
+		Name:    "strDiff",
+		Value:   FnASSVsRA(tk.StrDiff),
+		ValueEx: FnASSVsRAex(tk.StrDiff),
 	},
 	BuiltinStrFindAllSub: &BuiltinFunction{
 		Name:    "strFindAllSub",
