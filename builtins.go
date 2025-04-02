@@ -1146,7 +1146,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"postRequest": BuiltinPostRequest,
 	"prepareMultiPartFieldFromBytes": BuiltinPrepareMultiPartFieldFromBytes, // prepareMultiPartFieldFromBytes("file", bytes[0x65, 0x66, 0x67]), return ["for content-type", bytes generated]
-	"prepareMultiPartFileFromBytes": BuiltinPrepareMultiPartFileFromBytes, // prepareMultiPartFileFromBytes("file", "a.txt", bytes[0x65, 0x66, 0x67]), return ["for content-type", bytes generated]
+	"prepareMultiPartFileFromBytes": BuiltinPrepareMultiPartFileFromBytes, // prepareMultiPartFileFromBytes("file", "a.txt", bytes[0x65, 0x66, 0x67]), return ["for content-type", bytes generated], then rs := getWeb(spr("https://example.com/ms/mgmt/uploadAttach?uid=%v&valueonly=true&witherror=true&billNo=%v", uidT, newBillNoT), formObjT[1], `-headers={"Content-Type":"`+formObjT[0]+`"}`, "-timeout=30")
 
 	"urlExists": BuiltinUrlExists,
 

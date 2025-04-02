@@ -1199,7 +1199,9 @@ func runArgs(argsA ...string) interface{} {
 		}
 	}
 
-	if scriptT == "" && (!ifClipT) && (!ifSelectScriptT) && (!ifEditT) && (!ifEmbedT) && (!ifInExeT) && (!ifPipeT) {
+	ifCEditT := tk.IfSwitchExistsWhole(argsT, "-cedit")
+	
+	if scriptT == "" && (!ifClipT) && (!ifSelectScriptT) && (!ifEditT) && (!ifCEditT) && (!ifEmbedT) && (!ifInExeT) && (!ifPipeT) {
 		autoPathT := "auto.char"
 		autoCxbPathT := "auto.cxb"
 
@@ -1454,6 +1456,9 @@ func runArgs(argsA ...string) interface{} {
 		scriptPathT = filepath.Join(localPathT, scriptT)
 
 		fcT = tk.LoadStringFromFile(scriptPathT)
+	} else if ifCEditT {
+		scriptPathT = scriptT
+		fcT = tk.LoadStringFromFile(scriptT)
 	} else {
 		scriptPathT = scriptT
 		fcT = tk.LoadStringFromFile(scriptT)
@@ -1461,7 +1466,11 @@ func runArgs(argsA ...string) interface{} {
 	}
 
 	if tk.IsErrorString(fcT) {
-		return tk.Errf("failed to load script from %v: %v", scriptT, tk.GetErrorString(fcT))
+		if ifCEditT {
+			fcT = ""
+		} else {
+			return tk.Errf("failed to load script from %v: %v", scriptT, tk.GetErrorString(fcT))
+		}
 	}
 
 	rrStrT := ""
@@ -1649,8 +1658,6 @@ func runArgs(argsA ...string) interface{} {
 	 	return nil
 	}
 
-	ifCEditT := tk.IfSwitchExistsWhole(argsT, "-cedit")
-	
 	if ifCEditT {
 		var tmps string
 		
@@ -1668,6 +1675,7 @@ func runArgs(argsA ...string) interface{} {
 				return nil
 			}
 		} else {
+			fcT = tmps
 //			scriptT = tmps
 //			scriptT = "CMD"
 //			cmdT = tmps
