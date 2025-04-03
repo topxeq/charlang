@@ -126,6 +126,7 @@ const (
 	BuiltinRemoveDir
 	BuiltinGetInput
 	BuiltinGetInputf
+	BuiltinGetInputPasswordf
 	BuiltinGetChar
 	BuiltinGetMultiLineInput
 	BuiltinSetStdin
@@ -430,6 +431,7 @@ const (
 	BuiltinFtpSize
 	BuiltinFtpUpload
 	BuiltinFtpUploadFromReader
+	BuiltinFtpDownloadBytes
 	BuiltinSshUpload
 	BuiltinSshUploadBytes
 	BuiltinSshDownload
@@ -1069,6 +1071,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"getInput":  BuiltinGetInput,
 	"getInputf": BuiltinGetInputf,
+	"getInputPasswordf": BuiltinGetInputPasswordf,
 	"getChar":   BuiltinGetChar,
 	"getMultiLineInput":   BuiltinGetMultiLineInput,
 
@@ -1254,6 +1257,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"ftpSize":      BuiltinFtpSize, // could used to determine if file exists, by check the result if is error and contains certain text
 	"ftpUpload":      BuiltinFtpUpload,
 	"ftpUploadFromReader":      BuiltinFtpUploadFromReader,
+	"ftpDownloadBytes":      BuiltinFtpDownloadBytes,
 
 	"sshUpload":      BuiltinSshUpload,
 	"sshUploadBytes": BuiltinSshUploadBytes,
@@ -2959,6 +2963,11 @@ var BuiltinObjects = [...]Object{
 		Value:   FnASVaRS(tk.GetInputf),
 		ValueEx: FnASVaRSex(tk.GetInputf),
 	},
+	BuiltinGetInputPasswordf: &BuiltinFunction{
+		Name:    "getInputPasswordf",
+		Value:   FnASVaRS(tk.GetInputPasswordf),
+		ValueEx: FnASVaRSex(tk.GetInputPasswordf),
+	},
 	BuiltinGetChar: &BuiltinFunction{
 		Name:    "getChar",
 		Value:   FnARA(tk.GetChar),
@@ -3561,6 +3570,12 @@ var BuiltinObjects = [...]Object{
 		Name:    "ftpUploadFromReader",
 		Value:   CallExAdapter(builtinFtpUploadFromReaderFunc),
 		ValueEx: builtinFtpUploadFromReaderFunc,
+	},
+
+	BuiltinFtpDownloadBytes: &BuiltinFunction{
+		Name:    "ftpDownloadBytes",
+		Value:   CallExAdapter(builtinFtpDownloadBytesFunc),
+		ValueEx: builtinFtpDownloadBytesFunc,
 	},
 
 	BuiltinSshUpload: &BuiltinFunction{
@@ -11732,6 +11747,92 @@ func builtinFtpUploadFunc(c Call) (Object, error) {
 //	}
 //
 	return Undefined, nil
+}
+
+func builtinFtpDownloadBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v6 string
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+	
+	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+//	if v5 == "" {
+//		return ConvertToObject(fmt.Errorf("emtpy path")), nil
+//	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+	}
+
+	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to connect ftp server: %v", err)), nil
+	}
+
+	err = clientT.Login(v3, v4)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to login ftp server: %v", err)), nil
+	}
+
+//	_, err := clientT.FileSize(v6)
+//	if err != nil {
+//		return NewCommonErrorWithPos(c, "remote file not exists"), nil
+//	}
+
+	r, err := clientT.Retr(v6)
+	if err != nil {
+		return NewCommonErrorWithPos(c, "failed to download file: %v", err), nil
+	}
+	
+	defer r.Close()
+	
+	bufT, err := io.ReadAll(r)
+	if err != nil {
+		return NewCommonErrorWithPos(c, "failed to read contents: %v", err), nil
+	}
+	
+	err = clientT.Quit()
+
+	if err != nil {
+		return NewCommonErrorWithPos(c, "failed to close ftp connection: %v", err), nil
+	}
+
+	return Bytes(bufT), nil
 }
 
 func builtinFtpUploadFromReaderFunc(c Call) (Object, error) {
