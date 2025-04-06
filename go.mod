@@ -13,7 +13,7 @@ require (
 	github.com/minio/minio-go/v7 v7.0.76
 	github.com/stretchr/testify v1.10.0
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff
-	github.com/topxeq/sqltk v0.0.0-20250321071853-ac6f8f228108
+	github.com/topxeq/sqltk v0.0.0-20250406084423-dfacc20b10c4
 	github.com/topxeq/tkc v0.0.0
 )
 
