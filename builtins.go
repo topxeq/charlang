@@ -1223,6 +1223,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	// image related
 	"loadImageFromBytes": BuiltinLoadImageFromBytes, // usage: imageT := loadImageFromBytes(bytesT, "-type=png")
 	"saveImageToBytes":   BuiltinSaveImageToBytes,   // usage: bytesT := saveImageToBytes(imageT) or bytesT := saveImageToBytes(imageT, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
+	"imageToBytes":   BuiltinSaveImageToBytes,
 
 	"loadImageFromFile": BuiltinLoadImageFromFile, // usage: imageT := loadImageFromFile(`c:\test\abc.png`) or image2T := loadImageFromFile(`c:\test\abc.jpg`, "-type=jpg")
 	"saveImageToFile":   BuiltinSaveImageToFile,   // usage: errT := saveImageToFile(imageT, `c:\test\newabc.png`) or errT := saveImageToFile(imageT, `c:\test\newabc.png`, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
