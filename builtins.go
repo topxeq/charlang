@@ -24,6 +24,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -478,6 +479,7 @@ const (
 	BuiltinSaveText
 	BuiltinAppendText
 	BuiltinJoinPath
+	BuiltinJoinUrlPath
 	BuiltinGetSysInfo
 	BuiltinGetEnv
 	BuiltinSetEnv
@@ -1141,6 +1143,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"isFileNameUtf8InZipBytes": BuiltinIsFileNameUtf8InZipBytes, // return boolean value or error
 
 	// network/web related
+	"joinUrlPath": BuiltinJoinUrlPath, // join multiple url paths into one, equivalent to path.Join in the Go language standard library
+
 	"getWeb":                 BuiltinGetWeb,
 	"downloadFile":                 BuiltinDownloadFile,
 	"getWebBytes":            BuiltinGetWebBytes,
@@ -3195,6 +3199,11 @@ var BuiltinObjects = [...]Object{
 	},
 
 	// network/web related
+	BuiltinJoinUrlPath: &BuiltinFunction{
+		Name:    "joinUrlPath",
+		Value:   FnAVsRS(path.Join),
+		ValueEx: FnAVsRSex(path.Join),
+	},
 	BuiltinGetWeb: &BuiltinFunction{
 		Name:    "getWeb",
 		Value:   FnASVaRA(tk.GetWeb),
