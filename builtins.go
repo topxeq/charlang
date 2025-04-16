@@ -433,11 +433,20 @@ const (
 	BuiltinFtpUpload
 	BuiltinFtpUploadFromReader
 	BuiltinFtpDownloadBytes
+	BuiltinFtpRemoveFile
 	BuiltinSshUpload
 	BuiltinSshUploadBytes
 	BuiltinSshDownload
 	BuiltinSshDownloadBytes
+	BuiltinSshList
+	BuiltinSshIfFileExists
+	BuiltinSshGetFileInfo
 	BuiltinSshRun
+	BuiltinSshRename
+	BuiltinSshJoinPath
+	BuiltinSshRemoveFile
+	BuiltinSshRemoveDir
+	BuiltinSshEnsureMakeDirs
 	BuiltinArchiveFilesToZip
 	BuiltinGetFileListInArchive
 	BuiltinGetFileListInArchiveBytes
@@ -1263,12 +1272,21 @@ var BuiltinsMap = map[string]BuiltinType{
 	"ftpUpload":      BuiltinFtpUpload,
 	"ftpUploadFromReader":      BuiltinFtpUploadFromReader,
 	"ftpDownloadBytes":      BuiltinFtpDownloadBytes,
+	"ftpRemoveFile":      BuiltinFtpRemoveFile,
 
 	"sshUpload":      BuiltinSshUpload,
 	"sshUploadBytes": BuiltinSshUploadBytes,
 	"sshDownload":    BuiltinSshDownload,
 	"sshDownloadBytes":    BuiltinSshDownloadBytes,
+	"sshList":    BuiltinSshList, // sshList("-host=xx.xx.xx.xx", "-port=22", "-user=root", "-password=password123", "-remotePath=/root", "-recursive", "-sep=/", "-pattern=*", "-withDir", "-dirOnly")
+	"sshIfFileExists":    BuiltinSshIfFileExists,
+	"sshGetFileInfo":    BuiltinSshGetFileInfo,
 	"sshRun":         BuiltinSshRun,
+	"sshRename":         BuiltinSshRename,
+	"sshJoinPath":         BuiltinSshJoinPath,
+	"sshRemoveFile":         BuiltinSshRemoveFile,
+	"sshRemoveDir":         BuiltinSshRemoveDir,
+	"sshEnsureMakeDirs":         BuiltinSshEnsureMakeDirs,
 
 	// eTable related
 	"readCsv":  BuiltinReadCsv,
@@ -3588,6 +3606,12 @@ var BuiltinObjects = [...]Object{
 		ValueEx: builtinFtpDownloadBytesFunc,
 	},
 
+	BuiltinFtpRemoveFile: &BuiltinFunction{
+		Name:    "ftpRemoveFile",
+		Value:   CallExAdapter(builtinFtpRemoveFileFunc),
+		ValueEx: builtinFtpRemoveFileFunc,
+	},
+
 	BuiltinSshUpload: &BuiltinFunction{
 		Name:    "sshUpload",
 		Value:   CallExAdapter(builtinSshUploadFunc),
@@ -3608,10 +3632,50 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinSshDownloadBytesFunc),
 		ValueEx: builtinSshDownloadBytesFunc,
 	},
+	BuiltinSshList: &BuiltinFunction{
+		Name:    "sshList",
+		Value:   CallExAdapter(builtinSshListFunc),
+		ValueEx: builtinSshListFunc,
+	},
+	BuiltinSshIfFileExists: &BuiltinFunction{
+		Name:    "sshIfFileExists",
+		Value:   CallExAdapter(builtinSshIfFileExistsFunc),
+		ValueEx: builtinSshIfFileExistsFunc,
+	},
+	BuiltinSshGetFileInfo: &BuiltinFunction{
+		Name:    "sshGetFileInfo",
+		Value:   CallExAdapter(builtinSshGetFileInfoFunc),
+		ValueEx: builtinSshGetFileInfoFunc,
+	},
 	BuiltinSshRun: &BuiltinFunction{
 		Name:    "sshRun",
 		Value:   CallExAdapter(builtinSshRunFunc),
 		ValueEx: builtinSshRunFunc,
+	},
+	BuiltinSshRename: &BuiltinFunction{
+		Name:    "sshRename",
+		Value:   CallExAdapter(builtinSshRenameFunc),
+		ValueEx: builtinSshRenameFunc,
+	},
+	BuiltinSshJoinPath: &BuiltinFunction{
+		Name:    "sshJoinPath",
+		Value:   CallExAdapter(builtinSshJoinPathFunc),
+		ValueEx: builtinSshJoinPathFunc,
+	},
+	BuiltinSshRemoveFile: &BuiltinFunction{
+		Name:    "sshRemoveFile",
+		Value:   CallExAdapter(builtinSshRemoveFileFunc),
+		ValueEx: builtinSshRemoveFileFunc,
+	},
+	BuiltinSshRemoveDir: &BuiltinFunction{
+		Name:    "sshRemoveDir",
+		Value:   CallExAdapter(builtinSshRemoveDirFunc),
+		ValueEx: builtinSshRemoveDirFunc,
+	},
+	BuiltinSshEnsureMakeDirs: &BuiltinFunction{
+		Name:    "sshEnsureMakeDirs",
+		Value:   CallExAdapter(builtinSshEnsureMakeDirsFunc),
+		ValueEx: builtinSshEnsureMakeDirsFunc,
 	},
 
 	// eTable related
@@ -11845,6 +11909,79 @@ func builtinFtpDownloadBytesFunc(c Call) (Object, error) {
 	return Bytes(bufT), nil
 }
 
+func builtinFtpRemoveFileFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v6 string
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+	
+	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+//	if v5 == "" {
+//		return ConvertToObject(fmt.Errorf("emtpy path")), nil
+//	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+	}
+
+	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to connect ftp server: %v", err)), nil
+	}
+
+	err = clientT.Login(v3, v4)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to login ftp server: %v", err)), nil
+	}
+
+//	_, err := clientT.FileSize(v6)
+//	if err != nil {
+//		return NewCommonErrorWithPos(c, "remote file not exists"), nil
+//	}
+
+	err = clientT.Delete(v6)
+	if err != nil {
+		return NewCommonErrorWithPos(c, "failed to remove file: %v", err), nil
+	}
+	
+	return Undefined, nil
+}
+
 func builtinFtpUploadFromReaderFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11940,6 +12077,8 @@ func builtinSshUploadFunc(c Call) (Object, error) {
 
 	var v1, v2, v3, v4, v5, v6 string
 
+	v2 = "22"
+
 	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
 	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
 	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
@@ -12016,6 +12155,8 @@ func builtinSshUploadBytesFunc(c Call) (Object, error) {
 	pa := ObjectsToS(args[1:])
 
 	var v1, v2, v3, v4, v6 string
+
+	v2 = "22"
 
 	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
 	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
@@ -12094,6 +12235,8 @@ func builtinSshDownloadFunc(c Call) (Object, error) {
 
 	var v1, v2, v3, v4, v5, v6 string
 
+	v2 = "22"
+
 	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
 	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
 	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
@@ -12168,6 +12311,8 @@ func builtinSshDownloadBytesFunc(c Call) (Object, error) {
 
 	var v1, v2, v3, v4, v6 string
 
+	v2 = "22"
+
 	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
 	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
 	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
@@ -12219,6 +12364,198 @@ func builtinSshDownloadBytesFunc(c Call) (Object, error) {
 	return Bytes(bytesT), nil
 }
 
+func builtinSshListFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v6 string
+	
+	v2 = "22"
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+	}
+
+	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	defer sshT.Close()
+
+	listT, errT := sshT.Walk(v6, pa...)
+
+	// fmt.Println()
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	return ConvertToObject(listT), nil
+}
+
+func builtinSshIfFileExistsFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v6 string
+	
+	v2 = "22"
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("empty remote path")), nil
+	}
+
+	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	defer sshT.Close()
+
+	rsT, errT := sshT.IfFileExists(v6)
+
+	// fmt.Println()
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	return Bool(rsT), nil
+}
+
+func builtinSshGetFileInfoFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v6 string
+	
+	v2 = "22"
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("empty remote path")), nil
+	}
+
+	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	defer sshT.Close()
+
+	rsT, errT := sshT.GetFileInfo(v6)
+
+	// fmt.Println()
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	return ConvertToObject(rsT), nil
+}
+
 func builtinSshRunFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12229,6 +12566,8 @@ func builtinSshRunFunc(c Call) (Object, error) {
 	pa := ObjectsToS(args)
 
 	var v1, v2, v3, v4, v5 string
+
+	v2 = "22"
 
 	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
 	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
@@ -12273,10 +12612,331 @@ func builtinSshRunFunc(c Call) (Object, error) {
 	outT, errT := sshT.Run(v5)
 
 	if errT != nil {
-		return ConvertToObject(errT), nil
+		return ConvertToObject(fmt.Sprintf("%v\n%v", string(outT), errT)), nil
 	}
 
 	return ToStringObject(outT), nil
+}
+
+func builtinSshRenameFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v5, v6 string
+
+	v2 = "22"
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v5))
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-destPath=", v6))
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if v5 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remote path")), nil
+	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy destination path")), nil
+	}
+
+	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	defer sshT.Close()
+
+	errT = sshT.Rename(v5, v6)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinSshJoinPathFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+	
+	pas1 := []string{}
+	pas2 := []string{}
+	
+	for _, v := range pa {
+		if strings.HasPrefix(v, "-") {
+			pas1 = append(pas1, v)
+		} else {
+			pas2 = append(pas2, v)
+		}
+	}
+
+	var v1, v2, v3, v4 string
+
+	v2 = "22"
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pas1, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pas1, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pas1, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pas1, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if len(pas2) < 1 {
+		return ConvertToObject(fmt.Errorf("emtpy remote paths")), nil
+	}
+
+	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	defer sshT.Close()
+
+	rs := sshT.JoinPath(pas2...)
+
+	return String{Value: rs}, nil
+}
+
+func builtinSshRemoveFileFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v5 string
+
+	v2 = "22"
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v5))
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if v5 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remote path")), nil
+	}
+
+	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	defer sshT.Close()
+
+	errT = sshT.RemoveFile(v5)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinSshRemoveDirFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v5 string
+
+	v2 = "22"
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v5))
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if v5 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remote path")), nil
+	}
+
+	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	defer sshT.Close()
+
+	errT = sshT.RemoveDir(v5)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	return Undefined, nil
+}
+
+func builtinSshEnsureMakeDirsFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v5 string
+
+	v2 = "22"
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v5))
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+	}
+
+	if v5 == "" {
+		return ConvertToObject(fmt.Errorf("emtpy remote path")), nil
+	}
+
+	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	defer sshT.Close()
+
+	errT = sshT.EnsureMakeDirs(v5)
+
+	if errT != nil {
+		return ConvertToObject(errT), nil
+	}
+
+	return Undefined, nil
 }
 
 func builtinStringBuilderFunc(c Call) (Object, error) {
