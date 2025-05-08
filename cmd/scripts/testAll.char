@@ -6,6 +6,10 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", seqT.get(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "runJavaScript.char")
+
+testByText(rs, "result: 3.24\nresult2: 3.24abc\nvalue a: 1.2(float)\n[3.24] [3, 5]\nresult3: 11.24\n", seqT.get(), "runJavaScript.char")
+
 rs = systemCmd("char", "-gopath", "stringBuilder.char")
 
 testByText(rs, "[0] (stringBuilder)(stringBuilder)abc\n123\n[1] (int)4\n[2] (int)3\nsb: (stringBuilder)abc\n123\nabc\n123\n2 + 2 + 5 = 9\n\nabc\n123\n2 + 2 + 5 = 9\n-----   A天很蓝+-*/\n\t=?\n", seqT.get(), "stringBuilder.char")

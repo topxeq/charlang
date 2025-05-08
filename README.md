@@ -33,6 +33,7 @@
       - [Multi-Threading](#multi-threading)
       - [Gel](#gel)
       - [Eval Machine(Virtual Machine to Run More Than One Piece of Script)](#eval-machinevirtual-machine-to-run-more-than-one-piece-of-script)
+      - [Run JavaScript Code](#run-javascript-code)
       - [Implement a Common Web Server](#implement-a-common-web-server)
         - [Start a Simple Web Server(with SSL Support) to Serve Static Files](#start-a-simple-web-serverwith-ssl-support-to-serve-static-files)
         - [Start a Common Web Server](#start-a-common-web-server)
@@ -1501,6 +1502,74 @@ Output:
 (int)8
 (array)[1, 2, 5, 18]
 (int)26
+```
+
+#### Run JavaScript Code
+
+Demonstrate how to create a JavaScript virtual machine to run JavaScript code and/or eval the result value.
+
+```go
+// initialize a JavaScript Virtual Machine
+vmT := jsVm()
+
+// run a piece of JavaScript code, and return the last evaluation
+rs := vmT.run(`
+let a = 1.2
+
+var b = a * 2.7
+
+b
+`)
+
+// get and output the return result
+pl("result: %v", rs)
+
+// set a global value
+vmT.set("c", "abc")
+
+// eval is equivalent to run
+rs2 := vmT.eval(`let d = "" + b + c; d`)
+
+pl("result2: %v", rs2)
+
+// get a global variable value from the VM
+value_a := vmT.get("a")
+
+pl("value a: %v(%v)", value_a, typeOf(value_a))
+
+// set a function/delegate/callback with parameters, then call it
+sourceT := `
+param ...vargs
+
+global inputG
+
+pln(inputG, vargs)
+
+return vargs[0] + vargs[1] + inputG[0]
+`
+
+d1 := delegate(sourceT)
+
+d1c := d1.compile(vmT.get("b")) // pass another parameter(via global variable inputG which will be an array)
+
+vmT.set("f1", d1c)
+
+rs3 := vmT.run(`let d3 = f1(3, 5); d3`)
+
+pl("result3: %v", rs3)
+
+```
+
+Running result:
+
+```shell
+D:\tmpx>char -exam runJavaScript.char
+result: 3.24
+result2: 3.24abc
+value a: 1.2(float)
+[3.24] [3, 5]
+result3: 11.24
+
 ```
 
 #### Implement a Common Web Server

@@ -28,7 +28,7 @@ import (
 )
 
 // global vars
-var VersionG = "1.9.3"
+var VersionG = "1.9.5"
 
 var CodeTextG = ""
 
@@ -1969,6 +1969,58 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
+//	711: map[string]*Function{ // *JsVm
+//		"setFunc": &Function{
+//			Name: "setFunc",
+//			ValueEx: func(c Call) (Object, error) {
+//				nv, ok := c.This.(*JsVm)
+//
+//				if !ok {
+//					return NewCommonError("invalid type: %#v", c.This), nil
+//				}
+//
+//				argsA := c.GetArgs()
+//
+//				if len(argsA) < 2 {
+//					return NewCommonErrorWithPos(c, "not enough parameters"), nil
+//				}
+//
+//				arg0 := argsA[0].String()
+//
+//				fnObjT := argsA[1]
+//
+//				fnT, ok := fnObjT.(*CompiledFunction)
+//
+//				if !ok {
+//					return NewCommonErrorWithPos(c, "invalid parameter 2: %T", fnObjT), nil
+//				}
+//				
+//				handlerT := func(argsA ...interface{}) interface{} {
+//					argsT := []Object{}
+//					
+//					for _, v := range argsA {
+//						argsT = append(argsT, ConvertToObject(v))
+//					}
+//					
+//					retT, errT := NewInvoker(c.VM(), fnT).Invoke(argsT...)
+//
+//					if errT != nil {
+//						return fmt.Errorf("failed to invoke handler: %v", errT)
+//					}
+//
+//					return ConvertFromObject(retT)
+//				}
+//				
+//				errT := nv.Value.Set(arg0, handlerT)
+//
+//				if errT != nil {
+//					return NewCommonErrorWithPos(c, "failed to set handler: %v", errT), nil
+//				}
+//
+//				return Undefined, nil
+//			},
+//		},
+//	},
 	1003: map[string]*Function{ // *Excel
 		"toStr": &Function{
 			Name: "toStr",
@@ -2911,7 +2963,7 @@ func ConvertToObject(vA interface{}) Object {
 }
 
 func ConvertFromObject(vA Object) interface{} {
-	// tk.Plo("ConvertFromObject:", vA)
+//	 tk.Plo("ConvertFromObject:", vA)
 	// if vA.TypeName() == "int" {
 	// 	return int(vA)
 	// }

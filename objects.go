@@ -12352,6 +12352,24 @@ func (o *JsVm) IndexSet(index, value Object) error {
 }
 
 func (o *JsVm) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
 	return nil, ErrNotIndexable
 }
 
@@ -12381,18 +12399,42 @@ func (o *JsVm) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return Undefined, nil
+	case "set":
+		args := c.GetArgs()
+		
+		if len(args) < 2 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		errT := o.Value.Set(args[0].String(), ConvertFromObject(args[1]))
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		}
+
+		return Undefined, nil
+	case "get":
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		rs := o.Value.Get(args[0].String()).Export()
+
+		return ConvertToObject(rs), nil
 	}
 
-//	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
-//	
-//	if errT != nil || tk.IsError(rs1) {
-//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
-//		return ConvertToObject(rs3), nil
-//	}
-//	
-//	return rs1, errT
+	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
 	
-	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+	if errT != nil || tk.IsError(rs1) {
+		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
+		return ConvertToObject(rs3), nil
+	}
+	
+	return rs1, errT
+	
+//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 }
 
 func NewJsVm(c Call) (Object, error) {

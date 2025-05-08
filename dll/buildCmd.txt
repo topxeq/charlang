@@ -1,0 +1,1 @@
+go build -buildmode=c-shared -ldflags="-s -w" -o \goprjs\bin\char.dll chardll.go
