@@ -19046,6 +19046,16 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 		}
 
 		return Undefined, nil
+	} else if typeNameT == "database" {
+		r1 := args[0].(*Database)
+
+		errT := r1.Value.Close()
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to close DB: %v", errT), nil
+		}
+
+		return Undefined, nil
 	} else if typeNameT == "excel" {
 		r1 := args[0].(*Excel)
 
