@@ -197,6 +197,36 @@ Charlang has a REPL application to learn and test Charlang language, run Charlan
 
 `char.exe` or `./char`
 
+```shell
+D:\tmpx>char
+Charlang 1.9.6 by TopXeQ
+> 1.8 * 3.79
+6.822
+> a := 12
+> pln(a + 19) 
+31
+> for i in 3 {\
+    pln(i, i+1)\
+  }
+0 1
+1 2
+2 3
+> q
+
+D:\tmpx>
+```
+
+Run Charlang with a file name to compile and run the script code.
+
+```shell
+D:\tmpx>char test.char
+aaa[3]
+
+D:\tmpx>
+```
+
+The following simple example shows the how to embed Charlang engine and run scripts in Golang.
+
 ```go
 package main
 
@@ -259,6 +289,8 @@ return v
     fmt.Println(ret) // [2, 4, 6, 8]
 }
 ```
+
+Refer to the documentation below to find more examples to run Charlang code.
 
 ## 7. Documentation
 
