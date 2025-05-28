@@ -216,6 +216,8 @@ Charlang 1.9.6 by TopXeQ
 D:\tmpx>
 ```
 
+Use command 'q' to exit the REPL.
+
 Run Charlang with a file name to compile and run the script code.
 
 ```shell
