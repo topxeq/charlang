@@ -302,6 +302,8 @@ Download the binary release files according to your OS from the website: [Charla
 
 ### 7.2 Compile from Source Code
 
+If you want to modify the code, or build Charlang for specific platform, 
+
 ```shell
 go get -u github.com/topxeq/charlang
 ```
