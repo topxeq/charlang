@@ -1,0 +1,27 @@
+// pass parameters through evaluations of an evalMachine
+code1 := charCode(`
+global inputG
+
+ary1 := inputG[2][0]
+
+ary1[0] + ary1[1] + ary1[2]
+
+`).compile()
+
+aryT := [[1, 2, 3]]
+
+ev1 := evalMachine(1, 2, aryT)
+
+rs1 := ev1.eval(code1)
+
+plt(rs1)
+
+// change the value
+aryT[0][2] = 5
+
+ev2 := evalMachine(2, 3, aryT)
+
+rs2 := ev2.eval(code1)
+
+plt(rs2)
+

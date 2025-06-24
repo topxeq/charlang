@@ -12575,6 +12575,26 @@ func (o *EvalMachine) CallName(nameA string, c Call) (Object, error) {
 		if len(args) < 1 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
+		
+		codeT, ok := args[0].(*CharCode)
+		
+		if ok {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			lastResultT, errT := o.Value.RunByteCode(ctx, codeT.Value)
+
+			if errT != nil {
+				return NewCommonErrorWithPos(c, "%v", errT), nil
+			}
+
+			if lastResultT != nil && lastResultT.TypeCode() != 0 {
+	//			fmt.Println(lastResultT)
+				return lastResultT, nil
+			}
+
+			return Undefined, nil
+		}
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()

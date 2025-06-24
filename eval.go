@@ -61,7 +61,31 @@ func (r *Eval) Run(ctx context.Context, script []byte) (Object, *Bytecode, error
 	if err != nil {
 		return nil, bytecode, err
 	}
+	
 	return ret, bytecode, nil
+}
+
+func (r *Eval) RunByteCode(ctx context.Context, byteCodeA *Bytecode) (Object, error) {
+	byteCodeA.Main.NumParams = byteCodeA.Main.NumLocals
+	r.Opts.Constants = byteCodeA.Constants
+	r.fixOpPop(byteCodeA)
+	r.VM.SetBytecode(byteCodeA)
+
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	r.VM.modulesCache = r.ModulesCache
+	ret, err := r.run(ctx)
+	r.ModulesCache = r.VM.modulesCache
+	r.Locals = r.VM.GetLocals(r.Locals)
+	r.VM.Clear()
+
+	if err != nil {
+		return nil, err
+	}
+	
+	return ret, nil
 }
 
 func (r *Eval) run(ctx context.Context) (ret Object, err error) {

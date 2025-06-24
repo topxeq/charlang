@@ -1,0 +1,7 @@
+d1 := delegate(`
+pln("now", now())
+
+return errStrf("member/method not found: %v", 0)
+`).compile()
+
+plt(d1)

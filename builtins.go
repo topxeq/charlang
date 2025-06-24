@@ -100,6 +100,8 @@ const (
 	BuiltinDecodeBytesFromImage
 	BuiltinDrawImageOnImage
 	BuiltinDrawTextWrappedOnImage
+	BuiltinAddWatermarkToImage
+	BuiltinSetImageOpacity
 	BuiltinGenQr
 	BuiltinSaveImageToBytes
 	BuiltinClose
@@ -191,6 +193,14 @@ const (
 	BuiltinTimeAddSecs
 	BuiltinTimeAddDate
 	BuiltinTimeBefore
+	BuiltinIsCronExprValid
+	BuiltinIsCronExprDue
+	BuiltinSplitCronExpr
+	BuiltinResetTasker
+	BuiltinRunTasker
+	BuiltinStopTasker
+	BuiltinAddSimpleTask
+	BuiltinAddShellTask
 	BuiltinGetNowTimeStamp
 	BuiltinBase64Encode
 	BuiltinBase64Decode
@@ -878,6 +888,17 @@ var BuiltinsMap = map[string]BuiltinType{
 	"timeAddDate": BuiltinTimeAddDate, // add years, months, days to time and return the result, usage: time2 := timeAddDate(time1, 0, -1, 0), will add -1 month to time1
 	
 	"timeBefore": BuiltinTimeBefore, // usage: b1 := timeBefore(time1, time2)
+	
+	// task related
+	"isCronExprValid": BuiltinIsCronExprValid, // check if the string is valid crontab expression, i.e. '* */5 * * *', return bool result
+	"isCronExprDue": BuiltinIsCronExprDue, // check if the string is valid crontab expression and is due, return bool or error if not valid
+	"splitCronExpr": BuiltinSplitCronExpr, // split crontab expression to 2 parts(of string), i.e. ["*/1 * * * *", "/bin/ls -al"], or error
+	
+	"resetTasker": BuiltinResetTasker,
+	"runTasker": BuiltinRunTasker,
+	"stopTasker": BuiltinStopTasker,
+	"addSimpleTask": BuiltinAddSimpleTask,
+	"addShellTask": BuiltinAddShellTask,
 
 	// binary/bytes related
 	"bytesStartsWith": BuiltinBytesStartsWith,
@@ -1251,6 +1272,8 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"drawImageOnImage":       BuiltinDrawImageOnImage,
 	"drawTextWrappedOnImage": BuiltinDrawTextWrappedOnImage,
+	"setImageOpacity":       BuiltinSetImageOpacity, // b1 := loadImageFromFile(`d:\downtemp\img1.jpg`); saveImageToFile(setImageOpacity(b1, 0.5), `d:\tmpx\test111.png`)
+	"addWatermarkToImage": BuiltinAddWatermarkToImage, // b1 := loadImageFromFile(`d:\downtemp\img1.jpg`); b2 := loadImageFromFile(`d:\downtemp\img_cr1.png`); saveImageToFile(addWatermarkToImage(b1, b2, "-opacity=0.7", "-x=200", "-y=300"), `d:\tmpx\test111.png`); saveImageToFile(addWatermarkToImage(b1, b2, "-opacity=0.5", "-repeat"), `d:\tmpx\test112.png`)
 
 	"genQr": BuiltinGenQr,
 
@@ -2311,6 +2334,53 @@ var BuiltinObjects = [...]Object{
 		Name:    "getNowTimeStamp",
 		Value:   CallExAdapter(builtinGetNowTimeStampFunc),
 		ValueEx: builtinGetNowTimeStampFunc,
+	},
+
+	// time related
+	BuiltinIsCronExprValid: &BuiltinFunction{
+		Name:    "isCronExprValid",
+		Value:   FnASRB(tk.IsValidCronExpr),
+		ValueEx: FnASRBex(tk.IsValidCronExpr),
+	},
+	BuiltinIsCronExprDue: &BuiltinFunction{
+		Name:    "isCronExprDue",
+		Value:   FnASVaRA(tk.IsCronExprDue),
+		ValueEx: FnASVaRAex(tk.IsCronExprDue),
+	},
+	BuiltinSplitCronExpr: &BuiltinFunction{
+		Name:    "splitCronExpr",
+		Value:   FnASRA(tk.SplitCronExpr),
+		ValueEx: FnASRAex(tk.SplitCronExpr),
+	},
+
+	BuiltinResetTasker: &BuiltinFunction{
+		Name:    "resetTasker",
+		Value:   FnAVsRE(tk.ResetTasker),
+		ValueEx: FnAVsREex(tk.ResetTasker),
+	},
+
+	BuiltinStopTasker: &BuiltinFunction{
+		Name:    "stopTasker",
+		Value:   FnARE(tk.StopTasker),
+		ValueEx: FnAREex(tk.StopTasker),
+	},
+
+	BuiltinRunTasker: &BuiltinFunction{
+		Name:    "runTasker",
+		Value:   FnARE(tk.RunTasker),
+		ValueEx: FnAREex(tk.RunTasker),
+	},
+
+	BuiltinAddSimpleTask: &BuiltinFunction{
+		Name:    "addSimpleTask",
+		Value:   FnASDlRE(tk.AddSimpleTask),
+		ValueEx: FnASDlREex(tk.AddSimpleTask),
+	},
+
+	BuiltinAddShellTask: &BuiltinFunction{
+		Name:    "addShellTask",
+		Value:   FnASSRE(tk.AddShellTask),
+		ValueEx: FnASSREex(tk.AddShellTask),
 	},
 
 	// binary/bytes related
@@ -3527,6 +3597,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "drawTextWrappedOnImage",
 		Value:   CallExAdapter(builtinDrawTextWrappedOnImageFunc),
 		ValueEx: builtinDrawTextWrappedOnImageFunc,
+	},
+	BuiltinSetImageOpacity: &BuiltinFunction{
+		Name:    "setImageOpacity",
+		Value:   CallExAdapter(builtinSetImageOpacityFunc),
+		ValueEx: builtinSetImageOpacityFunc,
+	},
+	BuiltinAddWatermarkToImage: &BuiltinFunction{
+		Name:    "addWatermarkToImage",
+		Value:   CallExAdapter(builtinAddWatermarkToImageFunc),
+		ValueEx: builtinAddWatermarkToImageFunc,
 	},
 	BuiltinGenQr: &BuiltinFunction{
 		Name:    "genQr",
@@ -5526,6 +5606,23 @@ func FnARTex(fn func() time.Time) CallableExFunc {
 	}
 }
 
+// like tk.RunTasker
+func FnARE(fn func() error) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		rs := fn()
+		
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnAREex(fn func() error) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		rs := fn()
+
+		return ConvertToObject(rs), nil
+	}
+}
+
 // like tk.GetTimeStampMid
 func FnATRS(fn func(time.Time) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
@@ -6475,6 +6572,43 @@ func FnASSRAex(fn func(string, string) interface{}) CallableExFunc {
 	}
 }
 
+// like tk.AddSimpleTask
+func FnASDlRE(fn func(string, func(argsA ...interface{}) interface{}) error) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		nv1, ok := args[1].(*Delegate)
+
+		if !ok {
+			return NewCommonError("invalid type of parameter 1: %v", nv1.TypeName()), nil
+		}
+
+		rs := fn(args[0].String(), nv1.Value)
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASDlREex(fn func(string, func(argsA ...interface{}) interface{}) error) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		nv1, ok := args[1].(*Delegate)
+
+		if !ok {
+			return NewCommonError("invalid type of parameter 1: %v", nv1.TypeName()), nil
+		}
+
+		rs := fn(args[0].String(), nv1.Value)
+		return ConvertToObject(rs), nil
+	}
+}
+
 // like tk.EncryptStreamByTXDEF
 func FnARSWRE(fn func(io.Reader, string, io.Writer) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
@@ -7363,6 +7497,35 @@ func FnASVaRSex(fn func(string, ...interface{}) string) CallableExFunc {
 
 		rs := fn(args[0].String(), vargs...)
 		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.IsCronExprDue
+func FnASVaRB(fn func(string, ...interface{}) bool) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		vargs := ObjectsToI(args[1:])
+
+		rs := fn(args[0].String(), vargs...)
+		return Bool(rs), nil
+	}
+}
+
+func FnASVaRBex(fn func(string, ...interface{}) bool) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		vargs := ObjectsToI(args[1:])
+
+		rs := fn(args[0].String(), vargs...)
+		return Bool(rs), nil
 	}
 }
 
@@ -18078,6 +18241,49 @@ func builtinDrawTextWrappedOnImageFunc(c Call) (Object, error) {
 	// }
 
 	return &Image{Value: dc.Image()}, nil
+}
+
+func builtinAddWatermarkToImageFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	v1, ok := args[0].(*Image)
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	v2, ok := args[1].(*Image)
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid parameter 2 type: (%T)%v", args[1], args[1]), nil
+	}
+
+	vs := ObjectsToS(args[2:])
+
+	imgT := tk.AddWatermarkToImage(v1.Value, v2.Value, vs...)
+
+	return &Image{Value: imgT}, nil
+}
+
+func builtinSetImageOpacityFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	v1, ok := args[0].(*Image)
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	v2 := tk.ToFloat(args[1].String())
+
+	imgT := tk.SetImageOpacity(v1.Value, v2)
+
+	return &Image{Value: imgT}, nil
 }
 
 func builtinGenQrFunc(c Call) (Object, error) {
