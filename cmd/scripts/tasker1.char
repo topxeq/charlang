@@ -1,0 +1,20 @@
+d1 := delegate(`
+pln("now", now())
+
+appendText(spr("\n[%v] tasker log\n", getNowStr()), "d:\\tmpx\\tasker1.log")
+
+return 0
+`).compile()
+
+plt(d1)
+
+resetTasker()
+
+addSimpleTask("1 * * * *", d1)
+
+runTasker()
+
+for {
+	sleep(1.0)
+}
+

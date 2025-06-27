@@ -1,0 +1,26 @@
+d1 := delegate(`
+pln("now", now())
+
+appendText(spr("\n[%v] tasker log\n", getNowStr()), "d:\\tmpx\\tasker1.log")
+
+return 0
+`).compile()
+
+plt(d1)
+
+for {
+	if isCronExprDue("* * * * *") {
+		pl("due %v", getNowStr())
+	}
+	
+	// * * * * * potentially indicates the 0th second of each minutes
+	// to make each seconds of one minute always due, use * * * * * * or manually set compare time to 0th seconds
+	// 2025-06-26 10:01:02 -> 2025-06-26 10:01:00
+//	curTimeStrT := getNowStr()[0:17] + "00"
+//	if isCronExprDue("* * * * *", curTimeStrT) {
+//		pl("due 0 %v", curTimeStrT)
+//	}
+	
+	sleep(0.1)
+}
+
