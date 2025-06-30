@@ -1,3 +1,6 @@
+// demostrates how to set a tasker manually
+
+// set the delegate function
 d1 := delegate(`
 pln("now", now())
 
@@ -8,6 +11,7 @@ return 0
 
 plt(d1)
 
+// infinite loop, check if the time is due every 0.1 seconds
 for {
 	if isCronExprDue("* * * * *") {
 		pl("due %v", getNowStr())

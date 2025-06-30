@@ -194,6 +194,7 @@ const (
 	BuiltinTimeAddDate
 	BuiltinTimeBefore
 	BuiltinIsCronExprValid
+	BuiltinRunTicker
 	BuiltinIsCronExprDue
 	BuiltinSplitCronExpr
 	BuiltinResetTasker
@@ -888,6 +889,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"timeAddDate": BuiltinTimeAddDate, // add years, months, days to time and return the result, usage: time2 := timeAddDate(time1, 0, -1, 0), will add -1 month to time1
 	
 	"timeBefore": BuiltinTimeBefore, // usage: b1 := timeBefore(time1, time2)
+	
+	"runTicker": BuiltinRunTicker, // run a delegate function in a thread, usage: errT := runTicker(1.2, dele1), stop the ticker by return error in delegate function
 	
 	// task related
 	"isCronExprValid": BuiltinIsCronExprValid, // check if the string is valid crontab expression, i.e. '* */5 * * *', return bool result
@@ -2335,8 +2338,13 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinGetNowTimeStampFunc),
 		ValueEx: builtinGetNowTimeStampFunc,
 	},
+	BuiltinRunTicker: &BuiltinFunction{
+		Name:    "runTicker",
+		Value:   CallExAdapter(builtinRunTickerFunc),
+		ValueEx: builtinRunTickerFunc,
+	},
 
-	// time related
+	// task related
 	BuiltinIsCronExprValid: &BuiltinFunction{
 		Name:    "isCronExprValid",
 		Value:   FnASRB(tk.IsValidCronExpr),
@@ -8977,6 +8985,30 @@ func isErrX(objA Object) bool {
 
 func builtinGetNowTimeStampFunc(c Call) (Object, error) {
 	return String{Value: tk.GetTimeStampMid(time.Now())}, nil
+}
+
+func builtinRunTickerFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	v1 := float64(ToFloatQuick(args[0]))
+	
+	if v1 <= 0.0 {
+		return Undefined, NewCommonErrorWithPos(c, "invalid duration: %v", args[0])
+	}
+
+	v2, ok := args[1].(*Delegate)
+	
+	if !ok {
+		return Undefined, NewCommonErrorWithPos(c, "unsupported type of param2: %T", args[1])
+	}
+	
+	rs := tk.RunTickerFunc(v1, v2.Value)
+
+	return ConvertToObject(rs), nil
 }
 
 func builtinTimeBeforeFunc(c Call) (Object, error) {

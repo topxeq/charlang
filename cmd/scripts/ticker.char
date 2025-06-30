@@ -1,0 +1,29 @@
+// use an array to pass parameters which will be changed
+a1 := [0]
+
+// set delegate function and pass a1 and 5 as parameters
+d1 := delegate(`
+global inputG
+
+pln("now", now(), inputG)
+
+inputG[0][0] ++
+
+if inputG[0][0] > inputG[1] {
+	return errf("stop")
+}
+
+return 0
+`).compile(a1, 5)
+
+plt(d1)
+
+// run a ticker function every 1.5 seconds in a seperate thread
+runTicker(1.5, d1)
+
+// infinite loop in main thread
+// use ctrl-c to break
+for {
+	sleep(0.1)
+}
+
