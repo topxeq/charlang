@@ -10004,6 +10004,12 @@ func builtinToFloatFunc(c Call) (Object, error) {
 		return Float(0.0), nil
 	}
 
+	if len(args) >1 {
+		rsT := tk.ToFloat(ConvertFromObject(args[0]), tk.ToFloat(ConvertFromObject(args[1]), 0.0))
+
+		return Float(rsT), nil
+	}
+
 	rsT := tk.ToFloat(ConvertFromObject(args[0]), 0.0)
 
 	return Float(rsT), nil
