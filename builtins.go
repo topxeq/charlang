@@ -103,6 +103,7 @@ const (
 	BuiltinAddWatermarkToImage
 	BuiltinSetImageOpacity
 	BuiltinGenQr
+	BuiltinScanQr
 	BuiltinSaveImageToBytes
 	BuiltinClose
 	BuiltinRegSplit
@@ -222,6 +223,7 @@ const (
 	BuiltinBytesBuffer
 	BuiltinImage
 	BuiltinLoadImageFromBytes
+	BuiltinLoadImageFromUrl
 	BuiltinThumbImage
 	BuiltinBytesStartsWith
 	BuiltinBytesEndsWith
@@ -1265,6 +1267,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"loadImageFromFile": BuiltinLoadImageFromFile, // usage: imageT := loadImageFromFile(`c:\test\abc.png`) or image2T := loadImageFromFile(`c:\test\abc.jpg`, "-type=jpg")
 	"saveImageToFile":   BuiltinSaveImageToFile,   // usage: errT := saveImageToFile(imageT, `c:\test\newabc.png`) or errT := saveImageToFile(imageT, `c:\test\newabc.png`, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
 
+	"loadImageFromUrl": BuiltinLoadImageFromUrl, // usage: imageT := loadImageFromUrl(`https://a.b.com/a.jpg`) or image2T := loadImageFromUrl(`https://a.b.com/a.jpg`, "-type=jpg")
+
 	"getImageInfo": BuiltinGetImageInfo,
 
 	"strToRgba": BuiltinStrToRgba,
@@ -1279,6 +1283,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"addWatermarkToImage": BuiltinAddWatermarkToImage, // b1 := loadImageFromFile(`d:\downtemp\img1.jpg`); b2 := loadImageFromFile(`d:\downtemp\img_cr1.png`); saveImageToFile(addWatermarkToImage(b1, b2, "-opacity=0.7", "-x=200", "-y=300"), `d:\tmpx\test111.png`); saveImageToFile(addWatermarkToImage(b1, b2, "-opacity=0.5", "-repeat"), `d:\tmpx\test112.png`)
 
 	"genQr": BuiltinGenQr,
+	"scanQr": BuiltinScanQr,
 
 	"imageToAscii": BuiltinImageToAscii, // convert an image object to colorful ASCII graph(array of string), usage: asciiT := imageToAscii(imageT, "-width=60", "-height=80"), set one of width or height will keep aspect ratio
 
@@ -3571,6 +3576,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinSaveImageToFileFunc),
 		ValueEx: builtinSaveImageToFileFunc,
 	},
+	BuiltinLoadImageFromUrl: &BuiltinFunction{
+		Name:    "loadImageFromUrl",
+		Value:   FnASVsRA(tk.LoadImageFromUrl),
+		ValueEx: FnASVsRAex(tk.LoadImageFromUrl),
+	},
 	BuiltinGetImageInfo: &BuiltinFunction{
 		Name:    "getImageInfo",
 		Value:   CallExAdapter(builtinGetImageInfoFunc),
@@ -3620,6 +3630,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "genQr",
 		Value:   CallExAdapter(builtinGenQrFunc),
 		ValueEx: builtinGenQrFunc,
+	},
+	BuiltinScanQr: &BuiltinFunction{
+		Name:    "scanQr",
+		Value:   CallExAdapter(builtinScanQrFunc),
+		ValueEx: builtinScanQrFunc,
 	},
 	BuiltinImageToAscii: &BuiltinFunction{
 		Name:    "imageToAscii",
@@ -18342,6 +18357,30 @@ func builtinGenQrFunc(c Call) (Object, error) {
 	}
 
 	return &Image{Value: qrCodeT}, nil
+}
+
+func builtinScanQrFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	v1, ok  := args[0].(*Image)
+	
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+	}
+
+	vs := ObjectsToS(args[1:])
+
+	qrCodeT := tk.ScanQR(v1.Value, vs...)
+
+	if tk.IsErrX(qrCodeT) {
+		return NewCommonErrorWithPos(c, "failed to scan QR code: %v", qrCodeT), nil
+	}
+
+	return String{Value: qrCodeT}, nil
 }
 
 func builtinAesEncryptFunc(c Call) (Object, error) {
