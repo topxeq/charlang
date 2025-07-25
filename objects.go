@@ -27,6 +27,7 @@ import (
 
 	"github.com/xuri/excelize/v2"
 	"github.com/dop251/goja"
+	"modernc.org/quickjs"
 )
 
 const (
@@ -53,7 +54,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, *MutableString: 106, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, *MapArray: 136, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Stack: 161, *Queue: 163, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *JsVm: 711, *EvalMachine: 888, *Any: 999, *Etable: 1001, *Excel: 1003
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, *MutableString: 106, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, *MapArray: 136, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Stack: 161, *Queue: 163, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *JsVm: 711, *QjsVm: 712, *EvalMachine: 888, *Any: 999, *Etable: 1001, *Excel: 1003
 
 // Object represents an object in the VM.
 type Object interface {
@@ -12443,6 +12444,286 @@ func NewJsVm(c Call) (Object, error) {
 	jsVmT := goja.New()
 
 	return &JsVm{Value: jsVmT}, nil
+}
+
+// QjsVm represents an JavaScript Virtual Machine based on QuickJS engine which could run script once or more
+type QjsVm struct {
+	// ObjectImpl
+
+	Value *quickjs.VM
+
+	Members map[string]Object `json:"-"`
+}
+
+func (*QjsVm) TypeCode() int {
+	return 712
+}
+
+func (*QjsVm) TypeName() string {
+	return "qjsVm"
+}
+
+func (o *QjsVm) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+func (o *QjsVm) HasMemeber() bool {
+	return true
+}
+
+func (o *QjsVm) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o), nil
+	}
+
+	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *QjsVm) GetValue() Object {
+	return o
+}
+
+func (o *QjsVm) SetValue(valueA Object) error {
+	switch nv := valueA.(type) {
+	case *QjsVm:
+		o.Value = nv.Value
+		return nil
+	}
+
+	return ErrNotIndexAssignable
+}
+
+func (o *QjsVm) GetMember(idxA string) Object {
+	if o.Members == nil {
+		return Undefined
+	}
+
+	v1, ok := o.Members[idxA]
+
+	if !ok {
+		return Undefined
+	}
+
+	return v1
+}
+
+func (o *QjsVm) SetMember(idxA string, valueA Object) error {
+	if o.Members == nil {
+		o.Members = map[string]Object{}
+	}
+
+	if IsUndefInternal(valueA) {
+		delete(o.Members, idxA)
+		return nil
+	}
+
+	o.Members[idxA] = valueA
+
+	// return fmt.Errorf("unsupported action(set member)")
+	return nil
+}
+
+func (o *QjsVm) Equal(right Object) bool {
+	switch v := right.(type) {
+	case *QjsVm:
+		return o.Value == v.Value
+	}
+
+	return false
+}
+
+func (o *QjsVm) IsFalsy() bool {
+	return o.Value == nil
+}
+
+func (o *QjsVm) CanCall() bool {
+	return false
+}
+
+func (o *QjsVm) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (*QjsVm) CanIterate() bool {
+	return false
+}
+
+func (*QjsVm) Iterate() Iterator {
+	return nil
+}
+
+func (o *QjsVm) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+func (o *QjsVm) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.Value
+
+		if strT == "value" {
+			return o, nil
+		}
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		// return nil, ErrIndexOutOfBounds
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, ErrNotIndexable
+}
+
+func (o *QjsVm) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return Undefined, NewCommonError("unsupported type: %T", right)
+}
+
+func (o *QjsVm) CallName(nameA string, c Call) (Object, error) {
+//	tk.Pl("EvalMachine call: %#v", c)
+	switch nameA {
+	case "eval", "run":
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+//		rs, errT := o.Value.RunString(args[0].String())
+		rs, errT := o.Value.Eval(args[0].String(), quickjs.EvalGlobal)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		}
+
+		if rs != nil {
+//			fmt.Println(lastResultT)
+			return ConvertToObject(rs), nil
+		}
+
+		return Undefined, nil
+	case "set":
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "invalid object"), nil
+		}
+		 
+		args := c.GetArgs()
+		
+		if len(args) < 2 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+		
+		globalObjT := o.Value.GlobalObject()
+		
+		atomT, errT := o.Value.NewAtom(args[0].String())
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to new atom prop: %v", errT), nil
+		}
+
+		errT = o.Value.SetProperty(globalObjT, atomT, ConvertFromObject(args[1]))
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		}
+
+		return Undefined, nil
+	case "setFunc":
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "invalid object"), nil
+		}
+		 
+		args := c.GetArgs()
+		
+		if len(args) < 2 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+		
+		f1 := ConvertFromObject(args[1])
+		
+//		fmt.Printf("%T %v\n", f1, f1)
+		
+//		var f2 = func(argsA ...interface{}) interface{} {
+//			return f1.(tk.QuickVarDelegate)(argsA...)
+//		}
+		
+//		var f2 = func(this any, argsA ...interface{}) int {
+//			return a1 + a2
+//		}
+		
+//		rs1 := f2(1, 2)
+//		fmt.Printf("%T %v\n", rs1, rs1)
+		
+		
+//		f2 = f1.(func(argsA ...interface{}) interface{})
+		
+		errT := o.Value.RegisterFunc(args[0].String(), f1, false)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		}
+
+		return Undefined, nil
+	case "get":
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		globalObjT := o.Value.GlobalObject()
+		
+		atomT, errT := o.Value.NewAtom(args[0].String())
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to new atom prop: %v", errT), nil
+		}
+
+		rs, errT := o.Value.GetProperty(globalObjT, atomT)
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to get prop: %v", errT), nil
+		}
+
+		return ConvertToObject(rs), nil
+	case "close":
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "invalid object"), nil
+		}
+		
+		errT := o.Value.Close()
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to close: %v", errT), nil
+		}
+
+		return Undefined, nil
+	}
+
+	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
+	
+	if errT != nil || tk.IsError(rs1) {
+		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
+		return ConvertToObject(rs3), nil
+	}
+	
+	return rs1, errT
+	
+//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+}
+
+func NewQjsVm(c Call) (Object, error) {
+//	argsA := c.GetArgs()
+
+	qjsVmT, errT := quickjs.NewVM()
+	
+	if errT != nil {
+		return NewCommonError("faile to create QjsVm object: %v", errT), nil
+	}
+
+	return &QjsVm{Value: qjsVmT}, nil
 }
 
 // EvalMachine represents an Charlang Virtual Machine could run script once or more

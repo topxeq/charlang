@@ -1,5 +1,5 @@
 // initialize a JavaScript Virtual Machine
-vmT := jsVm()
+vmT := qjsVm()
 
 // run a piece of JavaScript code, and return the last evaluation
 rs := vmT.run(`
@@ -21,8 +21,8 @@ rs2 := vmT.eval(`let d = "" + b + c; d`)
 
 pl("result2: %v", rs2)
 
-// get a global variable value from the VM
-value_a := vmT.get("a")
+// get global variables' value from the VM
+value_a := vmT.get("a") // 'a' is not accessible since the 'let'
 
 pl("value a: %v(%v)", value_a, typeOf(value_a))
 
@@ -49,32 +49,46 @@ d1 := delegate(sourceT)
 
 d1c := d1.compile(vmT.get("b")) // pass another parameter(via global variable inputG which will be an array)
 
-vmT.set("f1", d1c)
+vmT.setFunc("f1", d1c)
 
 rs3 := vmT.run(`let d3 = f1(3, 5); d3`)
 
 pl("result3: %v", rs3)
 
+// should close VM after use
+vmT.close()
+
 // es6/es2015 features
 
-pl("es6/es2015 result: %v", jsVm().run(`const multiply = (x, y) => x * y;
+vm2 := qjsVm()
+
+pl("es6/es2015 result: %v", vm2.run(`const multiply = (x, y) => x * y;
 multiply(2, 3); // 6`))
 
 // es2023
 
-pl("es2023 result: %v", jsVm().run(`const isOdd = (number) => number % 2 === 1;
+pl("es2023 result: %v", vm2.run(`const isOdd = (number) => number % 2 === 1;
 const numbers = [1, 2, 3, 4, 5];
 
 numbers.findLast(isOdd) + numbers.findLastIndex(isOdd); // 5 + 4 = 9`))
 
-// promise
+vm2.close()
 
-pl("promise result: %v", jsVm().run(`
+// promise, not supported
+
+vm3 := qjsVm()
+
+pl("promise result: %v", vm3.run(`
 
 a = 0;
 
-//let response1 = await fetch('https://api.example.com/data1');
-let a = await response1.text();
+let response1 = await fetch('https://api.example.com/data1');
+a = await response1.text();
 
 a
+
+
 `))
+
+vm3.close()
+

@@ -391,6 +391,7 @@ const (
 	BuiltinCharCode
 	BuiltinEvalMachine
 	BuiltinJsVm
+	BuiltinQjsVm
 	BuiltinGel
 	BuiltinDelegate
 	BuiltinGetReqBody
@@ -715,6 +716,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"delegate": BuiltinDelegate,
 
 	"jsVm": BuiltinJsVm, // new a JavaScript VM
+	"qjsVm": BuiltinQjsVm, // new a QuickJS(JavaScript) VM(ES2023 compliant)
 
 	"database": BuiltinDatabase,
 
@@ -1782,6 +1784,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "jsVm",
 		Value:   CallExAdapter(NewJsVm),
 		ValueEx: NewJsVm,
+	},
+	BuiltinQjsVm: &BuiltinFunction{
+		Name:    "qjsVm",
+		Value:   CallExAdapter(NewQjsVm),
+		ValueEx: NewQjsVm,
 	},
 
 	BuiltinDatabase: &BuiltinFunction{

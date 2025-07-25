@@ -28,7 +28,7 @@ import (
 )
 
 // global vars
-var VersionG = "1.9.8"
+var VersionG = "1.9.9"
 
 var CodeTextG = ""
 
@@ -1941,11 +1941,11 @@ var methodFuncMapG = map[int]map[string]*Function{
 					var globalsA map[string]interface{} = nil
 
 					envT := NewBaseEnv(globalsA) // Map{}
-					// tk.Plo(c.GetArgs())
+//					 tk.Plo(c.GetArgs())
 
 					(*envT)["inputG"] = inputGT
 
-					// tk.Plo(envT)
+//					 tk.Plo(envT)
 
 					var paramsA []Object = make([]Object, 0, len(argsA)+1)
 					for _, v := range argsA {
