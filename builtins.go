@@ -12509,9 +12509,9 @@ func builtinSshDownloadFunc(c Call) (Object, error) {
 
 	if withProgressT {
 		// fmt.Println()
-		errT = sshT.Download(v5, v6, pa...)
+		errT = sshT.Download(v6, v5, pa...)
 	} else {
-		errT = sshT.Download(v5, v6, pa...)
+		errT = sshT.Download(v6, v5, pa...)
 	}
 
 	// fmt.Println()
