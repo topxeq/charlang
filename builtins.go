@@ -17403,14 +17403,27 @@ func builtinSendMailFunc(c Call) (Object, error) {
 		if len(lineListT) < 2 {
 			return NewCommonError("invalid attach file format(should be in form NAME:FILE_PATH): %v", v), nil
 		}
+		
+		var bytesAttachT []byte
+		
+		if strings.HasPrefix(lineListT[1], "HEX_") {
+			bytesAttachT = tk.HexToBytes(strings.TrimSpace(lineListT[1]))
 
-		frsT := tk.LoadBytesFromFile(strings.TrimSpace(lineListT[1]))
+			if bytesAttachT == nil {
+				return NewCommonError("failed to attach bytes #%v: %v", i, bytesAttachT), nil
+			}
+		} else {
+			frsT := tk.LoadBytesFromFile(strings.TrimSpace(lineListT[1]))
 
-		if tk.IsErrX(frsT) {
-			return NewCommonError("failed to attach file #%v: %v", i, frsT), nil
+			if tk.IsErrX(frsT) {
+				return NewCommonError("failed to attach file #%v: %v", i, frsT), nil
+			}
+			
+			bytesAttachT = frsT.([]byte)
 		}
 
-		bufT := bytes.NewBuffer(frsT.([]byte))
+
+		bufT := bytes.NewBuffer(bytesAttachT)
 
 		mail.Attach(lineListT[0], bufT)
 	}
