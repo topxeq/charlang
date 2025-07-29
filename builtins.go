@@ -110,11 +110,14 @@ const (
 	BuiltinReadCsv
 	BuiltinExcelNew
 	BuiltinExcelOpen
+	BuiltinExcelOpenFromBytes
 	BuiltinExcelOpenFile
 	BuiltinExcelSaveAs
 	BuiltinExcelWriteTo
+	BuiltinExcelWriteToBytes
 	BuiltinExcelClose
 	BuiltinExcelNewSheet
+	BuiltinExcelRemoveSheet
 	BuiltinExcelReadAll
 	BuiltinExcelGetSheetCount
 	BuiltinExcelGetSheetList
@@ -1329,11 +1332,14 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"excelNew":           BuiltinExcelNew,
 	"excelOpen":          BuiltinExcelOpen,
+	"excelOpenFromBytes":      BuiltinExcelOpenFromBytes,
 	"excelOpenFile":      BuiltinExcelOpenFile,
 	"excelSaveAs":        BuiltinExcelSaveAs,
 	"excelWriteTo":       BuiltinExcelWriteTo,
+	"excelWriteToBytes":       BuiltinExcelWriteToBytes,
 	"excelClose":         BuiltinExcelClose,
 	"excelNewSheet":      BuiltinExcelNewSheet,
+	"excelRemoveSheet":      BuiltinExcelRemoveSheet,
 	"excelReadAll":     BuiltinExcelReadAll,
 	"excelGetSheetCount": BuiltinExcelGetSheetCount,
 	"excelGetSheetList":  BuiltinExcelGetSheetList,
@@ -3809,6 +3815,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinExcelOpenFunc),
 		ValueEx: builtinExcelOpenFunc,
 	},
+	BuiltinExcelOpenFromBytes: &BuiltinFunction{
+		Name:    "excelOpenFromBytes",
+		Value:   CallExAdapter(builtinExcelOpenFromBytesFunc),
+		ValueEx: builtinExcelOpenFromBytesFunc,
+	},
 	BuiltinExcelOpenFile: &BuiltinFunction{
 		Name:    "excelOpenFile",
 		Value:   CallExAdapter(builtinExcelOpenFileFunc),
@@ -3824,6 +3835,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinExcelWriteToFunc),
 		ValueEx: builtinExcelWriteToFunc,
 	},
+	BuiltinExcelWriteToBytes: &BuiltinFunction{
+		Name:    "excelWriteToBytes",
+		Value:   CallExAdapter(builtinExcelWriteToBytesFunc),
+		ValueEx: builtinExcelWriteToBytesFunc,
+	},
 	BuiltinExcelClose: &BuiltinFunction{
 		Name:    "excelClose",
 		Value:   CallExAdapter(builtinExcelCloseFunc),
@@ -3833,6 +3849,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "excelNewSheet",
 		Value:   CallExAdapter(builtinExcelNewSheetFunc),
 		ValueEx: builtinExcelNewSheetFunc,
+	},
+	BuiltinExcelRemoveSheet: &BuiltinFunction{
+		Name:    "excelRemoveSheet",
+		Value:   CallExAdapter(builtinExcelRemoveSheetFunc),
+		ValueEx: builtinExcelRemoveSheetFunc,
 	},
 	BuiltinExcelReadAll: &BuiltinFunction{
 		Name:    "excelReadAll",
@@ -10974,6 +10995,31 @@ func builtinExcelOpenFunc(c Call) (Object, error) {
 	return &Excel{Value: f}, nil
 }
 
+func builtinExcelOpenFromBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	var f *excelize.File
+	var err error
+
+	r1, ok := args[0].(Bytes)
+
+	if ok {
+		f, err = excelize.OpenReader(bytes.NewReader([]byte(r1)))
+
+		if err != nil {
+			return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+		}
+
+		return &Excel{Value: f}, nil
+	}
+
+	return NewCommonErrorWithPos(c, "failed to open excel bytes: %v", err), nil
+}
+
 func builtinExcelOpenFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11061,6 +11107,32 @@ func builtinExcelWriteToFunc(c Call) (Object, error) {
 
 	return Int(cntT), nil
 
+}
+
+func builtinExcelWriteToBytesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	var f *excelize.File
+
+	r0, ok := args[0].(*Excel)
+
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid type: %T", args[0]), nil
+	} else {
+		f = r0.Value
+	}
+
+	bufT, errT := f.WriteToBuffer()
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to write excel data: %v", errT), nil
+	}
+
+	return Bytes(bufT.Bytes()), nil
 }
 
 func builtinExcelCloseFunc(c Call) (Object, error) {
@@ -11636,6 +11708,34 @@ func builtinExcelNewSheetFunc(c Call) (Object, error) {
 	}
 
 	return Int(indexT), nil
+
+}
+
+func builtinExcelRemoveSheetFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	var f *excelize.File
+
+	r0, ok := args[0].(*Excel)
+
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid type: %T", args[0]), nil
+	}
+
+	f = r0.Value
+
+	nameT := args[1].String()
+
+	errT := f.DeleteSheet(nameT)
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to remove sheet: %v", errT), nil
+	}
+
+	return Undefined, nil
 
 }
 
@@ -14200,6 +14300,12 @@ func builtinReadBytesFunc(c Call) (Object, error) {
 //		resultBufT = append(resultBufT, bufT[:n]...)
 
 		return Bytes(bufT[:n]), nil
+	}
+
+	nv1c, ok := args[0].(*BytesBuffer)
+
+	if ok {
+		return Bytes(nv1c.Value.Bytes()), nil
 	}
 
 	nv2, ok := args[0].(io.Reader)

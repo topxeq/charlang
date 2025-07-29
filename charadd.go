@@ -28,7 +28,7 @@ import (
 )
 
 // global vars
-var VersionG = "1.9.9"
+var VersionG = "2.0.0"
 
 var CodeTextG = ""
 
@@ -2942,6 +2942,8 @@ func ConvertToObject(vA interface{}) Object {
 		return Undefined
 	case *tk.UndefinedStruct:
 		return Undefined
+	case *bytes.Buffer:
+		return &BytesBuffer{Value: nv}
 	case Function:
 		return &nv
 	case String:
