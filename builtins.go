@@ -75,6 +75,7 @@ const (
 	BuiltinDocxToStrs
 	BuiltinDocxReplacePattern
 	BuiltinDocxGetPlaceholders
+	BuiltinDeepClone
 	BuiltinShowTable
 	BuiltinGuiServerCommand
 	BuiltinGetMapItem
@@ -304,6 +305,7 @@ const (
 	BuiltinRUnlock
 	BuiltinTryRLock
 	BuiltinToKMG
+	BuiltinIntToStr
 	BuiltinFloatToStr
 	BuiltinStrToUtf8
 	BuiltinStrUtf8ToGb
@@ -362,10 +364,12 @@ const (
 	BuiltinArrayContains
 	BuiltinSortArray
 	// BuiltinSortByFunc
+	BuiltinShuffle
 	BuiltinLimitStr
 	BuiltinStrFindDiffPos
 	BuiltinStrDiff
 	BuiltinStrFindAllSub
+	BuiltinRemoveItem
 	BuiltinRemoveItems
 	BuiltinAppendList
 	BuiltinGetRandomInt
@@ -745,11 +749,16 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"getArrayItem": BuiltinGetArrayItem,
 
+	"removeItem": BuiltinRemoveItem, 
+	"removeArrayItem": BuiltinRemoveItem, 
+
 	"removeItems": BuiltinRemoveItems, // inclusive
 
 	"arrayContains": BuiltinArrayContains,
 
 	"sortArray": BuiltinSortArray, // usage: sortArray(totalFindsT, "runeStart", "desc")
+	
+	"shuffle": BuiltinShuffle, // shuffle(aryT, 10)
 
 	"getMapItem": BuiltinGetMapItem,
 	"setMapItem": BuiltinSetMapItem,
@@ -775,6 +784,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"hexToStr":          BuiltinHexToStr,
 	"toKMG":             BuiltinToKMG,
 
+	"intToStr": BuiltinIntToStr,
 	"floatToStr": BuiltinFloatToStr,
 	
 	"strToUtf8": BuiltinStrToUtf8,
@@ -1462,6 +1472,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"docxGetPlaceholders": BuiltinDocxGetPlaceholders,
 
 	"showTable": BuiltinShowTable,
+	
+	"deepClone": BuiltinDeepClone,
 
 	// "sortByFunc": BuiltinSortByFunc,
 
@@ -1852,6 +1864,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinGetArrayItemFunc),
 		ValueEx: builtinGetArrayItemFunc,
 	},
+	BuiltinRemoveItem: &BuiltinFunction{
+		Name:    "removeItem",
+		Value:   CallExAdapter(builtinRemoveItemFunc),
+		ValueEx: builtinRemoveItemFunc,
+	},
 	BuiltinRemoveItems: &BuiltinFunction{
 		Name:    "removeItems",
 		Value:   CallExAdapter(builtinRemoveItemsFunc),
@@ -1866,6 +1883,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "sortArray",
 		Value:   CallExAdapter(builtinSortArrayFunc),
 		ValueEx: builtinSortArrayFunc,
+	},
+	BuiltinShuffle: &BuiltinFunction{
+		Name:    "shuffle",
+		Value:   CallExAdapter(builtinShuffleFunc),
+		ValueEx: builtinShuffleFunc,
 	},
 	BuiltinGetMapItem: &BuiltinFunction{
 		Name:    "getMapItem",
@@ -1945,6 +1967,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "toKMG",
 		Value:   FnAAVaRS(tk.IntToKMGT),
 		ValueEx: FnAAVaRSex(tk.IntToKMGT),
+	},
+	BuiltinIntToStr: &BuiltinFunction{
+		Name:    "intToStr",
+		Value:   FnAAVsRS(tk.IntToStrX),
+		ValueEx: FnAAVsRSex(tk.IntToStrX),
 	},
 	BuiltinFloatToStr: &BuiltinFunction{
 		Name:    "floatToStr",
@@ -4321,6 +4348,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinShowTableFunc),
 		ValueEx: builtinShowTableFunc,
 	},
+	BuiltinDeepClone: &BuiltinFunction{
+		Name: "deepClone",
+		Value:   FnAARA(tk.DeepClone),
+		ValueEx: FnAARAex(tk.DeepClone),
+	},
 
 	// original internal related
 	BuiltinCopy: &BuiltinFunction{
@@ -4536,6 +4568,40 @@ func builtinRemoveItemsFunc(c Call) (Object, error) {
 
 		rs = append(rs, obj[:startT]...)
 		rs = append(rs, obj[endT+1:]...)
+
+		return rs, nil
+	}
+
+	return Undefined, NewCommonErrorWithPos(c, "unsupported type: (%T)%v", target, target)
+}
+
+func builtinRemoveItemFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	target := args[0]
+
+	idxT, ok := args[1].(Int)
+
+	if !ok {
+		return Undefined, NewCommonErrorWithPos(c, "invalid type for arg 2: (%T)%v", args[1], args[1])
+	}
+
+	switch obj := target.(type) {
+	case Array:
+		startT := int(idxT)
+		lenT := len(obj)
+		if startT < 0 || startT >= lenT {
+			return Undefined, NewCommonErrorWithPos(c, "start index out of range: %v -> %v", startT, lenT)
+		}
+
+		rs := make(Array, 0, lenT-1)
+
+		rs = append(rs, obj[:startT]...)
+		rs = append(rs, obj[startT+1:]...)
 
 		return rs, nil
 	}
@@ -7002,6 +7068,36 @@ func FnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 		tmps := args[0].String()
 
 		rs := fn(tmps, vargs...)
+
+		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.IntToStrX
+func FnAAVsRS(fn func(interface{}, ...string) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 1 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		vargs := ObjectsToS(args[1:])
+
+		rs := fn(ConvertFromObject(args[0]), vargs...)
+
+		return ToStringObject(rs), nil
+	}
+}
+
+func FnAAVsRSex(fn func(interface{}, ...string) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		if len(args) < 1 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		vargs := ObjectsToS(args[1:])
+
+		rs := fn(ConvertFromObject(args[0]), vargs...)
 
 		return ToStringObject(rs), nil
 	}
@@ -17548,6 +17644,10 @@ func builtinGetRandomIntFunc(c Call) (Object, error) {
 	// if !ok {
 	// 	return NewCommonErrorWithPos(c, "invalid parameter type: (%T)%v", args[0], args[0]), nil
 	// }
+	
+	if len(args) > 1 {
+		return Int(tk.GetRandomIntInRange(int(ToIntObject(args[0])), int(ToIntObject(args[1])))), nil
+	}
 
 	return Int(tk.GetRandomIntLessThan(int(ToIntObject(args[0])))), nil
 }
@@ -19590,6 +19690,85 @@ func builtinSortArrayFunc(c Call) (Object, error) {
 			return obj[i] < obj[j]
 		})
 		return obj, nil
+	case *UndefinedType:
+		return Undefined, nil
+	}
+
+	return nil, NewArgumentTypeError(
+		"first",
+		"array|string|bytes",
+		args[0].TypeName(),
+	)
+}
+
+func builtinShuffleFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+	
+	if len(args) < 2 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+	
+	timesT := ToIntQuick(args[1])
+
+	switch nv := args[0].(type) {
+	case Array:
+		var x, y int
+		
+		lenT := len(nv)
+		
+		for i := 0; i < timesT; i++ {
+			x = tk.GetRandomIntLessThan(lenT)
+			y = tk.GetRandomIntLessThan(lenT)
+
+			if x == y {
+				i--
+				continue
+			}
+
+			nv[x], nv[y] = nv[y], nv[x]
+		}
+
+		return nv, nil
+	case String:
+		s := []rune(nv.Value)
+		
+		var x, y int
+		
+		lenT := len(s)
+		
+		for i := 0; i < timesT; i++ {
+			x = tk.GetRandomIntLessThan(lenT)
+			y = tk.GetRandomIntLessThan(lenT)
+
+			if x == y {
+				i--
+				continue
+			}
+
+			s[x], s[y] = s[y], s[x]
+		}
+
+		return ToStringObject(string(s)), nil
+	case Bytes:
+//		s := nv[:] // copy it
+		
+		var x, y int
+		
+		lenT := len(nv)
+		
+		for i := 0; i < timesT; i++ {
+			x = tk.GetRandomIntLessThan(lenT)
+			y = tk.GetRandomIntLessThan(lenT)
+
+			if x == y {
+				i--
+				continue
+			}
+
+			nv[x], nv[y] = nv[y], nv[x]
+		}
+
+		return nv, nil
 	case *UndefinedType:
 		return Undefined, nil
 	}
