@@ -1,3 +1,5 @@
+// not completed
+
 // initialize a JavaScript Virtual Machine
 vmT := qjsVm()
 
