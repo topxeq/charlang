@@ -326,6 +326,7 @@ const (
 	BuiltinMathFloor
 	BuiltinMathRound
 	BuiltinFlexEval
+	BuiltinCalDistanceOfLatLon
 	BuiltinAdjustFloat
 	BuiltinBigInt
 	BuiltinBigFloat
@@ -886,6 +887,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"round": BuiltinMathRound, // returns the nearest integer, rounding half away from zero.
 
 	"flexEval": BuiltinFlexEval,
+	
+	"calDistanceOfLatLon": BuiltinCalDistanceOfLatLon,
 
 	// random related
 	"getRandomInt":   BuiltinGetRandomInt,
@@ -2318,6 +2321,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "flexEval",
 		Value:   FnASVaRA(tk.FlexEval),
 		ValueEx: FnASVaRAex(tk.FlexEval),
+	},
+	BuiltinCalDistanceOfLatLon: &BuiltinFunction{
+		Name:    "calDistanceOfLatLon",
+		Value:   FnAFFFFRF(tk.CalDistanceOfLatLonToMeters),
+		ValueEx: FnAFFFFRFex(tk.CalDistanceOfLatLonToMeters),
 	},
 
 	// random related
@@ -6319,6 +6327,31 @@ func FnAFRFex(fn func(float64) float64) CallableExFunc {
 		}
 
 		rs := fn(ToFloatQuick(c.Get(0)))
+
+		return Float(rs), nil
+	}
+}
+
+// like tk.CalDistanceOfLatLonToMeters
+func FnAFFFFRF(fn func(float64, float64, float64, float64) float64) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 4 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(ToFloatQuick(args[0]), ToFloatQuick(args[1]), ToFloatQuick(args[2]), ToFloatQuick(args[3]))
+
+		return Float(rs), nil
+	}
+}
+
+func FnAFFFFRFex(fn func(float64, float64, float64, float64) float64) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		if c.Len() < 4 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(ToFloatQuick(c.Get(0)), ToFloatQuick(c.Get(1)), ToFloatQuick(c.Get(2)), ToFloatQuick(c.Get(3)))
 
 		return Float(rs), nil
 	}
