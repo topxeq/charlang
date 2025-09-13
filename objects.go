@@ -3607,6 +3607,17 @@ func (o Map) CallName(nameA string, c Call) (Object, error) {
 	}
 	
 	switch nameA {
+	case "remove":
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+
+		delete(o, args[0].String())
+		
+		return Undefined, nil
+		
 	case "Set", "set":
 		args := c.GetArgs()
 		
@@ -3648,6 +3659,20 @@ func (o Map) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return &OrderedMap{Value: rs}, nil
+	case "hasKey":
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+		
+		_, ok := o[args[0].String()]
+		
+		if ok {
+			return Bool(true), nil
+		}
+
+		return Bool(false), nil
 	case "keys":
 		lenT := len(o)
 		
