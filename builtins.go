@@ -13907,7 +13907,12 @@ func builtinPrepareMultiPartFileFromBytesFunc(c Call) (Object, error) {
 	fieldNameT := args[0].String()
 	fileNameT := args[1].String()
 	
+	vs := ObjectsToS(args[3:])
+	
+	vsLenT := len(vs) / 2
+
 	var b bytes.Buffer
+	
     w := multipart.NewWriter(&b)
 	
 	r := bytes.NewReader([]byte(bytesT))
@@ -13922,6 +13927,19 @@ func builtinPrepareMultiPartFileFromBytesFunc(c Call) (Object, error) {
 	
 	if _, err = io.Copy(fw, r); err != nil {
 		return NewCommonErrorWithPos(c, "failed to set field: (%v) %v", args[0], err), nil
+	}
+	
+	for i := 0; i < vsLenT; i ++ {
+		if fw, err = w.CreateFormField(vs[i * 2]); err != nil {
+			return NewCommonErrorWithPos(c, "failed to create field: (%v) %v", i, err), nil
+		}
+		
+		r = bytes.NewReader([]byte(vs[i * 2 + 1]))
+		
+		if _, err = io.Copy(fw, r); err != nil {
+			return NewCommonErrorWithPos(c, "failed to set field: (%v) %v", i, err), nil
+		}
+		
 	}
 	
     w.Close()
