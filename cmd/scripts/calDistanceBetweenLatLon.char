@@ -1,0 +1,21 @@
+lon1 := 2.349014
+lat1 := 48.864716
+
+lon2 := 2.312385
+lat2 := 48.675392
+
+// method 1: use the builtin function
+result1 := calDistanceOfLatLon(toFloat(lat1), toFloat(lon1), lat2, lon2)
+
+pl("result 1: %v", result1)
+
+// method 2: use the math functions
+var R = 6378.137; // Radius of earth in KM
+
+var dLat = lat2 * mathPi() / 180 - lat1 * mathPi() / 180;
+var dLon = lon2 * mathPi() / 180 - lon1 * mathPi() / 180;
+var a = mathSin(dLat/2) * mathSin(dLat/2) + mathCos(lat1 * mathPi() / 180) * mathCos(lat2 * mathPi() / 180) * mathSin(dLon/2) * mathSin(dLon/2);
+var c = 2 * mathAtan2(mathSqrt(a), mathSqrt(1-a));
+var d = R * c;
+
+pl("result 2: %v", d * 1000) // meters

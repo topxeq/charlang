@@ -325,6 +325,12 @@ const (
 	BuiltinMathCeil
 	BuiltinMathFloor
 	BuiltinMathRound
+	BuiltinMathPi
+	BuiltinMathE
+	BuiltinMathSin
+	BuiltinMathCos
+	BuiltinMathTan
+	BuiltinMathAtan2
 	BuiltinFlexEval
 	BuiltinCalDistanceOfLatLon
 	BuiltinAdjustFloat
@@ -879,6 +885,13 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mathLog10": BuiltinMathLog10,
 	"log10":     BuiltinMathLog10,
 
+	"mathPi":     BuiltinMathPi,
+	"mathE":     BuiltinMathE,
+	"mathSin":     BuiltinMathSin,
+	"mathCos":     BuiltinMathCos,
+	"mathTan":     BuiltinMathTan,
+	"mathAtan2":     BuiltinMathAtan2,
+
 	"min": BuiltinMathMin, // returns the largest of several values(integer of float).
 	"max": BuiltinMathMax, // returns the smallest of several values(integer of float).
 
@@ -888,7 +901,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"flexEval": BuiltinFlexEval,
 	
-	"calDistanceOfLatLon": BuiltinCalDistanceOfLatLon,
+	"calDistanceOfLatLon": BuiltinCalDistanceOfLatLon, // distanceT := calDistanceOfLatLon(toFloat(latitudeT), toFloat(longitudeT), 48.864716, 2.349014), result is in meters
 
 	// random related
 	"getRandomInt":   BuiltinGetRandomInt,
@@ -2291,6 +2304,36 @@ var BuiltinObjects = [...]Object{
 		Name:    "mathLog10",
 		Value:   CallExAdapter(builtinMathLog10Func),
 		ValueEx: builtinMathLog10Func,
+	},
+	BuiltinMathPi: &BuiltinFunction{
+		Name:    "mathPi",
+		Value:   CallExAdapter(builtinMathPiFunc),
+		ValueEx: builtinMathPiFunc,
+	},
+	BuiltinMathE: &BuiltinFunction{
+		Name:    "mathE",
+		Value:   CallExAdapter(builtinMathEFunc),
+		ValueEx: builtinMathEFunc,
+	},
+	BuiltinMathSin: &BuiltinFunction{
+		Name:    "mathSin",
+		Value:   CallExAdapter(builtinMathSinFunc),
+		ValueEx: builtinMathSinFunc,
+	},
+	BuiltinMathCos: &BuiltinFunction{
+		Name:    "mathCos",
+		Value:   CallExAdapter(builtinMathCosFunc),
+		ValueEx: builtinMathCosFunc,
+	},
+	BuiltinMathTan: &BuiltinFunction{
+		Name:    "mathTan",
+		Value:   CallExAdapter(builtinMathTanFunc),
+		ValueEx: builtinMathTanFunc,
+	},
+	BuiltinMathAtan2: &BuiltinFunction{
+		Name:    "mathAtan2",
+		Value:   CallExAdapter(builtinMathAtan2Func),
+		ValueEx: builtinMathAtan2Func,
 	},
 	BuiltinMathMin: &BuiltinFunction{
 		Name:    "min",
@@ -18100,20 +18143,55 @@ func builtinMathLog10Func(c Call) (Object, error) {
 		return NewCommonError("not enough parameters"), nil
 	}
 
-	switch nv := args[0].(type) {
-	case Byte:
-		return Float(math.Log10(float64(nv))), nil
-	case Char:
-		return Float(math.Log10(float64(nv))), nil
-	case Int:
-		return Float(math.Log10(float64(nv))), nil
-	case Uint:
-		return Float(math.Log10(float64(nv))), nil
-	case Float:
-		return Float(math.Log10(float64(nv))), nil
+	return Float(math.Log10(ToFloatQuick(args[0]))), nil
+}
+
+func builtinMathSinFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
 	}
 
-	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
+	return Float(math.Sin(ToFloatQuick(args[0]))), nil
+}
+
+func builtinMathCosFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	return Float(math.Cos(ToFloatQuick(args[0]))), nil
+}
+
+func builtinMathTanFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	return Float(math.Tan(ToFloatQuick(args[0]))), nil
+}
+
+func builtinMathAtan2Func(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+	
+	return Float(math.Atan2(ToFloatQuick(args[0]), ToFloatQuick(args[1]))), nil
+}
+
+func builtinMathPiFunc(c Call) (Object, error) {
+	return Float(math.Pi), nil
+}
+
+func builtinMathEFunc(c Call) (Object, error) {
+	return Float(math.E), nil
 }
 
 func builtinMathPowFunc(c Call) (Object, error) {
