@@ -2358,6 +2358,8 @@ in the compiler. Optimizer evaluates simple expressions not having side effects
 to replace expressions with constant values. Note that, optimizer can be
 disabled to speed up compilation process.
 
+Since it's in active development stage, for a successful compilation, please `git clone https://github.com/topxeq/tkc` in your `$GOPATH/src/github.com/topxeq`(`%GOPATH%/src/github.com/topxeq` in windows) directory first. Then add `replace github.com/topxeq/tkc v0.0.0 => $GOPATH/src/github.com/topxeq/tkc` in go.mod file. Be sure to replace `$GOPATH` to your actual GOPATH.
+
 ```go
 package main
 
@@ -2382,7 +2384,7 @@ func main() {
     }
   return fib(num, 0, 1)
   `
-  bytecode, err := charlang.Compile([]byte(script), charlang.DefaultCompilerOptions)
+  bytecode, err := charlang.Compile([]byte(script), &charlang.DefaultCompilerOptions)
 
   if err != nil {
     panic(err)
