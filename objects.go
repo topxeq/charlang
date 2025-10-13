@@ -4974,7 +4974,7 @@ var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
 		// 		return newArgTypeErr("1st", "string", c.Get(0).TypeName())
 		// 	}
 		// }
-		return &String{Value: tk.FormatTime(o.Value, ObjectsToS(c.GetArgs())...)}, nil
+		return String{Value: tk.FormatTime(o.Value, ObjectsToS(c.GetArgs())...)}, nil
 		// return timeFormat(o, format), nil
 	},
 	"appendFormat": func(o *Time, c *Call) (Object, error) {
