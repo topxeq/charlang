@@ -547,6 +547,8 @@ const (
 	BuiltinGetJsonNodeStr
 	BuiltinGetJsonNodeStrs
 	BuiltinStrsToJson
+	BuiltinEncodeSimpleMap
+	BuiltinDecodeSimpleMap
 	BuiltinPlo
 	BuiltinPlt
 	BuiltinPlErr
@@ -1073,8 +1075,15 @@ var BuiltinsMap = map[string]BuiltinType{
 	
 	"getJsonNodeStr": BuiltinGetJsonNodeStr, // getJsonNodeStr(jsonA, pathA), pathA refer to github.com/tidwall/gjson
 	"getJsonNodeStrs": BuiltinGetJsonNodeStrs, // getJsonNodeStrs(jsonA, pathA), pathA refer to github.com/tidwall/gjson
-
+	
 	"strsToJson": BuiltinStrsToJson,
+
+// in a simplemap structure, key/value pairs are in form as KEY=VALUE
+// "=" in keys should be replaced as `EQ`
+// line-ends in values such as "\n" should be replaced as #CR#
+// comments could be used after ####
+	"encodeSimpleMap": BuiltinEncodeSimpleMap,
+	"decodeSimpleMap": BuiltinDecodeSimpleMap,
 
 	// XML related
 	"xmlEncodeStr":  BuiltinStrXmlEncode,
@@ -2959,6 +2968,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "strsToJson",
 		Value:   FnAVsRS(tk.StringsToJson),
 		ValueEx: FnAVsRSex(tk.StringsToJson),
+	},
+	BuiltinEncodeSimpleMap: &BuiltinFunction{
+		Name:    "encodeSimpleMap",
+		Value:   CallExAdapter(builtinEncodeSimpleMapFunc),
+		ValueEx: builtinEncodeSimpleMapFunc,
+	},
+	BuiltinDecodeSimpleMap: &BuiltinFunction{
+		Name:    "decodeSimpleMap",
+		Value:   CallExAdapter(builtinDecodeSimpleMapFunc),
+		ValueEx: builtinDecodeSimpleMapFunc,
 	},
 
 	// XML related
@@ -9110,6 +9129,50 @@ func builtinFromXmlFunc(c Call) (Object, error) {
 	cObjT := ConvertToObject(jObjT)
 
 	return cObjT, nil
+}
+
+func builtinEncodeSimpleMapFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	objT, ok := args[0].(Map)
+	
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid type for parameter 1: %T", args[0]), nil
+	}
+	
+	mapT := map[string]string{}
+
+	for k, v := range objT {
+		mapT[k] = v.String()
+	}
+
+	strT := tk.SimpleMapToString(mapT)
+
+	return String{Value: strT}, nil
+}
+
+func builtinDecodeSimpleMapFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+	}
+
+	strT := args[0].String()
+	
+	mapT := tk.LoadSimpleMapFromString(strT)
+	
+	map1T := Map{}
+
+	for k, v := range mapT {
+		map1T[k] = String{Value: v}
+	}
+
+	return map1T, nil
 }
 
 func builtinIsErrXFunc(c Call) (Object, error) {
