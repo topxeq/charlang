@@ -4,6 +4,11 @@ import (
 	"bytes"
 	"compress/flate"
 	"context"
+	cryptoRand "crypto/rand"
+	"crypto/rsa"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/x509"
 	"database/sql"
 	"encoding/base64"
 	"encoding/csv"
@@ -11,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -18,6 +24,7 @@ import (
 	"io"
 	"math"
 	"math/big"
+	"math/rand"
 	"mime/multipart"
 	"net"
 	"net/http"
@@ -269,6 +276,8 @@ const (
 	BuiltinDecryptTextByTXDEE
 	BuiltinAesEncrypt
 	BuiltinAesDecrypt
+	BuiltinGetSha256WithKeyYY
+	BuiltinRsaEncryptStrYY
 	BuiltinHtmlEncode
 	BuiltinHtmlDecode
 	BuiltinServeFile
@@ -1073,7 +1082,17 @@ var BuiltinsMap = map[string]BuiltinType{
 	"formatJson": BuiltinFormatJson,
 	"compactJson": BuiltinCompactJson,
 	
-	"getJsonNodeStr": BuiltinGetJsonNodeStr, // getJsonNodeStr(jsonA, pathA), pathA refer to github.com/tidwall/gjson
+	"getJsonNodeStr": BuiltinGetJsonNodeStr, // getJsonNodeStr(jsonA, pathA), pathA refer to github.com/tidwall/gjson, such as
+//		"name.last"          >> "Anderson"
+//		"age"                >> 37
+//		"children"           >> ["Sara","Alex","Jack"]
+//		"children.#"         >> 3
+//		"children.1"         >> "Alex"
+//		"child*.2"           >> "Jack"
+//		"c?ildren.0"         >> "Sara"
+//		"fav\.movie"         >> "Deer Hunter"
+//		"friends.#.first"    >> ["Dale","Roger","Jane"]
+//		"friends.1.last"     >> "Craig"
 	"getJsonNodeStrs": BuiltinGetJsonNodeStrs, // getJsonNodeStrs(jsonA, pathA), pathA refer to github.com/tidwall/gjson
 	
 	"strsToJson": BuiltinStrsToJson,
@@ -1298,6 +1317,9 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"aesEncrypt": BuiltinAesEncrypt, // AES encrypt string or bytes, "-cbc" to use cbc
 	"aesDecrypt": BuiltinAesDecrypt, // AES decrypt string or bytes, "-cbc" to use cbc
+	
+	"getSha256WithKeyYY": BuiltinGetSha256WithKeyYY, // encrypt method for Yong You
+	"rsaEncryptStrYY": BuiltinRsaEncryptStrYY, // encrypt method for Yong You
 
 	// image related
 	"loadImageFromBytes": BuiltinLoadImageFromBytes, // usage: imageT := loadImageFromBytes(bytesT, "-type=png")
@@ -3663,6 +3685,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "aesDecrypt",
 		Value:   CallExAdapter(builtinAesDecryptFunc),
 		ValueEx: builtinAesDecryptFunc,
+	},
+	BuiltinGetSha256WithKeyYY: &BuiltinFunction{
+		Name:    "getSha256WithKeyYY",
+		Value:   CallExAdapter(builtinGetSha256WithKeyYYFunc),
+		ValueEx: builtinGetSha256WithKeyYYFunc,
+	},
+	BuiltinRsaEncryptStrYY: &BuiltinFunction{
+		Name:    "rsaEncryptStrYY",
+		Value:   CallExAdapter(builtinRsaEncryptStrYYFunc),
+		ValueEx: builtinRsaEncryptStrYYFunc,
 	},
 
 	// image related
@@ -18878,6 +18910,188 @@ func builtinAesDecryptFunc(c Call) (Object, error) {
 	}
 
 	return String{Value: string(rs)}, nil
+}
+
+func SHA1(data []byte) []byte {
+	h := sha1.New()
+	h.Write(data)
+	return h.Sum(nil)
+}
+
+func SHA1PRNG(seed []byte, size int) ([]byte, error) {
+	hashs := SHA1(SHA1(seed))
+	maxLen := len(hashs)
+	realLen := size
+	
+	if realLen > maxLen {
+		return nil, fmt.Errorf("Not Support %d, Only Support Lower then %d [% x]", realLen, maxLen, hashs)
+	}
+	
+	return hashs[0:realLen], nil
+}
+
+func bytes2Hex(bytes []byte) string {
+	var buffer strings.Builder
+
+	for _, b := range bytes {
+		// 将每个字节转换为两位十六进制
+		hex := fmt.Sprintf("%02x", b)
+		buffer.WriteString(hex)
+	}
+
+	return buffer.String()
+}
+func getSHA256(str string) (string, error) {
+	hash := sha256.New()
+	_, err := hash.Write([]byte(str))
+	if err != nil {
+		return "", fmt.Errorf("failed to compute hash: %v", err)
+	}
+
+	return bytes2Hex(hash.Sum(nil)), nil
+}
+
+type RSAEncryption struct {
+	publicKey *rsa.PublicKey
+	hash      hash.Hash
+	random    io.Reader
+}
+
+func newRSAEncryption(base64PubKey string) (*RSAEncryption, error) {
+	pubKeyBytes, err := decryptBASE64(base64PubKey)
+	if err != nil {
+		return nil, err
+	}
+
+	rsaPublicKey, err := generatePublicKey(pubKeyBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RSAEncryption{
+		publicKey: rsaPublicKey,
+		hash:      sha256.New(),
+		random:    cryptoRand.Reader,
+	}, nil
+}
+
+func decryptBASE64(input string) ([]byte, error) {
+	decoded, err := base64.StdEncoding.DecodeString(input)
+	if err != nil {
+		return nil, fmt.Errorf("base64 decode failed: %v", err)
+	}
+	return decoded, nil
+}
+
+func generatePublicKey(keyBytes []byte) (*rsa.PublicKey, error) {
+	publicKey, err := x509.ParsePKIXPublicKey(keyBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse public key: %v", err)
+	}
+
+	rsaKey, ok := publicKey.(*rsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("not an RSA public key")
+	}
+
+	return rsaKey, nil
+}
+
+func (r *RSAEncryption) Encrypt(plainText string) (string, error) {
+	data := []byte(plainText)
+	inputLen := len(data)
+	var buffer bytes.Buffer
+	blockSize := 117 // RSA2048 OAEP with SHA256 max encrypt block
+
+	for i := 0; i < inputLen; i += blockSize {
+		end := i + blockSize
+		if end > inputLen {
+			end = inputLen
+		}
+
+		chunk := data[i:end]
+		cache, err := r.encryptBlock(chunk)
+		if err != nil {
+			return "", fmt.Errorf("encryption error at offset %d: %v", i, err)
+		}
+
+		buffer.Write(cache)
+	}
+
+	encoded := base64.StdEncoding.EncodeToString(buffer.Bytes())
+
+	return url.QueryEscape(encoded), nil
+}
+
+func (r *RSAEncryption) encryptBlock(data []byte) ([]byte, error) {
+	return rsa.EncryptOAEP(
+		r.hash,
+		r.random,
+		r.publicKey,
+		data,
+		nil,
+	)
+}
+
+func builtinGetSha256WithKeyYYFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+	
+	strT := args[0].String()
+
+	keyT := args[1].String()
+	
+	salt := make([]byte, 16)
+
+	seed, errT := SHA1PRNG([]byte(keyT), 16)
+	
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to create key: %v", errT), nil 
+	}
+
+	random := rand.New(rand.NewSource(int64(seed[0])))
+
+	random.Read(salt)
+
+	saltValue := base64.StdEncoding.EncodeToString(seed)
+
+	saltValue = strings.ReplaceAll(saltValue, "\r", "")
+	saltValue = strings.ReplaceAll(saltValue, "\n", "")
+	
+	rs, errT := getSHA256(strT + saltValue)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to create key: %v", errT), nil 
+	}
+
+	return String{Value: rs}, nil
+}
+
+func builtinRsaEncryptStrYYFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+	
+	keyT := args[0].String()
+
+	secretT := args[1].String()
+	
+	rsaEncryption, errT := newRSAEncryption(keyT)
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to encrypt: %v", errT), nil
+	}
+
+	encrypted, errT := rsaEncryption.Encrypt(secretT)
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to encrypt: %v", errT), nil
+	}
+
+	return String{Value: encrypted}, nil
 }
 
 func builtinSaveImageToFileFunc(c Call) (Object, error) {
