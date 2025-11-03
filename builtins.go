@@ -62,6 +62,8 @@ import (
 	"github.com/jtclarkjr/kanjikana"
 	
 	"github.com/jlaffaye/ftp"
+	
+	"github.com/sahilm/fuzzy"
 )
 
 var (
@@ -89,6 +91,7 @@ const (
 	BuiltinSetMapItem
 	BuiltinSendMail
 	BuiltinGetTextSimilarity
+	BuiltinFuzzyFind
 	BuiltinLeSshInfo
 	BuiltinStack
 	BuiltinQueue
@@ -864,6 +867,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"dealStr": BuiltinDealStr, // deal with hex-encoded, encrypted or other special-treated string
 
 	"getTextSimilarity": BuiltinGetTextSimilarity, // calculate the cosine similarity of two strings
+
+	"fuzzyFind":           BuiltinFuzzyFind,           // find strings in a list with fuzzy matching, usage: matchesT := fuzzyFind(["abc", "bbbe", "123456dbde"], "be") will return [{"Str": "bbbeeee", "Index": 1, "MatchedIndexes": [0, 3], "Score": 5}, {"Str": "123456dbdebe", "Index": 2, "MatchedIndexes": [7, 9], "Score": -25}]
 
 	// regex related
 	"regMatch":      BuiltinRegMatch,      // determine whether a string fully conforms to a regular expression, usage example: result := regMatch("abcab", `a.*b`)
@@ -2236,6 +2241,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getTextSimilarity",
 		Value:   FnASSVIRF(tk.GetTextSimilarity),
 		ValueEx: FnASSVIRFex(tk.GetTextSimilarity),
+	},
+	BuiltinFuzzyFind: &BuiltinFunction{
+		Name:    "fuzzyFind",
+		Value:   CallExAdapter(BuiltinFuzzyFindFunc),
+		ValueEx: BuiltinFuzzyFindFunc,
 	},
 
 	// regex related
@@ -17970,11 +17980,55 @@ func BuiltinDealStrFunc(c Call) (Object, error) {
 	return &String{Value: strT}, nil
 }
 
+func BuiltinFuzzyFindFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonError("not enough parameters"), nil
+	}
+	
+	v1, ok := args[0].(String)
+	
+	if ok {
+		matchesT := Array{}
+		
+		rs1 := fuzzy.Find(args[1].String(), []string{v1.Value})
+		
+		for _, v := range rs1 {
+			matchesT = append(matchesT, Map{"Str": String{Value: v.Str}, "Index": Int(v.Index), "MatchedIndexes": ConvertToObject(v.MatchedIndexes), "Score": Int(v.Score)})
+		}
+		
+		return matchesT, nil
+	}
+
+	v2, ok := args[0].(Array)
+	
+	rAryT := []string{}
+	
+	for _, v := range v2 {
+		rAryT = append(rAryT, v.String())
+	}
+	
+	if ok {
+		matchesT := Array{}
+		
+		rs1 := fuzzy.Find(args[1].String(), rAryT)
+		
+		for _, v := range rs1 {
+			matchesT = append(matchesT, Map{"Str": String{Value: v.Str}, "Index": Int(v.Index), "MatchedIndexes": ConvertToObject(v.MatchedIndexes), "Score": Int(v.Score)})
+		}
+		
+		return matchesT, nil
+	}
+
+	return NewCommonErrorWithPos(c, "parameter type(%T) not supported", args[0]), nil
+}
+
 func builtinSscanfFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		return NewCommonError("not enough paramters"), nil
+		return NewCommonErrorWithPos(c, "not enough paramters"), nil
 	}
 
 	rsT, errT := fmt.Sscanf(args[0].String(), args[1].String(), AnysToOriginal(args[2:])...)
