@@ -868,7 +868,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"getTextSimilarity": BuiltinGetTextSimilarity, // calculate the cosine similarity of two strings
 
-	"fuzzyFind":           BuiltinFuzzyFind,           // find strings in a list with fuzzy matching, usage: matchesT := fuzzyFind(["abc", "bbbe", "123456dbde"], "be") will return [{"Str": "bbbeeee", "Index": 1, "MatchedIndexes": [0, 3], "Score": 5}, {"Str": "123456dbdebe", "Index": 2, "MatchedIndexes": [7, 9], "Score": -25}]
+	"fuzzyFind":           BuiltinFuzzyFind,           // find strings in a list with fuzzy matching, usage: matchesT := fuzzyFind(["abc", "bbbe", "123456dbde"], "be", "-sort") will return [{"Str": "bbbeeee", "Index": 1, "MatchedIndexes": [0, 3], "Score": 5}, {"Str": "123456dbdebe", "Index": 2, "MatchedIndexes": [7, 9], "Score": -25}], "-sort" is the optional switch
 
 	// regex related
 	"regMatch":      BuiltinRegMatch,      // determine whether a string fully conforms to a regular expression, usage example: result := regMatch("abcab", `a.*b`)
@@ -17987,12 +17987,22 @@ func BuiltinFuzzyFindFunc(c Call) (Object, error) {
 		return NewCommonError("not enough parameters"), nil
 	}
 	
+	vs := ObjectsToS(args[2:])
+	
+	ifSortT := tk.IfSwitchExistsWhole(vs, "-sort")
+	
 	v1, ok := args[0].(String)
+	
+	var rs1 fuzzy.Matches
 	
 	if ok {
 		matchesT := Array{}
 		
-		rs1 := fuzzy.Find(args[1].String(), []string{v1.Value})
+		if ifSortT {
+			rs1 = fuzzy.Find(args[1].String(), []string{v1.Value})
+		} else {
+			rs1 = fuzzy.FindNoSort(args[1].String(), []string{v1.Value})
+		}
 		
 		for _, v := range rs1 {
 			matchesT = append(matchesT, Map{"Str": String{Value: v.Str}, "Index": Int(v.Index), "MatchedIndexes": ConvertToObject(v.MatchedIndexes), "Score": Int(v.Score)})
@@ -18012,7 +18022,11 @@ func BuiltinFuzzyFindFunc(c Call) (Object, error) {
 	if ok {
 		matchesT := Array{}
 		
-		rs1 := fuzzy.Find(args[1].String(), rAryT)
+		if ifSortT {
+			rs1 = fuzzy.Find(args[1].String(), rAryT)
+		} else {
+			rs1 = fuzzy.FindNoSort(args[1].String(), rAryT)
+		}
 		
 		for _, v := range rs1 {
 			matchesT = append(matchesT, Map{"Str": String{Value: v.Str}, "Index": Int(v.Index), "MatchedIndexes": ConvertToObject(v.MatchedIndexes), "Score": Int(v.Score)})
