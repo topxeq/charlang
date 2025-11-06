@@ -14358,7 +14358,7 @@ func builtinMakeFunc(c Call) (Object, error) {
 
 			rs := make(Array, sizeT)
 			
-			for i := 0; i < sizeT; i ++ {
+			for i := 0; i < sizeT; i ++ { // set initial values
 				rs[i] = Undefined
 			}
 			
