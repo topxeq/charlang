@@ -345,6 +345,7 @@ const (
 	BuiltinMathAtan2
 	BuiltinFlexEval
 	BuiltinCalDistanceOfLatLon
+	BuiltinCalDistanceOfLonLat
 	BuiltinAdjustFloat
 	BuiltinBigInt
 	BuiltinBigFloat
@@ -918,6 +919,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"flexEval": BuiltinFlexEval,
 	
 	"calDistanceOfLatLon": BuiltinCalDistanceOfLatLon, // distanceT := calDistanceOfLatLon(toFloat(latitudeT), toFloat(longitudeT), 48.864716, 2.349014), result is in meters
+	"calDistanceOfLonLat": BuiltinCalDistanceOfLonLat, // distanceT := calDistanceOfLatLon(toFloat(longitudeT), toFloat(latitudeT), 116.3912757, 39.906217), result is in meters
 
 	// random related
 	"getRandomInt":   BuiltinGetRandomInt,
@@ -2410,6 +2412,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "calDistanceOfLatLon",
 		Value:   FnAFFFFRF(tk.CalDistanceOfLatLonToMeters),
 		ValueEx: FnAFFFFRFex(tk.CalDistanceOfLatLonToMeters),
+	},
+	BuiltinCalDistanceOfLonLat: &BuiltinFunction{
+		Name:    "calDistanceOfLonLat",
+		Value:   FnAFFFFRF(tk.CalDistanceOfLonLatToMeters),
+		ValueEx: FnAFFFFRFex(tk.CalDistanceOfLonLatToMeters),
 	},
 
 	// random related
