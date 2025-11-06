@@ -14354,7 +14354,15 @@ func builtinMakeFunc(c Call) (Object, error) {
 			
 			return rs, nil
 		} else if len(args) > 1 {
-			return make(Array, tk.ToInt(args[1].String(), 0)), nil
+			sizeT := tk.ToInt(args[1].String(), 0)
+
+			rs := make(Array, sizeT)
+			
+			for i := 0; i < sizeT; i ++ {
+				rs[i] = Undefined
+			}
+			
+			return rs, nil
 		} else {
 			return make(Array, 0, 0), nil
 		}
