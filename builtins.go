@@ -774,7 +774,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"removeItem": BuiltinRemoveItem, 
 	"removeArrayItem": BuiltinRemoveItem, 
 
-	"removeItems": BuiltinRemoveItems, // inclusive
+	"removeItems": BuiltinRemoveItems, // remove items in the array(inclusive), will return a new array, usage: e := removeItems(a, 1, 3), will remove the items with index 1, 2, 3
 
 	"arrayContains": BuiltinArrayContains,
 
@@ -14339,7 +14339,20 @@ func builtinMakeFunc(c Call) (Object, error) {
 		}
 	case "[]", "array", "list":
 		if len(args) > 2 {
-			return make(Array, tk.ToInt(args[1].String(), 0), tk.ToInt(args[2].String(), 0)), nil
+			sizeT := tk.ToInt(args[1].String(), 0)
+			capT := tk.ToInt(args[2].String(), 0)
+			
+			if capT < sizeT {
+				return Undefined, NewCommonErrorWithPos(c, "capacity could not be less than size")
+			}
+			
+			rs := make(Array, sizeT, capT)
+			
+			for i := 0; i < sizeT; i ++ {
+				rs[i] = Undefined
+			}
+			
+			return rs, nil
 		} else if len(args) > 1 {
 			return make(Array, tk.ToInt(args[1].String(), 0)), nil
 		} else {
@@ -20146,12 +20159,14 @@ func builtinSortArrayFunc(c Call) (Object, error) {
 			sort.Slice(obj, func(i, j int) bool {
 				v, e := obj[i].BinaryOp(token.Less, obj[j])
 				if e != nil && err == nil {
-					err = e
+//					err = e
 					return false
 				}
+				
 				if v != nil {
 					return !v.IsFalsy()
 				}
+				
 				return false
 			})
 		}
@@ -20159,6 +20174,7 @@ func builtinSortArrayFunc(c Call) (Object, error) {
 		if err != nil {
 			return nil, err
 		}
+		
 		return obj, nil
 	case String:
 		s := []rune(obj.Value)
