@@ -28,7 +28,7 @@ import (
 )
 
 // global vars
-var VersionG = "2.0.5"
+var VersionG = "2.0.6"
 
 var CodeTextG = ""
 
@@ -626,11 +626,11 @@ var methodFuncMapG = map[int]map[string]*Function{
 				nv, ok := c.This.(*Function)
 
 				if !ok {
-					return NewCommonError("invalid type: %#v", c.This), nil
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
 				}
 
 				if c.VM() == nil {
-					return NewCommonError("no VM specified"), nil
+					return NewCommonErrorWithPos(c, "no VM specified"), nil
 				}
 
 				argsT := c.GetArgs()
@@ -690,15 +690,15 @@ var methodFuncMapG = map[int]map[string]*Function{
 				nv, ok := c.This.(*CompiledFunction)
 
 				if !ok {
-					return NewCommonError("invalid type: %#v", c.This), nil
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
 				}
 
 				if nv.Instructions == nil {
-					return NewCommonError("code not compiled"), nil
+					return NewCommonErrorWithPos(c, "code not compiled"), nil
 				}
 
 				if c.VM() == nil {
-					return NewCommonError("no VM specified"), nil
+					return NewCommonErrorWithPos(c, "no VM specified"), nil
 				}
 
 				argsT := c.GetArgs()
@@ -798,11 +798,11 @@ var methodFuncMapG = map[int]map[string]*Function{
 				nv, ok := c.This.(*CharCode)
 
 				if !ok {
-					return NewCommonError("invalid type: %#v", c.This), nil
+					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
 				}
 
 				if nv.Value == nil {
-					return NewCommonError("code not compiled"), nil
+					return NewCommonErrorWithPos(c, "code not compiled"), nil
 					// 	_, errT := nv.CallMethod("compile")
 
 					// 	if errT != nil {

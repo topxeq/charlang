@@ -68,7 +68,7 @@ plt(e)
 
 f := make("array", 2, 5)
 
-plo(f)
+plt(f)
 
 f[0] = make("array", 2, 2)
 f[0][0] = false
@@ -157,4 +157,38 @@ plt(n, n1)
 item9 := n[-2]
 
 plt(item9)
+
+// sort array by defined function(with delegate object) without 'ex' module
+sourceT := `
+param ...vargs
+
+str1 := string(vargs[0])
+str2 := string(vargs[1])
+
+try {
+	// keep 'abc' the largest item
+	if str1 == "abc" {
+		return false
+	} else if str2 == "abc" {
+		return true
+	}
+	
+	rs := str1 < str2
+	
+	return rs
+} catch e {
+	pln("exception:", e)
+	return false
+}
+
+return false
+`
+
+dele1 := delegate(sourceT)
+
+dele1.compile()
+
+n.sortByFunc(dele1)
+
+pln(n)
 

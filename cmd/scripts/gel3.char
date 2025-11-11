@@ -30,6 +30,9 @@ map1 := toOrderedMap(simpleMath).method("sortKeys", "-desc")
 
 plt(map1)
 
+// more convenient
+// map1 := toOrderedMap(simpleMath).sortKeys("-desc")
+
 map1 = callMethod(map1, "sortKeys")
 
 plt(map1)

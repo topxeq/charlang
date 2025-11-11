@@ -3240,6 +3240,86 @@ func (o Array) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	// return Undefined, NewCommonError("unknown method: %v", nameA)
 }
 
+func (o Array) CallName(nameA string, c Call) (Object, error) {
+	switch nameA {
+	case "toStr":
+		return ToStringObject(o), nil
+	case "value":
+		return o, nil
+	case "size":
+		return ToIntObject(len(o)), nil
+	case "remove":
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+		
+		idxT := ToIntQuick(args[0])
+
+		rs := append(o[0:idxT], o[idxT+1:]...)
+		
+		return rs, nil
+		
+	case "sortByFunc":
+		if c.Len() < 1 {
+			return Undefined, fmt.Errorf("not enough parameters")
+		}
+
+		nv1, ok := c.Get(0).(*Delegate)
+
+		if !ok {
+			return NewCommonErrorWithPos(c, "invalid type: %#v", c.Get(0)), nil
+		}
+		
+		if nv1.Value == nil {
+			return NewCommonErrorWithPos(c, "func code not compiled"), nil
+		}
+		
+		func1 := func(i, j interface{}) bool {
+			rsT := nv1.Value(i, j)
+			
+			nvT, okT := rsT.(bool)
+			
+//			tk.Plv(rsT, nvT, okT)
+			
+			if !okT {
+				return false
+			}
+			
+			return bool(nvT)
+		}
+		
+		lenT := len(o)
+	
+		var tmpv Object
+
+		for i := 0; i < lenT; i ++ {
+			for j := i + 1; j < lenT; j ++ {
+				if !func1(o[i], o[j]) {
+					tmpv = o[i]
+					o[i] = o[j]
+					o[j] = tmpv
+				}
+			}
+		}
+
+		return o, nil
+		
+	}
+
+	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
+	
+	if errT != nil || tk.IsError(rs1) {
+		rs3 := tk.ReflectCallMethodCompact(o, nameA, ObjectsToI(c.GetArgs())...)
+		return ConvertToObject(rs3), nil
+	}
+	
+	return rs1, errT
+	
+//	return Undefined, ErrInvalidIndex.NewError(nameA)
+}
+
 func (o Array) GetValue() Object {
 	return o
 }
@@ -10060,6 +10140,278 @@ func (o *OrderedMap) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
+func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
+//	tk.Pl("call: %#v", c)
+//	rs, ok := o.GetMember[nameA]
+//	
+//	if ok {
+//		fn, ok := rs.(*Function)
+//		
+//		if ok {
+//			return fn.CallEx(c)
+//		}
+//		
+//		cfn, ok := rs.(*CompiledFunction)
+//		
+//		if ok {
+//			retT, errT := NewInvoker(c.VM(), cfn).Invoke(c.GetArgs()...)
+//
+//			return retT, errT
+//		}
+//		
+//		return NewCommonErrorWithPos(c, "member is not a function: %v", nameA), nil
+//	}
+	
+	switch nameA {
+	case "toStr":
+		return ToStringObject(o), nil
+	case "value":
+		return o, nil
+	case "method":
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		return o.CallMethod(args[0].String(), args[1:]...)
+	
+	case "size":
+		return ToIntObject(o.Value.Len()), nil
+	case "Set", "set":
+		args := c.GetArgs()
+		
+		if len(args) < 2 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+
+		o.Value.Set(args[0].String(), args[1])
+		
+		return Undefined, nil
+		
+	case "Get", "get":
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+		
+		rs := o.Value.GetCompact(args[0].String())
+		
+		if rs == nil {
+			return Undefined, nil
+		}
+
+		return ConvertToObject(rs), nil
+		
+	case "remove":
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+
+		rs := o.Value.DeleteQuick(args[0].String())
+		
+		return ConvertToObject(rs), nil
+		
+	case "sort", "sortKeys":
+		args := c.GetArgs()
+		
+		errT := o.Value.SortStringKeys(ObjectsToS(args)...)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to sort: %v", errT), nil
+		}
+
+		return o, nil
+		
+	case "sortReverse", "sortKeysReverse":
+		args := c.GetArgs()
+		
+		errT := o.Value.SortStringKeysDesc(ObjectsToS(args)...)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to sort: %v", errT), nil
+		}
+
+		return o, nil
+		
+	case "toMap":
+		rs := make(Map)
+
+		for _, k := range o.Value.GetStringKeys() {
+			rs[k] = o.Value.GetCompact(k).(Object)
+		}
+
+		return rs, nil
+	case "hasKey":
+		args := c.GetArgs()
+		
+		if len(args) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+		
+		ok := o.Value.HasKey(args[0].String())
+		
+		if ok {
+			return Bool(true), nil
+		}
+
+		return Bool(false), nil
+	case "keys", "getKeys":
+		rs1 := o.Value.GetKeys()
+
+		if rs1 == nil {
+			return Undefined, nil
+		}
+
+		return ConvertToObject(rs1), nil
+	case "values", "getValues":
+		rs1 := o.Value.GetValues()
+
+		if rs1 == nil {
+			return Undefined, nil
+		}
+
+		return ConvertToObject(rs1), nil
+		
+	case "moveToFront":
+		if c.Len() < 1 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		errT := o.Value.MoveToFront(c.Get(0).String())
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to move: %v", errT), nil
+		}
+
+		return o, nil
+		
+	case "moveToBack":
+		if c.Len() < 1 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		errT := o.Value.MoveToBack(c.Get(0).String())
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to move: %v", errT), nil
+		}
+
+		return o, nil
+		
+	case "moveBefore":
+		if c.Len() < 2 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		errT := o.Value.MoveBefore(c.Get(0).String(), c.Get(1).String())
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to move: %v", errT), nil
+		}
+
+		return o, nil
+		
+	case "moveAfter":
+		if c.Len() < 2 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		errT := o.Value.MoveAfter(c.Get(0).String(), c.Get(1).String())
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to move: %v", errT), nil
+		}
+
+		return o, nil
+		
+	case "getItemByIndex":
+		if c.Len() < 1 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		rs1 := o.Value.GetPairByIndex(ToIntQuick(c.Get(0)))
+
+		if rs1 == nil {
+			return Undefined, nil
+		}
+
+		return Array{ToStringObject(rs1.Key), ConvertToObject(rs1.Value)}, nil
+		
+	case "oldest", "first":
+		rs1 := o.Value.Oldest()
+
+		if rs1 == nil {
+			return Undefined, nil
+		}
+
+		return Array{ToStringObject(rs1.Key), ConvertToObject(rs1.Value)}, nil
+		
+	case "newest", "last":
+		rs1 := o.Value.Newest()
+
+		if rs1 == nil {
+			return Undefined, nil
+		}
+
+		return Array{ToStringObject(rs1.Key), ConvertToObject(rs1.Value)}, nil
+		
+	case "sortByFunc":
+		if c.Len() < 1 {
+			return Undefined, fmt.Errorf("not enough parameters")
+		}
+
+		nv1, ok := c.Get(0).(*Delegate)
+
+		if !ok {
+			return NewCommonErrorWithPos(c, "invalid type: %#v", c.Get(0)), nil
+		}
+		
+		if nv1.Value == nil {
+			return NewCommonErrorWithPos(c, "func code not compiled"), nil
+		}
+		
+		func1 := func(i, j string) bool {
+			rsT := nv1.Value(i, j)
+			
+			nvT, okT := rsT.(bool)
+			
+//			tk.Plv(rsT, nvT, okT)
+			
+			if !okT {
+				return false
+			}
+			
+			return bool(nvT)
+		}
+		
+		errT := o.Value.SortByFunc(func1)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to sort: %v", errT), nil
+		}
+
+		return o, nil
+		
+	case "dump":
+		return String{Value: o.Value.Dump()}, nil
+	}
+
+	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
+	
+	if errT != nil || tk.IsError(rs1) {
+		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
+		return ConvertToObject(rs3), nil
+	}
+	
+	return rs1, errT
+	
+//	return Undefined, ErrInvalidIndex.NewError(nameA)
+}
+
 func (o *OrderedMap) GetValue() Object {
 	return o
 }
@@ -10293,12 +10645,18 @@ func NewOrderedMap(argsA ...Object) (Object, error) {
 
 	nv1, ok := argsA[0].(Map)
 
-	if !ok {
-		return Undefined, NewCommonError("unsupported type: (%T)%v", argsA[0], argsA[0])
+	if lenT == 1 && (!ok) {
+		return Undefined, NewCommonError("unsupported type while creating orderedMap: (%T)%v", argsA[0], argsA[0])
 	}
 
 	for k, v := range nv1 {
 		rs.Set(k, v)
+	}
+	
+	len1T := lenT / 2
+	
+	for i := 0; i < len1T; i ++ {
+		rs.Set(argsA[i*2].String(), argsA[i*2+1])
 	}
 
 	return &OrderedMap{Value: rs}, nil
