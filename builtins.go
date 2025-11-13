@@ -135,6 +135,7 @@ const (
 	BuiltinExcelGetSheetName
 	BuiltinExcelReadSheet
 	BuiltinExcelReadCell
+	BuiltinExcelReadCellImages
 	BuiltinExcelWriteSheet
 	BuiltinExcelWriteCell
 	BuiltinExcelGetColumnIndexByName
@@ -514,6 +515,7 @@ const (
 	BuiltinRegReplace
 	BuiltinAny
 	BuiltinTrim
+	BuiltinTrimErr
 	BuiltinStrTrim
 	BuiltinStrTrimStart
 	BuiltinStrTrimEnd
@@ -822,6 +824,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"trim":          BuiltinTrim,         // trim spaces of the string, also convert undefined value to empty string
 	"nilToEmpty":    BuiltinTrim,         // convert undefined value to empty string
 	"strTrim":       BuiltinTrim,         // same as trim
+	"trimErr":          BuiltinTrimErr,         // trim spaces of the string, also convert undefined value, error object or error string(starts with 'TXERROR:') to empty string
 	"strTrimStart":  BuiltinStrTrimStart, // usage: strTrimStart(s, prefix), returns string without the provided leading prefix sub-string. If the string doesn't start with prefix, s is returned unchanged.
 	"strTrimEnd":    BuiltinStrTrimEnd,   // usage: strTrimEnd(s, suffix), returns string without the provided trailing suffix sub-string. If the string doesn't end with suffix, s is returned unchanged.
 	"strTrimLeft":   BuiltinStrTrimLeft,  // usage: strTrimLeft(s, cutset string), strTrimLeft returns a slice of the string s with all leading Unicode code points contained in cutset removed.
@@ -1412,6 +1415,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"excelWriteSheet":    BuiltinExcelWriteSheet,
 	"excelReadCell":      BuiltinExcelReadCell,
 	"excelGetCellValue":      BuiltinExcelReadCell,
+	"excelReadCellImages":      BuiltinExcelReadCellImages, // usage: picObjT := excelGetCellImages(sheetName1T, "B2"), return an array such as, [{"idx": "1", "ext": ".jpg", "format": "...", "insertType": "...", "data": ...}]
+	"excelGetCellImages":      BuiltinExcelReadCellImages,
 	"excelWriteCell":     BuiltinExcelWriteCell,
 	"excelSetCellValue":     BuiltinExcelWriteCell,
 	"excelGetColumnIndexByName":  BuiltinExcelGetColumnIndexByName,
@@ -2068,6 +2073,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "trim",
 		Value:   CallExAdapter(builtinTrimFunc),
 		ValueEx: builtinTrimFunc,
+	},
+	BuiltinTrimErr: &BuiltinFunction{
+		Name:    "trimErr",
+		Value:   CallExAdapter(builtinTrimErrFunc),
+		ValueEx: builtinTrimErrFunc,
 	},
 	BuiltinStrTrim: &BuiltinFunction{
 		Name:    "strTrim",
@@ -4035,6 +4045,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "excelReadCell",
 		Value:   CallExAdapter(builtinExcelReadCellFunc),
 		ValueEx: builtinExcelReadCellFunc,
+	},
+	BuiltinExcelReadCellImages: &BuiltinFunction{
+		Name:    "excelReadCellImages",
+		Value:   CallExAdapter(builtinExcelReadCellImagesFunc),
+		ValueEx: builtinExcelReadCellImagesFunc,
 	},
 	BuiltinExcelWriteCell: &BuiltinFunction{
 		Name:    "excelWriteCell",
@@ -10533,6 +10548,33 @@ func builtinTrimFunc(c Call) (Object, error) {
 	return ToStringObject(tk.Trim(arg0.String(), ObjectsToS(args[1:])...)), nil
 }
 
+func builtinTrimErrFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	arg0 := args[0]
+
+	_, ok := arg0.(*UndefinedType)
+	if ok {
+		return ToStringObject(""), nil
+	}
+	
+	b1, errT := builtinIsErrXFunc(Call{Args: []Object{arg0}})
+	
+	if errT != nil {
+		return ToStringObject(""), nil
+	}
+	
+	if bool(b1.(Bool)) == true {
+		return ToStringObject(""), nil
+	}
+
+	return ToStringObject(tk.Trim(arg0.String(), ObjectsToS(args[1:])...)), nil
+}
+
 // won't convert undefined value to empty string
 func builtinStrTrimFunc(c Call) (Object, error) {
 	args := c.GetArgs()
@@ -11794,6 +11836,76 @@ func builtinExcelReadCellFunc(c Call) (Object, error) {
 
 }
 
+func builtinExcelReadCellImagesFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	var f *excelize.File
+	var err error
+
+	r0, ok := args[0].(*Excel)
+
+	if !ok {
+		r1, ok := args[0].(*Reader)
+
+		if !ok {
+			filePathT := args[0].String()
+
+			f, err = excelize.OpenFile(filePathT)
+
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+			}
+
+			defer f.Close()
+
+		} else {
+			f, err = excelize.OpenReader(r1.Value)
+
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+			}
+
+			defer f.Close()
+		}
+
+	} else {
+		f = r0.Value
+	}
+
+	var indexT Object = args[1]
+
+	var nameT string
+
+	nv1, ok := indexT.(Int)
+
+	if ok {
+		nameT = f.GetSheetName(int(nv1))
+	} else {
+		nameT = indexT.String()
+	}
+
+	posT := args[2].String()
+
+	picsT, errT := f.GetPictures(nameT, posT)
+	
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to get cell image: %v", errT), nil
+	}
+	
+	aryT := Array{}
+	
+	for i, v := range picsT {
+		aryT = append(aryT, Map{"idx": String{Value: fmt.Sprintf("%v", i)}, "ext": String{Value: v.Extension}, "data": Bytes(v.File), "format": String{Value: fmt.Sprintf("%v", v.Format)}, "insertType": String{Value: fmt.Sprintf("%v", v.InsertType)}})
+	}
+	
+	return aryT, nil
+
+}
+
 func builtinExcelWriteSheetFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12080,7 +12192,7 @@ func builtinWriteCsvFunc(c Call) (Object, error) {
 				}
 
 			default:
-				tk.Pl("unsupported line type: %T", args[1])
+				tk.Pl("unsupported line type: %T(%#v)", args[0], args[0])
 				return Undefined, nil
 			}
 		}
