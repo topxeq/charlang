@@ -16,4 +16,7 @@ pl("typeName of c: %v", typeName(c))
 d := []
 
 pl("typeCode of d: %v", typeCode(d))
-pl("typeName of d: %v", typeName(d))
+pl("typeName of d: %v", typeOf(d))
+
+pl("typeName of 123.5: %v", typeOf(123.5))
+

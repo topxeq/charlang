@@ -1048,10 +1048,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mb":        BuiltinGetMember,
 	"setMember": BuiltinSetMember,
 
-	"callMethod":   BuiltinCallMethod,
-	"mt":           BuiltinCallMethod,
-	"callMethodEx": BuiltinCallMethodEx,
-	"mtEx":         BuiltinCallMethodEx,
+	"callMethod":   BuiltinCallMethod, // call a method of an object, usage: callMethod(obj1, "toStr")
+	"mt":           BuiltinCallMethod, // same as callMethod
+	"callMethodEx": BuiltinCallMethodEx, // call a method of an Golang object, usage: time1 := callNamedFunc("time.Now")[0] \n time2 := callMethodEx(time1, "AddDate", 0, -1, 0)[0]
+	"mtEx":         BuiltinCallMethodEx, // same as callMethodEx
 
 	// open/close related
 	"close": BuiltinClose,
@@ -1397,13 +1397,13 @@ var BuiltinsMap = map[string]BuiltinType{
 	"writeCsv": BuiltinWriteCsv,
 	"csvWrite": BuiltinWriteCsv,
 
-	"excelNew":           BuiltinExcelNew,
-	"excelOpen":          BuiltinExcelOpen,
-	"excelOpenFromBytes":      BuiltinExcelOpenFromBytes,
-	"excelOpenFile":      BuiltinExcelOpenFile,
-	"excelSaveAs":        BuiltinExcelSaveAs,
-	"excelWriteTo":       BuiltinExcelWriteTo,
-	"excelWriteToBytes":       BuiltinExcelWriteToBytes,
+	"excelNew":           BuiltinExcelNew, // create an Excel object with empty content
+	"excelOpen":          BuiltinExcelOpen, // create an Excel object from file, bytes or reader object, usage: e1 := excelOpen("./abc.xlsx"), e2 := excelOpen(bytes([00, 11, ...])), e3 := excelOpen(reader1)
+	"excelOpenFromBytes":      BuiltinExcelOpenFromBytes, // create an Excel object contains the content from the bytes object
+	"excelOpenFile":      BuiltinExcelOpenFile, // open an Excel file(.xlsx) and create a new Excel object contains the content of the file
+	"excelSaveAs":        BuiltinExcelSaveAs, // save the Excel object to a file, usage: result := excelSaveAs(excel1, "./abc.xlsx")
+	"excelWriteTo":       BuiltinExcelWriteTo, // write the content of the Excel object to a writer or http response(httpResp) object, usage: result := excelWriteTo(excel1, httpReq1)
+	"excelWriteToBytes":       BuiltinExcelWriteToBytes, // write the content of the Excel object to bytes, return a bytes object
 	"excelClose":         BuiltinExcelClose,
 	"excelNewSheet":      BuiltinExcelNewSheet,
 	"excelRemoveSheet":      BuiltinExcelRemoveSheet,
@@ -1417,10 +1417,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"excelGetCellValue":      BuiltinExcelReadCell,
 	"excelReadCellImages":      BuiltinExcelReadCellImages, // usage: picObjT := excelGetCellImages(sheetName1T, "B2"), return an array such as, [{"idx": "1", "ext": ".jpg", "format": "...", "insertType": "...", "data": ...}]
 	"excelGetCellImages":      BuiltinExcelReadCellImages,
-	"excelWriteCell":     BuiltinExcelWriteCell,
-	"excelSetCellValue":     BuiltinExcelWriteCell,
-	"excelGetColumnIndexByName":  BuiltinExcelGetColumnIndexByName,
-	"excelGetColumnNameByIndex":  BuiltinExcelGetColumnNameByIndex,
+	"excelWriteCell":     BuiltinExcelWriteCell, // write a string value to the cell
+	"excelSetCellValue":     BuiltinExcelWriteCell, // the same as excelWriteCell 
+	"excelGetColumnIndexByName":  BuiltinExcelGetColumnIndexByName, // excelGetColumnIndexByName("A") == 1, excelGetColumnIndexByName("AB") == 28
+	"excelGetColumnNameByIndex":  BuiltinExcelGetColumnNameByIndex, // excelGetColumnNameByIndex(1) == "A", excelGetColumnNameByIndex(28) == "AB"
 
 	// database related
 	"formatSQLValue": BuiltinFormatSQLValue,
@@ -11312,10 +11312,22 @@ func builtinExcelOpenFunc(c Call) (Object, error) {
 		}
 
 	} else {
-		f, err = excelize.OpenFile(args[0].String())
-		if err != nil {
-			return NewCommonErrorWithPos(c, "failed to open excel file: %v", err), nil
+		r2, ok := args[0].(Bytes)
+
+		if ok {
+			f, err = excelize.OpenReader(bytes.NewReader([]byte(r2)))
+
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open file: %v", err), nil
+			}
+
+		} else {
+			f, err = excelize.OpenFile(args[0].String())
+			if err != nil {
+				return NewCommonErrorWithPos(c, "failed to open excel file: %v", err), nil
+			}
 		}
+
 	}
 
 	return &Excel{Value: f}, nil
@@ -20234,15 +20246,21 @@ func builtinSortArrayFunc(c Call) (Object, error) {
 	case Array:
 		var err error
 
-		keyT := ""
-		if len(args) > 1 {
-			keyT = args[1].String()
-		}
+		vs := ObjectsToS(c.GetArgs())
 
-		descT := false
-		if len(args) > 2 {
-			descT = (args[2].String() == "desc") || (!(args[2].IsFalsy()))
-		}
+		keyT := tk.GetSwitch(vs, "-key=", "")
+//		keyT := ""
+//		if len(args) > 1 {
+//			keyT = args[1].String()
+//		}
+
+		descT := tk.IfSwitchExists(vs, "-desc")
+//		descT := false
+//		if len(args) > 2 {
+//			optT := args[2].String()
+//			descT = (optT == "desc") //  || (optT != "asc" && !(args[2].IsFalsy()))
+////			descT = (args[2].String() == "desc") || (!(args[2].IsFalsy()))
+//		}
 
 		if keyT != "" {
 			sort.Slice(obj, func(i, j int) bool {
@@ -20271,13 +20289,27 @@ func builtinSortArrayFunc(c Call) (Object, error) {
 							}
 						}
 					}
+				} else {
+					sort.Slice(obj, func(i, j int) bool {
+						v, e := obj[i].BinaryOp(tk.IfThenElse(descT, token.Greater, token.Less).(token.Token), obj[j])
+						if e != nil && err == nil {
+		//					err = e
+							return false
+						}
+						
+						if v != nil {
+							return !v.IsFalsy()
+						}
+						
+						return false
+					})
 				}
 
 				return false
 			})
 		} else {
 			sort.Slice(obj, func(i, j int) bool {
-				v, e := obj[i].BinaryOp(token.Less, obj[j])
+				v, e := obj[i].BinaryOp(tk.IfThenElse(descT, token.Greater, token.Less).(token.Token), obj[j])
 				if e != nil && err == nil {
 //					err = e
 					return false

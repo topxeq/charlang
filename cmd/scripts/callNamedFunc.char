@@ -6,4 +6,14 @@ pln(tk)
 // note the result is an array
 rs := callMethodEx(tk, "GetTextSimilarity", "abc", "abd")[0]
 
-plv(rs)
+plt(rs)
+
+time1 := callNamedFunc("time.Now")[0]
+
+plt(time1)
+
+time2 := callMethodEx(time1, "AddDate", 0, -1, 0)[0]
+
+plt(time2)
+
+

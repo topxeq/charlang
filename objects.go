@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -3229,14 +3230,14 @@ func (o Array) HasMemeber() bool {
 }
 
 func (o Array) CallMethod(nameA string, argsA ...Object) (Object, error) {
-	switch nameA {
-	case "value":
-		return o, nil
-	case "toStr":
-		return ToStringObject(o), nil
-	}
+//	switch nameA {
+//	case "value":
+//		return o, nil
+//	case "toStr":
+//		return ToStringObject(o), nil
+//	}
 
-	return CallObjectMethodFunc(o, nameA, argsA...)
+	return o.CallName(nameA, Call{Args: argsA})
 	// return Undefined, NewCommonError("unknown method: %v", nameA)
 }
 
@@ -3260,7 +3261,94 @@ func (o Array) CallName(nameA string, c Call) (Object, error) {
 		rs := append(o[0:idxT], o[idxT+1:]...)
 		
 		return rs, nil
+	case "sort":
+		var err error
 		
+//		args := c.Args
+		
+		vs := ObjectsToS(c.GetArgs())
+
+		keyT := tk.GetSwitch(vs, "-key=", "")
+//		if len(args) > 0 {
+//			keyT = args[0].String()
+//		}
+
+//		descT := false
+		descT := tk.IfSwitchExists(vs, "-desc")
+//		if len(args) > 1 {
+//			optT := args[1].String()
+//			descT = (optT == "desc") // || (optT != "asc" && !(args[1].IsFalsy()))
+//		}
+		
+//		obj := o.(Array)
+
+		if keyT != "" {
+			sort.Slice(o, func(i, j int) bool {
+				// v1 := Undefined
+				// v2 := Undefined
+
+				m1, ok := o[i].(Map)
+
+				if ok {
+					m2, ok := o[j].(Map)
+					if ok {
+						v1, ok := m1[keyT]
+						if ok {
+							v2, ok := m2[keyT]
+
+							if ok {
+								v, e := v1.BinaryOp(tk.IfThenElse(descT, token.Greater, token.Less).(token.Token), v2)
+								if e != nil && err == nil {
+									err = e
+									return false
+								}
+								if v != nil {
+									return !v.IsFalsy()
+								}
+								return false
+							}
+						}
+					}
+				} else {
+					sort.Slice(o, func(i, j int) bool {
+						v, e := o[i].BinaryOp(tk.IfThenElse(descT, token.Greater, token.Less).(token.Token), o[j])
+						if e != nil && err == nil {
+		//					err = e
+							return false
+						}
+						
+						if v != nil {
+							return !v.IsFalsy()
+						}
+						
+						return false
+					})
+				}
+
+				return false
+			})
+		} else {
+			sort.Slice(o, func(i, j int) bool {
+				v, e := o[i].BinaryOp(tk.IfThenElse(descT, token.Greater, token.Less).(token.Token), o[j])
+				if e != nil && err == nil {
+//					err = e
+					return false
+				}
+				
+				if v != nil {
+					return !v.IsFalsy()
+				}
+				
+				return false
+			})
+		}
+
+		if err != nil {
+			return NewCommonErrorWithPos(c, "error: %v", err), nil
+		}
+		
+		return o, nil
+
 	case "sortByFunc":
 		if c.Len() < 1 {
 			return Undefined, fmt.Errorf("not enough parameters")
@@ -3310,9 +3398,13 @@ func (o Array) CallName(nameA string, c Call) (Object, error) {
 
 	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
 	
-	if errT != nil || tk.IsError(rs1) {
-		rs3 := tk.ReflectCallMethodCompact(o, nameA, ObjectsToI(c.GetArgs())...)
-		return ConvertToObject(rs3), nil
+//	if errT != nil || tk.IsError(rs1) {
+//		rs3 := tk.ReflectCallMethodCompact(o, nameA, ObjectsToI(c.GetArgs())...)
+//		return ConvertToObject(rs3), nil
+//	}
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to call method(%v): %v", nameA, errT), nil
 	}
 	
 	return rs1, errT
@@ -3796,14 +3888,15 @@ func (o Map) CallName(nameA string, c Call) (Object, error) {
 }
 
 func (o Map) CallMethod(nameA string, argsA ...Object) (Object, error) {
-	switch nameA {
-	case "value":
-		return o, nil
-	case "toStr":
-		return ToStringObject(o), nil
-	}
-
-	return CallObjectMethodFunc(o, nameA, argsA...)
+	return o.CallName(nameA, Call{Args: argsA})
+//	switch nameA {
+//	case "value":
+//		return o, nil
+//	case "toStr":
+//		return ToStringObject(o), nil
+//	}
+//
+//	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o Map) GetValue() Object {

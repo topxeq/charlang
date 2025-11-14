@@ -1,0 +1,10 @@
+pi := getConst("math.Pi")
+
+plt(pi)
+
+e := getConst("math.E")
+
+plt(e)
+
+plt(getConst("math.MaxInt"), getConst("math.MinInt"), getConst("math.MaxFloat"), getConst("math.MinFloat"))
+

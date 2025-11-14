@@ -117,6 +117,7 @@ func init() {
 var namedFuncMapG = map[string]interface{}{
 	"fmt.Fprintf": fmt.Fprintf,
 	"tk.NewTK":    tk.NewTK,
+	"time.Now":    time.Now,
 }
 
 var namedValueMapG = map[string]interface{}{
@@ -139,10 +140,18 @@ var namedValueMapG = map[string]interface{}{
 	"time.Minute": time.Minute,
 	"time.Hour": time.Hour,
 
+	"math.Pi":   math.Pi,
+	"math.E":   math.E,
+
 	"maxInt":   math.MaxInt,
 	"minInt":   math.MinInt,
 	"maxFloat": math.MaxFloat64,
 	"minFloat": math.SmallestNonzeroFloat64,
+	"math.MaxInt":   math.MaxInt,
+	"math.MinInt":   math.MinInt,
+	"math.MaxFloat": math.MaxFloat64,
+	"math.MinFloat": math.SmallestNonzeroFloat64,
+
 
 	"http.StatusContinue":           100, // RFC 9110, 15.2.1
 	"http.StatusSwitchingProtocols": 101, // RFC 9110, 15.2.2
