@@ -258,7 +258,7 @@ testByText(rs, "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n", seqT.get(), "exit.char")
 
 rs = systemCmd("char", "-gopath", "typeCodeAndName.char")
 
-testByText(rs, "typeCode of a: 107\ntypeName of a: int\ntypeCode of b: 105\ntypeName of b: string\ntypeCode of c: 131\ntypeName of c: array\ntypeCode of d: 131\ntypeName of d: array\n", seqT.get(), "typeCodeAndName.char")
+testByText(rs, "typeCode of a: 107\ntypeName of a: int\ntypeCode of b: 105\ntypeName of b: string\ntypeCode of c: 131\ntypeName of c: array\ntypeCode of d: 131\ntypeName of d: array\ntypeName of 123.5: float\n", seqT.get(), "typeCodeAndName.char")
 
 rs = systemCmd("char", "-gopath", "anonymousFunc.char")
 
