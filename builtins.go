@@ -780,7 +780,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"arrayContains": BuiltinArrayContains,
 
-	"sortArray": BuiltinSortArray, // usage: sortArray(totalFindsT, "runeStart", "desc")
+	"sortArray": BuiltinSortArray, // usage: sortArray(totalFindsT, "-key=runeStart", "-desc")
 	
 	"shuffle": BuiltinShuffle, // shuffle(aryT, 10)
 

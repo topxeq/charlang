@@ -124,6 +124,8 @@
 
 **jsVm**: new a JavaScript VM
 
+// "qjsVm": BuiltinQjsVm, // new a QuickJS(JavaScript) VM(ES2023 compliant)
+
 **database**
 
 ### --- new related ---
@@ -158,11 +160,17 @@
 
 **getArrayItem**
 
-**removeItems**: inclusive
+**removeItem**
+
+**removeArrayItem**
+
+**removeItems**: remove items in the array(inclusive), will return a new array, usage: e := removeItems(a, 1, 3), will remove the items with index 1, 2, 3
 
 **arrayContains**
 
-**sortArray**: usage: sortArray(totalFindsT, "runeStart", "desc")
+**sortArray**: usage: sortArray(totalFindsT, "-key=runeStart", "-desc")
+
+**shuffle**: shuffle(aryT, 10)
 
 **getMapItem**
 
@@ -204,6 +212,8 @@
 
 **toKMG**
 
+**intToStr**
+
 **floatToStr**
 
 **strToUtf8**
@@ -225,6 +235,8 @@
 **nilToEmpty**: convert undefined value to empty string
 
 **strTrim**: same as trim
+
+**trimErr**: trim spaces of the string, also convert undefined value, error object or error string(starts with 'TXERROR:') to empty string
 
 **strTrimStart**: usage: strTrimStart(s, prefix), returns string without the provided leading prefix sub-string. If the string doesn't start with prefix, s is returned unchanged.
 
@@ -296,6 +308,8 @@
 
 **getTextSimilarity**: calculate the cosine similarity of two strings
 
+**fuzzyFind**: find strings in a list with fuzzy matching, usage: matchesT := fuzzyFind(["abc", "bbbe", "123456dbde"], "be", "-sort") will return [{"Str": "bbbeeee", "Index": 1, "MatchedIndexes": [0, 3], "Score": 5}, {"Str": "123456dbdebe", "Index": 2, "MatchedIndexes": [7, 9], "Score": -25}], "-sort" is the optional switch
+
 ### --- regex related ---
 
 **regMatch**: determine whether a string fully conforms to a regular expression, usage example: result := regMatch("abcab", `a.*b`)
@@ -350,6 +364,18 @@
 
 **log10**
 
+**mathPi**
+
+**mathE**
+
+**mathSin**
+
+**mathCos**
+
+**mathTan**
+
+**mathAtan2**
+
 **min**: returns the largest of several values(integer of float).
 
 **max**: returns the smallest of several values(integer of float).
@@ -361,6 +387,10 @@
 **round**: returns the nearest integer, rounding half away from zero.
 
 **flexEval**
+
+**calDistanceOfLatLon**: distanceT := calDistanceOfLatLon(toFloat(latitudeT), toFloat(longitudeT), 48.864716, 2.349014), result is in meters
+
+**calDistanceOfLonLat**: distanceT := calDistanceOfLatLon(toFloat(longitudeT), toFloat(latitudeT), 116.3912757, 39.906217), result is in meters
 
 ### --- random related ---
 
@@ -391,6 +421,26 @@
 **timeAddDate**: add years, months, days to time and return the result, usage: time2 := timeAddDate(time1, 0, -1, 0), will add -1 month to time1
 
 **timeBefore**: usage: b1 := timeBefore(time1, time2)
+
+**runTicker**: run a delegate function in a thread, usage: errT := runTicker(1.2, dele1), stop the ticker by return error in delegate function
+
+### --- task related ---
+
+**isCronExprValid**: check if the string is valid crontab expression, i.e. '* */5 * * *', return bool result
+
+**isCronExprDue**: check if the string is valid crontab expression and is due, return bool or error if not valid
+
+**splitCronExpr**: split crontab expression to 2 parts(of string), i.e. ["*/1 * * * *", "/bin/ls -al"], or error
+
+**resetTasker**
+
+**runTasker**
+
+**stopTasker**
+
+**addSimpleTask**
+
+**addShellTask**
 
 ### --- binary/bytes related ---
 
@@ -540,13 +590,13 @@
 
 **setMember**
 
-**callMethod**
+**callMethod**: call a method of an object, usage: callMethod(obj1, "toStr")
 
-**mt**
+**mt**: same as callMethod
 
-**callMethodEx**
+**callMethodEx**: call a method of an Golang object, usage: time1 := callNamedFunc("time.Now")[0] \n time2 := callMethodEx(time1, "AddDate", 0, -1, 0)[0]
 
-**mtEx**
+**mtEx**: same as callMethodEx
 
 ### --- open/close related ---
 
@@ -608,11 +658,43 @@
 
 **compactJson**
 
-**getJsonNodeStr**: getJsonNodeStr(jsonA, pathA), pathA refer to github.com/tidwall/gjson
+**getJsonNodeStr**: getJsonNodeStr(jsonA, pathA), pathA refer to github.com/tidwall/gjson, such as
+
+// "name.last"          >> "Anderson"
+
+// "age"                >> 37
+
+// "children"           >> ["Sara","Alex","Jack"]
+
+// "children.#"         >> 3
+
+// "children.1"         >> "Alex"
+
+// "child*.2"           >> "Jack"
+
+// "c?ildren.0"         >> "Sara"
+
+// "fav\.movie"         >> "Deer Hunter"
+
+// "friends.#.first"    >> ["Dale","Roger","Jane"]
+
+// "friends.1.last"     >> "Craig"
 
 **getJsonNodeStrs**: getJsonNodeStrs(jsonA, pathA), pathA refer to github.com/tidwall/gjson
 
 **strsToJson**
+
+// in a simplemap structure, key/value pairs are in form as KEY=VALUE
+
+// "=" in keys should be replaced as `EQ`
+
+// line-ends in values such as "\n" should be replaced as #CR#
+
+// comments could be used after ####
+
+**encodeSimpleMap**
+
+**decodeSimpleMap**
 
 ### --- XML related ---
 
@@ -936,6 +1018,10 @@
 
 **aesDecrypt**: AES decrypt string or bytes, "-cbc" to use cbc
 
+**getSha256WithKeyYY**: encrypt method for Yong You
+
+**rsaEncryptStrYY**: encrypt method for Yong You
+
 ### --- image related ---
 
 **loadImageFromBytes**: usage: imageT := loadImageFromBytes(bytesT, "-type=png")
@@ -947,6 +1033,8 @@
 **loadImageFromFile**: usage: imageT := loadImageFromFile(`c:\test\abc.png`) or image2T := loadImageFromFile(`c:\test\abc.jpg`, "-type=jpg")
 
 **saveImageToFile**: usage: errT := saveImageToFile(imageT, `c:\test\newabc.png`) or errT := saveImageToFile(imageT, `c:\test\newabc.png`, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
+
+**loadImageFromUrl**: usage: imageT := loadImageFromUrl(`https://a.b.com/a.jpg`) or image2T := loadImageFromUrl(`https://a.b.com/a.jpg`, "-type=jpg")
 
 **getImageInfo**
 
@@ -962,7 +1050,13 @@
 
 **drawTextWrappedOnImage**
 
+**setImageOpacity**: b1 := loadImageFromFile(`d:\downtemp\img1.jpg`); saveImageToFile(setImageOpacity(b1, 0.5), `d:\tmpx\test111.png`)
+
+**addWatermarkToImage**: b1 := loadImageFromFile(`d:\downtemp\img1.jpg`); b2 := loadImageFromFile(`d:\downtemp\img_cr1.png`); saveImageToFile(addWatermarkToImage(b1, b2, "-opacity=0.7", "-x=200", "-y=300"), `d:\tmpx\test111.png`); saveImageToFile(addWatermarkToImage(b1, b2, "-opacity=0.5", "-repeat"), `d:\tmpx\test112.png`)
+
 **genQr**
+
+**scanQr**
 
 **imageToAscii**: convert an image object to colorful ASCII graph(array of string), usage: asciiT := imageToAscii(imageT, "-width=60", "-height=80"), set one of width or height will keep aspect ratio
 
@@ -1030,19 +1124,25 @@
 
 **csvWrite**
 
-**excelNew**
+**excelNew**: create an Excel object with empty content
 
-**excelOpen**
+**excelOpen**: create an Excel object from file, bytes or reader object, usage: e1 := excelOpen("./abc.xlsx"), e2 := excelOpen(bytes([00, 11, ...])), e3 := excelOpen(reader1)
 
-**excelOpenFile**
+**excelOpenFromBytes**: create an Excel object contains the content from the bytes object
 
-**excelSaveAs**
+**excelOpenFile**: open an Excel file(.xlsx) and create a new Excel object contains the content of the file
 
-**excelWriteTo**
+**excelSaveAs**: save the Excel object to a file, usage: result := excelSaveAs(excel1, "./abc.xlsx")
+
+**excelWriteTo**: write the content of the Excel object to a writer or http response(httpResp) object, usage: result := excelWriteTo(excel1, httpReq1)
+
+**excelWriteToBytes**: write the content of the Excel object to bytes, return a bytes object
 
 **excelClose**
 
 **excelNewSheet**
+
+**excelRemoveSheet**
 
 **excelReadAll**
 
@@ -1060,13 +1160,17 @@
 
 **excelGetCellValue**
 
-**excelWriteCell**
+**excelReadCellImages**: usage: picObjT := excelGetCellImages(sheetName1T, "B2"), return an array such as, [{"idx": "1", "ext": ".jpg", "format": "...", "insertType": "...", "data": ...}]
 
-**excelSetCellValue**
+**excelGetCellImages**
 
-**excelGetColumnIndexByName**
+**excelWriteCell**: write a string value to the cell
 
-**excelGetColumnNameByIndex**
+**excelSetCellValue**: the same as excelWriteCell
+
+**excelGetColumnIndexByName**: excelGetColumnIndexByName("A") == 1, excelGetColumnIndexByName("AB") == 28
+
+**excelGetColumnNameByIndex**: excelGetColumnNameByIndex(1) == "A", excelGetColumnNameByIndex(28) == "AB"
 
 ### --- database related ---
 
@@ -1247,6 +1351,8 @@
 **docxGetPlaceholders**
 
 **showTable**
+
+**deepClone**
 
 // "sortByFunc": BuiltinSortByFunc,
 
