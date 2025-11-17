@@ -340,6 +340,52 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
+//	115: map[string]*Function{ // Array
+//		"sortByFuncQuick": &Function{
+//			Name: "sortByFuncQuick",
+//			ValueEx: func(c Call) (Object, error) {
+//				nv, ok := c.This.(*CompiledFunction)
+//
+//				if !ok {
+//					return NewCommonError("invalid type: %#v", c.This), nil
+//				}
+//
+//				if nv.Instructions == nil {
+//					return NewCommonError("code not compiled"), nil
+//				}
+//
+//				if c.VM() == nil {
+//					return NewCommonError("no VM specified"), nil
+//				}
+//
+//				argsT := c.GetArgs()
+//
+//				retT, errT := NewInvoker(c.VM(), nv).Invoke(argsT...)
+//
+//				if errT != nil {
+//					return NewCommonError("failed to run compiled function: %v", errT), nil
+//				}
+//
+//				return retT, nil
+//			},
+//		},
+//		"trim": &Function{
+//			Name: "trim",
+//			ValueEx: func(c Call) (Object, error) {
+//				nv, ok := c.This.(*MutableString)
+//				if !ok {
+//					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+//				}
+//
+//				args := toArgsS(0, c)
+//
+//				nv.Value = tk.Trim(nv.Value, args...)
+//				// tk.Pl("h1: %#v %#v %#v", c, args, nv.Value)
+//
+//				return ToStringObject(nv.Value), nil
+//			},
+//		},
+//	},
 	135: map[string]*Function{ // *OrderedMap
 		"toStr": &Function{
 			Name: "toStr",

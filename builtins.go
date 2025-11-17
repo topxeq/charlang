@@ -589,6 +589,8 @@ const (
 	BuiltinTestByEndsWith
 	BuiltinTestByContains
 	BuiltinTestByRegContains
+//	BuiltinTestByFunc
+//	BuiltinTestByLineRules
 	BuiltinTestByReg
 	BuiltinGetSeq
 	BuiltinMagic
@@ -669,6 +671,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"testByContains":    BuiltinTestByContains,    // definition: testByContains(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
 	"testByReg":         BuiltinTestByReg,         // definition: testByReg(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
 	"testByRegContains": BuiltinTestByRegContains, // definition: testByRegContains(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
+//	"testByFunc": BuiltinTestByFunc, // definition: testByRegContains(strToTest string, compareFunc func, indexInteger int, scriptFileName string)
+//	"testByLineRules": BuiltinTestByLineRules, // definition: testByLineRules(strToTest string, [[0, "text", "abc123"], [1, "notEmpty"], [2, "empty"], [3, "startsWith": "abc", [4, "endsWith": "abc"], [5, "contains": "abc"], [6, "reg": "abc"], [7, "regContains": "abc"], [7, "map": `{"field1", "value1", "field2", "value2"}`]], indexInteger int, scriptFileName string)
 
 	"dumpVar":   BuiltinDumpVar,   // for internal debug
 	"debugInfo": BuiltinDebugInfo, // for internal debug
@@ -1598,6 +1602,16 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinTestByRegContainsFunc),
 		ValueEx: builtinTestByRegContainsFunc,
 	},
+//	BuiltinTestByFunc: &BuiltinFunction{
+//		Name:    "testByFunc",
+//		Value:   CallExAdapter(builtinTestByFuncFunc),
+//		ValueEx: builtinTestByFuncFunc,
+//	},
+//	BuiltinTestByLineRules: &BuiltinFunction{
+//		Name:    "testByLineRules",
+//		Value:   CallExAdapter(builtinTestByLineRulesFunc),
+//		ValueEx: builtinTestByLineRulesFunc,
+//	},
 
 	BuiltinDumpVar: &BuiltinFunction{
 		Name:    "dumpVar",
@@ -8730,6 +8744,155 @@ func builtinTestByRegContainsFunc(c Call) (Object, error) {
 
 	return nil, nil
 }
+
+//func builtinTestByFuncFunc(c Call) (Object, error) {
+//	argsA := c.GetArgs()
+//	lenT := len(argsA)
+//
+//	if lenT < 2 {
+//		return Undefined, fmt.Errorf("not enough parameters")
+//	}
+//
+//	v1 := argsA[0]
+//	v2 := argsA[1]
+//
+//	var v3 string
+//	var v4 string
+//
+//	if lenT > 3 {
+//		v3 = tk.ToStr(argsA[2])
+//		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+//	} else if lenT > 2 {
+//		v3 = tk.ToStr(argsA[2])
+//	} else {
+//		v3 = tk.ToStr(tk.GetSeq())
+//	}
+//
+//	nv1, ok := v1.(String)
+//
+//	if !ok {
+//		return nil, fmt.Errorf("test %v%v failed(invalid type v1): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+//	}
+//
+//	nv2, ok := v2.(*CompiledFunction)
+//
+//	if !ok {
+//		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+//	}
+//
+//	retT, errT := NewInvoker(c.VM(), nv2).Invoke(nv1)
+////						tk.Plv(retT, errT)
+//
+//	
+//	if errT != nil {
+//		return nil, fmt.Errorf("test %v%v failed(compareFunc returns error: %v): %#v <-> %#v\n-----\n%v\n-----\n%v", errT, v3, v4, v1, v2, v1, v2)
+//	}
+//
+//	tk.Pl("test %v%v passed", v3, v4)
+//
+//	return nil, nil
+//}
+
+//func builtinTestByLineRulesFunc(c Call) (Object, error) {
+//	argsA := c.GetArgs()
+//	lenT := len(argsA)
+//
+//	if lenT < 2 {
+//		return Undefined, fmt.Errorf("not enough parameters")
+//	}
+//
+//	v1 := argsA[0]
+//	v2 := argsA[1]
+//	
+//	var v3 string
+//	var v4 string
+//
+//	if lenT > 3 {
+//		v3 = tk.ToStr(argsA[2])
+//		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+//	} else if lenT > 2 {
+//		v3 = tk.ToStr(argsA[2])
+//	} else {
+//		v3 = tk.ToStr(tk.GetSeq())
+//	}
+//
+//	nv1, ok := v1.(String)
+//
+//	if !ok {
+//		return nil, fmt.Errorf("test %v%v failed(invalid type v1): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+//	}
+//
+//	nv2, ok := v2.(Array)
+//
+//	if !ok {
+//		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+//	}
+//	
+//	linesT := tk.SplitLines(nv1.Value)
+//	
+//	linesLenT := len(linesT)
+//	
+//	for i, v := range nv2 {
+//		
+//		if i > (linesLenT - 1) {
+//			return nil, fmt.Errorf("test %v%v failed(index out of line rules): [%v] %#v <-> %v/%v", v3, v4, i, v2, i, linesLenT)
+//		}
+//		
+//		tk.Pl("process line rules: [%v] %#v %v %v ...", i, v2, i, v)
+//		
+//		nvl, ok := v.(Array)
+//		
+//		if !ok {
+//			return nil, fmt.Errorf("test %v%v failed(invalid internal type of line rules): [%v] %#v <-> (%T) %#v", v3, v4, i, v2, v, v)
+//		}
+//		
+//		if len(nvl) < 2 {
+//			return nil, fmt.Errorf("test %v%v failed(invalid internal array length of line rules): [%v] %#v <-> (%T) %#v", v3, v4, i, v2, v, v)
+//		}
+//		
+//		ruleTypeT := nvl[1].String()
+//		
+//		switch ruleTypeT {
+//			case "text":
+//				if len(nvl) < 3 {
+//					return nil, fmt.Errorf("test %v%v failed(invalid internal array length of line rules): [%v] %#v <-> (%T) %#v", v3, v4, i, v2, v, v)
+//				}
+//				
+//				if linesT[i] != nvl[2].String() {
+////					tk.Pl("test %v%v passed", v3, v4)
+//				} else {
+//					return nil, fmt.Errorf("test %v%v failed(line rules not match): %#v <-> %#v\n-----\n%v\n-----\n%#v", v3, v4, v1, v2, linesT[i], v)
+//				}
+//			case "regContains":
+//				if len(nvl) < 3 {
+//					return nil, fmt.Errorf("test %v%v failed(invalid internal array length of line rules): [%v] %#v <-> (%T) %#v", v3, v4, i, v2, v, v)
+//				}
+//				
+//				if tk.RegContainsX(linesT[i], nvl[2].String()) {
+////					tk.Pl("test %v%v passed", v3, v4)
+//				} else {
+//					return nil, fmt.Errorf("test %v%v failed(line rules not match): %#v <-> %#v\n-----\n%v\n-----\n%#v", v3, v4, v1, v2, linesT[i], v)
+//				}
+////			case "jsonSortAs":
+////				if len(nvl) < 3 {
+////					return nil, fmt.Errorf("test %v%v failed(invalid internal array length of line rules): [%v] %#v <-> (%T) %#v", v3, v4, i, v2, v, v)
+////				}
+////				
+////				if tk.RegContainsX(linesT[i], v[2].String()) {
+//////					tk.Pl("test %v%v passed", v3, v4)
+////				} else {
+////					return nil, fmt.Errorf("test %v%v failed(line rules not match): %#v <-> %#v\n-----\n%v\n-----\n%#v", v3, v4, v1, v2, linesT[i], v)
+////				}
+//			default:
+//				return nil, fmt.Errorf("test %v%v failed(unknown rule type of line rules): [%v] %#v <-> (%#v) %v", v3, v4, i, v2, v, ruleTypeT)
+//				
+//		}
+//	}
+//
+//	tk.Pl("test %v%v passed", v3, v4)
+//
+//	return nil, nil
+//}
 
 func builtinTestByRegFunc(c Call) (Object, error) {
 	argsA := c.GetArgs()

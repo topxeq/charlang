@@ -113,6 +113,20 @@ try {
 plt(c, c1)
 
 // sort by function
+ary1 := [123, 2, "abc", "132", 3.5, "", false, true, [5, 6]]
+
+pl("ary1: %v", ary1)
+
+func0 := func(idx1, idx2) {
+	return toStr(ary1[idx1]) < toStr(ary1[idx2])
+}
+
+ary2 := ary1.sortByFunc(func0)
+
+// ary2 is the same as ary1, and is sorted
+plt(ary1, ary2)
+
+// sort by function with module 'ex'
 ex := import("ex")
 
 func1 := func(idx1, idx2) {

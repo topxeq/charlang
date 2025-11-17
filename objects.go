@@ -1672,21 +1672,102 @@ func (o String) HasMemeber() bool {
 	return true
 }
 
-func (o String) CallMethod(nameA string, argsA ...Object) (Object, error) {
+func (o String) CallName(nameA string, c Call) (Object, error) {
 	switch nameA {
 	case "value":
 		return o, nil
 	case "toStr":
 		return ToStringObject(o), nil
 	case "contains":
-		if len(argsA) < 1 {
-			return NewCommonError("not enough parameters"), nil
+		args := c.GetArgs()
+	
+		if len(args) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
 
-		return Bool(strings.Contains(o.Value, argsA[0].String())), nil
+		return Bool(strings.Contains(o.Value, args[0].String())), nil
+	case "testByFunc":
+		args := c.GetArgs()
+	
+		lenT := len(args)
+
+		if lenT < 1 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		v2 := args[0]
+
+		var v3 string
+		var v4 string
+
+		if lenT > 2 {
+			v3 = tk.ToStr(args[1])
+			v4 = "(" + tk.ToStr(args[2]) + ")"
+		} else if lenT > 1 {
+			v3 = tk.ToStr(args[1])
+		} else {
+			v3 = tk.ToStr(tk.GetSeq())
+		}
+
+		v1 := o
+		nv1 := o
+
+		nv2, ok := v2.(*CompiledFunction)
+
+		if !ok {
+			return nil, NewCommonErrorWithPos(c, "test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+		}
+
+		retT, errT := NewInvoker(c.VM(), nv2).Invoke(nv1)
+		
+		if errT != nil {
+			return nil, NewCommonErrorWithPos(c, "test %v%v failed(compareFunc returns error: %v): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, errT, v1, v2, v1, v2)
+		}
+		
+		b1, ok := retT.(Bool)
+		if !ok {
+			return nil, NewCommonErrorWithPos(c, "test %v%v failed(compareFunc returns invalid type: %#v): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, retT, v1, v2, v1, v2)
+		}
+		
+		if !bool(b1) {
+			return nil, NewCommonErrorWithPos(c, "test %v%v failed(compareFunc returns false): %v -> %#v\n-----\n%v\n", v3, v4, retT, v1, v1)
+		}
+
+		tk.Pl("test %v%v passed", v3, v4)
+
+		return nil, nil
 	}
 
-	return CallObjectMethodFunc(o, nameA, argsA...)
+	args := c.GetArgs()
+	
+	rs1, errT := CallObjectMethodFunc(o, nameA, args...)
+	
+//	if errT != nil || tk.IsError(rs1) {
+//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
+//		return ConvertToObject(rs3), nil
+//	}
+	
+	return rs1, errT
+	
+//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+}
+
+func (o String) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	return o.CallName(nameA, Call{Args: argsA})
+//	switch nameA {
+//	case "value":
+//		return o, nil
+//	case "toStr":
+//		return ToStringObject(o), nil
+//	case "contains":
+//		if len(argsA) < 1 {
+//			return NewCommonError("not enough parameters"), nil
+//		}
+//
+//		return Bool(strings.Contains(o.Value, argsA[0].String())), nil
+//	}
+//
+//	return CallObjectMethodFunc(o, nameA, argsA...)
 
 	// return Undefined, NewCommonError("unknown method: %v", nameA)
 }
@@ -3350,9 +3431,56 @@ func (o Array) CallName(nameA string, c Call) (Object, error) {
 		return o, nil
 
 	case "sortByFunc":
+		argsT := c.GetArgs()
+		
 		if c.Len() < 1 {
 			return Undefined, fmt.Errorf("not enough parameters")
 		}
+		
+		if true {
+//			fn, ok := argsT[0].(*Function)
+//			
+//			if ok {
+//				return fn.CallEx(c)
+//			}
+			
+			cfn, ok := argsT[0].(*CompiledFunction)
+			
+//			tk.Plv(cfn, ok)
+			
+			if ok {
+				lenT := len(o)
+			
+				var tmpv Object
+				
+				ivkT := NewInvoker(c.VM(), cfn)
+
+				for i := 0; i < lenT; i ++ {
+					for j := i + 1; j < lenT; j ++ {
+						retT, errT := ivkT.Invoke(Int(i), Int(j))
+//						tk.Plv(retT, errT)
+
+						
+						if errT == nil {
+							bv1, ok := retT.(Bool)
+							
+							if ok {
+								if !bool(bv1) {
+									tmpv = o[i]
+									o[i] = o[j]
+									o[j] = tmpv
+								}
+							}
+						}
+					}
+				}
+
+				return o, nil
+			}
+			
+//			return NewCommonErrorWithPos(c, "member is not a function: %v", nameA), nil
+		}
+
 
 		nv1, ok := c.Get(0).(*Delegate)
 
