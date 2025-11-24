@@ -3055,13 +3055,13 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 					nv0, ok := args[0].(String)
 
 					if !ok {
-						return NewCommonError("invalid paramter 1"), nil
+						return NewCommonError("invalid parameter 1"), nil
 					}
 
 					nv1, ok := args[1].(String)
 
 					if !ok {
-						return NewCommonError("invalid paramter 2"), nil
+						return NewCommonError("invalid parameter 2"), nil
 					}
 
 					rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
@@ -3082,7 +3082,7 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 				Name: "database.formatSQLValue",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
-						return NewCommonError("not enough paramters"), nil
+						return NewCommonError("not enough parameters"), nil
 					}
 
 					nv0 := args[0].String()
@@ -3100,12 +3100,12 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 				Name: "database.oneColumnToArray",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 1 {
-						return NewCommonError("not enough paramters"), nil
+						return NewCommonError("not enough parameters"), nil
 					}
 
 					nv0, ok := args[0].(Array)
 					if !ok {
-						return NewCommonError("invalid paramter 1"), nil
+						return NewCommonError("invalid parameter 1"), nil
 					}
 
 					aryT := Array{}
@@ -5811,19 +5811,19 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 				Name: "connect",
 				Value: func(args ...Object) (Object, error) {
 					if len(args) < 2 {
-						return NewCommonError("not enough paramters"), nil
+						return NewCommonError("not enough parameters"), nil
 					}
 
 					nv0, ok := args[0].(String)
 
 					if !ok {
-						return NewCommonError("invalid paramter 1"), nil
+						return NewCommonError("invalid parameter 1"), nil
 					}
 
 					nv1, ok := args[1].(String)
 
 					if !ok {
-						return NewCommonError("invalid paramter 2"), nil
+						return NewCommonError("invalid parameter 2"), nil
 					}
 
 					rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)

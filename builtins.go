@@ -60,9 +60,9 @@ import (
 
 	// "github.com/gojp/kana"
 	"github.com/jtclarkjr/kanjikana"
-	
+
 	"github.com/jlaffaye/ftp"
-	
+
 	"github.com/sahilm/fuzzy"
 )
 
@@ -419,7 +419,7 @@ const (
 	BuiltinCharCode
 	BuiltinEvalMachine
 	BuiltinJsVm
-//	BuiltinQjsVm
+	//	BuiltinQjsVm
 	BuiltinGel
 	BuiltinDelegate
 	BuiltinGetReqBody
@@ -589,8 +589,8 @@ const (
 	BuiltinTestByEndsWith
 	BuiltinTestByContains
 	BuiltinTestByRegContains
-//	BuiltinTestByFunc
-//	BuiltinTestByLineRules
+	//	BuiltinTestByFunc
+	//	BuiltinTestByLineRules
 	BuiltinTestByReg
 	BuiltinGetSeq
 	BuiltinMagic
@@ -671,8 +671,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"testByContains":    BuiltinTestByContains,    // definition: testByContains(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
 	"testByReg":         BuiltinTestByReg,         // definition: testByReg(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
 	"testByRegContains": BuiltinTestByRegContains, // definition: testByRegContains(strToTest string, strToCompare string, indexInteger int, scriptFileName string)
-//	"testByFunc": BuiltinTestByFunc, // definition: testByRegContains(strToTest string, compareFunc func, indexInteger int, scriptFileName string)
-//	"testByLineRules": BuiltinTestByLineRules, // definition: testByLineRules(strToTest string, [[0, "text", "abc123"], [1, "notEmpty"], [2, "empty"], [3, "startsWith": "abc", [4, "endsWith": "abc"], [5, "contains": "abc"], [6, "reg": "abc"], [7, "regContains": "abc"], [7, "map": `{"field1", "value1", "field2", "value2"}`]], indexInteger int, scriptFileName string)
+	//	"testByFunc": BuiltinTestByFunc, // definition: testByRegContains(strToTest string, compareFunc func, indexInteger int, scriptFileName string)
+	//	"testByLineRules": BuiltinTestByLineRules, // definition: testByLineRules(strToTest string, [[0, "text", "abc123"], [1, "notEmpty"], [2, "empty"], [3, "startsWith": "abc", [4, "endsWith": "abc"], [5, "contains": "abc"], [6, "reg": "abc"], [7, "regContains": "abc"], [7, "map": `{"field1", "value1", "field2", "value2"}`]], indexInteger int, scriptFileName string)
 
 	"dumpVar":   BuiltinDumpVar,   // for internal debug
 	"debugInfo": BuiltinDebugInfo, // for internal debug
@@ -706,8 +706,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"string":        BuiltinString,        // create a string value(with type 'string'), usage: s1 := string(),  s2 := string("abc")
 	"mutableString": BuiltinMutableString, // create a mutable string value(with type 'mutableString'), mutableString could change value at run time, usage: s1 := mutableString(),  s2 := mutableString("abc")
 	"bytes":         BuiltinBytes,         // create a bytes value(with type 'bytes'), usage: b1 := bytes([0xef, 0xbc, 0x81]), b2 := bytes("abc123")
-	"bytesWithSize":         BuiltinBytesWithSize,         // create a bytes value(with type 'bytes') with specified size, usage: b1 := bytesWithSize(5)
-	"bytesWithCap":         BuiltinBytesWithCap,         // create a bytes value(with type 'bytes') with specified capacity(init with zero size), usage: b1 := bytesWithCap(5)
+	"bytesWithSize": BuiltinBytesWithSize, // create a bytes value(with type 'bytes') with specified size, usage: b1 := bytesWithSize(5)
+	"bytesWithCap":  BuiltinBytesWithCap,  // create a bytes value(with type 'bytes') with specified capacity(init with zero size), usage: b1 := bytesWithCap(5)
 	"chars":         BuiltinChars,         // create a chars/runes value(with type 'chars'), usage: c1 := chars([0xefab, 0xbc01, 0x81cf]) , c2 := ("abc123")
 
 	"bytesBuffer": BuiltinBytesBuffer, // create a bytes buffer, usage: buf1 := bytesBuffer() , buf2 := bytesBuffer(bytes("abc123"))
@@ -719,7 +719,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"stack": BuiltinStack, // create a stack object(first-in-last-out), usage: st1 := stack() , st2 := stack(1, 2.5, true, "abc123"), the objects passed as parameters for builtin stack function will be pushed in sequence after the creation of the stack
 	"queue": BuiltinQueue, // create a queue object(first-in-first-out), usage: que1 := queue() , que2 := queue(10), the integer value passed as parameters for builtin queue function will set the capacity(default infinite) of the queue, the first item will be discarded while a new item is pushing into the queue and the queue is full
-	
+
 	"mapArray": BuiltinMapArray, // create an MapArray/SimpleFlexObject which is an array with some items have keys
 
 	"error": BuiltinError, // manually create an error object, usage: err1 := error("failed to do something")
@@ -730,10 +730,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"excel": BuiltinExcel, // create an Excel object
 
 	"statusResult": BuiltinStatusResult, // create a statusResult object(i.e. {"Status": "success", "Value": "some value"}, or {"Status": "fail", "Value": "failed reason/description"})
-	"seq":          BuiltinSeq, // create a sequence object
-	"mutex":        BuiltinMutex, // create a mutex object for threads
+	"seq":          BuiltinSeq,          // create a sequence object
+	"mutex":        BuiltinMutex,        // create a mutex object for threads
 
-	"mux":         BuiltinMux, // create a mux object for http routing
+	"mux":         BuiltinMux,         // create a mux object for http routing
 	"httpHandler": BuiltinHttpHandler, // create a httpHandler object for handling http routes
 
 	"httpReq": BuiltinHttpReq, // create a http request object
@@ -745,13 +745,13 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"image": BuiltinImage, // new an image object, usage: imageT := image("-width=480", "-height=640", "-color=#FF0000")
 
-	"charCode": BuiltinCharCode,
+	"charCode":    BuiltinCharCode,
 	"evalMachine": BuiltinEvalMachine,
-	"gel":      BuiltinGel,
-	"delegate": BuiltinDelegate,
+	"gel":         BuiltinGel,
+	"delegate":    BuiltinDelegate,
 
 	"jsVm": BuiltinJsVm, // new a JavaScript VM
-//	"qjsVm": BuiltinQjsVm, // new a QuickJS(JavaScript) VM(ES2023 compliant)
+	//	"qjsVm": BuiltinQjsVm, // new a QuickJS(JavaScript) VM(ES2023 compliant)
 
 	"database": BuiltinDatabase,
 
@@ -773,19 +773,19 @@ var BuiltinsMap = map[string]BuiltinType{
 	"appendSlice": BuiltinAppendList,
 	"delete":      BuiltinDelete,
 
-	"reset":  BuiltinReset,
+	"reset": BuiltinReset,
 
 	"getArrayItem": BuiltinGetArrayItem,
 
-	"removeItem": BuiltinRemoveItem, 
-	"removeArrayItem": BuiltinRemoveItem, 
+	"removeItem":      BuiltinRemoveItem,
+	"removeArrayItem": BuiltinRemoveItem,
 
 	"removeItems": BuiltinRemoveItems, // remove items in the array(inclusive), will return a new array, usage: e := removeItems(a, 1, 3), will remove the items with index 1, 2, 3
 
 	"arrayContains": BuiltinArrayContains,
 
 	"sortArray": BuiltinSortArray, // usage: sortArray(totalFindsT, "-key=runeStart", "-desc")
-	
+
 	"shuffle": BuiltinShuffle, // shuffle(aryT, 10)
 
 	"getMapItem": BuiltinGetMapItem,
@@ -805,52 +805,52 @@ var BuiltinsMap = map[string]BuiltinType{
 	"toFloat":           BuiltinToFloat,
 	"toTime":            BuiltinToTime,
 	"toHex":             BuiltinToHex,
-	"strToHex":             BuiltinToHex,
+	"strToHex":          BuiltinToHex,
 	"hexEncode":         BuiltinToHex,
 	"unhex":             BuiltinUnhex,
 	"hexDecode":         BuiltinUnhex,
 	"hexToStr":          BuiltinHexToStr,
 	"toKMG":             BuiltinToKMG,
 
-	"intToStr": BuiltinIntToStr,
+	"intToStr":   BuiltinIntToStr,
 	"floatToStr": BuiltinFloatToStr,
-	
-	"strToUtf8": BuiltinStrToUtf8,
+
+	"strToUtf8":   BuiltinStrToUtf8,
 	"strUtf8ToGb": BuiltinStrUtf8ToGb,
-	"isUtf8": BuiltinIsUtf8,
-	
-	"simpleStrToMap": BuiltinSimpleStrToMap,
+	"isUtf8":      BuiltinIsUtf8,
+
+	"simpleStrToMap":        BuiltinSimpleStrToMap,
 	"simpleStrToMapReverse": BuiltinSimpleStrToMapReverse,
 
 	"reverseMap": BuiltinReverseMap,
 
 	// string related
-	"trim":          BuiltinTrim,         // trim spaces of the string, also convert undefined value to empty string
-	"nilToEmpty":    BuiltinTrim,         // convert undefined value to empty string
-	"strTrim":       BuiltinTrim,         // same as trim
-	"trimErr":          BuiltinTrimErr,         // trim spaces of the string, also convert undefined value, error object or error string(starts with 'TXERROR:') to empty string
-	"strTrimStart":  BuiltinStrTrimStart, // usage: strTrimStart(s, prefix), returns string without the provided leading prefix sub-string. If the string doesn't start with prefix, s is returned unchanged.
-	"strTrimEnd":    BuiltinStrTrimEnd,   // usage: strTrimEnd(s, suffix), returns string without the provided trailing suffix sub-string. If the string doesn't end with suffix, s is returned unchanged.
-	"strTrimLeft":   BuiltinStrTrimLeft,  // usage: strTrimLeft(s, cutset string), strTrimLeft returns a slice of the string s with all leading Unicode code points contained in cutset removed.
-	"strTrimRight":  BuiltinStrTrimRight, // usage: strTrimRight(s, cutset string), strTrimRight returns a slice of the string s, with all trailing Unicode code points contained in cutset removed.
-	"toUpper":       BuiltinToUpper,
-	"strToUpper":    BuiltinToUpper,
-	"toLower":       BuiltinToLower,
-	"strToLower":    BuiltinToLower,
-	"strContains":   BuiltinStrContains,
-	"strContainsAny":   BuiltinStrContainsAny, // as strings.ContainsAny, reports whether any Unicode code points in chars are within s. 
-	"strContainsIn": BuiltinStrContainsIn,
-	"strIndex":      BuiltinStrIndex,
-	"strStartsWith": BuiltinStrStartsWith,
-	"strEndsWith":   BuiltinStrEndsWith,
-	"strReplace":    BuiltinStrReplace,
-	"strSplit":      BuiltinStrSplit,
+	"trim":           BuiltinTrim,         // trim spaces of the string, also convert undefined value to empty string
+	"nilToEmpty":     BuiltinTrim,         // convert undefined value to empty string
+	"strTrim":        BuiltinTrim,         // same as trim
+	"trimErr":        BuiltinTrimErr,      // trim spaces of the string, also convert undefined value, error object or error string(starts with 'TXERROR:') to empty string
+	"strTrimStart":   BuiltinStrTrimStart, // usage: strTrimStart(s, prefix), returns string without the provided leading prefix sub-string. If the string doesn't start with prefix, s is returned unchanged.
+	"strTrimEnd":     BuiltinStrTrimEnd,   // usage: strTrimEnd(s, suffix), returns string without the provided trailing suffix sub-string. If the string doesn't end with suffix, s is returned unchanged.
+	"strTrimLeft":    BuiltinStrTrimLeft,  // usage: strTrimLeft(s, cutset string), strTrimLeft returns a slice of the string s with all leading Unicode code points contained in cutset removed.
+	"strTrimRight":   BuiltinStrTrimRight, // usage: strTrimRight(s, cutset string), strTrimRight returns a slice of the string s, with all trailing Unicode code points contained in cutset removed.
+	"toUpper":        BuiltinToUpper,
+	"strToUpper":     BuiltinToUpper,
+	"toLower":        BuiltinToLower,
+	"strToLower":     BuiltinToLower,
+	"strContains":    BuiltinStrContains,
+	"strContainsAny": BuiltinStrContainsAny, // as strings.ContainsAny, reports whether any Unicode code points in chars are within s.
+	"strContainsIn":  BuiltinStrContainsIn,
+	"strIndex":       BuiltinStrIndex,
+	"strStartsWith":  BuiltinStrStartsWith,
+	"strEndsWith":    BuiltinStrEndsWith,
+	"strReplace":     BuiltinStrReplace,
+	"strSplit":       BuiltinStrSplit,
 	"strSplitN":      BuiltinStrSplitN,
-	"strSplitLines": BuiltinStrSplitLines,
-	"strJoin":       BuiltinStrJoin,
-	"strRepeat":     BuiltinStrRepeat,
-	"strCount":      BuiltinStrCount,
-	"strPad":        BuiltinStrPad, // string padding operations such as zero padding, for example, result := strPad(strT, 5, "-fill=0", "-right=true"), where the first parameter is the string to be padded, and the second parameter is the number of characters to be padded. The default padding string is fill as string 0, and right (indicating whether to fill on the right side) is false (which can also be written directly as -right). Therefore, the above example is equivalent to result := strPad(strT, 5). If the fill string contains more than one character, the final number of padding will not exceed the value specified by the second parameter, but it may be less
+	"strSplitLines":  BuiltinStrSplitLines,
+	"strJoin":        BuiltinStrJoin,
+	"strRepeat":      BuiltinStrRepeat,
+	"strCount":       BuiltinStrCount,
+	"strPad":         BuiltinStrPad, // string padding operations such as zero padding, for example, result := strPad(strT, 5, "-fill=0", "-right=true"), where the first parameter is the string to be padded, and the second parameter is the number of characters to be padded. The default padding string is fill as string 0, and right (indicating whether to fill on the right side) is false (which can also be written directly as -right). Therefore, the above example is equivalent to result := strPad(strT, 5). If the fill string contains more than one character, the final number of padding will not exceed the value specified by the second parameter, but it may be less
 
 	"strRuneLen": BuiltinStrRuneLen, // get the length of string by rune(how many rune characters in the string)
 
@@ -859,7 +859,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strGetLastComponent": BuiltinStrGetLastComponent, // strGetLastComponent("/root/abc", "/"), default separator is \ in Windows or / in Linux/MacOS
 
 	"strFindDiffPos": BuiltinStrFindDiffPos, // return -1 if 2 strings are identical
-	
+
 	"strDiff": BuiltinStrDiff,
 
 	"strFindAllSub": BuiltinStrFindAllSub,
@@ -876,7 +876,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"getTextSimilarity": BuiltinGetTextSimilarity, // calculate the cosine similarity of two strings
 
-	"fuzzyFind":           BuiltinFuzzyFind,           // find strings in a list with fuzzy matching, usage: matchesT := fuzzyFind(["abc", "bbbe", "123456dbde"], "be", "-sort") will return [{"Str": "bbbeeee", "Index": 1, "MatchedIndexes": [0, 3], "Score": 5}, {"Str": "123456dbdebe", "Index": 2, "MatchedIndexes": [7, 9], "Score": -25}], "-sort" is the optional switch
+	"fuzzyFind": BuiltinFuzzyFind, // find strings in a list with fuzzy matching, usage: matchesT := fuzzyFind(["abc", "bbbe", "123456dbde"], "be", "-sort") will return [{"Str": "bbbeeee", "Index": 1, "MatchedIndexes": [0, 3], "Score": 5}, {"Str": "123456dbdebe", "Index": 2, "MatchedIndexes": [7, 9], "Score": -25}], "-sort" is the optional switch
 
 	// regex related
 	"regMatch":      BuiltinRegMatch,      // determine whether a string fully conforms to a regular expression, usage example: result := regMatch("abcab", `a.*b`)
@@ -909,12 +909,12 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mathLog10": BuiltinMathLog10,
 	"log10":     BuiltinMathLog10,
 
-	"mathPi":     BuiltinMathPi,
+	"mathPi":    BuiltinMathPi,
 	"mathE":     BuiltinMathE,
-	"mathSin":     BuiltinMathSin,
-	"mathCos":     BuiltinMathCos,
-	"mathTan":     BuiltinMathTan,
-	"mathAtan2":     BuiltinMathAtan2,
+	"mathSin":   BuiltinMathSin,
+	"mathCos":   BuiltinMathCos,
+	"mathTan":   BuiltinMathTan,
+	"mathAtan2": BuiltinMathAtan2,
 
 	"min": BuiltinMathMin, // returns the largest of several values(integer of float).
 	"max": BuiltinMathMax, // returns the smallest of several values(integer of float).
@@ -924,7 +924,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"round": BuiltinMathRound, // returns the nearest integer, rounding half away from zero.
 
 	"flexEval": BuiltinFlexEval,
-	
+
 	"calDistanceOfLatLon": BuiltinCalDistanceOfLatLon, // distanceT := calDistanceOfLatLon(toFloat(latitudeT), toFloat(longitudeT), 48.864716, 2.349014), result is in meters
 	"calDistanceOfLonLat": BuiltinCalDistanceOfLonLat, // distanceT := calDistanceOfLatLon(toFloat(longitudeT), toFloat(latitudeT), 116.3912757, 39.906217), result is in meters
 
@@ -945,27 +945,27 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"timeAddSecs": BuiltinTimeAddSecs, // add seconds(could be float) to time and return the result, usage: time2 := timeAddSecs(time1, 1.2)
 	"timeAddDate": BuiltinTimeAddDate, // add years, months, days to time and return the result, usage: time2 := timeAddDate(time1, 0, -1, 0), will add -1 month to time1
-	
+
 	"timeBefore": BuiltinTimeBefore, // usage: b1 := timeBefore(time1, time2)
-	
+
 	"runTicker": BuiltinRunTicker, // run a delegate function in a thread, usage: errT := runTicker(1.2, dele1), stop the ticker by return error in delegate function
-	
+
 	// task related
 	"isCronExprValid": BuiltinIsCronExprValid, // check if the string is valid crontab expression, i.e. '* */5 * * *', return bool result
-	"isCronExprDue": BuiltinIsCronExprDue, // check if the string is valid crontab expression and is due, return bool or error if not valid
-	"splitCronExpr": BuiltinSplitCronExpr, // split crontab expression to 2 parts(of string), i.e. ["*/1 * * * *", "/bin/ls -al"], or error
-	
-	"resetTasker": BuiltinResetTasker,
-	"runTasker": BuiltinRunTasker,
-	"stopTasker": BuiltinStopTasker,
+	"isCronExprDue":   BuiltinIsCronExprDue,   // check if the string is valid crontab expression and is due, return bool or error if not valid
+	"splitCronExpr":   BuiltinSplitCronExpr,   // split crontab expression to 2 parts(of string), i.e. ["*/1 * * * *", "/bin/ls -al"], or error
+
+	"resetTasker":   BuiltinResetTasker,
+	"runTasker":     BuiltinRunTasker,
+	"stopTasker":    BuiltinStopTasker,
 	"addSimpleTask": BuiltinAddSimpleTask,
-	"addShellTask": BuiltinAddShellTask,
+	"addShellTask":  BuiltinAddShellTask,
 
 	// binary/bytes related
 	"bytesStartsWith": BuiltinBytesStartsWith,
 	"bytesEndsWith":   BuiltinBytesEndsWith,
 	"bytesContains":   BuiltinBytesContains,
-	"bytesIndex":   BuiltinBytesIndex,
+	"bytesIndex":      BuiltinBytesIndex,
 
 	// compare related
 	"compareBytes": BuiltinCompareBytes,
@@ -1000,7 +1000,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	// error related
 	"isErrX":     BuiltinIsErrX,
 	"isErr":      BuiltinIsErrX,
-	"isErrStr":      BuiltinIsErrStr,
+	"isErrStr":   BuiltinIsErrStr,
 	"getErrStrX": BuiltinGetErrStrX,
 	"getErrStr":  BuiltinGetErrStrX,
 
@@ -1012,8 +1012,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"errStrf": BuiltinErrStrf,
 	"errf":    BuiltinErrf,
 
-	"errToEmpty":    BuiltinErrToEmpty,
-	
+	"errToEmpty": BuiltinErrToEmpty,
+
 	// output/print related
 	"pr":     BuiltinPr,
 	"prf":    BuiltinPrf,
@@ -1027,7 +1027,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"plErr":  BuiltinPlErr,
 	"fatalf": BuiltinFatalf,
 	"spr":    BuiltinSpr,
-	"spln":    BuiltinSpln,
+	"spln":   BuiltinSpln,
 
 	// scan related
 	"sscanf": BuiltinSscanf,
@@ -1052,8 +1052,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mb":        BuiltinGetMember,
 	"setMember": BuiltinSetMember,
 
-	"callMethod":   BuiltinCallMethod, // call a method of an object, usage: callMethod(obj1, "toStr")
-	"mt":           BuiltinCallMethod, // same as callMethod
+	"callMethod":   BuiltinCallMethod,   // call a method of an object, usage: callMethod(obj1, "toStr")
+	"mt":           BuiltinCallMethod,   // same as callMethod
 	"callMethodEx": BuiltinCallMethodEx, // call a method of an Golang object, usage: time1 := callNamedFunc("time.Now")[0] \n time2 := callMethodEx(time1, "AddDate", 0, -1, 0)[0]
 	"mtEx":         BuiltinCallMethodEx, // same as callMethodEx
 
@@ -1063,11 +1063,11 @@ var BuiltinsMap = map[string]BuiltinType{
 	// read/write related
 	"readAllStr":   BuiltinReadAllStr,
 	"readAllBytes": BuiltinReadAllBytes,
-	"readBytes": BuiltinReadBytes,
+	"readBytes":    BuiltinReadBytes,
 	"writeStr":     BuiltinWriteStr,
 	"writeBytes":   BuiltinWriteBytes,
-	"writeBytesAt":   BuiltinWriteBytesAt, // write bytes at the specified index in Bytes, return the result buffer(maybe the same), if not enough size, enlarge the buffer and reture the new buffer(i.e. the Bytes object), usage: buf1 = writeBytesAt(bytes([1, 2, 3]), 1, bytes([4, 5, 6, 7]))
-	"copyBytes":   BuiltinCopyBytes,
+	"writeBytesAt": BuiltinWriteBytesAt, // write bytes at the specified index in Bytes, return the result buffer(maybe the same), if not enough size, enlarge the buffer and reture the new buffer(i.e. the Bytes object), usage: buf1 = writeBytesAt(bytes([1, 2, 3]), 1, bytes([4, 5, 6, 7]))
+	"copyBytes":    BuiltinCopyBytes,
 
 	"ioCopy": BuiltinIoCopy,
 
@@ -1092,37 +1092,37 @@ var BuiltinsMap = map[string]BuiltinType{
 	"toJson":   BuiltinToJSON,
 	"fromJSON": BuiltinFromJSON,
 	"fromJson": BuiltinFromJSON,
-	
-	"formatJson": BuiltinFormatJson,
+
+	"formatJson":  BuiltinFormatJson,
 	"compactJson": BuiltinCompactJson,
-	
+
 	"getJsonNodeStr": BuiltinGetJsonNodeStr, // getJsonNodeStr(jsonA, pathA), pathA refer to github.com/tidwall/gjson, such as
-//		"name.last"          >> "Anderson"
-//		"age"                >> 37
-//		"children"           >> ["Sara","Alex","Jack"]
-//		"children.#"         >> 3
-//		"children.1"         >> "Alex"
-//		"child*.2"           >> "Jack"
-//		"c?ildren.0"         >> "Sara"
-//		"fav\.movie"         >> "Deer Hunter"
-//		"friends.#.first"    >> ["Dale","Roger","Jane"]
-//		"friends.1.last"     >> "Craig"
+	//		"name.last"          >> "Anderson"
+	//		"age"                >> 37
+	//		"children"           >> ["Sara","Alex","Jack"]
+	//		"children.#"         >> 3
+	//		"children.1"         >> "Alex"
+	//		"child*.2"           >> "Jack"
+	//		"c?ildren.0"         >> "Sara"
+	//		"fav\.movie"         >> "Deer Hunter"
+	//		"friends.#.first"    >> ["Dale","Roger","Jane"]
+	//		"friends.1.last"     >> "Craig"
 	"getJsonNodeStrs": BuiltinGetJsonNodeStrs, // getJsonNodeStrs(jsonA, pathA), pathA refer to github.com/tidwall/gjson
-	
+
 	"strsToJson": BuiltinStrsToJson,
 
-// in a simplemap structure, key/value pairs are in form as KEY=VALUE
-// "=" in keys should be replaced as `EQ`
-// line-ends in values such as "\n" should be replaced as #CR#
-// comments could be used after ####
+	// in a simplemap structure, key/value pairs are in form as KEY=VALUE
+	// "=" in keys should be replaced as `EQ`
+	// line-ends in values such as "\n" should be replaced as #CR#
+	// comments could be used after ####
 	"encodeSimpleMap": BuiltinEncodeSimpleMap,
 	"decodeSimpleMap": BuiltinDecodeSimpleMap,
 
 	// XML related
 	"xmlEncodeStr":  BuiltinStrXmlEncode,
 	"xmlGetNodeStr": BuiltinXmlGetNodeStr,
-	"fromXml": BuiltinFromXml,
-	"formatXml": BuiltinFormatXml,
+	"fromXml":       BuiltinFromXml,
+	"formatXml":     BuiltinFormatXml,
 
 	// command-line related
 	"ifSwitchExists": BuiltinIfSwitchExists,
@@ -1148,9 +1148,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"tryRLock": BuiltinTryRLock,
 
 	// os/system related
-	"systemCmd": BuiltinSystemCmd,
+	"systemCmd":         BuiltinSystemCmd,
 	"systemCmdDetached": BuiltinSystemCmdDetached,
-	"systemStart": BuiltinSystemStart,
+	"systemStart":       BuiltinSystemStart,
 
 	"getSysInfo": BuiltinGetSysInfo, // getSysInfo("-disk=/", "-cpuTime=0.5"), by default, disk info will not be retrieved
 
@@ -1171,19 +1171,19 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getUserDir": BuiltinGetHomeDir,
 	"getTempDir": BuiltinGetTempDir,
 
-	"createTempDir": BuiltinCreateTempDir, // usage: tempDirNameT := createTempDir(dirA, patternA)  , createTempDir creates a new temporary directory in the directory dirA and returns the pathname of the new directory. The new directory's name is generated by adding a random string to the end of patternA. If patternA includes a "*", the random string replaces the last "*" instead. The directory is created with mode 0o700 (before umask). If dirA is the empty string, createTempDir uses the default directory for temporary files. It is the caller's responsibility to remove the directory when it is no longer needed. 
-	"createTempFile": BuiltinCreateTempFile, // usage: tempFileNameT := createTempFile(dirA, patternA)  , createTempFile creates a new temporary file in the directory dir, and returns the resulting file name. The filename is generated by taking patternA and adding a random string to the end. If patternA includes a "*", the random string replaces the last "*". The file is created with mode 0o600 (before umask). If dirA is the empty string, createTempFile uses the default directory for temporary files. It is the caller's responsibility to remove the file when it is no longer needed. 
+	"createTempDir":  BuiltinCreateTempDir,  // usage: tempDirNameT := createTempDir(dirA, patternA)  , createTempDir creates a new temporary directory in the directory dirA and returns the pathname of the new directory. The new directory's name is generated by adding a random string to the end of patternA. If patternA includes a "*", the random string replaces the last "*" instead. The directory is created with mode 0o700 (before umask). If dirA is the empty string, createTempDir uses the default directory for temporary files. It is the caller's responsibility to remove the directory when it is no longer needed.
+	"createTempFile": BuiltinCreateTempFile, // usage: tempFileNameT := createTempFile(dirA, patternA)  , createTempFile creates a new temporary file in the directory dir, and returns the resulting file name. The filename is generated by taking patternA and adding a random string to the end. If patternA includes a "*", the random string replaces the last "*". The file is created with mode 0o600 (before umask). If dirA is the empty string, createTempFile uses the default directory for temporary files. It is the caller's responsibility to remove the file when it is no longer needed.
 
 	"changeDir": BuiltinChangeDir,
-	"chdir":      BuiltinChangeDir,
+	"chdir":     BuiltinChangeDir,
 
 	"lookPath": BuiltinLookPath,
 
-	"getInput":  BuiltinGetInput,
-	"getInputf": BuiltinGetInputf,
+	"getInput":          BuiltinGetInput,
+	"getInputf":         BuiltinGetInputf,
 	"getInputPasswordf": BuiltinGetInputPasswordf,
-	"getChar":   BuiltinGetChar,
-	"getMultiLineInput":   BuiltinGetMultiLineInput,
+	"getChar":           BuiltinGetChar,
+	"getMultiLineInput": BuiltinGetMultiLineInput,
 
 	"setStdin":  BuiltinSetStdin,
 	"setStdout": BuiltinSetStdout,
@@ -1219,7 +1219,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"renameFile": BuiltinRenameFile,
 	"moveFile":   BuiltinRenameFile,
 	"removeFile": BuiltinRemoveFile, // remove file only
-	"removeDir":  BuiltinRemoveDir, // remove directory only
+	"removeDir":  BuiltinRemoveDir,  // remove directory only
 	"removePath": BuiltinRemovePath, // remove file or directory, use "-recursive" to remove with files and sub-directories
 
 	"loadText":   BuiltinLoadText,
@@ -1239,29 +1239,29 @@ var BuiltinsMap = map[string]BuiltinType{
 	"uncompressData": BuiltinUncompressData,
 	"uncompressStr":  BuiltinUncompressStr,
 
-	"archiveFilesToZip": BuiltinArchiveFilesToZip, // Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
-	"getFileListInArchive": BuiltinGetFileListInArchive,
+	"archiveFilesToZip":         BuiltinArchiveFilesToZip, // Add multiple files to a newly created zip file. The first parameter is the zip file name, with a suffix of '.zip'. Optional parameters include '-overwrite' (whether to overwrite existing files) and '-makeDirs' (whether to create a new directory as needed). Other parameters are treated as files or directories to be added, and the directory will be recursively added to the zip file. If the parameter is a list, it will be treated as a list of file names, and all files in it will be added
+	"getFileListInArchive":      BuiltinGetFileListInArchive,
 	"getFileListInArchiveBytes": BuiltinGetFileListInArchiveBytes,
-	"getFileListInZip": BuiltinGetFileListInZip,
+	"getFileListInZip":          BuiltinGetFileListInZip,
 
-	"loadBytesInArchive": BuiltinLoadBytesInArchive, // loadBytesInArchive("example.zip", "subdir1/a.txt", "-limit=3")
-	"loadBytesInArchiveBytes": BuiltinLoadBytesInArchiveBytes, // loadBytesInArchiveBytes(bytesT)
-	"extractFileInArchive": BuiltinExtractFileInArchive, // extractFileInArchive("example.zip", "subdir1/a.txt", "toDir/a.txt")
-	"extractArchive": BuiltinExtractArchive, // extractArchive("example.zip", "toDir", "-noFileDir", "-force")
+	"loadBytesInArchive":       BuiltinLoadBytesInArchive,       // loadBytesInArchive("example.zip", "subdir1/a.txt", "-limit=3")
+	"loadBytesInArchiveBytes":  BuiltinLoadBytesInArchiveBytes,  // loadBytesInArchiveBytes(bytesT)
+	"extractFileInArchive":     BuiltinExtractFileInArchive,     // extractFileInArchive("example.zip", "subdir1/a.txt", "toDir/a.txt")
+	"extractArchive":           BuiltinExtractArchive,           // extractArchive("example.zip", "toDir", "-noFileDir", "-force")
 	"isFileNameUtf8InZipBytes": BuiltinIsFileNameUtf8InZipBytes, // return boolean value or error
 
 	// network/web related
 	"joinUrlPath": BuiltinJoinUrlPath, // join multiple url paths into one, equivalent to path.Join in the Go language standard library
 
 	"getWeb":                 BuiltinGetWeb,
-	"downloadFile":                 BuiltinDownloadFile,
+	"downloadFile":           BuiltinDownloadFile,
 	"getWebBytes":            BuiltinGetWebBytes,
 	"getWebBytesWithHeaders": BuiltinGetWebBytesWithHeaders,
 	"getWebRespBody":         BuiltinGetWebRespBody, // rs := getWebRespBody(urlT, "-withLen"); if isErr(rs) {...}; readerT := rs[0]; lenT := rs[1]; rs = s3PutObject(readerT, "tmpbucket", keyT, "-endPoint=xxxxx", "-accessKey=xxxxx", "-secretAccessKey=xxxxx", "-ssl", "-force", "-size="+toStr(lenT), "-contentType=application/octet-stream", "-timeout=600");  close(readerT)
 
-	"postRequest": BuiltinPostRequest,
+	"postRequest":                    BuiltinPostRequest,
 	"prepareMultiPartFieldFromBytes": BuiltinPrepareMultiPartFieldFromBytes, // prepareMultiPartFieldFromBytes("file", bytes[0x65, 0x66, 0x67]), return ["for content-type", bytes generated]
-	"prepareMultiPartFileFromBytes": BuiltinPrepareMultiPartFileFromBytes, // prepareMultiPartFileFromBytes("file", "a.txt", bytes[0x65, 0x66, 0x67]), return ["for content-type", bytes generated], then rs := getWeb(spr("https://example.com/ms/mgmt/uploadAttach?uid=%v&valueonly=true&witherror=true&billNo=%v", uidT, newBillNoT), formObjT[1], `-headers={"Content-Type":"`+formObjT[0]+`"}`, "-timeout=30")
+	"prepareMultiPartFileFromBytes":  BuiltinPrepareMultiPartFileFromBytes,  // prepareMultiPartFileFromBytes("file", "a.txt", bytes[0x65, 0x66, 0x67]), return ["for content-type", bytes generated], then rs := getWeb(spr("https://example.com/ms/mgmt/uploadAttach?uid=%v&valueonly=true&witherror=true&billNo=%v", uidT, newBillNoT), formObjT[1], `-headers={"Content-Type":"`+formObjT[0]+`"}`, "-timeout=30")
 
 	"urlExists": BuiltinUrlExists,
 
@@ -1274,7 +1274,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// server/service related
 	"getReqHeader":    BuiltinGetReqHeader,
-	"getReqHeaders":    BuiltinGetReqHeaders,
+	"getReqHeaders":   BuiltinGetReqHeaders,
 	"getReqBody":      BuiltinGetReqBody,
 	"parseReqForm":    BuiltinParseReqForm,
 	"parseReqFormEx":  BuiltinParseReqFormEx,
@@ -1299,7 +1299,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"checkToken": BuiltinCheckToken,
 
 	"genJwtToken":   BuiltinGenJwtToken, // genJwtToken({"sub":"user1","exp":1742450426,"userId":116}, "my_secret", "-noType", "-base64Secret"), genJwtToken({"sub":"user1","exp":1742450426,"userId":116}, base64DecodeByRawUrl("my_secret"), "-noType")
-	"parseJwtToken":   BuiltinParseJwtToken, 
+	"parseJwtToken": BuiltinParseJwtToken,
 
 	"getOtpCode":   BuiltinGetOtpCode,
 	"genOtpCode":   BuiltinGetOtpCode,
@@ -1331,14 +1331,14 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"aesEncrypt": BuiltinAesEncrypt, // AES encrypt string or bytes, "-cbc" to use cbc
 	"aesDecrypt": BuiltinAesDecrypt, // AES decrypt string or bytes, "-cbc" to use cbc
-	
+
 	"getSha256WithKeyYY": BuiltinGetSha256WithKeyYY, // encrypt method for Yong You
-	"rsaEncryptStrYY": BuiltinRsaEncryptStrYY, // encrypt method for Yong You
+	"rsaEncryptStrYY":    BuiltinRsaEncryptStrYY,    // encrypt method for Yong You
 
 	// image related
 	"loadImageFromBytes": BuiltinLoadImageFromBytes, // usage: imageT := loadImageFromBytes(bytesT, "-type=png")
 	"saveImageToBytes":   BuiltinSaveImageToBytes,   // usage: bytesT := saveImageToBytes(imageT) or bytesT := saveImageToBytes(imageT, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
-	"imageToBytes":   BuiltinSaveImageToBytes,
+	"imageToBytes":       BuiltinSaveImageToBytes,
 
 	"loadImageFromFile": BuiltinLoadImageFromFile, // usage: imageT := loadImageFromFile(`c:\test\abc.png`) or image2T := loadImageFromFile(`c:\test\abc.jpg`, "-type=jpg")
 	"saveImageToFile":   BuiltinSaveImageToFile,   // usage: errT := saveImageToFile(imageT, `c:\test\newabc.png`) or errT := saveImageToFile(imageT, `c:\test\newabc.png`, ".png") to save image with specified format, .jpg, .png, .gif, .bmp is supported
@@ -1355,10 +1355,10 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"drawImageOnImage":       BuiltinDrawImageOnImage,
 	"drawTextWrappedOnImage": BuiltinDrawTextWrappedOnImage,
-	"setImageOpacity":       BuiltinSetImageOpacity, // b1 := loadImageFromFile(`d:\downtemp\img1.jpg`); saveImageToFile(setImageOpacity(b1, 0.5), `d:\tmpx\test111.png`)
-	"addWatermarkToImage": BuiltinAddWatermarkToImage, // b1 := loadImageFromFile(`d:\downtemp\img1.jpg`); b2 := loadImageFromFile(`d:\downtemp\img_cr1.png`); saveImageToFile(addWatermarkToImage(b1, b2, "-opacity=0.7", "-x=200", "-y=300"), `d:\tmpx\test111.png`); saveImageToFile(addWatermarkToImage(b1, b2, "-opacity=0.5", "-repeat"), `d:\tmpx\test112.png`)
+	"setImageOpacity":        BuiltinSetImageOpacity,     // b1 := loadImageFromFile(`d:\downtemp\img1.jpg`); saveImageToFile(setImageOpacity(b1, 0.5), `d:\tmpx\test111.png`)
+	"addWatermarkToImage":    BuiltinAddWatermarkToImage, // b1 := loadImageFromFile(`d:\downtemp\img1.jpg`); b2 := loadImageFromFile(`d:\downtemp\img_cr1.png`); saveImageToFile(addWatermarkToImage(b1, b2, "-opacity=0.7", "-x=200", "-y=300"), `d:\tmpx\test111.png`); saveImageToFile(addWatermarkToImage(b1, b2, "-opacity=0.5", "-repeat"), `d:\tmpx\test112.png`)
 
-	"genQr": BuiltinGenQr,
+	"genQr":  BuiltinGenQr,
 	"scanQr": BuiltinScanQr,
 
 	"imageToAscii": BuiltinImageToAscii, // convert an image object to colorful ASCII graph(array of string), usage: asciiT := imageToAscii(imageT, "-width=60", "-height=80"), set one of width or height will keep aspect ratio
@@ -1373,27 +1373,27 @@ var BuiltinsMap = map[string]BuiltinType{
 	"plotLoadFont": BuiltinPlotLoadFont, // load a font file in ttf format for plot, usage: plotLoadFont("c:\windows\tahoma.ttf", "tahoma", true), the secode parameter gives the font name(default is the file name), pass true for the third parameter to set the font as default font used in plot(default is false)
 
 	// ssh/ftp related
-	"ftpList":      BuiltinFtpList,
-	"ftpCreateDir":      BuiltinFtpCreateDir,
-	"ftpSize":      BuiltinFtpSize, // could used to determine if file exists, by check the result if is error and contains certain text
-	"ftpUpload":      BuiltinFtpUpload,
-	"ftpUploadFromReader":      BuiltinFtpUploadFromReader,
-	"ftpDownloadBytes":      BuiltinFtpDownloadBytes,
-	"ftpRemoveFile":      BuiltinFtpRemoveFile,
+	"ftpList":             BuiltinFtpList,
+	"ftpCreateDir":        BuiltinFtpCreateDir,
+	"ftpSize":             BuiltinFtpSize, // could used to determine if file exists, by check the result if is error and contains certain text
+	"ftpUpload":           BuiltinFtpUpload,
+	"ftpUploadFromReader": BuiltinFtpUploadFromReader,
+	"ftpDownloadBytes":    BuiltinFtpDownloadBytes,
+	"ftpRemoveFile":       BuiltinFtpRemoveFile,
 
-	"sshUpload":      BuiltinSshUpload,
-	"sshUploadBytes": BuiltinSshUploadBytes,
-	"sshDownload":    BuiltinSshDownload,
-	"sshDownloadBytes":    BuiltinSshDownloadBytes,
-	"sshList":    BuiltinSshList, // sshList("-host=xx.xx.xx.xx", "-port=22", "-user=root", "-password=password123", "-remotePath=/root", "-recursive", "-sep=/", "-pattern=*", "-withDir", "-dirOnly")
-	"sshIfFileExists":    BuiltinSshIfFileExists,
+	"sshUpload":         BuiltinSshUpload,
+	"sshUploadBytes":    BuiltinSshUploadBytes,
+	"sshDownload":       BuiltinSshDownload,
+	"sshDownloadBytes":  BuiltinSshDownloadBytes,
+	"sshList":           BuiltinSshList, // sshList("-host=xx.xx.xx.xx", "-port=22", "-user=root", "-password=password123", "-remotePath=/root", "-recursive", "-sep=/", "-pattern=*", "-withDir", "-dirOnly")
+	"sshIfFileExists":   BuiltinSshIfFileExists,
 	"sshGetFileInfo":    BuiltinSshGetFileInfo,
-	"sshRun":         BuiltinSshRun,
+	"sshRun":            BuiltinSshRun,
 	"sshRename":         BuiltinSshRename,
-	"sshJoinPath":         BuiltinSshJoinPath,
-	"sshRemoveFile":         BuiltinSshRemoveFile,
-	"sshRemoveDir":         BuiltinSshRemoveDir,
-	"sshEnsureMakeDirs":         BuiltinSshEnsureMakeDirs,
+	"sshJoinPath":       BuiltinSshJoinPath,
+	"sshRemoveFile":     BuiltinSshRemoveFile,
+	"sshRemoveDir":      BuiltinSshRemoveDir,
+	"sshEnsureMakeDirs": BuiltinSshEnsureMakeDirs,
 
 	// eTable related
 	"readCsv":  BuiltinReadCsv,
@@ -1401,30 +1401,30 @@ var BuiltinsMap = map[string]BuiltinType{
 	"writeCsv": BuiltinWriteCsv,
 	"csvWrite": BuiltinWriteCsv,
 
-	"excelNew":           BuiltinExcelNew, // create an Excel object with empty content
-	"excelOpen":          BuiltinExcelOpen, // create an Excel object from file, bytes or reader object, usage: e1 := excelOpen("./abc.xlsx"), e2 := excelOpen(bytes([00, 11, ...])), e3 := excelOpen(reader1)
-	"excelOpenFromBytes":      BuiltinExcelOpenFromBytes, // create an Excel object contains the content from the bytes object
-	"excelOpenFile":      BuiltinExcelOpenFile, // open an Excel file(.xlsx) and create a new Excel object contains the content of the file
-	"excelSaveAs":        BuiltinExcelSaveAs, // save the Excel object to a file, usage: result := excelSaveAs(excel1, "./abc.xlsx")
-	"excelWriteTo":       BuiltinExcelWriteTo, // write the content of the Excel object to a writer or http response(httpResp) object, usage: result := excelWriteTo(excel1, httpReq1)
-	"excelWriteToBytes":       BuiltinExcelWriteToBytes, // write the content of the Excel object to bytes, return a bytes object
-	"excelClose":         BuiltinExcelClose,
-	"excelNewSheet":      BuiltinExcelNewSheet,
-	"excelRemoveSheet":      BuiltinExcelRemoveSheet,
-	"excelReadAll":     BuiltinExcelReadAll,
-	"excelGetSheetCount": BuiltinExcelGetSheetCount,
-	"excelGetSheetList":  BuiltinExcelGetSheetList,
-	"excelGetSheetName":  BuiltinExcelGetSheetName,
-	"excelReadSheet":     BuiltinExcelReadSheet,
-	"excelWriteSheet":    BuiltinExcelWriteSheet,
-	"excelReadCell":      BuiltinExcelReadCell,
-	"excelGetCellValue":      BuiltinExcelReadCell,
-	"excelReadCellImages":      BuiltinExcelReadCellImages, // usage: picObjT := excelGetCellImages(sheetName1T, "B2"), return an array such as, [{"idx": "1", "ext": ".jpg", "format": "...", "insertType": "...", "data": ...}]
-	"excelGetCellImages":      BuiltinExcelReadCellImages,
-	"excelWriteCell":     BuiltinExcelWriteCell, // write a string value to the cell
-	"excelSetCellValue":     BuiltinExcelWriteCell, // the same as excelWriteCell 
-	"excelGetColumnIndexByName":  BuiltinExcelGetColumnIndexByName, // excelGetColumnIndexByName("A") == 1, excelGetColumnIndexByName("AB") == 28
-	"excelGetColumnNameByIndex":  BuiltinExcelGetColumnNameByIndex, // excelGetColumnNameByIndex(1) == "A", excelGetColumnNameByIndex(28) == "AB"
+	"excelNew":                  BuiltinExcelNew,           // create an Excel object with empty content
+	"excelOpen":                 BuiltinExcelOpen,          // create an Excel object from file, bytes or reader object, usage: e1 := excelOpen("./abc.xlsx"), e2 := excelOpen(bytes([00, 11, ...])), e3 := excelOpen(reader1)
+	"excelOpenFromBytes":        BuiltinExcelOpenFromBytes, // create an Excel object contains the content from the bytes object
+	"excelOpenFile":             BuiltinExcelOpenFile,      // open an Excel file(.xlsx) and create a new Excel object contains the content of the file
+	"excelSaveAs":               BuiltinExcelSaveAs,        // save the Excel object to a file, usage: result := excelSaveAs(excel1, "./abc.xlsx")
+	"excelWriteTo":              BuiltinExcelWriteTo,       // write the content of the Excel object to a writer or http response(httpResp) object, usage: result := excelWriteTo(excel1, httpReq1)
+	"excelWriteToBytes":         BuiltinExcelWriteToBytes,  // write the content of the Excel object to bytes, return a bytes object
+	"excelClose":                BuiltinExcelClose,
+	"excelNewSheet":             BuiltinExcelNewSheet,
+	"excelRemoveSheet":          BuiltinExcelRemoveSheet,
+	"excelReadAll":              BuiltinExcelReadAll,
+	"excelGetSheetCount":        BuiltinExcelGetSheetCount,
+	"excelGetSheetList":         BuiltinExcelGetSheetList,
+	"excelGetSheetName":         BuiltinExcelGetSheetName,
+	"excelReadSheet":            BuiltinExcelReadSheet,
+	"excelWriteSheet":           BuiltinExcelWriteSheet,
+	"excelReadCell":             BuiltinExcelReadCell,
+	"excelGetCellValue":         BuiltinExcelReadCell,
+	"excelReadCellImages":       BuiltinExcelReadCellImages, // usage: picObjT := excelGetCellImages(sheetName1T, "B2"), return an array such as, [{"idx": "1", "ext": ".jpg", "format": "...", "insertType": "...", "data": ...}]
+	"excelGetCellImages":        BuiltinExcelReadCellImages,
+	"excelWriteCell":            BuiltinExcelWriteCell,            // write a string value to the cell
+	"excelSetCellValue":         BuiltinExcelWriteCell,            // the same as excelWriteCell
+	"excelGetColumnIndexByName": BuiltinExcelGetColumnIndexByName, // excelGetColumnIndexByName("A") == 1, excelGetColumnIndexByName("AB") == 28
+	"excelGetColumnNameByIndex": BuiltinExcelGetColumnNameByIndex, // excelGetColumnNameByIndex(1) == "A", excelGetColumnNameByIndex(28) == "AB"
 
 	// database related
 	"formatSQLValue": BuiltinFormatSQLValue,
@@ -1454,7 +1454,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// line editor related
 	"leClear":          BuiltinLeClear,
-	"leInfo":          BuiltinLeInfo, // show lines count, chars count, ...
+	"leInfo":           BuiltinLeInfo, // show lines count, chars count, ...
 	"leLoadFromStr":    BuiltinLeLoadFromStr,
 	"leAppendFromStr":  BuiltinLeAppendFromStr,
 	"leSaveToStr":      BuiltinLeSaveToStr,
@@ -1494,13 +1494,13 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// GUI server related
 	"guiServerCommand": BuiltinGuiServerCommand, // send command to GUI server, usage: rs := cgsCmd("pln", "-url="+trim(guiServerUrlG), "value", "18")
-	"cgsCmd": BuiltinGuiServerCommand,
+	"cgsCmd":           BuiltinGuiServerCommand,
 
 	// s3 related
 	"s3GetObjectBytes":  BuiltinS3GetObjectBytes,
 	"s3GetObjectText":   BuiltinS3GetObjectText,
 	"s3PutObject":       BuiltinS3PutObject,
-	"s3GetObjectToFile":       BuiltinS3GetObjectToFile,
+	"s3GetObjectToFile": BuiltinS3GetObjectToFile,
 	"s3GetObjectReader": BuiltinS3GetObjectReader,
 	"s3GetObjectUrl":    BuiltinS3GetObjectUrl,
 	"s3GetObjectTags":   BuiltinS3GetObjectTags,
@@ -1515,7 +1515,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"awsSign": BuiltinAwsSign,
 
 	// misc related
-	"magic":  BuiltinMagic,
+	"magic": BuiltinMagic,
 
 	"getSeq":  BuiltinGetSeq,
 	"getUuid": BuiltinGetUuid,
@@ -1525,17 +1525,17 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"replaceHtmlByMap":    BuiltinReplaceHtmlByMap,
 	"processHtmlTemplate": BuiltinProcessHtmlTemplate,
-	
+
 	"statusToStr": BuiltinStatusToStr,
 	"statusToMap": BuiltinStatusToMap,
 
 	"docxToStrs": BuiltinDocxToStrs,
 
-	"docxReplacePattern": BuiltinDocxReplacePattern,
+	"docxReplacePattern":  BuiltinDocxReplacePattern,
 	"docxGetPlaceholders": BuiltinDocxGetPlaceholders,
 
 	"showTable": BuiltinShowTable,
-	
+
 	"deepClone": BuiltinDeepClone,
 
 	// "sortByFunc": BuiltinSortByFunc,
@@ -1602,16 +1602,16 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(builtinTestByRegContainsFunc),
 		ValueEx: builtinTestByRegContainsFunc,
 	},
-//	BuiltinTestByFunc: &BuiltinFunction{
-//		Name:    "testByFunc",
-//		Value:   CallExAdapter(builtinTestByFuncFunc),
-//		ValueEx: builtinTestByFuncFunc,
-//	},
-//	BuiltinTestByLineRules: &BuiltinFunction{
-//		Name:    "testByLineRules",
-//		Value:   CallExAdapter(builtinTestByLineRulesFunc),
-//		ValueEx: builtinTestByLineRulesFunc,
-//	},
+	//	BuiltinTestByFunc: &BuiltinFunction{
+	//		Name:    "testByFunc",
+	//		Value:   CallExAdapter(builtinTestByFuncFunc),
+	//		ValueEx: builtinTestByFuncFunc,
+	//	},
+	//	BuiltinTestByLineRules: &BuiltinFunction{
+	//		Name:    "testByLineRules",
+	//		Value:   CallExAdapter(builtinTestByLineRulesFunc),
+	//		ValueEx: builtinTestByLineRulesFunc,
+	//	},
 
 	BuiltinDumpVar: &BuiltinFunction{
 		Name:    "dumpVar",
@@ -1671,8 +1671,8 @@ var BuiltinObjects = [...]Object{
 		Name:    "bool",
 		Value:   CallExAdapter(builtinBoolFunc),
 		ValueEx: builtinBoolFunc,
-//		Value:   funcPORO(builtinBoolFunc),
-//		ValueEx: funcPOROEx(builtinBoolFunc),
+		//		Value:   funcPORO(builtinBoolFunc),
+		//		ValueEx: funcPOROEx(builtinBoolFunc),
 	},
 	BuiltinByte: &BuiltinFunction{
 		Name:    "byte",
@@ -1878,11 +1878,11 @@ var BuiltinObjects = [...]Object{
 		Value:   CallExAdapter(NewJsVm),
 		ValueEx: NewJsVm,
 	},
-//	BuiltinQjsVm: &BuiltinFunction{
-//		Name:    "qjsVm",
-//		Value:   CallExAdapter(NewQjsVm),
-//		ValueEx: NewQjsVm,
-//	},
+	//	BuiltinQjsVm: &BuiltinFunction{
+	//		Name:    "qjsVm",
+	//		Value:   CallExAdapter(NewQjsVm),
+	//		ValueEx: NewQjsVm,
+	//	},
 
 	BuiltinDatabase: &BuiltinFunction{
 		Name:    "database",
@@ -4435,7 +4435,7 @@ var BuiltinObjects = [...]Object{
 
 	// misc related
 	BuiltinMagic: &BuiltinFunction{
-		Name: "magic",
+		Name:    "magic",
 		Value:   CallExAdapter(builtinMagicFunc),
 		ValueEx: builtinMagicFunc,
 	},
@@ -4469,37 +4469,37 @@ var BuiltinObjects = [...]Object{
 		ValueEx: FnASSAVaRAex(tk.ProcessHtmlTemplate),
 	},
 	BuiltinStatusToStr: &BuiltinFunction{
-		Name: "statusToStr",
+		Name:    "statusToStr",
 		Value:   FnASRS(tk.StatusToString),
 		ValueEx: FnASRSex(tk.StatusToString),
 	},
 	BuiltinStatusToMap: &BuiltinFunction{
-		Name: "statusToMap",
+		Name:    "statusToMap",
 		Value:   FnASRA(tk.StatusToMap),
 		ValueEx: FnASRAex(tk.StatusToMap),
 	},
 	BuiltinDocxToStrs: &BuiltinFunction{
-		Name: "docxToStrs",
+		Name:    "docxToStrs",
 		Value:   CallExAdapter(builtinDocxToStrsFunc),
 		ValueEx: builtinDocxToStrsFunc,
 	},
 	BuiltinDocxReplacePattern: &BuiltinFunction{
-		Name: "docxReplacePattern",
+		Name:    "docxReplacePattern",
 		Value:   CallExAdapter(builtinDocxReplacePatternFunc),
 		ValueEx: builtinDocxReplacePatternFunc,
 	},
 	BuiltinDocxGetPlaceholders: &BuiltinFunction{
-		Name: "docxGetPlaceholders",
+		Name:    "docxGetPlaceholders",
 		Value:   CallExAdapter(builtinDocxGetPlaceholdersFunc),
 		ValueEx: builtinDocxGetPlaceholdersFunc,
 	},
 	BuiltinShowTable: &BuiltinFunction{
-		Name: "showTable",
+		Name:    "showTable",
 		Value:   CallExAdapter(builtinShowTableFunc),
 		ValueEx: builtinShowTableFunc,
 	},
 	BuiltinDeepClone: &BuiltinFunction{
-		Name: "deepClone",
+		Name:    "deepClone",
 		Value:   FnAARA(tk.DeepClone),
 		ValueEx: FnAARAex(tk.DeepClone),
 	},
@@ -4784,8 +4784,8 @@ func builtinAppendListFunc(c Call) (Object, error) {
 		if ok {
 			obj = append(obj, nv1...)
 		}
-		
-//		fmt.Printf("obj: %#v\n", obj)
+
+		//		fmt.Printf("obj: %#v\n", obj)
 
 		return obj, nil
 	case Chars:
@@ -4819,7 +4819,7 @@ func builtinAppendListFunc(c Call) (Object, error) {
 
 func builtinResetFunc(c Call) (Object, error) {
 	args := c.GetArgs()
-	
+
 	lenT := len(args)
 
 	if lenT < 1 {
@@ -5354,11 +5354,11 @@ func builtinErrorFunc(arg Object) Object {
 
 func builtinTypeNameFunc(arg Object) Object { return ToStringObject(arg.TypeName()) }
 
-func builtinBoolFunc(c Call) (Object, error) { 
+func builtinBoolFunc(c Call) (Object, error) {
 	if c.Len() < 1 {
 		return Bool(false), nil
 	}
-	
+
 	return Bool(!c.Get(0).IsFalsy()), nil
 }
 
@@ -5883,7 +5883,7 @@ func FnARTex(fn func() time.Time) CallableExFunc {
 func FnARE(fn func() error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		rs := fn()
-		
+
 		return ConvertToObject(rs), nil
 	}
 }
@@ -6860,7 +6860,7 @@ func FnASSRA(fn func(string, string) interface{}) CallableFunc {
 func FnASSRAex(fn func(string, string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
-		
+
 		if len(args) < 2 {
 			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
 		}
@@ -6891,7 +6891,7 @@ func FnASDlRE(fn func(string, func(argsA ...interface{}) interface{}) error) Cal
 func FnASDlREex(fn func(string, func(argsA ...interface{}) interface{}) error) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
-		
+
 		if len(args) < 2 {
 			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
 		}
@@ -7348,7 +7348,7 @@ func FnALySRLy(fn func([]byte, string) []byte) CallableFunc {
 func FnALySRLyex(fn func([]byte, string) []byte) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
-		
+
 		if len(args) < 2 {
 			return NewCommonError("not enough parameters"), nil
 		}
@@ -7431,7 +7431,7 @@ func FnALySVsRA(fn func([]byte, string, ...string) interface{}) CallableFunc {
 func FnALySVsRAex(fn func([]byte, string, ...string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
-		
+
 		if len(args) < 2 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
@@ -7614,7 +7614,7 @@ func FnASSVsRA(fn func(string, string, ...string) interface{}) CallableFunc {
 func FnASSVsRAex(fn func(string, string, ...string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
-		
+
 		if len(args) < 2 {
 			return Undefined, NewCommonError("not enough parameters")
 		}
@@ -7645,7 +7645,7 @@ func FnASSSVsRA(fn func(string, string, string, ...string) interface{}) Callable
 func FnASSSVsRAex(fn func(string, string, string, ...string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
-		
+
 		if len(args) < 3 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
@@ -8791,7 +8791,7 @@ func builtinTestByRegContainsFunc(c Call) (Object, error) {
 //	retT, errT := NewInvoker(c.VM(), nv2).Invoke(nv1)
 ////						tk.Plv(retT, errT)
 //
-//	
+//
 //	if errT != nil {
 //		return nil, fmt.Errorf("test %v%v failed(compareFunc returns error: %v): %#v <-> %#v\n-----\n%v\n-----\n%v", errT, v3, v4, v1, v2, v1, v2)
 //	}
@@ -8811,7 +8811,7 @@ func builtinTestByRegContainsFunc(c Call) (Object, error) {
 //
 //	v1 := argsA[0]
 //	v2 := argsA[1]
-//	
+//
 //	var v3 string
 //	var v4 string
 //
@@ -8835,37 +8835,37 @@ func builtinTestByRegContainsFunc(c Call) (Object, error) {
 //	if !ok {
 //		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
 //	}
-//	
+//
 //	linesT := tk.SplitLines(nv1.Value)
-//	
+//
 //	linesLenT := len(linesT)
-//	
+//
 //	for i, v := range nv2 {
-//		
+//
 //		if i > (linesLenT - 1) {
 //			return nil, fmt.Errorf("test %v%v failed(index out of line rules): [%v] %#v <-> %v/%v", v3, v4, i, v2, i, linesLenT)
 //		}
-//		
+//
 //		tk.Pl("process line rules: [%v] %#v %v %v ...", i, v2, i, v)
-//		
+//
 //		nvl, ok := v.(Array)
-//		
+//
 //		if !ok {
 //			return nil, fmt.Errorf("test %v%v failed(invalid internal type of line rules): [%v] %#v <-> (%T) %#v", v3, v4, i, v2, v, v)
 //		}
-//		
+//
 //		if len(nvl) < 2 {
 //			return nil, fmt.Errorf("test %v%v failed(invalid internal array length of line rules): [%v] %#v <-> (%T) %#v", v3, v4, i, v2, v, v)
 //		}
-//		
+//
 //		ruleTypeT := nvl[1].String()
-//		
+//
 //		switch ruleTypeT {
 //			case "text":
 //				if len(nvl) < 3 {
 //					return nil, fmt.Errorf("test %v%v failed(invalid internal array length of line rules): [%v] %#v <-> (%T) %#v", v3, v4, i, v2, v, v)
 //				}
-//				
+//
 //				if linesT[i] != nvl[2].String() {
 ////					tk.Pl("test %v%v passed", v3, v4)
 //				} else {
@@ -8875,7 +8875,7 @@ func builtinTestByRegContainsFunc(c Call) (Object, error) {
 //				if len(nvl) < 3 {
 //					return nil, fmt.Errorf("test %v%v failed(invalid internal array length of line rules): [%v] %#v <-> (%T) %#v", v3, v4, i, v2, v, v)
 //				}
-//				
+//
 //				if tk.RegContainsX(linesT[i], nvl[2].String()) {
 ////					tk.Pl("test %v%v passed", v3, v4)
 //				} else {
@@ -8885,7 +8885,7 @@ func builtinTestByRegContainsFunc(c Call) (Object, error) {
 ////				if len(nvl) < 3 {
 ////					return nil, fmt.Errorf("test %v%v failed(invalid internal array length of line rules): [%v] %#v <-> (%T) %#v", v3, v4, i, v2, v, v)
 ////				}
-////				
+////
 ////				if tk.RegContainsX(linesT[i], v[2].String()) {
 //////					tk.Pl("test %v%v passed", v3, v4)
 ////				} else {
@@ -8893,7 +8893,7 @@ func builtinTestByRegContainsFunc(c Call) (Object, error) {
 ////				}
 //			default:
 //				return nil, fmt.Errorf("test %v%v failed(unknown rule type of line rules): [%v] %#v <-> (%#v) %v", v3, v4, i, v2, v, ruleTypeT)
-//				
+//
 //		}
 //	}
 //
@@ -9374,11 +9374,11 @@ func builtinEncodeSimpleMapFunc(c Call) (Object, error) {
 	}
 
 	objT, ok := args[0].(Map)
-	
+
 	if !ok {
 		return NewCommonErrorWithPos(c, "invalid type for parameter 1: %T", args[0]), nil
 	}
-	
+
 	mapT := map[string]string{}
 
 	for k, v := range objT {
@@ -9398,9 +9398,9 @@ func builtinDecodeSimpleMapFunc(c Call) (Object, error) {
 	}
 
 	strT := args[0].String()
-	
+
 	mapT := tk.LoadSimpleMapFromString(strT)
-	
+
 	map1T := Map{}
 
 	for k, v := range mapT {
@@ -9508,17 +9508,17 @@ func builtinRunTickerFunc(c Call) (Object, error) {
 	}
 
 	v1 := float64(ToFloatQuick(args[0]))
-	
+
 	if v1 <= 0.0 {
 		return Undefined, NewCommonErrorWithPos(c, "invalid duration: %v", args[0])
 	}
 
 	v2, ok := args[1].(*Delegate)
-	
+
 	if !ok {
 		return Undefined, NewCommonErrorWithPos(c, "unsupported type of param2: %T", args[1])
 	}
-	
+
 	rs := tk.RunTickerFunc(v1, v2.Value)
 
 	return ConvertToObject(rs), nil
@@ -9532,13 +9532,13 @@ func builtinTimeBeforeFunc(c Call) (Object, error) {
 	}
 
 	v1, ok := args[0].(*Time)
-	
+
 	if !ok {
 		return Undefined, NewCommonErrorWithPos(c, "unsupported type of param1: %T", args[0])
 	}
 
 	v2, ok := args[1].(*Time)
-	
+
 	if !ok {
 		return Undefined, NewCommonErrorWithPos(c, "unsupported type of param2: %T", args[1])
 	}
@@ -10517,7 +10517,7 @@ func builtinToFloatFunc(c Call) (Object, error) {
 		return Float(0.0), nil
 	}
 
-	if len(args) >1 {
+	if len(args) > 1 {
 		rsT := tk.ToFloat(ConvertFromObject(args[0]), tk.ToFloat(ConvertFromObject(args[1]), 0.0))
 
 		return Float(rsT), nil
@@ -10732,13 +10732,13 @@ func builtinTrimErrFunc(c Call) (Object, error) {
 	if ok {
 		return ToStringObject(""), nil
 	}
-	
+
 	b1, errT := builtinIsErrXFunc(Call{Args: []Object{arg0}})
-	
+
 	if errT != nil {
 		return ToStringObject(""), nil
 	}
-	
+
 	if bool(b1.(Bool)) == true {
 		return ToStringObject(""), nil
 	}
@@ -11003,19 +11003,19 @@ func builtinGetMultiLineInputFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	var funcT func(...interface{}) interface{} = nil
-	
+
 	vs := []string{}
-	
+
 	var ok bool = false
-	
+
 	var nv1 *Delegate
-	
+
 	for _, v := range args {
 		if !ok {
 			nv1, ok = v.(*Delegate)
-			
+
 			if ok {
-//				fmt.Printf("nv1 type: %T, %#v\n", nv1.Value, nv1.Value)
+				//				fmt.Printf("nv1 type: %T, %#v\n", nv1.Value, nv1.Value)
 				funcT = nv1.Value
 			} else {
 				vs = append(vs, v.String())
@@ -11025,19 +11025,19 @@ func builtinGetMultiLineInputFunc(c Call) (Object, error) {
 		}
 	}
 
-//	if len(args) < 1 {
-//	} else {
-//		nv1, ok := args[0].(*Delegate)
-//		
-//		if !ok {
-//			return NewCommonErrorWithPos(c, "unsupported parameter type: %v", args[0].TypeName()), nil
-//		}
-//		
-//		funcT = nv1.Value
-//		
-//		vs = ObjectsToS(args[1:])
-//	}
-//	fmt.Printf("funcT: %#v\n", funcT)
+	//	if len(args) < 1 {
+	//	} else {
+	//		nv1, ok := args[0].(*Delegate)
+	//
+	//		if !ok {
+	//			return NewCommonErrorWithPos(c, "unsupported parameter type: %v", args[0].TypeName()), nil
+	//		}
+	//
+	//		funcT = nv1.Value
+	//
+	//		vs = ObjectsToS(args[1:])
+	//	}
+	//	fmt.Printf("funcT: %#v\n", funcT)
 	rs := tk.GetMultiLineInput(funcT, vs...)
 
 	return String{Value: rs}, nil
@@ -11778,20 +11778,20 @@ func builtinExcelReadAllFunc(c Call) (Object, error) {
 	} else {
 		f = r0.Value
 	}
-	
+
 	sheetListT := f.GetSheetList()
-	
+
 	sheetLenT := len(sheetListT)
 
 	aryT := make(Array, 0, sheetLenT)
-	
+
 	for _, iv := range sheetListT {
 		rowsT, errT := f.GetRows(iv)
 
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to get rows: %v", errT), nil
 		}
-		
+
 		rsT := make(Array, 0, len(rowsT))
 
 		for _, v := range rowsT {
@@ -11802,13 +11802,12 @@ func builtinExcelReadAllFunc(c Call) (Object, error) {
 
 			rsT = append(rsT, lineListT)
 		}
-		
+
 		aryT = append(aryT, rsT)
 
 	}
 
 	// tk.Pl("nameT: %#v", nameT)
-
 
 	return aryT, nil
 
@@ -12074,17 +12073,17 @@ func builtinExcelReadCellImagesFunc(c Call) (Object, error) {
 	posT := args[2].String()
 
 	picsT, errT := f.GetPictures(nameT, posT)
-	
+
 	if errT != nil {
 		return NewCommonErrorWithPos(c, "failed to get cell image: %v", errT), nil
 	}
-	
+
 	aryT := Array{}
-	
+
 	for i, v := range picsT {
 		aryT = append(aryT, Map{"idx": String{Value: fmt.Sprintf("%v", i)}, "ext": String{Value: v.Extension}, "data": Bytes(v.File), "format": String{Value: fmt.Sprintf("%v", v.Format)}, "insertType": String{Value: fmt.Sprintf("%v", v.InsertType)}})
 	}
-	
+
 	return aryT, nil
 
 }
@@ -12428,23 +12427,23 @@ func builtinFtpCreateDirFunc(c Call) (Object, error) {
 	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v6 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
 	}
 
 	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
@@ -12461,7 +12460,7 @@ func builtinFtpCreateDirFunc(c Call) (Object, error) {
 	if err != nil {
 		return ConvertToObject(fmt.Errorf("failed to create dir: %v", err)), nil
 	}
-	
+
 	err = clientT.Quit()
 
 	if err != nil {
@@ -12498,23 +12497,23 @@ func builtinFtpListFunc(c Call) (Object, error) {
 	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v6 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
 	}
 
 	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
@@ -12531,7 +12530,7 @@ func builtinFtpListFunc(c Call) (Object, error) {
 	if err != nil {
 		return ConvertToObject(fmt.Errorf("failed to create dir: %v", err)), nil
 	}
-	
+
 	err = clientT.Quit()
 
 	if err != nil {
@@ -12568,23 +12567,23 @@ func builtinFtpSizeFunc(c Call) (Object, error) {
 	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v6 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
 	}
 
 	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
@@ -12601,7 +12600,7 @@ func builtinFtpSizeFunc(c Call) (Object, error) {
 	if err != nil {
 		return ConvertToObject(fmt.Errorf("failed to get file size: %v", err)), nil
 	}
-	
+
 	err = clientT.Quit()
 
 	if err != nil {
@@ -12634,33 +12633,33 @@ func builtinFtpUploadFunc(c Call) (Object, error) {
 	}
 	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-path=", v5))
 	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
-	
+
 	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
 
 	forceT := tk.IfSwitchExists(pa, "-force")
-	
+
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v5 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy path")), nil
+		return ConvertToObject(fmt.Errorf("empty path")), nil
 	}
 
 	if v6 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
 	}
 
 	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
@@ -12691,37 +12690,37 @@ func builtinFtpUploadFunc(c Call) (Object, error) {
 	if err != nil {
 		return NewCommonErrorWithPos(c, "failed to upload file: %v", err), nil
 	}
-	
+
 	err = clientT.Quit()
 
 	if err != nil {
 		return NewCommonErrorWithPos(c, "failed to close ftp connection: %v", err), nil
 	}
 
-//	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
-//
-//	if errT != nil {
-//		return ConvertToObject(errT), nil
-//	}
-//
-//	defer sshT.Close()
-//
-//	if withProgressT {
-//		fmt.Println()
-//		errT = sshT.UploadWithProgressFunc(v5, v6, func(i interface{}) interface{} {
-//			fmt.Printf("\rprogress: %v                ", i)
-//			return ""
-//		}, pa...)
-//		fmt.Println()
-//
-//	} else {
-//		errT = sshT.Upload(v5, v6, pa...)
-//	}
-//
-//	if errT != nil {
-//		return ConvertToObject(errT), nil
-//	}
-//
+	//	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
+	//
+	//	if errT != nil {
+	//		return ConvertToObject(errT), nil
+	//	}
+	//
+	//	defer sshT.Close()
+	//
+	//	if withProgressT {
+	//		fmt.Println()
+	//		errT = sshT.UploadWithProgressFunc(v5, v6, func(i interface{}) interface{} {
+	//			fmt.Printf("\rprogress: %v                ", i)
+	//			return ""
+	//		}, pa...)
+	//		fmt.Println()
+	//
+	//	} else {
+	//		errT = sshT.Upload(v5, v6, pa...)
+	//	}
+	//
+	//	if errT != nil {
+	//		return ConvertToObject(errT), nil
+	//	}
+	//
 	return Undefined, nil
 }
 
@@ -12748,31 +12747,31 @@ func builtinFtpDownloadBytesFunc(c Call) (Object, error) {
 	}
 
 	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
-	
+
 	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
-//	if v5 == "" {
-//		return ConvertToObject(fmt.Errorf("emtpy path")), nil
-//	}
+	//	if v5 == "" {
+	//		return ConvertToObject(fmt.Errorf("empty path")), nil
+	//	}
 
 	if v6 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
 	}
 
 	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
@@ -12785,23 +12784,23 @@ func builtinFtpDownloadBytesFunc(c Call) (Object, error) {
 		return ConvertToObject(fmt.Errorf("failed to login ftp server: %v", err)), nil
 	}
 
-//	_, err := clientT.FileSize(v6)
-//	if err != nil {
-//		return NewCommonErrorWithPos(c, "remote file not exists"), nil
-//	}
+	//	_, err := clientT.FileSize(v6)
+	//	if err != nil {
+	//		return NewCommonErrorWithPos(c, "remote file not exists"), nil
+	//	}
 
 	r, err := clientT.Retr(v6)
 	if err != nil {
 		return NewCommonErrorWithPos(c, "failed to download file: %v", err), nil
 	}
-	
+
 	defer r.Close()
-	
+
 	bufT, err := io.ReadAll(r)
 	if err != nil {
 		return NewCommonErrorWithPos(c, "failed to read contents: %v", err), nil
 	}
-	
+
 	err = clientT.Quit()
 
 	if err != nil {
@@ -12834,31 +12833,31 @@ func builtinFtpRemoveFileFunc(c Call) (Object, error) {
 	}
 
 	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
-	
+
 	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
-//	if v5 == "" {
-//		return ConvertToObject(fmt.Errorf("emtpy path")), nil
-//	}
+	//	if v5 == "" {
+	//		return ConvertToObject(fmt.Errorf("empty path")), nil
+	//	}
 
 	if v6 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
 	}
 
 	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
@@ -12871,16 +12870,16 @@ func builtinFtpRemoveFileFunc(c Call) (Object, error) {
 		return ConvertToObject(fmt.Errorf("failed to login ftp server: %v", err)), nil
 	}
 
-//	_, err := clientT.FileSize(v6)
-//	if err != nil {
-//		return NewCommonErrorWithPos(c, "remote file not exists"), nil
-//	}
+	//	_, err := clientT.FileSize(v6)
+	//	if err != nil {
+	//		return NewCommonErrorWithPos(c, "remote file not exists"), nil
+	//	}
 
 	err = clientT.Delete(v6)
 	if err != nil {
 		return NewCommonErrorWithPos(c, "failed to remove file: %v", err), nil
 	}
-	
+
 	return Undefined, nil
 }
 
@@ -12905,35 +12904,35 @@ func builtinFtpUploadFromReaderFunc(c Call) (Object, error) {
 	if strings.HasPrefix(v4, "//TXDEF#") {
 		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
 	}
-//	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-path=", v5))
+	//	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-path=", v5))
 	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
-	
+
 	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
 
 	forceT := tk.IfSwitchExists(pa, "-force")
-	
+
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
-//	if v5 == "" {
-//		return ConvertToObject(fmt.Errorf("emtpy path")), nil
-//	}
+	//	if v5 == "" {
+	//		return ConvertToObject(fmt.Errorf("empty path")), nil
+	//	}
 
 	if v6 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
 	}
 
 	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
@@ -12958,7 +12957,7 @@ func builtinFtpUploadFromReaderFunc(c Call) (Object, error) {
 	if err != nil {
 		return ConvertToObject(fmt.Errorf("failed to upload file: %v", err)), nil
 	}
-	
+
 	err = clientT.Quit()
 
 	if err != nil {
@@ -12997,27 +12996,27 @@ func builtinSshUploadFunc(c Call) (Object, error) {
 	withProgressT := tk.IfSwitchExistsWhole(pa, "-progress")
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v5 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy path")), nil
+		return ConvertToObject(fmt.Errorf("empty path")), nil
 	}
 
 	if v6 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
 	}
 
 	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
@@ -13082,27 +13081,27 @@ func builtinSshUploadBytesFunc(c Call) (Object, error) {
 	withProgressT := tk.IfSwitchExistsWhole(pa, "-progress")
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	// if v5 == "" {
-	// 	return ConvertToObject(fmt.Errorf("emtpy path")), nil
+	// 	return ConvertToObject(fmt.Errorf("empty path")), nil
 	// }
 
 	if v6 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
 	}
 
 	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
@@ -13155,27 +13154,27 @@ func builtinSshDownloadFunc(c Call) (Object, error) {
 	withProgressT := tk.IfSwitchExistsWhole(pa, "-progress")
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v5 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy path")), nil
+		return ConvertToObject(fmt.Errorf("empty path")), nil
 	}
 
 	if v6 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
 	}
 
 	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
@@ -13228,23 +13227,23 @@ func builtinSshDownloadBytesFunc(c Call) (Object, error) {
 	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v6 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
 	}
 
 	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
@@ -13276,7 +13275,7 @@ func builtinSshListFunc(c Call) (Object, error) {
 	pa := ObjectsToS(args)
 
 	var v1, v2, v3, v4, v6 string
-	
+
 	v2 = "22"
 
 	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
@@ -13292,23 +13291,23 @@ func builtinSshListFunc(c Call) (Object, error) {
 	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v6 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remotePath")), nil
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
 	}
 
 	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
@@ -13340,7 +13339,7 @@ func builtinSshIfFileExistsFunc(c Call) (Object, error) {
 	pa := ObjectsToS(args)
 
 	var v1, v2, v3, v4, v6 string
-	
+
 	v2 = "22"
 
 	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
@@ -13356,19 +13355,19 @@ func builtinSshIfFileExistsFunc(c Call) (Object, error) {
 	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v6 == "" {
@@ -13404,7 +13403,7 @@ func builtinSshGetFileInfoFunc(c Call) (Object, error) {
 	pa := ObjectsToS(args)
 
 	var v1, v2, v3, v4, v6 string
-	
+
 	v2 = "22"
 
 	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
@@ -13420,19 +13419,19 @@ func builtinSshGetFileInfoFunc(c Call) (Object, error) {
 	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v6 == "" {
@@ -13484,23 +13483,23 @@ func builtinSshRunFunc(c Call) (Object, error) {
 	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-cmd=", v5))
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v5 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy command")), nil
+		return ConvertToObject(fmt.Errorf("empty command")), nil
 	}
 
 	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
@@ -13547,27 +13546,27 @@ func builtinSshRenameFunc(c Call) (Object, error) {
 	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-destPath=", v6))
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v5 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remote path")), nil
+		return ConvertToObject(fmt.Errorf("empty remote path")), nil
 	}
 
 	if v6 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy destination path")), nil
+		return ConvertToObject(fmt.Errorf("empty destination path")), nil
 	}
 
 	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
@@ -13595,10 +13594,10 @@ func builtinSshJoinPathFunc(c Call) (Object, error) {
 	}
 
 	pa := ObjectsToS(args)
-	
+
 	pas1 := []string{}
 	pas2 := []string{}
-	
+
 	for _, v := range pa {
 		if strings.HasPrefix(v, "-") {
 			pas1 = append(pas1, v)
@@ -13623,23 +13622,23 @@ func builtinSshJoinPathFunc(c Call) (Object, error) {
 	}
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if len(pas2) < 1 {
-		return ConvertToObject(fmt.Errorf("emtpy remote paths")), nil
+		return ConvertToObject(fmt.Errorf("empty remote paths")), nil
 	}
 
 	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
@@ -13681,23 +13680,23 @@ func builtinSshRemoveFileFunc(c Call) (Object, error) {
 	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v5))
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v5 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remote path")), nil
+		return ConvertToObject(fmt.Errorf("empty remote path")), nil
 	}
 
 	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
@@ -13743,23 +13742,23 @@ func builtinSshRemoveDirFunc(c Call) (Object, error) {
 	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v5))
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v5 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remote path")), nil
+		return ConvertToObject(fmt.Errorf("empty remote path")), nil
 	}
 
 	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
@@ -13805,23 +13804,23 @@ func builtinSshEnsureMakeDirsFunc(c Call) (Object, error) {
 	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v5))
 
 	if v1 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy host")), nil
+		return ConvertToObject(fmt.Errorf("empty host")), nil
 	}
 
 	if v2 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy port")), nil
+		return ConvertToObject(fmt.Errorf("empty port")), nil
 	}
 
 	if v3 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy user")), nil
+		return ConvertToObject(fmt.Errorf("empty user")), nil
 	}
 
 	if v4 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy password")), nil
+		return ConvertToObject(fmt.Errorf("empty password")), nil
 	}
 
 	if v5 == "" {
-		return ConvertToObject(fmt.Errorf("emtpy remote path")), nil
+		return ConvertToObject(fmt.Errorf("empty remote path")), nil
 	}
 
 	sshT, errT := tk.NewSSHClient(v1, v2, v3, v4)
@@ -14084,21 +14083,21 @@ func builtinGenJwtTokenFunc(c Call) (Object, error) {
 	if len(args) < 2 {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
-	
-//	var v1Str string
-//
-//	v1, ok := args[0].(Map)
-//	if ok {
-//		v1Str = tk.ToJSONX(v1, "-sort")
-//	} else {
-//		v1Str = args[0].String()
-//	}
+
+	//	var v1Str string
+	//
+	//	v1, ok := args[0].(Map)
+	//	if ok {
+	//		v1Str = tk.ToJSONX(v1, "-sort")
+	//	} else {
+	//		v1Str = args[0].String()
+	//	}
 
 	vs := ObjectsToS(args[2:])
 
 	var v2Bytes []byte
 	var errT error
-	
+
 	v2, ok := args[1].(Bytes)
 	if ok {
 		v2Bytes = []byte(v2)
@@ -14113,9 +14112,9 @@ func builtinGenJwtTokenFunc(c Call) (Object, error) {
 		} else {
 			v2Bytes = []byte(args[1].String())
 		}
-		
+
 	}
-	
+
 	rs := tk.GenerateJwtToken(args[0], v2Bytes, vs...)
 
 	return String{Value: rs}, nil
@@ -14127,21 +14126,21 @@ func builtinParseJwtTokenFunc(c Call) (Object, error) {
 	if len(args) < 2 {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
-	
-//	var v1Str string
-//
-//	v1, ok := args[0].(Map)
-//	if ok {
-//		v1Str = tk.ToJSONX(v1, "-sort")
-//	} else {
-//		v1Str = args[0].String()
-//	}
+
+	//	var v1Str string
+	//
+	//	v1, ok := args[0].(Map)
+	//	if ok {
+	//		v1Str = tk.ToJSONX(v1, "-sort")
+	//	} else {
+	//		v1Str = args[0].String()
+	//	}
 
 	vs := ObjectsToS(args[2:])
 
 	var v2Bytes []byte
 	var errT error
-	
+
 	v2, ok := args[1].(Bytes)
 	if ok {
 		v2Bytes = []byte(v2)
@@ -14156,9 +14155,9 @@ func builtinParseJwtTokenFunc(c Call) (Object, error) {
 		} else {
 			v2Bytes = []byte(args[1].String())
 		}
-		
+
 	}
-	
+
 	rs := tk.ParseJwtToken(args[0].String(), v2Bytes, vs...)
 
 	return ConvertToObject(rs), nil
@@ -14277,9 +14276,9 @@ func builtinGetReqHeadersFunc(c Call) (Object, error) {
 	}
 
 	reqT := nv1.Value
-	
+
 	mapT := make(Map)
-	
+
 	for k, v := range reqT.Header {
 		mapT[k] = String{Value: v[0]}
 	}
@@ -14312,32 +14311,32 @@ func builtinPrepareMultiPartFieldFromBytesFunc(c Call) (Object, error) {
 	}
 
 	bytesT, ok := args[1].(Bytes)
-	
+
 	if !ok {
 		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[1], args[1]), nil
 	}
-	
+
 	fieldNameT := args[0].String()
-	
+
 	var b bytes.Buffer
-    w := multipart.NewWriter(&b)
-	
+	w := multipart.NewWriter(&b)
+
 	r := bytes.NewReader([]byte(bytesT))
-	
+
 	var fw io.Writer
-	
+
 	var err error
 
 	if fw, err = w.CreateFormField(fieldNameT); err != nil {
 		return NewCommonErrorWithPos(c, "failed to create field: (%v) %v", args[0], err), nil
 	}
-	
+
 	if _, err = io.Copy(fw, r); err != nil {
 		return NewCommonErrorWithPos(c, "failed to set field: (%v) %v", args[0], err), nil
 	}
-	
-    w.Close()
-	
+
+	w.Close()
+
 	return Array{ToStringObject(w.FormDataContentType()), Bytes(b.Bytes())}, nil
 }
 
@@ -14349,51 +14348,51 @@ func builtinPrepareMultiPartFileFromBytesFunc(c Call) (Object, error) {
 	}
 
 	bytesT, ok := args[2].(Bytes)
-	
+
 	if !ok {
 		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[2], args[2]), nil
 	}
-	
+
 	fieldNameT := args[0].String()
 	fileNameT := args[1].String()
-	
+
 	vs := ObjectsToS(args[3:])
-	
+
 	vsLenT := len(vs) / 2
 
 	var b bytes.Buffer
-	
-    w := multipart.NewWriter(&b)
-	
+
+	w := multipart.NewWriter(&b)
+
 	r := bytes.NewReader([]byte(bytesT))
-	
+
 	var fw io.Writer
-	
+
 	var err error
 
 	if fw, err = w.CreateFormFile(fieldNameT, fileNameT); err != nil {
 		return NewCommonErrorWithPos(c, "failed to create field: (%v) %v", args[0], err), nil
 	}
-	
+
 	if _, err = io.Copy(fw, r); err != nil {
 		return NewCommonErrorWithPos(c, "failed to set field: (%v) %v", args[0], err), nil
 	}
-	
-	for i := 0; i < vsLenT; i ++ {
-		if fw, err = w.CreateFormField(vs[i * 2]); err != nil {
+
+	for i := 0; i < vsLenT; i++ {
+		if fw, err = w.CreateFormField(vs[i*2]); err != nil {
 			return NewCommonErrorWithPos(c, "failed to create field: (%v) %v", i, err), nil
 		}
-		
-		r = bytes.NewReader([]byte(vs[i * 2 + 1]))
-		
+
+		r = bytes.NewReader([]byte(vs[i*2+1]))
+
 		if _, err = io.Copy(fw, r); err != nil {
 			return NewCommonErrorWithPos(c, "failed to set field: (%v) %v", i, err), nil
 		}
-		
+
 	}
-	
-    w.Close()
-	
+
+	w.Close()
+
 	return Array{ToStringObject(w.FormDataContentType()), Bytes(b.Bytes())}, nil
 }
 
@@ -14408,9 +14407,9 @@ func builtinPostRequestFunc(c Call) (Object, error) {
 	// if !ok {
 	// 	return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
 	// }
-	
+
 	bytesT, ok := args[1].(Bytes)
-	
+
 	if ok {
 		rs, errT := tk.PostRequestBytesX(args[0].String(), []byte(bytesT), args[2].String(), time.Duration(ToGoIntWithDefault(args[3], 30)))
 
@@ -14636,27 +14635,27 @@ func builtinMakeFunc(c Call) (Object, error) {
 		if len(args) > 2 {
 			sizeT := tk.ToInt(args[1].String(), 0)
 			capT := tk.ToInt(args[2].String(), 0)
-			
+
 			if capT < sizeT {
 				return Undefined, NewCommonErrorWithPos(c, "capacity could not be less than size")
 			}
-			
+
 			rs := make(Array, sizeT, capT)
-			
-			for i := 0; i < sizeT; i ++ {
+
+			for i := 0; i < sizeT; i++ {
 				rs[i] = Undefined
 			}
-			
+
 			return rs, nil
 		} else if len(args) > 1 {
 			sizeT := tk.ToInt(args[1].String(), 0)
 
 			rs := make(Array, sizeT)
-			
-			for i := 0; i < sizeT; i ++ { // set initial values
+
+			for i := 0; i < sizeT; i++ { // set initial values
 				rs[i] = Undefined
 			}
-			
+
 			return rs, nil
 		} else {
 			return make(Array, 0, 0), nil
@@ -14857,7 +14856,7 @@ func builtinReadAllBytesFunc(c Call) (Object, error) {
 
 func builtinReadBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
-	
+
 	lenT := len(args)
 
 	if lenT < 1 {
@@ -14865,16 +14864,16 @@ func builtinReadBytesFunc(c Call) (Object, error) {
 	}
 
 	nv1, ok := args[0].(*Reader)
-	
+
 	bufLenT := 100
-	
+
 	if lenT > 1 {
 		bufLenT = ToIntQuick(args[1])
 	}
-	
+
 	bufT := make([]byte, bufLenT)
-	
-//	resultBufT := make([]byte, 0, bufLenT)
+
+	//	resultBufT := make([]byte, 0, bufLenT)
 
 	if ok {
 		n, errT := nv1.Value.Read(bufT)
@@ -14893,8 +14892,8 @@ func builtinReadBytesFunc(c Call) (Object, error) {
 		if n <= 0 {
 			return Bytes([]byte{}), nil
 		}
-		
-//		resultBufT = append(resultBufT, bufT[:n]...)
+
+		//		resultBufT = append(resultBufT, bufT[:n]...)
 
 		return Bytes(bufT[:n]), nil
 	}
@@ -14907,15 +14906,15 @@ func builtinReadBytesFunc(c Call) (Object, error) {
 			if errT == io.EOF {
 				return NewCommonError("EOF"), nil
 			}
-			
+
 			return NewCommonErrorWithPos(c, "failed to read bytes: %v", errT), nil
 		}
-		
+
 		if n <= 0 {
 			return Bytes([]byte{}), nil
 		}
-		
-//		resultBufT = append(resultBufT, bufT[:n]...)
+
+		//		resultBufT = append(resultBufT, bufT[:n]...)
 
 		return Bytes(bufT[:n]), nil
 	}
@@ -14934,15 +14933,15 @@ func builtinReadBytesFunc(c Call) (Object, error) {
 			if errT == io.EOF {
 				return NewCommonError("EOF"), nil
 			}
-			
+
 			return NewCommonErrorWithPos(c, "failed to read bytes: %v", errT), nil
 		}
-		
+
 		if n <= 0 {
 			return Bytes([]byte{}), nil
 		}
-		
-//		resultBufT = append(resultBufT, bufT[:n]...)
+
+		//		resultBufT = append(resultBufT, bufT[:n]...)
 
 		return Bytes(bufT[:n]), nil
 	}
@@ -15223,16 +15222,16 @@ func builtinWriteBytesAtFunc(c Call) (Object, error) {
 
 	var oldBufT []byte
 	var bufT []byte
-//	var errT error
-//	var n int
+	//	var errT error
+	//	var n int
 
 	nv0, ok := args[0].(Bytes)
 	if !ok {
 		return NewCommonErrorWithPos(c, "unsupport type of arg 1: %T", args[0]), nil
 	}
-	
+
 	oldBufT = []byte(nv0)
-	
+
 	switch nv := args[2].(type) {
 	case Bytes:
 		bufT = []byte(nv)
@@ -15243,30 +15242,30 @@ func builtinWriteBytesAtFunc(c Call) (Object, error) {
 	default:
 		return NewCommonErrorWithPos(c, "unsupport type of arg 3: %T", args[2]), nil
 	}
-	
+
 	idxT := ToIntQuick(args[1])
-	
-//	oldLenT := len(oldBufT)
-//	writeLenT := len(bufT)
-	
+
+	//	oldLenT := len(oldBufT)
+	//	writeLenT := len(bufT)
+
 	n := copy(oldBufT[idxT:], bufT)
-	
-//	if oldLenT < 1 {
-//		return Bytes(bufT), nil
-//	}
-//
-//	if idxT < 0 {
-//		idxT = oldLenT - idxT
-//		
-//		if idxT < 0 {
-//			return NewCommonErrorWithPos(c, "invalid index: %v", args[1]), nil
-//		}
-//	} else if idxT == oldLenT {
-//	} else if idxT > oldLenT {
-//		return NewCommonErrorWithPos(c, "invalid index: %v", args[1]), nil
-//	}
-//	
-//	
+
+	//	if oldLenT < 1 {
+	//		return Bytes(bufT), nil
+	//	}
+	//
+	//	if idxT < 0 {
+	//		idxT = oldLenT - idxT
+	//
+	//		if idxT < 0 {
+	//			return NewCommonErrorWithPos(c, "invalid index: %v", args[1]), nil
+	//		}
+	//	} else if idxT == oldLenT {
+	//	} else if idxT > oldLenT {
+	//		return NewCommonErrorWithPos(c, "invalid index: %v", args[1]), nil
+	//	}
+	//
+	//
 
 	return Int(n), nil
 }
@@ -15278,22 +15277,22 @@ func builtinCopyBytesFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
-//	var oldBufT []byte
-//	var bufT []byte
-	
-//	var errT error
+	//	var oldBufT []byte
+	//	var bufT []byte
+
+	//	var errT error
 	var n int
 
 	nv0, ok := args[0].(Bytes)
 	if !ok {
 		return NewCommonErrorWithPos(c, "unsupport type of arg 1: %T", args[0]), nil
 	}
-	
+
 	nv1, ok := args[1].(Bytes)
 	if !ok {
 		return NewCommonErrorWithPos(c, "unsupport type of arg 2: %T", args[1]), nil
 	}
-	
+
 	n = copy(nv0, nv1)
 
 	return Int(n), nil
@@ -15303,19 +15302,19 @@ func builtinDatabaseFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		return NewCommonErrorWithPos(c, "not enough paramters"), nil
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
 	nv0, ok := args[0].(String)
 
 	if !ok {
-		return NewCommonErrorWithPos(c, "invalid paramter 1"), nil
+		return NewCommonErrorWithPos(c, "invalid parameter 1"), nil
 	}
 
 	nv1, ok := args[1].(String)
 
 	if !ok {
-		return NewCommonErrorWithPos(c, "invalid paramter 2"), nil
+		return NewCommonErrorWithPos(c, "invalid parameter 2"), nil
 	}
 
 	v1 := nv0.Value
@@ -16126,27 +16125,27 @@ func builtinIsUtf8Func(c Call) (Object, error) {
 	if len(args) < 1 {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
-	
+
 	nv1, ok := args[0].(Bytes)
-	
+
 	if ok {
 		return Bool(utf8.Valid([]byte(nv1))), nil
 	}
 
 	nv2, ok := args[0].(String)
-	
+
 	if ok {
 		return Bool(utf8.ValidString(nv2.Value)), nil
 	}
 
 	nv3, ok := args[0].(*MutableString)
-	
+
 	if ok {
 		return Bool(utf8.ValidString(nv3.Value)), nil
 	}
 
 	return NewCommonErrorWithPos(c, "invalid parameter type: (%T)%v", args[0], args[0]), nil
-//	return Bool(utf8.ValidString(args[0].String())), nil
+	//	return Bool(utf8.ValidString(args[0].String())), nil
 }
 
 func builtinSimpleStrToMapFunc(c Call) (Object, error) {
@@ -16155,20 +16154,20 @@ func builtinSimpleStrToMapFunc(c Call) (Object, error) {
 	if len(args) < 1 {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
-	
+
 	nv1 := args[0].String()
 
 	var mapT map[string]string = make(map[string]string)
 
 	listT := strings.Split(nv1, "|")
-	
+
 	for _, v := range listT {
 		list1T := strings.SplitN(v, ":", 2)
-		
+
 		if len(list1T) < 2 {
 			continue
 		}
-		
+
 		mapT[list1T[0]] = list1T[1]
 	}
 
@@ -16181,20 +16180,20 @@ func builtinSimpleStrToMapReverseFunc(c Call) (Object, error) {
 	if len(args) < 1 {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
-	
+
 	nv1 := args[0].String()
 
 	var mapT map[string]string = make(map[string]string)
 
 	listT := strings.Split(nv1, "|")
-	
+
 	for _, v := range listT {
 		list1T := strings.SplitN(v, ":", 2)
-		
+
 		if len(list1T) < 2 {
 			continue
 		}
-		
+
 		mapT[list1T[1]] = list1T[0]
 	}
 
@@ -16207,9 +16206,9 @@ func builtinReverseMapFunc(c Call) (Object, error) {
 	if len(args) < 1 {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
-	
+
 	nv1, ok := args[0].(Map)
-	
+
 	if !ok {
 		return NewCommonError("unsupported parameter type: %v", args[0].TypeName()), nil
 	}
@@ -16217,7 +16216,7 @@ func builtinReverseMapFunc(c Call) (Object, error) {
 	mapT := make(Map, len(nv1))
 
 	for k, v := range nv1 {
-//		fmt.Printf("k: %#v, v: %#v\n", k, v)
+		//		fmt.Printf("k: %#v, v: %#v\n", k, v)
 		mapT[v.String()] = String{Value: k}
 	}
 
@@ -16697,10 +16696,10 @@ func builtinMagicFunc(c Call) (Object, error) {
 
 	nv1 := ToIntQuick(args[0])
 
-//	vs := ObjectsToS(args[1:])
+	//	vs := ObjectsToS(args[1:])
 
 	fcT := GetMagic(nv1)
-	
+
 	if tk.IsErrStr(fcT) {
 		return NewCommonErrorWithPos(c, "failed to get magic script: %v", tk.GetErrStr(fcT)), nil
 	}
@@ -17240,7 +17239,7 @@ func builtinS3GetObjectToFileFunc(c Call) (Object, error) {
 	localPathT = tk.GetSwitch(vs, "-localPath=", localPathT)
 
 	forceT := tk.IfSwitchExists(vs, "-force")
-	
+
 	if !forceT && tk.IfFileExists(localPathT) {
 		return NewCommonError("local file already exists"), nil
 	}
@@ -17464,7 +17463,7 @@ func builtinS3CopyObjectFunc(c Call) (Object, error) {
 	srcPathT = tk.GetSwitch(vs, "-srcPath=", srcPathT)
 	destPathT = tk.GetSwitch(vs, "-destPath=", destPathT)
 
-//	forceT := tk.IfSwitchExists(vs, "-force")
+	//	forceT := tk.IfSwitchExists(vs, "-force")
 
 	versionIdT := strings.TrimSpace(tk.GetSwitch(vs, "-versionId=", ""))
 
@@ -17472,7 +17471,7 @@ func builtinS3CopyObjectFunc(c Call) (Object, error) {
 		Bucket: srcBucketNameT,
 		Object: srcPathT,
 	}
-	
+
 	if versionIdT != "" {
 		srcOpts.VersionID = versionIdT
 	}
@@ -17548,7 +17547,7 @@ func builtinS3MoveObjectFunc(c Call) (Object, error) {
 		Bucket: srcBucketNameT,
 		Object: srcPathT,
 	}
-	
+
 	if versionIdT != "" {
 		srcOpts.VersionID = versionIdT
 	}
@@ -17789,17 +17788,17 @@ func builtinDocxReplacePatternFunc(c Call) (Object, error) {
 	if m == nil {
 		return args[0], nil
 	}
-	
+
 	lenT := len(m)
-	
+
 	aryT := make([]string, lenT)
 
-	for i := 0; i < lenT; i ++ {
+	for i := 0; i < lenT; i++ {
 		aryT[i] = m[i].String()
 	}
-	
+
 	rs := tk.ReplacePatternsInDocxBytes([]byte(s), aryT)
-	
+
 	errT, ok := rs.(error)
 	if ok && errT != nil {
 		return NewCommonErrorWithPos(c, "%v", errT), nil
@@ -17821,7 +17820,7 @@ func builtinDocxGetPlaceholdersFunc(c Call) (Object, error) {
 	}
 
 	rs := tk.GetPlaceholderInDocxBytes([]byte(s))
-	
+
 	errT, ok := rs.(error)
 	if ok && errT != nil {
 		return NewCommonErrorWithPos(c, "%v", errT), nil
@@ -17838,30 +17837,30 @@ func builtinShowTableFunc(c Call) (Object, error) {
 	}
 
 	var ok bool = false
-	
+
 	nv1, ok1 := args[0].(Array)
 	if !ok1 {
 		return NewCommonErrorWithPos(c, "unsupported parameter 1 type(expect array): %v", args[0].TypeName()), nil
 	}
-	
+
 	len1 := len(nv1)
-	
+
 	var funcT func(...interface{}) interface{} = nil
-	
+
 	vs := []string{}
-	
+
 	var nv2 *Delegate
-	
+
 	for i, v := range args {
 		if i < 1 {
 			continue
 		}
-		
+
 		if !ok {
 			nv2, ok = v.(*Delegate)
-			
+
 			if ok {
-//				fmt.Printf("nv2 type: %T, %#v\n", nv2.Value, nv2.Value)
+				//				fmt.Printf("nv2 type: %T, %#v\n", nv2.Value, nv2.Value)
 				funcT = nv2.Value
 			} else {
 				vs = append(vs, v.String())
@@ -17872,19 +17871,19 @@ func builtinShowTableFunc(c Call) (Object, error) {
 	}
 
 	aryT := make([][]string, 0, len1)
-	
-	for i := 0; i < len1; i ++ {
+
+	for i := 0; i < len1; i++ {
 		nv2, ok := nv1[i].(Array)
-		
+
 		if !ok {
 			return NewCommonErrorWithPos(c, "unsupported row %v type(expect array): %v", i, nv1[i].TypeName()), nil
 		}
-		
+
 		aryT = append(aryT, ObjectsToS(nv2))
 	}
 
 	rs := tk.ShowTableCompact(aryT, funcT, vs...)
-	
+
 	return String{Value: rs}, nil
 }
 
@@ -17900,14 +17899,14 @@ func builtinDocxToStrsFunc(c Call) (Object, error) {
 	nv1, ok := args[0].(Bytes)
 	if ok {
 		rs := tk.DocxBytesToText([]byte(nv1), vs...)
-		
-	//	if tk.IsError(rs) {
-	//		return NewCommonErrorWithPos(c, "failed convert docx bytes to text: %v", rs), nil
-	//	}
-		
+
+		//	if tk.IsError(rs) {
+		//		return NewCommonErrorWithPos(c, "failed convert docx bytes to text: %v", rs), nil
+		//	}
+
 		return ConvertToObject(rs), nil
 	}
-	
+
 	rs := tk.DocxToText(args[0].String(), vs...)
 
 	return ConvertToObject(rs), nil
@@ -18021,9 +18020,9 @@ func builtinSendMailFunc(c Call) (Object, error) {
 		if len(lineListT) < 2 {
 			return NewCommonError("invalid attach file format(should be in form NAME:FILE_PATH): %v", v), nil
 		}
-		
+
 		var bytesAttachT []byte
-		
+
 		if strings.HasPrefix(lineListT[1], "HEX_") {
 			bytesAttachT = tk.HexToBytes(strings.TrimSpace(lineListT[1]))
 
@@ -18036,10 +18035,9 @@ func builtinSendMailFunc(c Call) (Object, error) {
 			if tk.IsErrX(frsT) {
 				return NewCommonError("failed to attach file #%v: %v", i, frsT), nil
 			}
-			
+
 			bytesAttachT = frsT.([]byte)
 		}
-
 
 		bufT := bytes.NewBuffer(bytesAttachT)
 
@@ -18069,7 +18067,7 @@ func builtinGuiServerCommandFunc(c Call) (Object, error) {
 	if len(args) < 1 {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
-	
+
 	cmdT := args[0].String()
 
 	vs := ObjectsToS(args[1:])
@@ -18078,11 +18076,11 @@ func builtinGuiServerCommandFunc(c Call) (Object, error) {
 
 	if urlT == "" {
 		urlT = "http://127.0.0.1:7458"
-//		return NewCommonErrorWithPos(c, "url empty"), nil
+		//		return NewCommonErrorWithPos(c, "url empty"), nil
 	}
 
 	mapT := map[string]string{"cmd": cmdT}
-	
+
 	parasT := make([]string, 0, len(vs))
 
 	optsT := make([]interface{}, 0, len(vs))
@@ -18098,21 +18096,21 @@ func builtinGuiServerCommandFunc(c Call) (Object, error) {
 
 	lenT := len(parasT)
 	cntT := 0
-	
+
 	for {
 		if cntT >= lenT {
 			break
 		}
-		
-		if cntT + 1 >= lenT {
+
+		if cntT+1 >= lenT {
 			break
 		}
-		
-		mapT[parasT[cntT]] = parasT[cntT + 1]
-		
+
+		mapT[parasT[cntT]] = parasT[cntT+1]
+
 		cntT += 2
 	}
-	
+
 	optsT = append(optsT, mapT)
 
 	rs := tk.GetWeb(urlT, optsT...)
@@ -18166,7 +18164,7 @@ func builtinGetRandomIntFunc(c Call) (Object, error) {
 	// if !ok {
 	// 	return NewCommonErrorWithPos(c, "invalid parameter type: (%T)%v", args[0], args[0]), nil
 	// }
-	
+
 	if len(args) > 1 {
 		return Int(tk.GetRandomIntInRange(int(ToIntObject(args[0])), int(ToIntObject(args[1])))), nil
 	}
@@ -18309,52 +18307,52 @@ func BuiltinFuzzyFindFunc(c Call) (Object, error) {
 	if len(args) < 2 {
 		return NewCommonError("not enough parameters"), nil
 	}
-	
+
 	vs := ObjectsToS(args[2:])
-	
+
 	ifSortT := tk.IfSwitchExistsWhole(vs, "-sort")
-	
+
 	v1, ok := args[0].(String)
-	
+
 	var rs1 fuzzy.Matches
-	
+
 	if ok {
 		matchesT := Array{}
-		
+
 		if ifSortT {
 			rs1 = fuzzy.Find(args[1].String(), []string{v1.Value})
 		} else {
 			rs1 = fuzzy.FindNoSort(args[1].String(), []string{v1.Value})
 		}
-		
+
 		for _, v := range rs1 {
 			matchesT = append(matchesT, Map{"Str": String{Value: v.Str}, "Index": Int(v.Index), "MatchedIndexes": ConvertToObject(v.MatchedIndexes), "Score": Int(v.Score)})
 		}
-		
+
 		return matchesT, nil
 	}
 
 	v2, ok := args[0].(Array)
-	
+
 	rAryT := []string{}
-	
+
 	for _, v := range v2 {
 		rAryT = append(rAryT, v.String())
 	}
-	
+
 	if ok {
 		matchesT := Array{}
-		
+
 		if ifSortT {
 			rs1 = fuzzy.Find(args[1].String(), rAryT)
 		} else {
 			rs1 = fuzzy.FindNoSort(args[1].String(), rAryT)
 		}
-		
+
 		for _, v := range rs1 {
 			matchesT = append(matchesT, Map{"Str": String{Value: v.Str}, "Index": Int(v.Index), "MatchedIndexes": ConvertToObject(v.MatchedIndexes), "Score": Int(v.Score)})
 		}
-		
+
 		return matchesT, nil
 	}
 
@@ -18365,7 +18363,7 @@ func builtinSscanfFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
-		return NewCommonErrorWithPos(c, "not enough paramters"), nil
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
 	rsT, errT := fmt.Sscanf(args[0].String(), args[1].String(), AnysToOriginal(args[2:])...)
@@ -18384,7 +18382,7 @@ func builtinBitNotFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 1 {
-		return NewCommonError("not enough paramters"), nil
+		return NewCommonError("not enough parameters"), nil
 	}
 
 	switch nv1 := args[0].(type) {
@@ -18668,7 +18666,7 @@ func builtinMathAtan2Func(c Call) (Object, error) {
 	if len(args) < 2 {
 		return NewCommonError("not enough parameters"), nil
 	}
-	
+
 	return Float(math.Atan2(ToFloatQuick(args[0]), ToFloatQuick(args[1]))), nil
 }
 
@@ -19207,8 +19205,8 @@ func builtinScanQrFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 
-	v1, ok  := args[0].(*Image)
-	
+	v1, ok := args[0].(*Image)
+
 	if !ok {
 		return NewCommonErrorWithPos(c, "invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
 	}
@@ -19230,26 +19228,26 @@ func builtinAesEncryptFunc(c Call) (Object, error) {
 	if len(args) < 2 {
 		return NewCommonError("not enough parameters"), nil
 	}
-	
+
 	var vp []byte
 
 	v, ok := args[0].(Bytes)
 	if !ok {
 		vp = []byte(args[0].String())
-//		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+		//		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
 	} else {
 		vp = []byte(v)
 	}
-	
+
 	keyT := args[1].String()
-	
+
 	vs := ObjectsToS(args[2:])
-	
+
 	modeT := tk.GetSwitch(vs, "-mode=", "")
 
 	var rs []byte
 	var errT error
-	
+
 	if modeT == "cbc" {
 		rs, errT = tk.AESEncryptCBC(vp, []byte(keyT))
 	} else {
@@ -19263,33 +19261,32 @@ func builtinAesEncryptFunc(c Call) (Object, error) {
 	return String{Value: string(rs)}, nil
 }
 
-
 func builtinAesDecryptFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	if len(args) < 2 {
 		return NewCommonError("not enough parameters"), nil
 	}
-	
+
 	var vp []byte
 
 	v, ok := args[0].(Bytes)
 	if !ok {
 		vp = []byte(args[0].String())
-//		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+		//		return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
 	} else {
 		vp = []byte(v)
 	}
 
 	keyT := args[1].String()
-	
+
 	vs := ObjectsToS(args[2:])
-	
+
 	modeT := tk.GetSwitch(vs, "-mode=", "")
 
 	var rs []byte
 	var errT error
-	
+
 	if modeT == "cbc" {
 		rs, errT = tk.AESDecryptCBC(vp, []byte(keyT))
 	} else {
@@ -19313,11 +19310,11 @@ func SHA1PRNG(seed []byte, size int) ([]byte, error) {
 	hashs := SHA1(SHA1(seed))
 	maxLen := len(hashs)
 	realLen := size
-	
+
 	if realLen > maxLen {
 		return nil, fmt.Errorf("Not Support %d, Only Support Lower then %d [% x]", realLen, maxLen, hashs)
 	}
-	
+
 	return hashs[0:realLen], nil
 }
 
@@ -19430,17 +19427,17 @@ func builtinGetSha256WithKeyYYFunc(c Call) (Object, error) {
 	if len(args) < 2 {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
-	
+
 	strT := args[0].String()
 
 	keyT := args[1].String()
-	
+
 	salt := make([]byte, 16)
 
 	seed, errT := SHA1PRNG([]byte(keyT), 16)
-	
+
 	if errT != nil {
-		return NewCommonErrorWithPos(c, "failed to create key: %v", errT), nil 
+		return NewCommonErrorWithPos(c, "failed to create key: %v", errT), nil
 	}
 
 	random := rand.New(rand.NewSource(int64(seed[0])))
@@ -19451,11 +19448,11 @@ func builtinGetSha256WithKeyYYFunc(c Call) (Object, error) {
 
 	saltValue = strings.ReplaceAll(saltValue, "\r", "")
 	saltValue = strings.ReplaceAll(saltValue, "\n", "")
-	
+
 	rs, errT := getSHA256(strT + saltValue)
 
 	if errT != nil {
-		return NewCommonErrorWithPos(c, "failed to create key: %v", errT), nil 
+		return NewCommonErrorWithPos(c, "failed to create key: %v", errT), nil
 	}
 
 	return String{Value: rs}, nil
@@ -19467,11 +19464,11 @@ func builtinRsaEncryptStrYYFunc(c Call) (Object, error) {
 	if len(args) < 2 {
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
-	
+
 	keyT := args[0].String()
 
 	secretT := args[1].String()
-	
+
 	rsaEncryption, errT := newRSAEncryption(keyT)
 	if errT != nil {
 		return NewCommonErrorWithPos(c, "failed to encrypt: %v", errT), nil
@@ -20420,18 +20417,18 @@ func builtinSortArrayFunc(c Call) (Object, error) {
 		vs := ObjectsToS(c.GetArgs())
 
 		keyT := tk.GetSwitch(vs, "-key=", "")
-//		keyT := ""
-//		if len(args) > 1 {
-//			keyT = args[1].String()
-//		}
+		//		keyT := ""
+		//		if len(args) > 1 {
+		//			keyT = args[1].String()
+		//		}
 
 		descT := tk.IfSwitchExists(vs, "-desc")
-//		descT := false
-//		if len(args) > 2 {
-//			optT := args[2].String()
-//			descT = (optT == "desc") //  || (optT != "asc" && !(args[2].IsFalsy()))
-////			descT = (args[2].String() == "desc") || (!(args[2].IsFalsy()))
-//		}
+		//		descT := false
+		//		if len(args) > 2 {
+		//			optT := args[2].String()
+		//			descT = (optT == "desc") //  || (optT != "asc" && !(args[2].IsFalsy()))
+		////			descT = (args[2].String() == "desc") || (!(args[2].IsFalsy()))
+		//		}
 
 		if keyT != "" {
 			sort.Slice(obj, func(i, j int) bool {
@@ -20464,14 +20461,14 @@ func builtinSortArrayFunc(c Call) (Object, error) {
 					sort.Slice(obj, func(i, j int) bool {
 						v, e := obj[i].BinaryOp(tk.IfThenElse(descT, token.Greater, token.Less).(token.Token), obj[j])
 						if e != nil && err == nil {
-		//					err = e
+							//					err = e
 							return false
 						}
-						
+
 						if v != nil {
 							return !v.IsFalsy()
 						}
-						
+
 						return false
 					})
 				}
@@ -20482,14 +20479,14 @@ func builtinSortArrayFunc(c Call) (Object, error) {
 			sort.Slice(obj, func(i, j int) bool {
 				v, e := obj[i].BinaryOp(tk.IfThenElse(descT, token.Greater, token.Less).(token.Token), obj[j])
 				if e != nil && err == nil {
-//					err = e
+					//					err = e
 					return false
 				}
-				
+
 				if v != nil {
 					return !v.IsFalsy()
 				}
-				
+
 				return false
 			})
 		}
@@ -20497,7 +20494,7 @@ func builtinSortArrayFunc(c Call) (Object, error) {
 		if err != nil {
 			return nil, err
 		}
-		
+
 		return obj, nil
 	case String:
 		s := []rune(obj.Value)
@@ -20523,19 +20520,19 @@ func builtinSortArrayFunc(c Call) (Object, error) {
 
 func builtinShuffleFunc(c Call) (Object, error) {
 	args := c.GetArgs()
-	
+
 	if len(args) < 2 {
 		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
-	
+
 	timesT := ToIntQuick(args[1])
 
 	switch nv := args[0].(type) {
 	case Array:
 		var x, y int
-		
+
 		lenT := len(nv)
-		
+
 		for i := 0; i < timesT; i++ {
 			x = tk.GetRandomIntLessThan(lenT)
 			y = tk.GetRandomIntLessThan(lenT)
@@ -20551,11 +20548,11 @@ func builtinShuffleFunc(c Call) (Object, error) {
 		return nv, nil
 	case String:
 		s := []rune(nv.Value)
-		
+
 		var x, y int
-		
+
 		lenT := len(s)
-		
+
 		for i := 0; i < timesT; i++ {
 			x = tk.GetRandomIntLessThan(lenT)
 			y = tk.GetRandomIntLessThan(lenT)
@@ -20570,12 +20567,12 @@ func builtinShuffleFunc(c Call) (Object, error) {
 
 		return ToStringObject(string(s)), nil
 	case Bytes:
-//		s := nv[:] // copy it
-		
+		//		s := nv[:] // copy it
+
 		var x, y int
-		
+
 		lenT := len(nv)
-		
+
 		for i := 0; i < timesT; i++ {
 			x = tk.GetRandomIntLessThan(lenT)
 			y = tk.GetRandomIntLessThan(lenT)

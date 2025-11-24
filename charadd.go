@@ -89,7 +89,7 @@ func init() {
 // 	Value: func(args ...Object) (Object, error) {
 
 // 		if len(args) < 1 {
-// 			return Undefined, NewCommonError("not enough paramters")
+// 			return Undefined, NewCommonError("not enough parameters")
 // 		}
 
 // 		if args[0].TypeName() != "string" {
@@ -1453,7 +1453,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 			ValueEx: func(c Call) (Object, error) {
 				lenT := c.Len()
 				if lenT < 2 {
-					return NewCommonError("not enough paramters"), nil
+					return NewCommonError("not enough parameters"), nil
 				}
 				// tk.Plv("%#v", c.GetArgs())
 
@@ -1562,7 +1562,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 					})
 				}
 
-				return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+				return NewCommonError("invalid parameter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
 
 			},
 		},
@@ -1749,7 +1749,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				}
 
 				return ToStringObject(tk.GetLastComponentOfFilePath(destFile1.Name())), nil
-				// return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+				// return NewCommonError("invalid parameter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
 
 			},
 		},
@@ -1795,7 +1795,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 					"Size":     ToStringObject(headerT.Size),
 					"Reader":   readerT,
 				}, nil
-				// return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+				// return NewCommonError("invalid parameter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
 
 			},
 		},
@@ -1944,7 +1944,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 				return NewCommonErrorWithPos(c, "unsupported type: %T", arg0), nil
 
-				// return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+				// return NewCommonError("invalid parameter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
 
 			},
 		},
@@ -2097,7 +2097,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Int(objT.Value.SheetCount), nil
 				// return NewCommonErrorWithPos(c, "unsupported type: %T", arg0), nil
 
-				// return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+				// return NewCommonError("invalid parameter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
 
 			},
 		},
@@ -2156,7 +2156,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 				return ConvertToObject(rowsT), nil
 
-				// return NewCommonError("invalid paramter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
+				// return NewCommonError("invalid parameter type: (%T)%v", fnObjT, fnObjT.TypeName()), nil
 
 			},
 		},
