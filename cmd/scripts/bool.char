@@ -18,5 +18,33 @@ plt(3.8 + !b1)
 
 plt(b1.toStr())
 
+b2 := bool()
 
+b3 := bool(b2)
+
+b4 := bool(1.2)
+
+b5 := bool("")
+
+pln(b2, b3, b4, b5, bool("abc"), bool("false"), bool("true"))
+
+var b = true
+
+prf("[%v] %v\n", typeOf(b), b)
+
+c := false
+
+prf("[%T] %v\n", c, c)
+
+prf("b == c: %v\n", b == c)
+
+prf("!b = %v\n", !b)
+
+prf("1 > 14: %v\n", 1 > 14)
+
+prf("b == true: %v\n", b == true)
+
+prf("b && c: %v\n", b && c)
+
+prf("b || c: %v\n", b || c)
 

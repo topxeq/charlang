@@ -1669,8 +1669,10 @@ var BuiltinObjects = [...]Object{
 
 	BuiltinBool: &BuiltinFunction{
 		Name:    "bool",
-		Value:   funcPORO(builtinBoolFunc),
-		ValueEx: funcPOROEx(builtinBoolFunc),
+		Value:   CallExAdapter(builtinBoolFunc),
+		ValueEx: builtinBoolFunc,
+//		Value:   funcPORO(builtinBoolFunc),
+//		ValueEx: funcPOROEx(builtinBoolFunc),
 	},
 	BuiltinByte: &BuiltinFunction{
 		Name:    "byte",
@@ -5352,7 +5354,13 @@ func builtinErrorFunc(arg Object) Object {
 
 func builtinTypeNameFunc(arg Object) Object { return ToStringObject(arg.TypeName()) }
 
-func builtinBoolFunc(arg Object) Object { return Bool(!arg.IsFalsy()) }
+func builtinBoolFunc(c Call) (Object, error) { 
+	if c.Len() < 1 {
+		return Bool(false), nil
+	}
+	
+	return Bool(!c.Get(0).IsFalsy()), nil
+}
 
 func builtinIntFunc(v int64) Object { return Int(v) }
 
