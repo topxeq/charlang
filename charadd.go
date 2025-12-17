@@ -2543,6 +2543,7 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 
 	if req != nil {
 		req.ParseForm()
+		req.ParseMultipartForm(100000000)
 	}
 
 	reqT := tk.GetFormValueWithDefaultValue(req, "charms", "")
