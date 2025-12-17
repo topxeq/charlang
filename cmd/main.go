@@ -1662,9 +1662,9 @@ func runArgs(argsA ...string) interface{} {
 		var tmps string
 		
 		if fcT != "" {
-			tmps = tk.GetMultiLineInput(nil, "-title="+fmt.Sprintf("Charlang by TopXeQ V%v", charlang.VersionG), "-bottom=Press Ctrl-Q to finish, Ctrl-X to exit.", "-width=78", "-height=10", "-keep", "-text="+fcT)
+			tmps = tk.GetMultiLineInput(nil, "-title="+fmt.Sprintf("Charlang by TopXeQ V%v", charlang.VersionG), "-bottom=Press Ctrl-Q to finish, Ctrl-X to exit.", "-width=78", "-height=15", "-keep", "-text="+fcT)
 		} else {
-			tmps = tk.GetMultiLineInput(nil, "-title="+fmt.Sprintf("Charlang by TopXeQ V%v", charlang.VersionG), "-bottom=Press Ctrl-Q to finish, Ctrl-X to exit.", "-width=78", "-height=10", "-keep")
+			tmps = tk.GetMultiLineInput(nil, "-title="+fmt.Sprintf("Charlang by TopXeQ V%v", charlang.VersionG), "-bottom=Press Ctrl-Q to finish, Ctrl-X to exit.", "-width=78", "-height=15", "-keep")
 		}
 		
 		if strings.HasPrefix(tmps, "TXERROR:") {

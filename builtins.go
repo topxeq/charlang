@@ -92,6 +92,7 @@ const (
 	BuiltinSendMail
 	BuiltinGetTextSimilarity
 	BuiltinFuzzyFind
+	BuiltinStrRemoveBomHead
 	BuiltinLeSshInfo
 	BuiltinStack
 	BuiltinQueue
@@ -877,6 +878,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getTextSimilarity": BuiltinGetTextSimilarity, // calculate the cosine similarity of two strings
 
 	"fuzzyFind": BuiltinFuzzyFind, // find strings in a list with fuzzy matching, usage: matchesT := fuzzyFind(["abc", "bbbe", "123456dbde"], "be", "-sort") will return [{"Str": "bbbeeee", "Index": 1, "MatchedIndexes": [0, 3], "Score": 5}, {"Str": "123456dbdebe", "Index": 2, "MatchedIndexes": [7, 9], "Score": -25}], "-sort" is the optional switch
+	
+	"strRemoveBomHead": BuiltinStrRemoveBomHead, // remove BOM from string(for UTF8+BOM format files)
 
 	// regex related
 	"regMatch":      BuiltinRegMatch,      // determine whether a string fully conforms to a regular expression, usage example: result := regMatch("abcab", `a.*b`)
@@ -2274,6 +2277,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "fuzzyFind",
 		Value:   CallExAdapter(BuiltinFuzzyFindFunc),
 		ValueEx: BuiltinFuzzyFindFunc,
+	},
+	BuiltinStrRemoveBomHead: &BuiltinFunction{
+		Name:    "strRemoveBomHead",
+		Value:   FnASRS(tk.RemoveBOM),
+		ValueEx: FnASRSex(tk.RemoveBOM),
 	},
 
 	// regex related

@@ -28,7 +28,7 @@ import (
 )
 
 // global vars
-var VersionG = "2.0.7"
+var VersionG = "2.0.8"
 
 var CodeTextG = ""
 
@@ -2512,6 +2512,8 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 	if tk.IfSwitchExists(optionsA, "-verbose") {
 		tk.Pl("Starting...")
 	}
+	
+	codeA = tk.RemoveBOM(codeA)
 
 	if strings.HasPrefix(codeA, "//INROUTE:") {
 		codeA = tk.TrimEx(tk.GetVar(codeA[10:]))
