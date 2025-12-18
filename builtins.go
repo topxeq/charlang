@@ -14208,6 +14208,41 @@ func builtinParseReqFormExFunc(c Call) (Object, error) {
 
 	reqT.ParseForm()
 
+	bufSizeT := 100000000
+	
+	if len(args) > 1 {
+		bufSizeT = ToIntQuick(args[1])
+	}
+
+	reqT.ParseMultipartForm(int64(bufSizeT))
+
+	paraMapT := tk.FormToMap(reqT.Form)
+
+	return ConvertToObject(paraMapT), nil
+}
+
+func builtinParseReqMultipartFormFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	nv, ok := args[0].(*HttpReq)
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid object type: (%T)%v", args[0], args[0]), nil
+	}
+
+	reqT := nv.Value
+	
+	bufSizeT := 100000000
+	
+	if len(args) > 1 {
+		bufSizeT = ToIntQuick(args[1])
+	}
+
+	reqT.ParseMultipartForm(int64(bufSizeT))
+
 	paraMapT := tk.FormToMap(reqT.Form)
 
 	return ConvertToObject(paraMapT), nil
