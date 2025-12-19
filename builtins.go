@@ -943,6 +943,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getNowStrCompact": BuiltinGetNowStrCompact,
 	"getNowTimeStamp":  BuiltinGetNowTimeStamp,
 	"timeToTick":       BuiltinTimeToTick,
+	"timeToTimeStamp":       BuiltinTimeToTick,
 
 	"formatTime": BuiltinFormatTime,
 
