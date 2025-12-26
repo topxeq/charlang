@@ -1032,16 +1032,11 @@ func runArgs(argsT ...string) interface{} {
 		return nil
 	}
 
-	if tk.IfSwitchExistsWhole(argsT, "-getWeb") {
-		urlT := strings.TrimSpace(tk.GetSwitchWithDefaultValue(argsT, "-url=", ""))
+	getWebUrlT := strings.TrimSpace(tk.GetSwitchWithDefaultValue(argsT, "-getWeb=", ""))
+	if getWebUrlT != "" {
+		getWebUrlT = tk.DealString(getWebUrlT)
 		
-		if urlT == "" {
-			return tk.Errf("url empty")
-		}
-		
-		urlT = tk.DealString(urlT)
-		
-		tk.Pln(tk.GetWeb(urlT, tk.StringArrayToAnyArray(argsT)...))
+		tk.Pln(tk.GetWeb(getWebUrlT, tk.StringArrayToAnyArray(argsT)...))
 		
 		return nil
 	}
