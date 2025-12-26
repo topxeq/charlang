@@ -18291,7 +18291,7 @@ func BuiltinDealStrFunc(c Call) (Object, error) {
 
 		buf, errT := hex.DecodeString(strT)
 		if errT != nil {
-			return NewCommonError("failed decode hex: %v", errT), nil
+			return NewCommonError("failed to decode hex: %v", errT), nil
 		}
 
 		return &String{Value: string(buf)}, nil
@@ -18300,10 +18300,19 @@ func BuiltinDealStrFunc(c Call) (Object, error) {
 
 		buf, errT := hex.DecodeString(strT)
 		if errT != nil {
-			return NewCommonError("failed decode hex: %v", errT), nil
+			return NewCommonError("failed to decode hex: %v", errT), nil
 		}
 
 		return &String{Value: string(buf)}, nil
+	} else if strings.HasPrefix(strT, "//TXUE#") {
+		strT = strT[7:]
+
+		rStrT, errT := url.QueryUnescape(strT)
+		if errT != nil {
+			return NewCommonError("failed to urlDecode: %v", errT), nil
+		}
+
+		return &String{Value: rStrT}, nil
 	} else if strings.HasPrefix(strT, "//TXTE#") {
 		codeT := ""
 

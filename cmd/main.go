@@ -1004,8 +1004,8 @@ func runLine(strA string) interface{} {
 	return runArgs(argsT...)
 }
 
-func runArgs(argsA ...string) interface{} {
-	argsT := argsA
+func runArgs(argsT ...string) interface{} {
+//	argsT := argsA
 
 	if tk.IfSwitchExistsWhole(argsT, "-version") {
 		tk.Pl("Charlang by TopXeQ V%v", charlang.VersionG)
@@ -1029,6 +1029,20 @@ func runArgs(argsA ...string) interface{} {
 
 		tk.Pl("cloudPath: %v", charlang.GetCfgString("cloud.cfg"))
 
+		return nil
+	}
+
+	if tk.IfSwitchExistsWhole(argsT, "-getWeb") {
+		urlT := strings.TrimSpace(tk.GetSwitchWithDefaultValue(argsT, "-url=", ""))
+		
+		if urlT == "" {
+			return tk.Errf("url empty")
+		}
+		
+		urlT = tk.DealString(urlT)
+		
+		tk.Pln(tk.GetWeb(urlT, tk.StringArrayToAnyArray(argsT)...))
+		
 		return nil
 	}
 
@@ -1188,11 +1202,28 @@ func runArgs(argsA ...string) interface{} {
 
 	ifPipeT := tk.IfSwitchExistsWhole(argsT, "-pipe")
 
+	ifRemoteT := tk.IfSwitchExistsWhole(argsT, "-remote")
+	ifRemoteTextT := tk.IfSwitchExistsWhole(argsT, "-remoteText")
+	
+	secondScriptT := ""
+
 	if ifEditT {
 		if !ifInExeT {
 			ifExampleT = true
-			if strings.TrimSpace(scriptT) != "" {
-				argsT = append(argsT, "-fromFile="+scriptT)
+			secondScriptT = scriptT
+			
+			if ifRemoteTextT {
+				if strings.TrimSpace(scriptT) != "" {
+					argsT = append(argsT, "-fromRemoteText="+secondScriptT)
+				}
+			} else if ifRemoteT {
+				if strings.TrimSpace(scriptT) != "" {
+					argsT = append(argsT, "-fromUrl="+secondScriptT)
+				}
+			} else {
+				if strings.TrimSpace(scriptT) != "" {
+					argsT = append(argsT, "-fromFile="+secondScriptT)
+				}
 			}
 
 			scriptT = "editFile.char"
@@ -1298,7 +1329,6 @@ func runArgs(argsA ...string) interface{} {
 	ifGoPathT := tk.IfSwitchExistsWhole(argsT, "-gopath")
 	ifLocalT := tk.IfSwitchExistsWhole(argsT, "-local")
 	ifAppPathT := tk.IfSwitchExistsWhole(argsT, "-apppath")
-	ifRemoteT := tk.IfSwitchExistsWhole(argsT, "-remote")
 	ifCloudT := tk.IfSwitchExistsWhole(argsT, "-cloud")
 	sshT := tk.GetSwitchWithDefaultValue(argsT, "-ssh=", "")
 	ifViewT := tk.IfSwitchExistsWhole(argsT, "-view")
@@ -1352,9 +1382,27 @@ func runArgs(argsA ...string) interface{} {
 		tk.Pl("run cmd(%v)", fcT)
 
 		scriptPathT = ""
+	} else if ifExampleT {
+		scriptPathT = "http://topget.org/dc/t/charlang/example/" + scriptT
+
+		fcT = tk.DownloadPageUTF8("http://topget.org/dc/t/charlang/example/"+scriptT, nil, "", 30)
+		
+		if ifRemoteTextT {
+			argsT = append(argsT, "-fromRemoteText="+tk.DealString(secondScriptT))
+		}
+
+		if ifRemoteT {
+			argsT = append(argsT, "-remoteUrl="+tk.DealString(secondScriptT))
+		}
+
 	} else if ifRemoteT {
-		scriptPathT = scriptT
+		scriptPathT = tk.DealString(scriptT)
 		fcT = tk.DownloadPageUTF8(scriptT, nil, "", 30)
+
+	} else if ifRemoteTextT {
+		scriptPathT = tk.DealString(scriptT)
+
+		fcT = tk.DownloadPageUTF8("https://get.topget.org/share/"+scriptPathT, nil, "", 30)
 
 	} else if ifSelectScriptT {
 		scriptPathT = strings.TrimSpace(SelectScript())
@@ -1368,11 +1416,6 @@ func runArgs(argsA ...string) interface{} {
 		}
 
 		fcT = tk.LoadStringFromFile(scriptPathT)
-
-	} else if ifExampleT {
-		scriptPathT = "http://topget.org/dc/t/charlang/example/" + scriptT
-
-		fcT = tk.DownloadPageUTF8("http://topget.org/dc/t/charlang/example/"+scriptT, nil, "", 30)
 
 	} else if ifClipT {
 		fcT = tk.GetClipText()

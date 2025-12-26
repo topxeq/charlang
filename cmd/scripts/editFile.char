@@ -11,6 +11,8 @@ if isErr(guiStatusT) {
 
 fileNameT := trim(getSwitch(argsG, "-fromFile=", ""))
 
+fileRemoteTextT := trim(getSwitch(argsG, "-fromRemoteText=", ""))
+
 fromClipT := ifSwitchExists(argsG, "-fromClip")
 
 fromInputT := ifSwitchExists(argsG, "-fromInput")
@@ -25,6 +27,8 @@ if fromClipT {
 	fcT = getWeb(fromUrlT)
 } else if fromInputT {
 	fcT = spr("%v", inputG)
+} else if fileRemoteTextT != "" {
+	fcT = getWeb("https://get.topget.org/share/"+fileRemoteTextT)
 } else if fileNameT != "" {
 	fileNameT = getFileAbs(fileNameT)
 
