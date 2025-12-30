@@ -14,7 +14,7 @@ require (
 	github.com/sahilm/fuzzy v0.1.1
 	github.com/stretchr/testify v1.11.1
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff
-	github.com/topxeq/sqltk v0.0.0-20250406084423-dfacc20b10c4
+	github.com/topxeq/sqltk v0.0.0-20251230061659-bfabc630b3fa
 	github.com/topxeq/tkc v0.0.0
 )
 
@@ -79,7 +79,6 @@ require (
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/mozillazg/go-pinyin v0.20.0 // indirect
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
