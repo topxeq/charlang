@@ -9020,11 +9020,11 @@ func (o *Reader) SetSize(sizeA int) {
 
 // comply to io.Closer
 func (o *Reader) Close() error {
-	fmt.Printf("\n******* %#v ********\n", o)
+//	fmt.Printf("\n******* %#v ********\n", o)
 	
 	if o.CloseDele != nil {
 		rs := o.CloseDele()
-		fmt.Printf("\n -- close 1\n", rs)
+//		fmt.Printf("\n -- close 1\n", rs)
 	}
 
 	methodT := o.GetMember("close")
@@ -9043,7 +9043,7 @@ func (o *Reader) Close() error {
 				return rs.(*Error).Unwrap()
 			}
 
-			fmt.Printf("\n -- close 2: %v\n", rs)
+//			fmt.Printf("\n -- close 2: %v\n", rs)
 			return nil
 		}
 		
@@ -9060,7 +9060,7 @@ func (o *Reader) Close() error {
 			return fmt.Errorf("failed to close: %v", errT)
 		}
 
-		fmt.Printf("\n -- close 3: %v\n", errT)
+//		fmt.Printf("\n -- close 3: %v\n", errT)
 		return nil
 	}
 
