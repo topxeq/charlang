@@ -476,6 +476,8 @@ const (
 	BuiltinFtpUpload
 	BuiltinFtpUploadFromReader
 	BuiltinFtpDownloadBytes
+	BuiltinFtpDownloadFile
+	BuiltinFtpGetReader
 	BuiltinFtpRemoveFile
 	BuiltinSshUpload
 	BuiltinSshUploadBytes
@@ -1383,6 +1385,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"ftpUpload":           BuiltinFtpUpload,
 	"ftpUploadFromReader": BuiltinFtpUploadFromReader,
 	"ftpDownloadBytes":    BuiltinFtpDownloadBytes,
+	"ftpDownloadFile":    BuiltinFtpDownloadFile,
+	"ftpGetReader":		BuiltinFtpGetReader,
 	"ftpRemoveFile":       BuiltinFtpRemoveFile,
 
 	"sshUpload":         BuiltinSshUpload,
@@ -3901,6 +3905,18 @@ var BuiltinObjects = [...]Object{
 		Name:    "ftpDownloadBytes",
 		Value:   CallExAdapter(builtinFtpDownloadBytesFunc),
 		ValueEx: builtinFtpDownloadBytesFunc,
+	},
+
+	BuiltinFtpDownloadFile: &BuiltinFunction{
+		Name:    "ftpDownloadFile",
+		Value:   CallExAdapter(builtinFtpDownloadFileFunc),
+		ValueEx: builtinFtpDownloadFileFunc,
+	},
+
+	BuiltinFtpGetReader: &BuiltinFunction{
+		Name:    "ftpGetReader",
+		Value:   CallExAdapter(builtinFtpGetReaderFunc),
+		ValueEx: builtinFtpGetReaderFunc,
 	},
 
 	BuiltinFtpRemoveFile: &BuiltinFunction{
@@ -9466,7 +9482,20 @@ func isErrX(objA Object) bool {
 			return true
 		}
 	case 155: // *RuntimeError
-		nv1 := objA.(*RuntimeError)
+		nv1, ok := objA.(*RuntimeError)
+		
+		if !ok {
+			nv2, ok := objA.(*Error)
+			
+			if !ok {
+				return false
+			}
+			
+			if nv2 != nil {
+				return true
+			}
+			
+		}
 
 		if nv1 != nil {
 			return true
@@ -12817,6 +12846,199 @@ func builtinFtpDownloadBytesFunc(c Call) (Object, error) {
 	}
 
 	return Bytes(bufT), nil
+}
+
+func builtinFtpDownloadFileFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v5, v6 string
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+
+	v5 = strings.TrimSpace(tk.GetSwitch(pa, "-path=", v5))
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+
+	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("empty host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("empty port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("empty user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("empty password")), nil
+	}
+
+	if v5 == "" {
+		return ConvertToObject(fmt.Errorf("empty path")), nil
+	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
+	}
+
+	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to connect ftp server: %v", err)), nil
+	}
+
+	err = clientT.Login(v3, v4)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to login ftp server: %v", err)), nil
+	}
+
+	//	_, err := clientT.FileSize(v6)
+	//	if err != nil {
+	//		return NewCommonErrorWithPos(c, "remote file not exists"), nil
+	//	}
+
+	r, err := clientT.Retr(v6)
+	if err != nil {
+		return NewCommonErrorWithPos(c, "failed to download file: %v", err), nil
+	}
+
+	defer r.Close()
+
+	dstFile, createErr := os.OpenFile(v5, os.O_CREATE|os.O_WRONLY, 0666)
+	if createErr != nil {
+		return NewCommonErrorWithPos(c, "failed to create dest file: %v", err), nil
+	}
+	defer dstFile.Close()
+	
+	cc, copyErr := io.Copy(dstFile, r)
+
+	if copyErr != nil {
+		return NewCommonErrorWithPos(c, "failed to save dest file: %v", copyErr), nil
+	}
+
+	err = clientT.Quit()
+
+	if err != nil {
+		return NewCommonErrorWithPos(c, "failed to close ftp connection: %v", err), nil
+	}
+
+	return Int(cc), nil
+}
+
+func builtinFtpGetReaderFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return nil, fmt.Errorf("not enough parameters")
+	}
+
+	pa := ObjectsToS(args)
+
+	var v1, v2, v3, v4, v6 string
+
+	v1 = strings.TrimSpace(tk.GetSwitch(pa, "-host=", v1))
+	v2 = strings.TrimSpace(tk.GetSwitch(pa, "-port=", v2))
+	v3 = strings.TrimSpace(tk.GetSwitch(pa, "-user=", v3))
+	v4 = strings.TrimSpace(tk.GetSwitch(pa, "-password=", v4))
+	if strings.HasPrefix(v4, "740404") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+	if strings.HasPrefix(v4, "//TXDEF#") {
+		v4 = strings.TrimSpace(tk.DecryptStringByTXDEF(v4))
+	}
+
+	v6 = strings.TrimSpace(tk.GetSwitch(pa, "-remotePath=", v6))
+
+	v7 := tk.ToInt(strings.TrimSpace(tk.GetSwitch(pa, "-timeout=", "15")), 0)
+
+	if v1 == "" {
+		return ConvertToObject(fmt.Errorf("empty host")), nil
+	}
+
+	if v2 == "" {
+		return ConvertToObject(fmt.Errorf("empty port")), nil
+	}
+
+	if v3 == "" {
+		return ConvertToObject(fmt.Errorf("empty user")), nil
+	}
+
+	if v4 == "" {
+		return ConvertToObject(fmt.Errorf("empty password")), nil
+	}
+
+	//	if v5 == "" {
+	//		return ConvertToObject(fmt.Errorf("empty path")), nil
+	//	}
+
+	if v6 == "" {
+		return ConvertToObject(fmt.Errorf("empty remotePath")), nil
+	}
+
+	clientT, err := ftp.Dial(v1+":"+v2, ftp.DialWithTimeout(time.Duration(v7)*time.Second))
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to connect ftp server: %v", err)), nil
+	}
+
+	err = clientT.Login(v3, v4)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to login ftp server: %v", err)), nil
+	}
+
+	sizeT, err := clientT.FileSize(v6)
+	if err != nil {
+		return ConvertToObject(fmt.Errorf("failed to get file size: %v", err)), nil
+	}
+
+	r, err := clientT.Retr(v6)
+	if err != nil {
+		return NewCommonErrorWithPos(c, "failed to download file: %v", err), nil
+	}
+
+	readerT := &Reader{Value: r}
+
+	readerT.SetMember("close", &Function{
+		Name: "close",
+		Value: func(args ...Object) (Object, error) {
+			err1 := r.Close()
+			
+			err2 := clientT.Quit()
+
+			if err1 != nil {
+				return NewCommonErrorWithPos(c, "failed to close ftp connection: %v", err), nil
+			}
+			
+			if err2 != nil {
+				return NewCommonErrorWithPos(c, "failed to close ftp connection: %v", err), nil
+			}
+			
+			return Undefined, nil
+		},
+	})
+
+	return Map{
+		"FileName": ToStringObject(v6),
+		"Size":     ToStringObject(sizeT),
+		"Reader":   readerT,
+	}, nil
+
 }
 
 func builtinFtpRemoveFileFunc(c Call) (Object, error) {
@@ -20367,31 +20589,23 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 	// 	// CallObjectMethodFunc(r1, "close")
 	// }
 
-	nv, ok := args[0].(io.Closer)
-
-	if ok {
-		errT := nv.Close()
-
-		if errT != nil {
-			return NewCommonErrorWithPos(c, "failed to close: %v", errT), nil
-		}
-
-		return Undefined, nil
-	}
-
 	typeNameT := args[0].TypeName()
 
 	if typeNameT == "reader" {
 		r1 := args[0].(*Reader)
+		
+		errT := r1.Close()
 
-		rs := r1.GetMember("close")
+//		rs := r1.GetMember("close")
+//
+//		if !IsUndefInternal(rs) {
+//			f1 := rs.(*Function)
+//			return (*f1).CallEx(Call{Args: []Object{}})
+//		}
 
-		if !IsUndefInternal(rs) {
-			f1 := rs.(*Function)
-			return (*f1).CallEx(Call{Args: []Object{}})
-		}
+		return ConvertToObject(errT), nil
 
-		return NewCommonErrorWithPos(c, "unsupport method: close"), nil
+//		return NewCommonErrorWithPos(c, "unsupport method: close"), nil
 	} else if typeNameT == "file" {
 		r1 := args[0].(*File)
 
@@ -20455,6 +20669,18 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 			return NewCommonErrorWithPos(c, "unsupported any type for close method: %T", vT.Value), nil
 
 		}
+	}
+
+	nv, ok := args[0].(io.Closer)
+
+	if ok {
+		errT := nv.Close()
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to close: %v", errT), nil
+		}
+
+		return Undefined, nil
 	}
 
 	return NewCommonErrorWithPos(c, "unsupported type: %v", typeNameT), nil

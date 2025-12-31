@@ -59,9 +59,10 @@ testByText(rs, "(array)[[\"title1\", \"title2\", \"title3\"], [\"dataA1\", \"dat
 rs = systemCmd("char", "-gopath", "reader1.char")
 
 func1 := func(strA) {
-	text1 := "(array)[[\"title1\", \"title2\", \"title3\"], [\"dataA1\", \"dataB1\", \"dataC1\"], [\"dataA2\", \"dataB2\", \"dataC2\"], [\"1\", \"2\", \"3\"], [\"a\", \"b\", \"c\"]]\n(*charlang.Reader)&charlang.Reader{ObjectImpl:charlang.ObjectImpl{}, Value:(*os.File), Members:map[string]charlang.Object(nil)}\n(array)[[\"title1\", \"title2\", \"title3\"], [\"dataA1\", \"dataB1\", \"dataC1\"], [\"dataA2\", \"dataB2\", \"dataC2\"], [\"1\", \"2\", \"3\"], [\"a\", \"b\", \"c\"]]\n(undefined)undefined\nError: failed to execute script(reader1.char) error: NotCallableError: error\n\n"
+	text1 := "(array)[[\"title1\", \"title2\", \"title3\"], [\"dataA1\", \"dataB1\", \"dataC1\"], [\"dataA2\", \"dataB2\", \"dataC2\"], [\"1\", \"2\", \"3\"], [\"a\", \"b\", \"c\"]]\n(*charlang.Reader)&charlang.Reader{ObjectImpl:charlang.ObjectImpl{}, Value:(*os.File), SizeM:0, CloseDele:(tkc.QuickVarDelegate)(nil), Members:map[string]charlang.Object(nil)}\n(array)[[\"title1\", \"title2\", \"title3\"], [\"dataA1\", \"dataB1\", \"dataC1\"], [\"dataA2\", \"dataB2\", \"dataC2\"], [\"1\", \"2\", \"3\"], [\"a\", \"b\", \"c\"]]\n(undefined)undefined\n(error)error: failed to close file already closed\n"
 	
 	str1 := regReplace(strA, `\(0x[a-f0-9]{10,}\)`, "")
+	str1 = regReplace(str1, `: close.*:`, "")
 	
 //	pl("str1: %v ---- text1: %v", str1, text1)
 	

@@ -8981,6 +8981,8 @@ func NewHttpHandler(c Call) (Object, error) {
 type Reader struct {
 	ObjectImpl
 	Value io.Reader
+	SizeM int // may be not set
+	CloseDele tk.QuickVarDelegate
 
 	// CloseHandler io.Closer
 
@@ -9002,6 +9004,14 @@ func (o *Reader) String() string {
 	return fmt.Sprintf("%v", o.Value)
 }
 
+func (o *Reader) Size() int {
+	return o.SizeM
+}
+
+func (o *Reader) SetSize(sizeA int) {
+	o.SizeM = sizeA
+}
+
 // func (o *Reader) SetValue(valueA Object) error {
 // 	// o.Value.Reset(int(ToIntObject(valueA)))
 
@@ -9010,44 +9020,55 @@ func (o *Reader) String() string {
 
 // comply to io.Closer
 func (o *Reader) Close() error {
+	fmt.Printf("\n******* %#v ********\n", o)
+	
+	if o.CloseDele != nil {
+		rs := o.CloseDele()
+		fmt.Printf("\n -- close 1\n", rs)
+	}
+
+	methodT := o.GetMember("close")
+
+	if !IsUndefInternal(methodT) {
+		f1, ok := methodT.(*Function)
+
+		if ok {
+			rs, err := (*f1).Call()
+
+			if err != nil {
+				return err
+			}
+
+			if isErrX(rs) {
+				return rs.(*Error).Unwrap()
+			}
+
+			fmt.Printf("\n -- close 2: %v\n", rs)
+			return nil
+		}
+		
+		return fmt.Errorf("unable to close")
+	}
+
 	nv, ok := o.Value.(io.Closer)
 
-	if !ok {
-		methodT := o.GetMember("close")
+	if ok {
+		errT := nv.Close()
+		// errT := o.CloseHandler.Close()
 
-		if !IsUndefInternal(methodT) {
-			f1, ok := methodT.(*Function)
-
-			if ok {
-				rs, err := (*f1).Call()
-
-				if err != nil {
-					return err
-				}
-
-				if isErrX(rs) {
-					return rs.(*Error).Unwrap()
-				}
-
-				return nil
-			}
+		if errT != nil {
+			return fmt.Errorf("failed to close: %v", errT)
 		}
 
-		return fmt.Errorf("unable to close")
+		fmt.Printf("\n -- close 3: %v\n", errT)
+		return nil
 	}
 
 	// if o.CloseHandler == nil {
 	// 	return fmt.Errorf("no close handler")
 	// }
 
-	errT := nv.Close()
-	// errT := o.CloseHandler.Close()
-
-	if errT != nil {
-		return fmt.Errorf("failed to close: %v", errT)
-	}
-
-	return nil
+	return fmt.Errorf("unable to close")
 }
 
 // comply to io.Reader
@@ -9061,19 +9082,57 @@ func (o *Reader) Read(p []byte) (n int, err error) {
 	return nv.Read(p)
 }
 
-func (o *Reader) HasMemeber() bool {
-	return true
-}
+//func (o *Reader) CallMethod(nameA string, argsA ...Object) (Object, error) {
+//	switch nameA {
+//	case "value":
+//		return builtinAnyFunc(Call{Args: []Object{o}})
+//	case "toStr":
+//		return ToStringObject(o), nil
+//	}
+//
+//	return CallObjectMethodFunc(o, nameA, argsA...)
+//}
 
 func (o *Reader) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	return o.CallName(nameA, Call{Args: argsA})
+//	switch nameA {
+//	case "value":
+//		return o, nil
+//	case "toStr":
+//		return ToStringObject(o), nil
+//	}
+//
+//	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *Reader) CallName(nameA string, c Call) (Object, error) {
 	switch nameA {
 	case "value":
 		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
-	}
+	case "close":
+		rs := o.Close()
 
-	return CallObjectMethodFunc(o, nameA, argsA...)
+		return ConvertToObject(rs), nil
+	}
+	
+	args := c.GetArgs()
+	
+	rs1, errT := CallObjectMethodFunc(o, nameA, args...)
+	
+//	if errT != nil || tk.IsError(rs1) {
+//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
+//		return ConvertToObject(rs3), nil
+//	}
+	
+	return rs1, errT
+	
+//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+}
+
+func (o *Reader) HasMemeber() bool {
+	return true
 }
 
 func (o *Reader) GetValue() Object {
@@ -9274,39 +9333,42 @@ func (o *Writer) String() string {
 
 // comply to io.Closer
 func (o *Writer) Close() error {
-	nv, ok := o.Value.(io.Closer)
+	methodT := o.GetMember("close")
 
-	if !ok {
-		methodT := o.GetMember("close")
+	if !IsUndefInternal(methodT) {
+		f1, ok := methodT.(*Function)
 
-		if !IsUndefInternal(methodT) {
-			f1, ok := methodT.(*Function)
+		if ok {
+			rs, err := (*f1).Call()
 
-			if ok {
-				rs, err := (*f1).Call()
-
-				if err != nil {
-					return err
-				}
-
-				if isErrX(rs) {
-					return rs.(*Error).Unwrap()
-				}
-
-				return nil
+			if err != nil {
+				return err
 			}
+
+			if isErrX(rs) {
+				return rs.(*Error).Unwrap()
+			}
+
+			return nil
 		}
 
 		return fmt.Errorf("unable to close")
 	}
 
-	errT := nv.Close()
+	nv, ok := o.Value.(io.Closer)
 
-	if errT != nil {
-		return fmt.Errorf("failed to close: %v", errT)
+	if ok {
+		errT := nv.Close()
+
+		if errT != nil {
+			return fmt.Errorf("failed to close: %v", errT)
+		}
+
+		return nil
 	}
-
-	return nil
+	
+	return fmt.Errorf("unable to close")
+	
 }
 
 // comply to io.Writer
@@ -9324,15 +9386,45 @@ func (o *Writer) HasMemeber() bool {
 	return true
 }
 
+//func (o *Writer) CallMethod(nameA string, argsA ...Object) (Object, error) {
+//	switch nameA {
+//	case "value":
+//		return builtinAnyFunc(Call{Args: []Object{o}})
+//	case "toStr":
+//		return ToStringObject(o), nil
+//	}
+//
+//	return CallObjectMethodFunc(o, nameA, argsA...)
+//}
+
 func (o *Writer) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	return o.CallName(nameA, Call{Args: argsA})
+}
+
+func (o *Writer) CallName(nameA string, c Call) (Object, error) {
 	switch nameA {
 	case "value":
 		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
-	}
+	case "close":
+		rs := o.Close()
 
-	return CallObjectMethodFunc(o, nameA, argsA...)
+		return ConvertToObject(rs), nil
+	}
+	
+	args := c.GetArgs()
+	
+	rs1, errT := CallObjectMethodFunc(o, nameA, args...)
+	
+//	if errT != nil || tk.IsError(rs1) {
+//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
+//		return ConvertToObject(rs3), nil
+//	}
+	
+	return rs1, errT
+	
+//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 }
 
 func (o *Writer) GetValue() Object {
@@ -11960,14 +12052,43 @@ func (o *Delegate) HasMemeber() bool {
 }
 
 func (o *Delegate) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	return o.CallName(nameA, Call{Args: argsA})
+//	switch nameA {
+//	case "value":
+//		return o, nil
+//	case "toStr":
+//		return ToStringObject(o), nil
+//	}
+//
+//	return CallObjectMethodFunc(o, nameA, argsA...)
+}
+
+func (o *Delegate) CallName(nameA string, c Call) (Object, error) {
 	switch nameA {
 	case "value":
 		return o, nil
 	case "toStr":
 		return ToStringObject(o), nil
-	}
+	case "call":
+		args := c.GetArgs()
+		
+		rs := o.Value(ObjectsToI(args)...)
 
-	return CallObjectMethodFunc(o, nameA, argsA...)
+		return ConvertToObject(rs), nil
+	}
+	
+	args := c.GetArgs()
+	
+	rs1, errT := CallObjectMethodFunc(o, nameA, args...)
+	
+//	if errT != nil || tk.IsError(rs1) {
+//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
+//		return ConvertToObject(rs3), nil
+//	}
+	
+	return rs1, errT
+	
+//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 }
 
 func (o *Delegate) GetValue() Object {
