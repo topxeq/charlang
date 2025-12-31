@@ -9023,7 +9023,7 @@ func (o *Reader) Close() error {
 //	fmt.Printf("\n******* %#v ********\n", o)
 	
 	if o.CloseDele != nil {
-		rs := o.CloseDele()
+		o.CloseDele() // rs := 
 //		fmt.Printf("\n -- close 1\n", rs)
 	}
 
