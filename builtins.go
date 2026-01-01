@@ -13004,7 +13004,7 @@ func builtinFtpGetReaderFunc(c Call) (Object, error) {
 
 	sizeT, err := clientT.FileSize(v6)
 	if err != nil {
-		return ConvertToObject(fmt.Errorf("failed to get file size: %v", err)), nil
+		return ConvertToObject(fmt.Errorf("failed to get file size: %v(%v)", err, v6)), nil
 	}
 
 	r, err := clientT.Retr(v6)
