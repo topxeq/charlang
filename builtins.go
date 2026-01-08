@@ -261,6 +261,7 @@ const (
 	BuiltinRenameFile
 	BuiltinStrJoin
 	BuiltinStrCount
+	BuiltinStrSub
 	BuiltinStrPad
 	BuiltinStrRuneLen
 	BuiltinStrIn
@@ -854,6 +855,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strRepeat":      BuiltinStrRepeat,
 	"strCount":       BuiltinStrCount,
 	"strPad":         BuiltinStrPad, // string padding operations such as zero padding, for example, result := strPad(strT, 5, "-fill=0", "-right=true"), where the first parameter is the string to be padded, and the second parameter is the number of characters to be padded. The default padding string is fill as string 0, and right (indicating whether to fill on the right side) is false (which can also be written directly as -right). Therefore, the above example is equivalent to result := strPad(strT, 5). If the fill string contains more than one character, the final number of padding will not exceed the value specified by the second parameter, but it may be less
+	"strSub":       BuiltinStrSub, // get substring with start and end(exclude) index, if failed, return default string, usage: rs := strSub("abc", 1, 3)
 
 	"strRuneLen": BuiltinStrRuneLen, // get the length of string by rune(how many rune characters in the string)
 
@@ -2212,6 +2214,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strPad",
 		Value:   FnASIVsRS(tk.PadString),
 		ValueEx: FnASIVsRSex(tk.PadString),
+	},
+	BuiltinStrSub: &BuiltinFunction{
+		Name:    "strSub",
+		Value:   FnASIIVsRS(tk.GetSubString),
+		ValueEx: FnASIIVsRSex(tk.GetSubString),
 	},
 	BuiltinStrRuneLen: &BuiltinFunction{
 		Name:    "strRuneLen",
@@ -8197,7 +8204,7 @@ func FnASIVsRS(fn func(string, int, ...string) string) CallableFunc {
 		v2, ok := ToGoInt(args[1])
 
 		if !ok {
-			return NewCommonError("invalid type for arg 2: (%T)%v"), nil
+			return NewCommonError("invalid type for arg 2: (%T)%v", args[1], args[1]), nil
 		}
 
 		vargs := ObjectsToS(args[2:])
@@ -8215,11 +8222,62 @@ func FnASIVsRSex(fn func(string, int, ...string) string) CallableExFunc {
 		v2, ok := ToGoInt(c.Get(1))
 
 		if !ok {
-			return NewCommonError("invalid type for arg 2: (%T)%v"), nil
+			return NewCommonError("invalid type for arg 2: (%T)%v", c.Get(1), c.Get(1)), nil
 		}
 
 		vargs := toArgsS(2, c)
 		rs := fn(c.Get(0).String(), v2, vargs...)
+		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.GetSubString
+func FnASIIVsRS(fn func(string, int, int, ...string) string) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 3 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		v2, ok := ToGoInt(args[1])
+
+		if !ok {
+			return NewCommonError("invalid type for arg 2: (%T)%v", args[1], args[1]), nil
+		}
+
+		v3, ok := ToGoInt(args[2])
+
+		if !ok {
+			return NewCommonError("invalid type for arg 3: (%T)%v", args[2], args[2]), nil
+		}
+
+		vargs := ObjectsToS(args[3:])
+		rs := fn(args[0].String(), v2, v3, vargs...)
+		return ToStringObject(rs), nil
+	}
+}
+
+func FnASIIVsRSex(fn func(string, int, int, ...string) string) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 3 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		v2, ok := ToGoInt(args[1])
+
+		if !ok {
+			return NewCommonErrorWithPos(c, "invalid type for arg 2: (%T)%v", args[1], args[1]), nil
+		}
+
+		v3, ok := ToGoInt(args[2])
+
+		if !ok {
+			return NewCommonErrorWithPos(c, "invalid type for arg 3: (%T)%v", args[2], args[2]), nil
+		}
+
+		vargs := ObjectsToS(args[3:])
+		rs := fn(args[0].String(), v2, v3, vargs...)
 		return ToStringObject(rs), nil
 	}
 }
