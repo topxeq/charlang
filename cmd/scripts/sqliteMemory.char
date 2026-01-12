@@ -1,0 +1,52 @@
+//This example demonstrates the creation, addition, deletion, and modification of SQLite 3 database in memory.
+
+// Create a new database in memory
+db := dbConnect("sqlite3", ":memory:")
+
+if isErr(db) {
+	pl("failed to create the database in memory: %v", getErrStr(db))
+	exit()
+}
+
+// use try...catch...finally to make sure the database connection closed in any conditions
+try {
+	sqlStmt := `create table TEST (ID integer not null primary key, CODE text);`
+
+	rs := dbExec(db, sqlStmt)
+
+	if isErr(rs) {
+		pl("failed to create table in database: %v", getErrStr(rs))
+		return
+	}
+
+	sql := `insert into TEST(ID, CODE) values(?, ?)`
+
+	for i := 0; i < 5; i++ {
+		str1 := genRandomStr()
+
+		rs = dbExec(db, sql, i, str1)
+
+		if isErr(rs) {
+			pl("failed to insert record into the database: %v", getErrStr(rs))
+			return
+		}
+	}
+
+	// use paramter placeholder in SQL select 
+	sql = `select ID, CODE from TEST where ID > ? and ID <= ?`
+
+	rs = dbQuery(db, sql, 1, 3)
+
+	plt(rs)
+
+	jsonStr := toJson(rs, "-indent", "-sort")
+
+	pln(jsonStr)
+} catch e {
+	pl("exception: %v", e)
+	return
+} finally {
+	dbClose(db)
+}
+
+
