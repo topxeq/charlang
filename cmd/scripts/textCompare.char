@@ -56,6 +56,6 @@ compareResult := compareText(buf1, buf2, limit)
 plt(compareResult)
 
 for i, v in compareResult {
-	pl("[%v] pos: %v %v/%v(%v) - %v/%X(%v)", i+1, v[0], v[1], toHex(v[1]), strQuote(spr("%c", v[1])), v[2], v[2], strQuote(spr("%c", v[2])))
+	pl("[%v] pos: %v %v/0x%v(%v - %v) - %v/0x%X(%v - %v)", i+1, v[0], v[1], toHex(v[1]), strQuote(spr("%c", v[1])), strSub(buf1, v[0] - 5, v[0] + 5), v[2], v[2], strQuote(spr("%c", v[2])), strSub(buf2, v[0] - 5, v[0] + 5))
 }
 
