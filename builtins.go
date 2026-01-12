@@ -370,6 +370,7 @@ const (
 	BuiltinToFloat
 	BuiltinToHex
 	BuiltinCompareBytes
+	BuiltinCompareText
 	BuiltinLoadBytes
 	BuiltinLoadBytesFromFile
 	BuiltinSaveBytes
@@ -977,6 +978,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// compare related
 	"compareBytes": BuiltinCompareBytes,
+	"compareText": BuiltinCompareText,
 
 	// control related
 	"isNil":        BuiltinIsNil,
@@ -2609,6 +2611,12 @@ var BuiltinObjects = [...]Object{
 		Value:   FnALbyLbyViRLLi(tk.CompareBytes),
 		ValueEx: FnALbyLbyViRLLiex(tk.CompareBytes),
 		Remark:  `compare two bytes object to find differences, usage: compareBytes(bytes1, bytes2[, limit]), return an Array, each item is an array with the difference index, byte in bytes1, byte in bytes2`,
+	},
+
+	BuiltinCompareText: &BuiltinFunction{
+		Name:    "compareText",
+		Value:   FnASSViRLLi(tk.CompareText),
+		ValueEx: FnASSViRLLiex(tk.CompareText),
 	},
 
 	// control related
@@ -8119,6 +8127,39 @@ func FnALbyLbyViRLLiex(fn func([]byte, []byte, ...int) [][]int) CallableExFunc {
 		}
 
 		rs := fn([]byte(nv1), []byte(nv2), ObjectsToN(args[2:])...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.CompareText(func(string, string, ...int) [][]int)
+func FnASSViRLLi(fn func(string, string, ...int) [][]int) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		nv1 := args[0].String()
+		nv2 := args[1].String()
+
+		rs := fn(nv1, nv2, ObjectsToN(args[2:])...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+func FnASSViRLLiex(fn func(string, string, ...int) [][]int) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+		
+		if len(args) < 2 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		nv1 := args[0].String()
+		nv2 := args[1].String()
+
+		rs := fn(nv1, nv2, ObjectsToN(args[2:])...)
 
 		return ConvertToObject(rs), nil
 	}

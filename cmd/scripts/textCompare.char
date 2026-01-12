@@ -1,0 +1,61 @@
+// compare two text files
+// char -example textCompare.char -file1=d:\tmpx\demo1.html -file2=d:\tmpx\demo2.html -limit=10
+
+global argsG
+
+var (buf1, buf2)
+
+file1 := trim(getSwitch(argsG, "-file1=", ""))
+
+if file1 == "" {
+	buf1 = getMultiLineInput("-placeholder=Input the text1 here, Ctrl-Q to confirm, Ctrl-X to cancel", "-width=80", "-height=15")
+	
+	if isErr(buf1) {
+		if buf1 == "TXERROR:cancel" {
+			return
+		} else {
+			fatalf("error: %v", buf1)
+		}
+	}
+} else {
+	buf1 = loadText(file1)
+
+	if isErr(buf1) {
+		fatalf("failed to read file1: %v", buf1)
+	}
+	// plt(buf1)
+}
+
+file2 := trim(getSwitch(argsG, "-file2=", ""))
+
+if file2 == "" {
+	buf2 = getMultiLineInput("-prompt=Input the text2 here, Ctrl-Q to confirm, Ctrl-X to cancel", "-width=80", "-height=15")
+	
+	if isErr(buf1) {
+		if buf2 == "TXERROR:cancel" {
+			return
+		} else {
+			fatalf("error: %v", buf2)
+		}
+	}
+} else {
+	buf2 = loadText(file2)
+
+	if isErr(buf2) {
+		fatalf("failed to read file2: %v", buf2)
+	}
+}
+
+//pl("compare %v -> %v", file1, file2)
+
+limit := getIntSwitch(argsG, "-limit=", 0)
+
+plt(limit)
+
+compareResult := compareText(buf1, buf2, limit)
+plt(compareResult)
+
+for i, v in compareResult {
+	pl("[%v] pos: %v %v/%v(%v) - %v/%X(%v)", i+1, v[0], v[1], toHex(v[1]), strQuote(spr("%c", v[1])), v[2], v[2], strQuote(spr("%c", v[2])))
+}
+
