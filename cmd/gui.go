@@ -107,7 +107,7 @@ func newWindowWebView2(paramsA []interface{}) interface{} {
 
 			w.SetSize(tk.ToInt(paramsA[0], 800), tk.ToInt(paramsA[1], 600), windowStyleG)
 			return nil
-		case "navigate":
+		case "navigate", "setUrl":
 			len1T := len(paramsA)
 			if len1T < 1 {
 				return fmt.Errorf("not enough parameters")
@@ -166,7 +166,16 @@ func newWindowWebView2(paramsA []interface{}) interface{} {
 			// tk.Pl("----")
 			// tk.Pl("paramsA: %#v", paramsA)
 
-			var codeT = paramsA[0]
+			var codeT interface{}
+			var nameT string
+			
+			if len1T > 1 {
+				nameT = tk.ToStr(paramsA[0])
+				codeT = paramsA[1]
+			} else {
+				nameT = "delegateDo"
+				codeT = paramsA[0]
+			}
 
 			var deleT tk.QuickVarDelegate
 			var ok bool
@@ -174,7 +183,7 @@ func newWindowWebView2(paramsA []interface{}) interface{} {
 
 			deleT, ok = codeT.(tk.QuickVarDelegate)
 			if ok {
-				errT := w.Bind("delegateDo", deleT)
+				errT := w.Bind(nameT, deleT)
 				return errT
 			} else {
 				if s1, ok = codeT.(string); ok {
@@ -189,7 +198,53 @@ func newWindowWebView2(paramsA []interface{}) interface{} {
 			}
 
 			// tk.Pl("here: %#v", deleT)
-			errT := w.Bind("delegateDo", deleT)
+			errT := w.Bind(nameT, deleT)
+
+			return errT
+
+		case "setDelegateThread":
+			len1T := len(paramsA)
+			if len1T < 1 {
+				return fmt.Errorf("not enough parameters")
+			}
+			// tk.Pl("----")
+			// tk.Plo(paramsA)
+			// tk.Pl("----")
+			// tk.Pl("paramsA: %#v", paramsA)
+
+			var codeT interface{}
+			var nameT string
+			
+			if len1T > 1 {
+				nameT = tk.ToStr(paramsA[0])
+				codeT = paramsA[1]
+			} else {
+				nameT = "delegateDoThread"
+				codeT = paramsA[0]
+			}
+
+			var deleT tk.QuickVarDelegate
+			var ok bool
+			var s1 string
+
+			deleT, ok = codeT.(tk.QuickVarDelegate)
+			if ok {
+				errT := w.Bind(nameT, deleT)
+				return errT
+			} else {
+				if s1, ok = codeT.(string); ok {
+					// s1 = strings.ReplaceAll(s1, "~~~", "`")
+					deleObjT, _ := charlang.BuiltinDelegateFunc(charlang.Call{Args: []charlang.Object{charlang.String{Value: s1}}})
+
+					deleObjT.CallMethod("compile")
+				} else {
+					return fmt.Errorf("invalid compiled object: %v", codeT)
+				}
+
+			}
+
+//			 tk.Pl("here: %v %#v", nameT, deleT)
+			errT := w.Bind(nameT, deleT)
 
 			return errT
 
@@ -311,6 +366,7 @@ func newWindowWebView2(paramsA []interface{}) interface{} {
 }
 
 func guiHandler(argsA ...interface{}) interface{} {
+//	fmt.Printf("guiHandler %v\n", argsA)
 	actionA := tk.ToStr(argsA[0])
 
 	paramsA := argsA[1:]
@@ -531,6 +587,7 @@ func guiHandler(argsA ...interface{}) interface{} {
 		return dlg
 
 	case "newWindow":
+//	fmt.Printf("%v\n", "newWindow")
 		return newWindowWebView2(paramsA)
 
 	default:

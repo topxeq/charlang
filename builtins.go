@@ -507,6 +507,7 @@ const (
 	BuiltinGetOSArch
 	BuiltinGetOSArgs
 	BuiltinGetAppDir
+	BuiltinGetAppPath
 	BuiltinGetCurDir
 	BuiltinGetHomeDir
 	BuiltinGetTempDir
@@ -938,7 +939,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// random related
 	"getRandomInt":   BuiltinGetRandomInt,
-	"getRandomFloat": BuiltinGetRandomFloat,
+	"getRandomFloat": BuiltinGetRandomFloat, // get a float number in [0, 1.0)
 	"getRandomStr":   BuiltinGetRandomStr,
 	"genRandomStr":   BuiltinGetRandomStr,
 
@@ -1176,6 +1177,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getOsArgs": BuiltinGetOSArgs,
 
 	"getAppDir":  BuiltinGetAppDir,
+	"getAppPath":  BuiltinGetAppPath,
 	"getCurDir":  BuiltinGetCurDir,
 	"getHomeDir": BuiltinGetHomeDir,
 	"getUserDir": BuiltinGetHomeDir,
@@ -3226,6 +3228,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "getAppDir",
 		Value:   FnARS(tk.GetApplicationPath),
 		ValueEx: FnARSex(tk.GetApplicationPath),
+	},
+	BuiltinGetAppPath: &BuiltinFunction{
+		Name:    "getAppPath",
+		Value:   FnARS(tk.GetExecutablePath),
+		ValueEx: FnARSex(tk.GetExecutablePath),
 	},
 	BuiltinGetCurDir: &BuiltinFunction{
 		Name:    "getCurDir",

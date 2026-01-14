@@ -1,0 +1,195 @@
+global guiG
+
+htmlT := `
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Estimating the Value of Pi using Monte Carlo Algorithm</title>
+	<style>
+		.blink_me {
+		  animation: blinker 1s linear infinite;
+		}
+
+		@keyframes blinker {
+		  50% {
+			opacity: 0;
+		  }
+		}
+
+        h3 {
+			font-size:2.0rem;
+			color:#5D71D0;
+			padding:20px 0px 20px 0px;
+            text-align:center;
+			margin: 0 0 0 0;
+        }
+
+	</style>
+</head>
+<body>
+    <h3>Estimating the Value of Pi </h3>
+	<div style="margin-top: 0px; text-align: center;">
+		<span>using Monte Carlo Algorithm</span>
+	</div>
+    <div id="progressId" class="blink_me" style="display: none; text-align: center; color:brown;">Loading, please wait...</div>
+	<div style="margin-top: 10px; text-align: center;">
+		<span id="mainResult"></span>
+	</div>
+	<div style="margin-top: 10px; text-align: center;">
+		<canvas id="mainCanvas" style="width: 30vw; height: 30vw;" width="200" height="200"></canvas>
+	</div>
+	<div style="margin-top: 10px; text-align: center;">
+		<button id="btnStart">Start</button>
+		<button id="btnClose" onclick="javascript:closeWindowClick();">Close</button>
+	</div>
+
+    <script>
+        document.getElementById("btnStart").addEventListener("click", function() {
+			dele("startCal");
+        });
+
+        function closeWindowClick() {
+            dele("closeWindow");
+        }
+		
+		var canvas;
+		var ctx;
+		var label1;
+ 
+        window.onload = function() {
+			console.log("window.dele:", !!window.dele);
+			
+			label1 = document.getElementById('mainResult');
+			
+			canvas = document.getElementById('mainCanvas');
+			ctx = canvas.getContext('2d');
+			
+			let w = canvas.width;
+			let h = canvas.height;
+			
+			console.log(w, h);
+			
+			// draw circle
+			ctx.beginPath();
+			ctx.arc(canvas.width / 2, canvas.height / 2, 80, 0, Math.PI * 2, false);
+			ctx.closePath();
+			ctx.strokeStyle = 'blue';
+			ctx.lineWidth = 2;
+			ctx.stroke();
+			
+			// draw square
+			ctx.beginPath();
+			ctx.rect(canvas.width / 2 - 80, canvas.height / 2 - 80, 160, 160);
+			ctx.closePath();
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = 'black';
+			ctx.stroke();
+			
+			// draw a point at the center point
+			ctx.fillStyle = 'red';
+			ctx.fillRect(canvas.width / 2, canvas.height / 2, 1, 1);
+        };
+ 
+    </script>
+</body>
+</html>
+`
+
+windowT := guiG.newWindow("-title=Estimating the Value of Pi using Monte Carlo Algorithm", "-width=640", "-height=480", "-center", "-debug")
+
+// plo(windowT)
+
+dele1 := delegate(`
+param ...vargs
+
+global inputG
+
+pln(vargs)
+
+pln(inputG)
+
+cmdT := vargs[0]
+
+if cmdT == "closeWindow" {
+	pl("close window")
+
+	windowT := inputG[0]
+
+	windowT("close")
+
+	return cmdT
+} else if cmdT == "startCal" {
+	pln(cmdT)
+
+	windowT := inputG[0]
+	
+	inCircleCount := 0
+	
+	count := 0
+	
+	pi := 0
+	
+	var (x, y)
+	
+	n := [1, -1]
+	
+	for true {
+		x := getRandomFloat() * n[getRandomInt(0, 1)]
+		y := getRandomFloat() * n[getRandomInt(0, 1)]
+		
+		pln(x * 80, y * 80)
+		
+		if (x * x + y * y <= 1.0) {
+			inCircleCount++
+			windowT.eval("ctx.fillStyle = 'red'; ctx.fillRect(canvas.width / 2 + "+(x * 80)+" - 1, canvas.height / 2 + "+(y * 80)+" - 1, 2, 2);");
+		} else {
+			windowT.eval("ctx.fillStyle = 'gray'; ctx.fillRect(canvas.width / 2 + "+(x * 80)+" - 1, canvas.height / 2 + "+(y * 80)+" - 1, 2, 2);");
+		}
+		
+		count++
+		
+		pi = 4.0 * inCircleCount / count
+		
+		windowT.eval("console.log("+x+","+y+","+pi+"); label1.innerHTML = 'π(Pi) = "+pi+"'");
+		
+		sleep(0.2)
+	}
+
+	return ""
+} else if cmdT == "test" {
+	pl("test" + getNowStr())
+
+	return getNowStr()
+}
+
+pl("cmd: %v", cmdT)
+
+return cmdT
+
+`)
+
+checkErr(dele1)
+
+rs := dele1.compileForThread(windowT)
+
+checkErr(rs)
+
+rs = windowT.setDelegateThread("dele", dele1)
+
+checkErr(rs)
+
+rs = windowT.setHtml(htmlT)
+
+checkErr(rs)
+
+rs = windowT("show")
+
+checkErr(rs)
+
+rs = windowT("close")
+
+checkErr(rs)
+
+

@@ -12082,9 +12082,31 @@ func (o *Delegate) CallName(nameA string, c Call) (Object, error) {
 	rs1, errT := CallObjectMethodFunc(o, nameA, args...)
 	
 //	if errT != nil || tk.IsError(rs1) {
+////		fmt.Printf("%#v\n", o)
 //		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
 //		return ConvertToObject(rs3), nil
 //	}
+	if errT != nil || tk.IsError(rs1) {
+		if o.Value == nil {
+			return Undefined, NewCommonError("delegate nil: %v", nameA)
+		}
+		
+		args := c.GetArgs()
+		
+//		fmt.Printf("1args: %#v", args)
+		
+		aryT := make([]interface{}, 0, len(args)+1)
+		
+		aryT = append(aryT, nameA)
+		
+		for _, v := range args {
+			aryT = append(aryT, ConvertFromObject(v))
+		}
+		
+		rs := o.Value(aryT...)
+
+		return ConvertToObject(rs), nil
+	}
 	
 	return rs1, errT
 	

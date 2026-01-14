@@ -28,7 +28,7 @@ import (
 )
 
 // global vars
-var VersionG = "2.1.0"
+var VersionG = "2.1.1"
 
 var CodeTextG = ""
 
@@ -847,6 +847,68 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return retT, nil
 			},
 		},
+		"runEx": &Function{
+			Name: "runEx",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*CharCode)
+
+				if !ok {
+					return NewCommonError("invalid type: %#v", c.This), nil
+				}
+
+				if nv.Value == nil {
+					return NewCommonError("code not compiled"), nil
+					// _, errT := nv.CallMethod("compile")
+
+					// if errT != nil {
+					// 	return NewCommonError("failed to compile code: %v", errT), nil
+					// }
+				}
+
+				argsT := c.GetArgs()
+
+				lenT := len(argsT)
+
+				if lenT < 1 {
+					return NewCommonError("not enough parameters"), nil
+				}
+
+				var globalsT map[string]interface{} = map[string]interface{}{}
+				// var additionsA []Object = nil
+
+				m, ok := argsT[0].(Map)
+				if !ok {
+					return NewCommonErrorWithPos(c, "unsupported parameter type(expect map): %v", argsT[0].TypeName()), nil
+				}
+
+//				fmt.Printf("m: %#v", m)
+
+				if m != nil {
+					for k, v := range m {
+						globalsT[k] = ConvertFromObject(v)
+					}
+				}
+
+				envT := NewBaseEnv(globalsT) // Map{}
+				
+//				fmt.Printf("envT: %#v", envT)
+
+				// if lenT > 1 {
+				// 	additionsA = argsT
+				// }
+				// for i:=1; i< lenT; i ++ {
+				// 	envT["v"]
+				// }
+
+				retT, errT := NewVM(nv.Value).Run(envT, argsT[1:]...)
+
+				if errT != nil {
+					return NewCommonError("%v", errT), nil
+				}
+
+				return retT, nil
+			},
+		},
 		"threadRun": &Function{
 			Name: "threadRun",
 			ValueEx: func(c Call) (Object, error) {
@@ -873,10 +935,10 @@ var methodFuncMapG = map[int]map[string]*Function{
 				// 	return NewCommonError("not enough parameters"), nil
 				// }
 
-				var globalsA map[string]interface{} = nil
+				var globalsT map[string]interface{} = nil
 				// var additionsA []Object = nil
-
-				envT := NewBaseEnv(globalsA) // Map{}
+				
+				envT := NewBaseEnv(globalsT) // Map{}
 
 				// if lenT > 1 {
 				// 	additionsA = argsT
@@ -2016,6 +2078,65 @@ var methodFuncMapG = map[int]map[string]*Function{
 					}
 
 					return ConvertFromObject(retT)
+				}
+
+				nv.Value = deleT
+
+				return nv, nil
+			},
+		},
+		"compileForThread": &Function{
+			Name: "compile",
+			ValueEx: func(c Call) (Object, error) {
+				nv, ok := c.This.(*Delegate)
+
+				if !ok {
+					return NewCommonError("invalid type: %#v", c.This), nil
+				}
+
+				if nv.Code == nil {
+					return NewCommonError("charCode not loaded in Delegate"), nil
+				}
+
+				// byteCodeT := QuickCompile(nv.Source) // quickCompile(tk.ToStr(argsA[0])) //
+
+				// if tk.IsError(byteCodeT) {
+				// 	return NewCommonError("%v", byteCodeT), nil
+				// }
+				byteCodeT := QuickCompile(nv.Code.Source, nv.Code.CompilerOptions) // quickCompile(tk.ToStr(argsA[0])) //
+
+				if tk.IsError(byteCodeT) {
+					nv.Code.LastError = fmt.Sprintf("%v", byteCodeT)
+					return NewCommonError("%v", byteCodeT), nil
+				}
+
+				nv.Code.Value = byteCodeT.(*Bytecode)
+
+				inputGT := append(Array{}, c.GetArgs()...)
+				// tk.Plo(inputGT)
+
+				deleT := func(argsA ...interface{}) interface{} {
+					var globalsA map[string]interface{} = nil
+
+					envT := NewBaseEnv(globalsA) // Map{}
+//					 tk.Plo(c.GetArgs())
+
+					(*envT)["inputG"] = inputGT
+
+//					 tk.Plo(envT)
+
+					var paramsA []Object = make([]Object, 0, len(argsA)+1)
+					for _, v := range argsA {
+						paramsA = append(paramsA, ConvertToObject(v))
+					}
+					// additionsA = append(additionsA, ToStringObject(strT))
+					// additionsA = append(additionsA, argsT...)
+					
+					vmT := NewVM(byteCodeT.(*Bytecode))
+
+					go vmT.Run(envT, paramsA...) // , additionsA...)
+
+					return nil
 				}
 
 				nv.Value = deleT
