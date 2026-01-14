@@ -25,6 +25,7 @@ import (
 	// _ "github.com/godror/godror"
 	// full version related end
 	// ugofmt "github.com/topxeq/charlang/stdlib/fmt"
+	"github.com/gorilla/websocket"
 )
 
 // global vars
@@ -3040,6 +3041,8 @@ func ConvertToObject(vA interface{}) Object {
 		return &Mux{Value: nv}
 	case *http.Request:
 		return &HttpReq{Value: nv}
+	case *websocket.Conn:
+		return &WebSocket{Value: nv}
 	case http.ResponseWriter:
 		return &HttpResp{Value: nv}
 	case io.Reader:
@@ -3224,6 +3227,8 @@ func ConvertFromObject(vA Object) interface{} {
 	case *HttpResp:
 		return nv.Value
 	case *HttpHandler:
+		return nv.Value
+	case *WebSocket:
 		return nv.Value
 	case *Reader:
 		return nv.Value

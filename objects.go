@@ -29,6 +29,7 @@ import (
 	"github.com/xuri/excelize/v2"
 	"github.com/dop251/goja"
 //	"modernc.org/quickjs"
+	"github.com/gorilla/websocket"
 )
 
 const (
@@ -55,7 +56,7 @@ var (
 // ToIntObject
 // ToStringObject
 
-// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, *MutableString: 106, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, *MapArray: 136, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Stack: 161, *Queue: 163, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *JsVm: 711, *QjsVm(not completed): 712, *EvalMachine: 888, *Any: 999, *Etable: 1001, *Excel: 1003
+// TypeCodes: -1: unknown, undefined: 0, ObjectImpl: 101, Bool: 103, String: 105, *MutableString: 106, Int: 107, Byte: 109, Uint: 111, Char: 113, Float: 115, Array: 131, Map: 133, *OrderedMap: 135, *MapArray: 136, Bytes: 137, Chars: 139, *ObjectPtr: 151, *ObjectRef: 152, *SyncMap: 153, *Error: 155, *RuntimeError: 157, *Stack: 161, *Queue: 163, *Function: 181, *BuiltinFunction: 183, *CompiledFunction: 185, *CharCode: 191, *Gel: 193, *BigInt: 201, *BigFloat: 203, StatusResult: 303, *StringBuilder: 307, *BytesBuffer: 308, *Database: 309, *Time: 311, *Location: 313, *Seq: 315, *Mutex: 317, *Mux: 319, *HttpReq: 321, *HttpResp: 323, *HttpHandler: 325, *WebSocket: 327, *Reader: 331, *Writer: 333, *File: 401, *Image: 501, *Delegate: 601, *JsVm: 711, *QjsVm(not completed): 712, *EvalMachine: 888, *Any: 999, *Etable: 1001, *Excel: 1003
 
 // Object represents an object in the VM.
 type Object interface {
@@ -13860,5 +13861,215 @@ func NewMapArray(c Call) (Object, error) {
 	argsA := c.GetArgs()
 
 	return &MapArray{Value: tk.NewSimpleFlexObject(ObjectsToI(argsA))}, nil
+}
+
+// WebSocket object is used to represent the WebSocket connection
+type WebSocket struct {
+	ObjectImpl
+	Value *websocket.Conn
+}
+
+// var _ Object = NewWebSocket()
+
+func NewWebSocket(c Call) (Object, error) {
+	argsA := c.GetArgs()
+
+	if len(argsA) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+	
+	nv1, ok := argsA[0].(*HttpReq)
+	
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupport type of paramter 1: %T", argsA[0]), nil
+	}
+
+	nv2, ok := argsA[1].(*HttpResp)
+	
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupport type of paramter 2: %T", argsA[1]), nil
+	}
+	
+	var upgraderT = websocket.Upgrader{}
+
+	conT, errT := upgraderT.Upgrade(nv2.Value, nv1.Value, nil)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "failed to upgrade connection: %v", errT), nil
+	}
+
+	return &WebSocket{Value: conT}, nil
+}
+
+func (*WebSocket) TypeCode() int {
+	return 327
+}
+
+// TypeName implements Object interface.
+func (*WebSocket) TypeName() string {
+	return "webSocket"
+}
+
+func (o *WebSocket) String() string {
+	return fmt.Sprintf("%v", o.Value)
+}
+
+// func (o *Mux) SetValue(valueA Object) error {
+// 	// o.Value.Reset(int(ToIntObject(valueA)))
+
+// 	return NewCommonError("unsupported action(set value)")
+// }
+
+func (o *WebSocket) HasMemeber() bool {
+	return false
+}
+
+func (o *WebSocket) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	return o.CallName(nameA, Call{Args: argsA})
+}
+
+func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
+	switch nameA {
+	case "toStr":
+		return ToStringObject(o), nil
+	case "value":
+		return o, nil
+	case "localAddr":
+		return ToStringObject(o.Value.LocalAddr().String()), nil
+	case "readMsg":
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "failed to read message: %v", "connection is nil"), nil
+		}
+		
+		mt, message, errT := o.Value.ReadMessage()
+		
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to read message: %v", errT), nil
+		}
+		
+		return Array{ToIntObject(mt), Bytes(message)}, nil
+	case "writeMsg":
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "failed to write message: %v", "connection is nil"), nil
+		}
+		
+		argsA := c.GetArgs()
+
+		if len(argsA) < 2 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+		
+		nv1, ok := argsA[0].(Int)
+		
+		if !ok {
+			return NewCommonErrorWithPos(c, "unsupport type of paramter 1: %T", argsA[0]), nil
+		}
+		
+		var nv2b []byte
+		
+		nv2, ok := argsA[1].(Bytes)
+		
+		if !ok {
+			nv2s, ok := argsA[1].(String)
+			
+			if !ok {
+				return NewCommonErrorWithPos(c, "unsupport type of paramter 2: %T", argsA[1]), nil
+			}
+		
+			nv2b = []byte(nv2s.Value)
+		} else {
+			nv2b = []byte(nv2)
+		}
+		
+		errT := o.Value.WriteMessage(int(nv1), nv2b)
+		
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to write message: %v", errT), nil
+		}
+		
+		return Undefined, nil
+	case "close":
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "failed to close connection: %v", "connection is nil"), nil
+		}
+		
+		errT := o.Value.Close()
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to close: %v", errT), nil
+		}
+		
+		return Undefined, nil
+	}
+
+//	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
+//	
+//	if errT != nil || tk.IsError(rs1) {
+	rs3 := tk.ReflectCallMethodCompact(o, nameA, ObjectsToI(c.GetArgs())...)
+	return ConvertToObject(rs3), nil
+//	}
+
+//	return rs1, errT
+}
+
+func (o *WebSocket) GetValue() Object {
+	return Undefined
+}
+
+func (o *WebSocket) GetMember(idxA string) Object {
+	return Undefined
+}
+
+func (o *WebSocket) SetMember(idxA string, valueA Object) error {
+	return nil
+}
+
+func (*WebSocket) CanIterate() bool { return false }
+
+func (o *WebSocket) Iterate() Iterator {
+	return nil
+}
+
+func (o *WebSocket) IndexSet(index, value Object) error {
+
+	return ErrNotIndexAssignable
+}
+
+func (o *WebSocket) IndexGet(index Object) (Object, error) {
+	return Undefined, NewCommonError("not indexable: %v", o.TypeName())
+}
+
+func (o *WebSocket) Equal(right Object) bool {
+	if v, ok := right.(*WebSocket); ok {
+		return v == o
+	}
+
+	return false
+}
+
+func (o *WebSocket) IsFalsy() bool { return o.Value == nil }
+
+func (o *WebSocket) CanCall() bool { return false }
+
+func (o *WebSocket) Call(_ ...Object) (Object, error) {
+	return nil, ErrNotCallable
+}
+
+func (o *WebSocket) BinaryOp(tok token.Token, right Object) (Object, error) {
+	return nil, NewOperandTypeError(
+		tok.String(),
+		o.TypeName(),
+		right.TypeName())
+}
+
+// comply to io.Closer
+func (o *WebSocket) Close() error {
+	errT := o.Value.Close()
+
+	if errT != nil {
+		return fmt.Errorf("failed to close: %v", errT)
+	}
+	
+	return nil
 }
 

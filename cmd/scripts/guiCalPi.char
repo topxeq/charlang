@@ -6,7 +6,7 @@ htmlT := `
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Estimating the Value of Pi using Monte Carlo Algorithm</title>
+    <title>Estimating the Value of Pi(π) using Monte Carlo Algorithm</title>
 	<style>
 		.blink_me {
 		  animation: blinker 1s linear infinite;
@@ -29,7 +29,7 @@ htmlT := `
 	</style>
 </head>
 <body>
-    <h3>Estimating the Value of Pi </h3>
+    <h3>Estimating the Value of Pi(π) </h3>
 	<div style="margin-top: 0px; text-align: center;">
 		<span>using Monte Carlo Algorithm</span>
 	</div>
@@ -97,7 +97,7 @@ htmlT := `
 </html>
 `
 
-windowT := guiG.newWindow("-title=Estimating the Value of Pi using Monte Carlo Algorithm", "-width=640", "-height=480", "-center", "-debug")
+windowT := guiG.newWindow("-title=Estimating the Value of Pi(π) using Monte Carlo Algorithm", "-width=640", "-height=480", "-center", "-debug")
 
 // plo(windowT)
 
@@ -152,7 +152,7 @@ if cmdT == "closeWindow" {
 		
 		pi = 4.0 * inCircleCount / count
 		
-		windowT.eval("console.log("+x+","+y+","+pi+"); label1.innerHTML = 'π(Pi) = "+pi+"'");
+		windowT.eval("console.log("+x+","+y+","+pi+"); label1.innerHTML = '"+pi+"'");
 		
 		sleep(0.2)
 	}

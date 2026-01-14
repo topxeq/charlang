@@ -8,6 +8,7 @@ require (
 	github.com/domodwyer/mailyak v3.1.1+incompatible
 	github.com/dop251/goja v0.0.0-20250309171923-bcd7cc6bf64c
 	github.com/fogleman/gg v1.3.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/jtclarkjr/kanjikana v0.1.0
 	github.com/minio/minio-go/v7 v7.0.76
