@@ -437,6 +437,7 @@ const (
 	BuiltinMutex
 	BuiltinHttpHandler
 	BuiltinHttpReq
+	BuiltinWebSocket
 	BuiltinFatalf
 	BuiltinSeq
 	BuiltinIsNil
@@ -743,6 +744,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"httpHandler": BuiltinHttpHandler, // create a httpHandler object for handling http routes
 
 	"httpReq": BuiltinHttpReq, // create a http request object
+	"webSocket": BuiltinWebSocket, // create a web socket object, supprt server or client mode, usage: webSocket(requestA, responseA) to create a web socket server, webSocket(urlStrA) to create a web socket client
 
 	"reader": BuiltinReader, // create a reader object from bytes, string, file or other objects
 	"writer": BuiltinWriter, // create a writer object from bytes, string, file or other objects
@@ -1841,6 +1843,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "httpReq",
 		Value:   CallExAdapter(builtinHttpReqFunc),
 		ValueEx: builtinHttpReqFunc,
+	},
+	BuiltinWebSocket: &BuiltinFunction{
+		Name:    "webSocket",
+		Value:   CallExAdapter(builtinWebSocketFunc),
+		ValueEx: builtinWebSocketFunc,
 	},
 
 	BuiltinImage: &BuiltinFunction{
@@ -19149,6 +19156,10 @@ func builtinHttpHandlerFunc(c Call) (Object, error) {
 
 func builtinHttpReqFunc(c Call) (Object, error) {
 	return NewHttpReq(c)
+}
+
+func builtinWebSocketFunc(c Call) (Object, error) {
+	return NewWebSocket(c)
 }
 
 func builtinImageFunc(c Call) (Object, error) {

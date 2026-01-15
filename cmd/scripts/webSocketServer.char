@@ -1,0 +1,72 @@
+// this is a  micro-service script running in a Charlang server
+global requestG
+global responseG
+global reqUriG
+global paraMapG
+global basePathG
+
+outG := "TX_END_RESPONSE_XT"
+
+setRespHeader(responseG, "Access-Control-Allow-Origin", "*")
+setRespHeader(responseG, "Access-Control-Allow-Headers", "*")
+
+upgradeT := trim(getReqHeader(requestG, "Upgrade"))
+
+if !strStartsWith(upgradeT, "websocket") {
+	setRespHeader(responseG, "Content-Type", "text/json; charset=utf-8")
+	writeResp(responseG, genResp("fail", spr("unsupported protocol: %v", upgradeT), requestG))
+	return outG	
+}
+
+var rs
+
+connT := webSocket(requestG, responseG)
+
+if isErr(connT) {
+	writeResp(responseG, genResp("fail", spr("failed to upgrade webSocket: %v", connT), requestG))
+	return outG	
+}
+
+var msgT
+
+try {
+	for true {
+		msgT := connT.readMsg()
+		
+		pl("msg: %#v", msgT)
+		
+		if isErr(msgT) {
+			connT.close()
+			return outG
+		}
+		
+		if msgT[0] == 1 { // text message
+			pl("text message received: %v", string(msgT[1]))
+		}
+		
+		if msgT[0] == 2 && len(msgT[1]) == 4 {
+			pl("specific message received: %v, %v", msgT[0], msgT[1])
+			
+			connT.sendTextMsg(spr("specific message received: %v, %v", msgT[0], msgT[1]))
+		}
+		
+		if msgT[0] == 8 {
+			pl("close message received: %v, %v", msgT[0], msgT[1])
+			
+//			connT.sendCloseMsg()
+			connT.close()
+			return outG
+		}
+		
+	}
+	
+} catch e {
+	writeResp(responseG, genResp("fail", spr("exception：%v", e), requestG))
+	return outG
+} finally {
+	connT.close()
+}
+
+writeResp(responseG, genResp("fail", spr("unknown error occured"), requestG))
+return outG	
+

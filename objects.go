@@ -13875,6 +13875,17 @@ func NewWebSocket(c Call) (Object, error) {
 	argsA := c.GetArgs()
 
 	if len(argsA) < 2 {
+		if len(argsA) > 0 { // client mode
+			nv1 := argsA[0].String()
+			
+			connT, _, errT := websocket.DefaultDialer.Dial(nv1, nil)
+			if errT != nil {
+				return NewCommonErrorWithPos(c, "failed to dial websocket server: %v", errT), nil
+			}
+	
+			return &WebSocket{Value: connT}, nil
+		}
+		
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
 	
@@ -13929,6 +13940,7 @@ func (o *WebSocket) CallMethod(nameA string, argsA ...Object) (Object, error) {
 }
 
 func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
+//	tk.Pl("here0 nameA: %#v", 1)
 	switch nameA {
 	case "toStr":
 		return ToStringObject(o), nil
@@ -13936,7 +13948,7 @@ func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
 		return o, nil
 	case "localAddr":
 		return ToStringObject(o.Value.LocalAddr().String()), nil
-	case "readMsg":
+	case "readMsg", "getMsg":
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to read message: %v", "connection is nil"), nil
 		}
@@ -13948,7 +13960,47 @@ func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
 		}
 		
 		return Array{ToIntObject(mt), Bytes(message)}, nil
-	case "writeMsg":
+	case "readTextMsg", "getTextMsg":
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "failed to read message: %v", "connection is nil"), nil
+		}
+		
+		mt, message, errT := o.Value.ReadMessage()
+		
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to read message: %v", errT), nil
+		}
+		
+		if mt == websocket.CloseMessage {
+			return NewCommonErrorWithPos(c, "is a close message: %v", mt), nil
+		}
+		
+		if mt != websocket.TextMessage {
+			return NewCommonErrorWithPos(c, "not a text message: %v", mt), nil
+		}
+		
+		return String{Value: string(message)}, nil
+	case "readBinMsg", "getBinMsg":
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "failed to read message: %v", "connection is nil"), nil
+		}
+		
+		mt, message, errT := o.Value.ReadMessage()
+		
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to read message: %v", errT), nil
+		}
+		
+		if mt == websocket.CloseMessage {
+			return NewCommonErrorWithPos(c, "is a close message: %v", mt), nil
+		}
+		
+		if mt != websocket.BinaryMessage {
+			return NewCommonErrorWithPos(c, "not a binary message: %v", mt), nil
+		}
+		
+		return Bytes(message), nil
+	case "writeMsg", "sendMsg":
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to write message: %v", "connection is nil"), nil
 		}
@@ -13988,6 +14040,72 @@ func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
 		}
 		
 		return Undefined, nil
+	case "writeTextMsg", "sendTextMsg":
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "failed to write message: %v", "connection is nil"), nil
+		}
+		
+		argsA := c.GetArgs()
+
+		if len(argsA) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+		
+		nv1 := argsA[0].String()
+		
+		errT := o.Value.WriteMessage(websocket.TextMessage, []byte(nv1))
+		
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to write message: %v", errT), nil
+		}
+		
+		return Undefined, nil
+	case "writeBinMsg", "sendBinMsg":
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "failed to write message: %v", "connection is nil"), nil
+		}
+		
+		argsA := c.GetArgs()
+
+		if len(argsA) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+		
+		var nv2b []byte
+		
+		nv1, ok := argsA[0].(Bytes)
+		
+		if !ok {
+			nv2s, ok := argsA[0].(String)
+			
+			if !ok {
+				return NewCommonErrorWithPos(c, "unsupport type of paramter 1: %T", argsA[0]), nil
+			}
+		
+			nv2b = []byte(nv2s.Value)
+		} else {
+			nv2b = []byte(nv1)
+		}
+		
+		errT := o.Value.WriteMessage(websocket.BinaryMessage, []byte(nv2b))
+		
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to write message: %v", errT), nil
+		}
+		
+		return Undefined, nil
+	case "writeCloseMsg", "sendCloseMsg":
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "failed to write message: %v", "connection is nil"), nil
+		}
+		
+		errT := o.Value.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+		
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to write message: %v", errT), nil
+		}
+		
+		return Undefined, nil
 	case "close":
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to close connection: %v", "connection is nil"), nil
@@ -14005,7 +14123,9 @@ func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
 //	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
 //	
 //	if errT != nil || tk.IsError(rs1) {
-	rs3 := tk.ReflectCallMethodCompact(o, nameA, ObjectsToI(c.GetArgs())...)
+//	tk.Pl("here1 nameA: %#v", 2)
+	rs3 := tk.ReflectCallMethodCompactWithError(o.Value, nameA, ObjectsToI(c.GetArgs())...)
+//	tk.Pl("here2 nameA: %#v", rs3)
 	return ConvertToObject(rs3), nil
 //	}
 

@@ -1,0 +1,62 @@
+var connection
+var rs
+
+connection = webSocket("ws://127.0.0.1/ms/ws1")
+
+if isErr(connection) {
+	pl("failed to connect ws server: %v", connection)
+	return
+}
+
+try {
+	rs = connection.sendMsg(1, "abc")
+
+	if isErr(rs) {
+		pl("failed to send message to server: %v", rs)
+		return
+	}
+
+	rs = connection.sendTextMsg("abc")
+
+	if isErr(rs) {
+		pl("failed to send message to server: %v", rs)
+		return
+	}
+
+	rs = connection.sendBinMsg(bytes(0x01, 0x02, 0x04, 0x08))
+
+	if isErr(rs) {
+		pl("failed to send message to server: %v", rs)
+		return
+	}
+
+	rs = connection.readMsg()
+
+	if isErr(rs) {
+		pl("failed to get message from server: %v", rs)
+		return
+	}
+
+	pl("got message: %#v %v", rs, string(rs[1]))
+
+	rs = connection.sendCloseMsg()
+
+	if isErr(rs) {
+		pl("failed to send close message to server: %v", rs)
+		return
+	}
+	
+	rs = connection.readMsg()
+
+	if isErr(rs) {
+		pl("failed to get message from server: %v", rs)
+		return
+	}
+
+} catch e {
+	pl("exception: %v", e)
+} finally {
+	connection.close()
+	pln("connection closed")
+}
+
