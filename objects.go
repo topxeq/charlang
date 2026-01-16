@@ -14158,6 +14158,22 @@ func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
 		}
 		
 		return Undefined, nil
+	case "setReadLimit": // 0 to no limit
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "connection is nil"), nil
+		}
+		
+		argsA := c.GetArgs()
+
+		if len(argsA) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+		
+		nv1 := ToIntQuick(argsA[0])
+		
+		o.Value.SetReadLimit(int64(nv1))
+		
+		return Undefined, nil
 	}
 
 //	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
