@@ -20728,6 +20728,10 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 	} else if typeNameT == "file" {
 		r1 := args[0].(*File)
 
+		if r1.Value == nil {
+			return NewCommonErrorWithPos(c, "failed to close: nil value"), nil
+		}
+		
 		errT := r1.Value.Close()
 
 		if errT != nil {
@@ -20738,6 +20742,10 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 	} else if typeNameT == "database" {
 		r1 := args[0].(*Database)
 
+		if r1.Value == nil {
+			return NewCommonErrorWithPos(c, "failed to close: nil value"), nil
+		}
+		
 		errT := r1.Value.Close()
 
 		if errT != nil {
@@ -20745,6 +20753,20 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 		}
 
 		return Undefined, nil
+	} else if typeNameT == "webSocket" {
+		r1 := args[0].(*WebSocket)
+		
+		if r1.Value == nil {
+			return NewCommonErrorWithPos(c, "failed to close: nil value"), nil
+		}
+		
+		errT := r1.Value.Close()
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to close webSocket: %v", errT), nil
+		}
+
+		return ConvertToObject(errT), nil
 	} else if typeNameT == "excel" {
 		r1 := args[0].(*Excel)
 
@@ -20755,6 +20777,10 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 			return (*f1).CallEx(Call{Args: []Object{}})
 		}
 
+		if r1.Value == nil {
+			return NewCommonErrorWithPos(c, "failed to close: nil value"), nil
+		}
+		
 		errT := r1.Value.Close()
 
 		if errT != nil {

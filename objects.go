@@ -14118,6 +14118,46 @@ func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
 		}
 		
 		return Undefined, nil
+	case "setReadTimeout": // 0 to no timeout
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "connection is nil"), nil
+		}
+		
+		argsA := c.GetArgs()
+
+		if len(argsA) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+		
+		nv1 := ToFloatQuick(argsA[0])
+		
+		errT := o.Value.SetReadDeadline(time.Now().Add(time.Duration(nv1 * float64(time.Second))))
+		
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to set timeout: %v", errT), nil
+		}
+		
+		return Undefined, nil
+	case "setWriteTimeout": // 0 to no timeout
+		if o.Value == nil {
+			return NewCommonErrorWithPos(c, "connection is nil"), nil
+		}
+		
+		argsA := c.GetArgs()
+
+		if len(argsA) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+		
+		nv1 := ToFloatQuick(argsA[0])
+		
+		errT := o.Value.SetWriteDeadline(time.Now().Add(time.Duration(nv1 * float64(time.Second))))
+		
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to set timeout: %v", errT), nil
+		}
+		
+		return Undefined, nil
 	}
 
 //	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)

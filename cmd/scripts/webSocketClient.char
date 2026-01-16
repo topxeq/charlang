@@ -9,6 +9,9 @@ if isErr(connection) {
 }
 
 try {
+	connection.setReadTimout(1.5) // seconds, 0 for no timeout
+	connection.setWriteTimout(3) // seconds, 0 for no timeout
+	
 	rs = connection.sendMsg(1, "abc")
 
 	if isErr(rs) {
