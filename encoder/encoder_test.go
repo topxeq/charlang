@@ -14,7 +14,6 @@ import (
 
 	"github.com/topxeq/charlang"
 	"github.com/topxeq/charlang/stdlib/json"
-	"github.com/topxeq/charlang/stdlib/time"
 	"github.com/topxeq/charlang/token"
 
 	. "github.com/topxeq/charlang/encoder"
@@ -34,7 +33,7 @@ func TestGobEncoder(t *testing.T) {
 		charlang.Map{"b": charlang.Bool(true), "s": charlang.String("")},
 		&charlang.SyncMap{Value: charlang.Map{"i": charlang.Int(0), "u": charlang.Uint(0)}},
 		&charlang.ObjectPtr{},
-		&time.Time{Value: gotime.Now()},
+//		&time.Time{Value: gotime.Now()},
 		&json.EncoderOptions{Value: charlang.Float(0)},
 		&json.RawMessage{},
 	}

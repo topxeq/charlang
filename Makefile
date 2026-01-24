@@ -27,7 +27,6 @@ lint: version
 
 .PHONY: generate-docs
 generate-docs: version
-	go run ./cmd/chardoc ./stdlib/time ./docs/stdlib-time.md
 	go run ./cmd/chardoc ./stdlib/fmt ./docs/stdlib-fmt.md
 	go run ./cmd/chardoc ./stdlib/strings ./docs/stdlib-strings.md
 	go run ./cmd/chardoc ./stdlib/json ./docs/stdlib-json.md

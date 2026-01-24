@@ -13,7 +13,6 @@ import (
 	"github.com/topxeq/charlang/stdlib/fmt"
 	"github.com/topxeq/charlang/stdlib/json"
 	"github.com/topxeq/charlang/stdlib/strings"
-	"github.com/topxeq/charlang/stdlib/time"
 	"github.com/topxeq/charlang/tests"
 
 	. "github.com/topxeq/charlang/encoder"
@@ -34,7 +33,7 @@ var testObjects = []charlang.Object{
 	charlang.Map{"key": &charlang.Function{Name: "f"}},
 	&charlang.SyncMap{Value: charlang.Map{"k": charlang.String("")}},
 	charlang.Array{charlang.Undefined, charlang.True, charlang.False},
-	&time.Time{Value: gotime.Time{}},
+//	&time.Time{Value: gotime.Time{}},
 	&json.EncoderOptions{Value: charlang.Int(1)},
 	&json.RawMessage{Value: charlang.Bytes("bar")},
 	&charlang.ObjectPtr{Value: &baz},
@@ -83,7 +82,6 @@ func TestBytecode_full(t *testing.T) {
 	src := `
 fmt := import("fmt")
 strings := import("strings")
-time := import("time")
 json := import("json")
 srcmod := import("srcmod")
 
@@ -92,14 +90,13 @@ v = int(strings.Join([v], ""))
 v = srcmod.Incr(v)
 v = srcmod.Decr(v)
 v = int(fmt.Sprintf("%d", v))
-return v*time.Second/time.Second // 1
+return v // 1
 `
 
 	opts := charlang.DefaultCompilerOptions
 	opts.ModuleMap = charlang.NewModuleMap().
 		AddBuiltinModule("fmt", fmt.Module).
 		AddBuiltinModule("strings", strings.Module).
-		AddBuiltinModule("time", time.Module).
 		AddBuiltinModule("json", json.Module).
 		AddSourceModule("srcmod", []byte(`
 return {
@@ -110,7 +107,7 @@ return {
 
 	mmCopy := opts.ModuleMap.Copy()
 
-	bc, err := charlang.Compile([]byte(src), opts)
+	bc, err := charlang.Compile([]byte(src), &opts)
 	require.NoError(t, err)
 
 	wantRet, err := charlang.NewVM(bc).Run(nil)

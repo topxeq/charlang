@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	. "github.com/topxeq/charlang"
-	ugotime "github.com/topxeq/charlang/stdlib/time"
 )
 
 func TestEval(t *testing.T) {
@@ -33,23 +32,6 @@ func TestEval(t *testing.T) {
 				{`a = 10`, Undefined},
 				{`return a`, Int(10)},
 				{`return a*a`, Int(100)},
-			},
-		},
-		{
-			name: "import",
-			opts: CompilerOptions{
-				ModuleMap: NewModuleMap().
-					AddBuiltinModule("time", ugotime.Module),
-			},
-			sr: []scriptResult{
-				{`time := import("time")`, Undefined},
-				{`time.Second`, ugotime.Module["Second"]},
-				{`tmp := time.Second`, Undefined},
-				{`tmp`, ugotime.Module["Second"]},
-				{`time.Second = ""`, Undefined},
-				{`time.Second`, String("")},
-				{`time.Second = tmp`, Undefined},
-				{`time.Second`, ugotime.Module["Second"]},
 			},
 		},
 		{

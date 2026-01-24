@@ -4,7 +4,6 @@
 
 * [fmt](stdlib-fmt.md) module at `github.com/topxeq/charlang/stdlib/fmt`
 * [strings](stdlib-strings.md) module at `github.com/topxeq/charlang/stdlib/strings`
-* [time](stdlib-time.md) module at `github.com/topxeq/charlang/stdlib/time`
 * [json](stdlib-json.md) module at `github.com/topxeq/charlang/stdlib/json`
 
 ## How-To
@@ -25,19 +24,17 @@ import (
     "github.com/topxeq/charlang/stdlib/fmt"
     "github.com/topxeq/charlang/stdlib/json"
     "github.com/topxeq/charlang/stdlib/strings"
-    "github.com/topxeq/charlang/stdlib/time"
 )
 
 func main() {
     script := `
     const fmt = import("fmt")
     const strings = import("strings")
-    const time = import("time")
     const json = import("json")
 
     total := 0
     fn := func() {
-        start := time.Now()
+        start := now()
         try {
             /* ... */
         } finally {
@@ -50,7 +47,6 @@ func main() {
     moduleMap := ugo.NewModuleMap()
     moduleMap.AddBuiltinModule("fmt", fmt.Module)
     moduleMap.AddBuiltinModule("strings", strings.Module)
-    moduleMap.AddBuiltinModule("time", time.Module)
     moduleMap.AddBuiltinModule("json", json.Module)
 
     opts := ugo.DefaultCompilerOptions

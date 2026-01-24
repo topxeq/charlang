@@ -28,7 +28,6 @@ import (
 	charlangfmt "github.com/topxeq/charlang/stdlib/fmt"
 	charlangjson "github.com/topxeq/charlang/stdlib/json"
 	charlangstrings "github.com/topxeq/charlang/stdlib/strings"
-	charlangtime "github.com/topxeq/charlang/stdlib/time"
 )
 
 const chardocPrefix = "char:doc"
@@ -168,8 +167,8 @@ func (dg *docgroup) processFuncBlock(line string) {
 func getModuleItem(module, key string) string {
 	var moduleMap map[string]charlang.Object
 	switch module {
-	case "time":
-		moduleMap = charlangtime.Module
+//	case "time":
+//		moduleMap = charlangtime.Module
 	case "strings":
 		moduleMap = charlangstrings.Module
 	case "fmt":
