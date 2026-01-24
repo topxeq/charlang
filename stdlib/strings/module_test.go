@@ -53,7 +53,7 @@ func TestModuleStrings(t *testing.T) {
 	ret, err = equalFold.Call(String{Value: "CHAR"}, String{Value: "char"})
 	require.NoError(t, err)
 	require.EqualValues(t, true, ret)
-	ret, err = equalFold.Call(String{Value: "CHAR"}, String{Value: "char"})
+	ret, err = equalFold.Call(String{Value: "CHAR"}, String{Value: "chars"})
 	require.NoError(t, err)
 	require.EqualValues(t, false, ret)
 
@@ -61,9 +61,9 @@ func TestModuleStrings(t *testing.T) {
 	ret, err = fields.Call(String{Value: "\tfoo bar\nbaz"})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(ret.(Array)))
-	require.EqualValues(t, "foo", ret.(Array)[0].(String))
-	require.EqualValues(t, "bar", ret.(Array)[1].(String))
-	require.EqualValues(t, "baz", ret.(Array)[2].(String))
+	require.EqualValues(t, "foo", ret.(Array)[0].(String).Value)
+	require.EqualValues(t, "bar", ret.(Array)[1].(String).Value)
+	require.EqualValues(t, "baz", ret.(Array)[2].(String).Value)
 
 	hasPrefix := Module["HasPrefix"]
 	ret, err = hasPrefix.Call(String{Value: "foobarbaz"}, String{Value: "foo"})
@@ -119,7 +119,7 @@ func TestModuleStrings(t *testing.T) {
 	join := Module["Join"]
 	ret, err = join.Call(Array{String{Value: "foo"}, String{Value: "bar"}}, String{Value: ";"})
 	require.NoError(t, err)
-	require.EqualValues(t, "foo;bar", ret)
+	require.EqualValues(t, "foo;bar", ret.String())
 
 	lastIndex := Module["LastIndex"]
 	ret, err = lastIndex.Call(String{Value: "zfoobarbaz"}, String{Value: "z"})
@@ -154,143 +154,143 @@ func TestModuleStrings(t *testing.T) {
 	padLeft := Module["PadLeft"]
 	ret, err = padLeft.Call(String{Value: "abc"}, Int(3))
 	require.NoError(t, err)
-	require.EqualValues(t, "abc", ret)
+	require.EqualValues(t, "abc", ret.(String).Value)
 	ret, err = padLeft.Call(String{Value: "abc"}, Int(4))
 	require.NoError(t, err)
-	require.EqualValues(t, " abc", ret)
+	require.EqualValues(t, " abc", ret.(String).Value)
 	ret, err = padLeft.Call(String{Value: "abc"}, Int(5))
 	require.NoError(t, err)
-	require.EqualValues(t, "  abc", ret)
+	require.EqualValues(t, "  abc", ret.(String).Value)
 	ret, err = padLeft.Call(String{Value: "abc"}, Int(5), String{Value: "="})
 	require.NoError(t, err)
-	require.EqualValues(t, "==abc", ret)
+	require.EqualValues(t, "==abc", ret.(String).Value)
 	ret, err = padLeft.Call(String{Value: ""}, Int(6), String{Value: "="})
 	require.NoError(t, err)
-	require.EqualValues(t, "======", ret)
+	require.EqualValues(t, "======", ret.(String).Value)
 
 	padRight := Module["PadRight"]
 	ret, err = padRight.Call(String{Value: "abc"}, Int(3))
 	require.NoError(t, err)
-	require.EqualValues(t, "abc", ret)
+	require.EqualValues(t, "abc", ret.(String).Value)
 	ret, err = padRight.Call(String{Value: "abc"}, Int(4))
 	require.NoError(t, err)
-	require.EqualValues(t, "abc ", ret)
+	require.EqualValues(t, "abc ", ret.(String).Value)
 	ret, err = padRight.Call(String{Value: "abc"}, Int(5))
 	require.NoError(t, err)
-	require.EqualValues(t, "abc  ", ret)
+	require.EqualValues(t, "abc  ", ret.(String).Value)
 	ret, err = padRight.Call(String{Value: "abc"}, Int(5), String{Value: "="})
 	require.NoError(t, err)
-	require.EqualValues(t, "abc==", ret)
+	require.EqualValues(t, "abc==", ret.(String).Value)
 	ret, err = padRight.Call(String{Value: ""}, Int(6), String{Value: "="})
 	require.NoError(t, err)
-	require.EqualValues(t, "======", ret)
+	require.EqualValues(t, "======", ret.(String).Value)
 
 	repeat := Module["Repeat"]
 	ret, err = repeat.Call(String{Value: "abc"}, Int(3))
 	require.NoError(t, err)
-	require.EqualValues(t, "abcabcabc", ret)
+	require.EqualValues(t, "abcabcabc", ret.(String).Value)
 	ret, err = repeat.Call(String{Value: "abc"}, Int(-1))
 	require.NoError(t, err)
-	require.EqualValues(t, "", ret)
+	require.EqualValues(t, "", ret.(String).Value)
 
 	replace := Module["Replace"]
-	ret, err = replace.Call(String{Value: "abcdefbc"}, String{Value: "bc"}, String{Value: "(bc}"})
+	ret, err = replace.Call(String{Value: "abcdefbc"}, String{Value: "bc"}, String{Value: "(bc)"})
 	require.NoError(t, err)
-	require.EqualValues(t, "a(bc)def(bc)", ret)
+	require.EqualValues(t, "a(bc)def(bc)", ret.(String).Value)
 	ret, err = replace.Call(
-		String{Value: "abcdefbc"}, String{Value: "bc"}, String{Value: "(bc}"}, Int(1))
+		String{Value: "abcdefbc"}, String{Value: "bc"}, String{Value: "(bc)"}, Int(1))
 	require.NoError(t, err)
-	require.EqualValues(t, "a(bc)defbc", ret)
+	require.EqualValues(t, "a(bc)defbc", ret.(String).Value)
 
 	split := Module["Split"]
 	ret, err = split.Call(String{Value: "abc;def;"}, String{Value: ";"})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(ret.(Array)))
-	require.EqualValues(t, "abc", ret.(Array)[0])
-	require.EqualValues(t, "def", ret.(Array)[1])
-	require.EqualValues(t, "", ret.(Array)[2])
+	require.EqualValues(t, "abc", ret.(Array)[0].(String).Value)
+	require.EqualValues(t, "def", ret.(Array)[1].(String).Value)
+	require.EqualValues(t, "", ret.(Array)[2].(String).Value)
 	ret, err = split.Call(String{Value: "abc;def;"}, String{Value: "!"}, Int(0))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ret.(Array)))
 	ret, err = split.Call(String{Value: "abc;def;"}, String{Value: ";"}, Int(1))
 	require.NoError(t, err)
 	require.Equal(t, 1, len(ret.(Array)))
-	require.EqualValues(t, "abc;def;", ret.(Array)[0])
+	require.EqualValues(t, "abc;def;", ret.(Array)[0].(String).Value)
 	ret, err = split.Call(String{Value: "abc;def;"}, String{Value: ";"}, Int(2))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(ret.(Array)))
-	require.EqualValues(t, "abc", ret.(Array)[0])
-	require.EqualValues(t, "def;", ret.(Array)[1])
+	require.EqualValues(t, "abc", ret.(Array)[0].(String).Value)
+	require.EqualValues(t, "def;", ret.(Array)[1].(String).Value)
 
 	splitAfter := Module["SplitAfter"]
 	ret, err = splitAfter.Call(String{Value: "abc;def;"}, String{Value: ";"})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(ret.(Array)))
-	require.EqualValues(t, "abc;", ret.(Array)[0])
-	require.EqualValues(t, "def;", ret.(Array)[1])
-	require.EqualValues(t, "", ret.(Array)[2])
+	require.EqualValues(t, "abc;", ret.(Array)[0].(String).Value)
+	require.EqualValues(t, "def;", ret.(Array)[1].(String).Value)
+	require.EqualValues(t, "", ret.(Array)[2].(String).Value)
 	ret, err = splitAfter.Call(String{Value: "abc;def;"}, String{Value: "!"}, Int(0))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ret.(Array)))
 	ret, err = splitAfter.Call(String{Value: "abc;def;"}, String{Value: ";"}, Int(1))
 	require.NoError(t, err)
 	require.Equal(t, 1, len(ret.(Array)))
-	require.EqualValues(t, "abc;def;", ret.(Array)[0])
+	require.EqualValues(t, "abc;def;", ret.(Array)[0].(String).Value)
 	ret, err = splitAfter.Call(String{Value: "abc;def;"}, String{Value: ";"}, Int(2))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(ret.(Array)))
-	require.EqualValues(t, "abc;", ret.(Array)[0])
-	require.EqualValues(t, "def;", ret.(Array)[1])
+	require.EqualValues(t, "abc;", ret.(Array)[0].(String).Value)
+	require.EqualValues(t, "def;", ret.(Array)[1].(String).Value)
 
 	title := Module["Title"]
 	ret, err = title.Call(String{Value: "хлеб"})
 	require.NoError(t, err)
-	require.EqualValues(t, "Хлеб", ret)
+	require.EqualValues(t, "Хлеб", ret.(String).Value)
 
 	toLower := Module["ToLower"]
 	ret, err = toLower.Call(String{Value: "ÇİĞÖŞÜ"})
 	require.NoError(t, err)
-	require.EqualValues(t, "çiğöşü", ret)
+	require.EqualValues(t, "çiğöşü", ret.(String).Value)
 
 	toTitle := Module["ToTitle"]
 	ret, err = toTitle.Call(String{Value: "хлеб"})
 	require.NoError(t, err)
-	require.EqualValues(t, "ХЛЕБ", ret)
+	require.EqualValues(t, "ХЛЕБ", ret.(String).Value)
 
 	toUpper := Module["ToUpper"]
 	ret, err = toUpper.Call(String{Value: "çığöşü"})
 	require.NoError(t, err)
-	require.EqualValues(t, "ÇIĞÖŞÜ", ret)
+	require.EqualValues(t, "ÇIĞÖŞÜ", ret.(String).Value)
 
 	trim := Module["Trim"]
 	ret, err = trim.Call(String{Value: "!!??abc?!"}, String{Value: "!?"})
 	require.NoError(t, err)
-	require.EqualValues(t, "abc", ret)
+	require.EqualValues(t, "abc", ret.(String).Value)
 
 	trimLeft := Module["TrimLeft"]
 	ret, err = trimLeft.Call(String{Value: "!!??abc?!"}, String{Value: "!?"})
 	require.NoError(t, err)
-	require.EqualValues(t, "abc?!", ret)
+	require.EqualValues(t, "abc?!", ret.(String).Value)
 
 	trimPrefix := Module["TrimPrefix"]
 	ret, err = trimPrefix.Call(String{Value: "abcdef"}, String{Value: "abc"})
 	require.NoError(t, err)
-	require.EqualValues(t, "def", ret)
+	require.EqualValues(t, "def", ret.(String).Value)
 
 	trimRight := Module["TrimRight"]
 	ret, err = trimRight.Call(String{Value: "!!??abc?!"}, String{Value: "!?"})
 	require.NoError(t, err)
-	require.EqualValues(t, "!!??abc", ret)
+	require.EqualValues(t, "!!??abc", ret.(String).Value)
 
 	trimSpace := Module["TrimSpace"]
 	ret, err = trimSpace.Call(String{Value: "\n \tabcdef\t \n"})
 	require.NoError(t, err)
-	require.EqualValues(t, "abcdef", ret)
+	require.EqualValues(t, "abcdef", ret.(String).Value)
 
 	trimSuffix := Module["TrimSuffix"]
 	ret, err = trimSuffix.Call(String{Value: "abcdef"}, String{Value: "def"})
 	require.NoError(t, err)
-	require.EqualValues(t, "abc", ret)
+	require.EqualValues(t, "abc", ret.(String).Value)
 }
 
 func TestScript(t *testing.T) {
@@ -477,14 +477,15 @@ func TestScript(t *testing.T) {
 		{s: `strings.Map(func(){})`, m: catch, e: wrongArgs(2, 1)},
 		{s: `strings.Map(
 			func(c){
-				if c == 't' { return 'I' }
-				if c == 'e' { return '❤' }
-				if c == 'n' { return 'u' }
-				if c == 'g' { return 'G' }
-				if c == 'o' { return 'O' }
+				if c == 'a' { return 'I' }
+				if c == 'b' { return '❤' }
+				if c == 'c' { return 'C' }
+				if c == 'd' { return 'h' }
+				if c == 'e' { return 'a' }
+				if c == 'f' { return 'r' }
 				return c
 			},
-			"tengo")`, e: String{Value: "I❤Charlang"}},
+			"abcdef")`, e: String{Value: "I❤Char"}},
 		{s: `strings.Map(func(c){return c}, "test")`,
 			m: catch, e: String{Value: "test"}},
 

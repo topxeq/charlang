@@ -29,7 +29,7 @@ func Example() {
 	// print_line
 	// a b 3
 	// [1, 2]
-	// xy4
+	// x y 4
 	// 2
 	// true abc
 	// true 123
@@ -212,7 +212,7 @@ func TestScript(t *testing.T) {
 		// sprint
 		{
 			s: `return fmt.Sprint(1, 2, "c", 'd')`,
-			r: String{Value: "1 2c100"},
+			r: String{Value: "1 2 c 100"},
 		},
 		{
 			s: `return fmt.Sprintf("%.1f%s%c%d", 1.2, "abc", 'e', 18u)`,

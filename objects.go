@@ -276,8 +276,8 @@ func (ObjectImpl) TypeName() string {
 
 // String implements Object interface.
 func (o ObjectImpl) String() string {
-	return fmt.Sprintf("(objectImpl)")
-	// panic(ErrNotImplemented)
+//	return fmt.Sprintf("(objectImpl)")
+	 panic(ErrNotImplemented)
 }
 
 func (o ObjectImpl) HasMemeber() bool {
@@ -1841,8 +1841,14 @@ func (o String) IndexSet(index, value Object) error {
 
 // IndexGet represents string values and implements Object interface.
 func (o String) IndexGet(index Object) (Object, error) {
+	if IsUndefInternal(index) {
+		return nil, NewIndexTypeError("int|uint", index.TypeName())
+	}
+
 	var idx int
 	switch v := index.(type) {
+//	case UndefinedType:
+//		return nil, NewIndexTypeError("int|uint", index.TypeName())
 	case Byte:
 		idx = int(v)
 	case Int:
@@ -1970,6 +1976,10 @@ func ToStringObject(argA interface{}) String {
 	switch nv := argA.(type) {
 	case String:
 		return String{Value: nv.Value}
+	case Chars:
+		return String{Value: string(nv)}
+	case Bytes:
+		return String{Value: string(nv)}
 	case string:
 		return String{Value: nv}
 	case *strings.Builder:
@@ -1983,6 +1993,8 @@ func ToStringObject(argA interface{}) String {
 	case nil:
 		return String{Value: ""}
 	case []byte:
+		return String{Value: string(nv)}
+	case []rune:
 		return String{Value: string(nv)}
 	case *big.Int:
 		return String{Value: nv.String()}
@@ -3591,6 +3603,7 @@ func (o Array) IndexSet(index, value Object) error {
 		}
 		return ErrIndexOutOfBounds
 	}
+	
 	return NewIndexTypeError("int|uint", index.TypeName())
 }
 
@@ -4458,6 +4471,10 @@ func (o *Error) IsFalsy() bool { return true }
 
 // IndexGet implements Object interface.
 func (o *Error) IndexGet(index Object) (Object, error) {
+	if IsUndefInternal(index) {
+		return Undefined, nil
+	}
+
 	s := index.String()
 	if s == "Name" {
 		return ToStringObject(o.Name), nil
@@ -4686,6 +4703,10 @@ func (o *RuntimeError) IsFalsy() bool { return true }
 
 // IndexGet implements Object interface.
 func (o *RuntimeError) IndexGet(index Object) (Object, error) {
+	if IsUndefInternal(index) {
+		return Undefined, nil
+	}
+
 	if o.Err != nil {
 		s := index.String()
 		if s == "New" {
