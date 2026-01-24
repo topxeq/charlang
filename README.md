@@ -1,6 +1,6 @@
 <!-- |title: The Char Language (Charlang)| -->
-![Coverage](https://img.shields.io/badge/Coverage-1-red)
-
+[![Coverage](https://img.shields.io/badge/Coverage-1-red)
+](https://img.shields.io/badge/Coverage-1-red)
 [![Go Reference](https://pkg.go.dev/badge/github.com/topxeq/charlang.svg)](https://pkg.go.dev/github.com/topxeq/charlang)
 [![Go Report Card](https://goreportcard.com/badge/github.com/topxeq/charlang)](https://goreportcard.com/report/github.com/topxeq/charlang)
 
