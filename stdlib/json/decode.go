@@ -221,7 +221,7 @@ func (d *decodeState) literal() (charlang.Object, error) {
 		if !ok {
 			panic(phasePanicMsg)
 		}
-		return charlang.String(s), nil
+		return charlang.String{Value: s}, nil
 
 	default: // number
 		if c != '-' && (c < '0' || c > '9') {
