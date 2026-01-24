@@ -743,7 +743,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"mux":         BuiltinMux,         // create a mux object for http routing
 	"httpHandler": BuiltinHttpHandler, // create a httpHandler object for handling http routes
 
-	"httpReq": BuiltinHttpReq, // create a http request object
+	"httpReq":   BuiltinHttpReq,   // create a http request object
 	"webSocket": BuiltinWebSocket, // create a web socket object, supprt server or client mode, usage: webSocket(requestA, responseA) to create a web socket server, webSocket(urlStrA) to create a web socket client
 
 	"reader": BuiltinReader, // create a reader object from bytes, string, file or other objects
@@ -859,7 +859,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strRepeat":      BuiltinStrRepeat,
 	"strCount":       BuiltinStrCount,
 	"strPad":         BuiltinStrPad, // string padding operations such as zero padding, for example, result := strPad(strT, 5, "-fill=0", "-right=true"), where the first parameter is the string to be padded, and the second parameter is the number of characters to be padded. The default padding string is fill as string 0, and right (indicating whether to fill on the right side) is false (which can also be written directly as -right). Therefore, the above example is equivalent to result := strPad(strT, 5). If the fill string contains more than one character, the final number of padding will not exceed the value specified by the second parameter, but it may be less
-	"strSub":       BuiltinStrSub, // get substring with start and end(exclude) index, if failed, return default string, usage: rs := strSub("abc", 1, 3)
+	"strSub":         BuiltinStrSub, // get substring with start and end(exclude) index, if failed, return default string, usage: rs := strSub("abc", 1, 3)
 
 	"strRuneLen": BuiltinStrRuneLen, // get the length of string by rune(how many rune characters in the string)
 
@@ -886,7 +886,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getTextSimilarity": BuiltinGetTextSimilarity, // calculate the cosine similarity of two strings
 
 	"fuzzyFind": BuiltinFuzzyFind, // find strings in a list with fuzzy matching, usage: matchesT := fuzzyFind(["abc", "bbbe", "123456dbde"], "be", "-sort") will return [{"Str": "bbbeeee", "Index": 1, "MatchedIndexes": [0, 3], "Score": 5}, {"Str": "123456dbdebe", "Index": 2, "MatchedIndexes": [7, 9], "Score": -25}], "-sort" is the optional switch
-	
+
 	"strRemoveBomHead": BuiltinStrRemoveBomHead, // remove BOM from string(for UTF8+BOM format files)
 
 	// regex related
@@ -951,7 +951,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getNowStrCompact": BuiltinGetNowStrCompact,
 	"getNowTimeStamp":  BuiltinGetNowTimeStamp,
 	"timeToTick":       BuiltinTimeToTick,
-	"timeToTimeStamp":       BuiltinTimeToTick,
+	"timeToTimeStamp":  BuiltinTimeToTick,
 
 	"formatTime": BuiltinFormatTime,
 
@@ -981,7 +981,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// compare related
 	"compareBytes": BuiltinCompareBytes,
-	"compareText": BuiltinCompareText,
+	"compareText":  BuiltinCompareText,
 
 	// control related
 	"isNil":        BuiltinIsNil,
@@ -1179,7 +1179,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"getOsArgs": BuiltinGetOSArgs,
 
 	"getAppDir":  BuiltinGetAppDir,
-	"getAppPath":  BuiltinGetAppPath,
+	"getAppPath": BuiltinGetAppPath,
 	"getCurDir":  BuiltinGetCurDir,
 	"getHomeDir": BuiltinGetHomeDir,
 	"getUserDir": BuiltinGetHomeDir,
@@ -1393,8 +1393,8 @@ var BuiltinsMap = map[string]BuiltinType{
 	"ftpUpload":           BuiltinFtpUpload,
 	"ftpUploadFromReader": BuiltinFtpUploadFromReader,
 	"ftpDownloadBytes":    BuiltinFtpDownloadBytes,
-	"ftpDownloadFile":    BuiltinFtpDownloadFile,
-	"ftpGetReader":		BuiltinFtpGetReader,
+	"ftpDownloadFile":     BuiltinFtpDownloadFile,
+	"ftpGetReader":        BuiltinFtpGetReader,
 	"ftpRemoveFile":       BuiltinFtpRemoveFile,
 
 	"sshUpload":         BuiltinSshUpload,
@@ -8165,7 +8165,7 @@ func FnASSViRLLi(fn func(string, string, ...int) [][]int) CallableFunc {
 func FnASSViRLLiex(fn func(string, string, ...int) [][]int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
-		
+
 		if len(args) < 2 {
 			return Undefined, NewCommonError("not enough parameters")
 		}
@@ -9596,18 +9596,18 @@ func isErrX(objA Object) bool {
 		}
 	case 155: // *RuntimeError
 		nv1, ok := objA.(*RuntimeError)
-		
+
 		if !ok {
 			nv2, ok := objA.(*Error)
-			
+
 			if !ok {
 				return false
 			}
-			
+
 			if nv2 != nil {
 				return true
 			}
-			
+
 		}
 
 		if nv1 != nil {
@@ -13041,7 +13041,7 @@ func builtinFtpDownloadFileFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "failed to create dest file: %v", err), nil
 	}
 	defer dstFile.Close()
-	
+
 	cc, copyErr := io.Copy(dstFile, r)
 
 	if copyErr != nil {
@@ -13133,17 +13133,17 @@ func builtinFtpGetReaderFunc(c Call) (Object, error) {
 		Name: "close",
 		Value: func(args ...Object) (Object, error) {
 			err1 := r.Close()
-			
+
 			err2 := clientT.Quit()
 
 			if err1 != nil {
 				return NewCommonErrorWithPos(c, "failed to close ftp connection: %v", err), nil
 			}
-			
+
 			if err2 != nil {
 				return NewCommonErrorWithPos(c, "failed to close ftp connection: %v", err), nil
 			}
-			
+
 			return Undefined, nil
 		},
 	})
@@ -14547,7 +14547,7 @@ func builtinParseReqFormExFunc(c Call) (Object, error) {
 	reqT.ParseForm()
 
 	bufSizeT := 100000000
-	
+
 	if len(args) > 1 {
 		bufSizeT = ToIntQuick(args[1])
 	}
@@ -14572,9 +14572,9 @@ func builtinParseReqMultipartFormFunc(c Call) (Object, error) {
 	}
 
 	reqT := nv.Value
-	
+
 	bufSizeT := 100000000
-	
+
 	if len(args) > 1 {
 		bufSizeT = ToIntQuick(args[1])
 	}
@@ -20712,26 +20712,26 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 
 	if typeNameT == "reader" {
 		r1 := args[0].(*Reader)
-		
+
 		errT := r1.Close()
 
-//		rs := r1.GetMember("close")
-//
-//		if !IsUndefInternal(rs) {
-//			f1 := rs.(*Function)
-//			return (*f1).CallEx(Call{Args: []Object{}})
-//		}
+		//		rs := r1.GetMember("close")
+		//
+		//		if !IsUndefInternal(rs) {
+		//			f1 := rs.(*Function)
+		//			return (*f1).CallEx(Call{Args: []Object{}})
+		//		}
 
 		return ConvertToObject(errT), nil
 
-//		return NewCommonErrorWithPos(c, "unsupport method: close"), nil
+		//		return NewCommonErrorWithPos(c, "unsupport method: close"), nil
 	} else if typeNameT == "file" {
 		r1 := args[0].(*File)
 
 		if r1.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to close: nil value"), nil
 		}
-		
+
 		errT := r1.Value.Close()
 
 		if errT != nil {
@@ -20745,7 +20745,7 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 		if r1.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to close: nil value"), nil
 		}
-		
+
 		errT := r1.Value.Close()
 
 		if errT != nil {
@@ -20755,11 +20755,11 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 		return Undefined, nil
 	} else if typeNameT == "webSocket" {
 		r1 := args[0].(*WebSocket)
-		
+
 		if r1.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to close: nil value"), nil
 		}
-		
+
 		errT := r1.Value.Close()
 
 		if errT != nil {
@@ -20780,7 +20780,7 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 		if r1.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to close: nil value"), nil
 		}
-		
+
 		errT := r1.Value.Close()
 
 		if errT != nil {
