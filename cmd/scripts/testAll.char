@@ -207,7 +207,7 @@ testByText(rs, "(objectRef)<objectRef:5>\n(int)5\nresult: 15005\n", seqT.get(), 
 
 rs = systemCmd("char", "-gopath", "seq.char")
 
-testByText(rs, "(seq)0\n(int)1\n(int)2\n(seq)0\n(int)1\n(int)2\n(seq)0\n(int)1\n(int)2\n(int)3\n(int)3\n(seq)1\n(int)2\n(int)2\n", seqT.get(), "seq.char")
+testByText(rs, "(seq)0\n(int)1\n(int)2\n(seq)0\n(int)1\n(int)2\n(seq)0\n(int)1\n(int)2\n(int)3\n(int)3\n(seq)1\n(int)2\n(int)2\n(int)1\n", seqT.get(), "seq.char")
 
 rs = systemCmd("char", "-gopath", "mutableString.char")
 
