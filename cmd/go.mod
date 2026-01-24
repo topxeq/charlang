@@ -17,7 +17,7 @@ require (
 	github.com/kbinani/screenshot v0.0.0-20230812210009-b87d31814237
 	github.com/ncruces/zenity v0.10.13
 	github.com/sijms/go-ora/v2 v2.7.17
-	github.com/topxeq/charlang v0.0.0-20260124131825-8c93968ad035
+	github.com/topxeq/charlang v0.0.0
 	github.com/topxeq/tkc v0.0.0-20260115062048-7734b6d59f96
 )
 
@@ -175,4 +175,4 @@ require (
 
 // replace github.com/topxeq/sqltk v0.0.0 => ../../sqltk
 
-//replace github.com/topxeq/charlang v0.0.0 => ../
+replace github.com/topxeq/charlang v0.0.0 => ../
