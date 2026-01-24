@@ -15,8 +15,8 @@ require (
 	github.com/sahilm/fuzzy v0.1.1
 	github.com/stretchr/testify v1.11.1
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff
-	github.com/topxeq/sqltk v0.0.0-20251230061659-bfabc630b3fa
-	github.com/topxeq/tkc v0.0.0
+	github.com/topxeq/sqltk v0.0.0-20260124035901-98bf8683db30
+	github.com/topxeq/tkc v0.0.0-20260115062048-7734b6d59f96
 )
 
 require (
@@ -149,6 +149,6 @@ require (
 	golang.org/x/image v0.25.0
 )
 
-replace github.com/topxeq/tkc v0.0.0 => ../tkc
+//replace github.com/topxeq/tkc v0.0.0 => ../tkc
 
 // replace github.com/topxeq/sqltk v0.0.0 => ../sqltk

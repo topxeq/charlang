@@ -19,8 +19,7 @@ require (
 	github.com/kbinani/screenshot v0.0.0-20230812210009-b87d31814237
 	github.com/ncruces/zenity v0.10.13
 	github.com/sijms/go-ora/v2 v2.7.17
-	github.com/topxeq/charlang v0.0.0
-	github.com/topxeq/tkc v0.0.0
+	github.com/topxeq/tkc 7734b6d
 )
 
 require (
@@ -144,7 +143,7 @@ require (
 	github.com/topxeq/mahonia v0.0.0-20190828060648-12b0599ddd1a // indirect
 	github.com/topxeq/regexpx v0.0.0-20230721063247-f118dbe089d7 // indirect
 	github.com/topxeq/socks v0.0.0-20230721063359-4740c5e460e9 // indirect
-	github.com/topxeq/sqltk v0.0.0-20251230061659-bfabc630b3fa // indirect
+	github.com/topxeq/sqltk v0.0.0-20260124035901-98bf8683db30 // indirect
 	github.com/topxeq/uuid v0.0.0-20210318003930-0d149e412ca1 // indirect
 	github.com/topxeq/xmlx v0.3.0 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
@@ -173,8 +172,8 @@ require (
 	modernc.org/sqlite v1.28.0 // indirect
 )
 
-replace github.com/topxeq/tkc v0.0.0 => ../../tkc
+//replace github.com/topxeq/tkc v0.0.0 => ../../tkc
 
 // replace github.com/topxeq/sqltk v0.0.0 => ../../sqltk
 
-replace github.com/topxeq/charlang v0.0.0 => ../
+//replace github.com/topxeq/charlang v0.0.0 => ../
