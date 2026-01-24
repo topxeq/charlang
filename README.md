@@ -2,6 +2,8 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/topxeq/charlang.svg)](https://pkg.go.dev/github.com/topxeq/charlang)
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/topxeq/charlang)](https://goreportcard.com/report/github.com/topxeq/charlang)
+
 - [The Char Language (Charlang)](#the-char-language-charlang)
   - [1. Features](#1-features)
   - [2. More Features](#2-more-features)
