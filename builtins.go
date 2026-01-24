@@ -6343,7 +6343,7 @@ func FnASSRSE(fn func(string, string) (string, error)) CallableFunc {
 		rs, errT := fn(args[0].String(), args[1].String())
 
 		if errT != nil {
-			return NewCommonError(errT.Error(), nil), nil
+			return NewCommonError(errT.Error(), (make([]interface{}, 0))...), nil
 		}
 
 		return ToStringObject(rs), nil
@@ -6361,7 +6361,7 @@ func FnASSRSEex(fn func(string, string) (string, error)) CallableExFunc {
 		rs, errT := fn(args[0].String(), args[1].String())
 
 		if errT != nil {
-			return NewCommonError(errT.Error(), nil), nil
+			return NewCommonError(errT.Error(), (make([]interface{}, 0))...), nil
 		}
 
 		return ToStringObject(rs), nil
@@ -6417,7 +6417,8 @@ func FnASRSE(fn func(string) (string, error)) CallableFunc {
 		rs, errT := fn(args[0].String())
 
 		if errT != nil {
-			return NewCommonError(errT.Error(), nil), nil
+//			var nilObjsT []interface{} = nil
+			return NewCommonError(errT.Error(), (make([]interface{}, 0))...), nil
 		}
 
 		return ToStringObject(rs), nil
@@ -6435,7 +6436,8 @@ func FnASRSEex(fn func(string) (string, error)) CallableExFunc {
 		rs, errT := fn(args[0].String())
 
 		if errT != nil {
-			return NewCommonError(errT.Error(), nil), nil
+			var nilObjsT []interface{} = nil
+			return NewCommonError(errT.Error(), nilObjsT...), nil
 		}
 
 		return ToStringObject(rs), nil

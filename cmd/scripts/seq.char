@@ -55,6 +55,9 @@ plt(getValue(seq3))
 
 plt(seq3.getCurrent())
 
+seq3.reset()
+
+plt(seq3.get())
 
 
 
