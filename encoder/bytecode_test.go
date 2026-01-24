@@ -18,7 +18,7 @@ import (
 	. "github.com/topxeq/charlang/encoder"
 )
 
-var baz charlang.Object = charlang.String("baz")
+var baz charlang.Object = charlang.String{Value: "baz"}
 var testObjects = []charlang.Object{
 	charlang.Undefined,
 	charlang.Int(-1), charlang.Int(0), charlang.Int(1),
@@ -26,12 +26,12 @@ var testObjects = []charlang.Object{
 	charlang.Char('x'),
 	charlang.Bool(true), charlang.Bool(false),
 	charlang.Float(0), charlang.Float(1.2),
-	charlang.String(""), charlang.String("abc"),
+	charlang.String{Value: ""}, charlang.String{Value: "abc"},
 	charlang.Bytes{}, charlang.Bytes("foo"),
 	charlang.ErrIndexOutOfBounds,
 	&charlang.RuntimeError{Err: charlang.ErrInvalidIndex},
 	charlang.Map{"key": &charlang.Function{Name: "f"}},
-	&charlang.SyncMap{Value: charlang.Map{"k": charlang.String("")}},
+	&charlang.SyncMap{Value: charlang.Map{"k": charlang.String{Value: ""}}},
 	charlang.Array{charlang.Undefined, charlang.True, charlang.False},
 //	&time.Time{Value: gotime.Time{}},
 	&json.EncoderOptions{Value: charlang.Int(1)},

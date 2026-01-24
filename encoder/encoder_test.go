@@ -27,10 +27,10 @@ func TestGobEncoder(t *testing.T) {
 		charlang.Uint(0),
 		charlang.Char(0),
 		charlang.Float(0),
-		charlang.String("abc"),
+		charlang.String{Value: "abc"},
 		charlang.Bytes{},
-		charlang.Array{charlang.Bool(true), charlang.String("")},
-		charlang.Map{"b": charlang.Bool(true), "s": charlang.String("")},
+		charlang.Array{charlang.Bool(true), charlang.String{Value: ""}},
+		charlang.Map{"b": charlang.Bool(true), "s": charlang.String{Value: ""}},
 		&charlang.SyncMap{Value: charlang.Map{"i": charlang.Int(0), "u": charlang.Uint(0)}},
 		&charlang.ObjectPtr{},
 //		&time.Time{Value: gotime.Now()},
@@ -166,19 +166,19 @@ func TestEncDecObjects(t *testing.T) {
 	// remove NaN from Floats slice, array tests below requires NaN check otherwise fails.
 	floatObjects = floatObjects[:len(floatObjects)-1]
 
-	stringObjects := []charlang.String{charlang.String(""), charlang.String("çığöşü")}
+	stringObjects := []charlang.String{charlang.String{Value: ""}, charlang.String{Value: "çığöşü"}}
 	for i := 0; i < 1000; i++ {
-		stringObjects = append(stringObjects, charlang.String(randString(i)))
+		stringObjects = append(stringObjects, charlang.String{Value: randString(i)})
 	}
 	for _, tC := range stringObjects {
 		msg := fmt.Sprintf("String(%v)", tC)
-		data, err := String(tC).MarshalBinary()
+		data, err := String{Value: tC.Value}.MarshalBinary()
 		require.NoError(t, err, msg)
 		require.Greater(t, len(data), 0, msg)
 		var v String
 		err = v.UnmarshalBinary(data)
 		require.NoError(t, err, msg)
-		require.Equal(t, String(tC), v, msg)
+		require.Equal(t, String{Value: tC.Value}, v, msg)
 
 		obj, err := DecodeObject(bytes.NewReader(data))
 		require.NoError(t, err, msg)
@@ -383,10 +383,10 @@ func TestEncDecBytecode_modules(t *testing.T) {
 		"run": &charlang.Function{
 			Name: "run",
 			Value: func(args ...charlang.Object) (charlang.Object, error) {
-				return charlang.String("mod1"), nil
+				return charlang.String{Value: "mod1"}, nil
 			},
 		},
-	}).Module("mod2", `return {run: func(){ return "mod2" }}`), charlang.String("mod1mod2"))
+	}).Module("mod2", `return {run: func(){ return "mod2" }}`), charlang.String{Value: "mod1mod2"})
 }
 
 func testEncDecBytecode(t *testing.T, script string, opts *testopts, expected charlang.Object) {
@@ -399,7 +399,7 @@ func testEncDecBytecode(t *testing.T, script string, opts *testopts, expected ch
 		initialModuleMap = opts.moduleMap.Copy()
 	}
 	bc, err := charlang.Compile([]byte(script),
-		charlang.CompilerOptions{
+		&charlang.CompilerOptions{
 			ModuleMap: opts.moduleMap,
 		},
 	)
@@ -471,7 +471,7 @@ func testDecodedBytecodeEqual(t *testing.T, actual, decoded *charlang.Bytecode) 
 func getModuleName(obj charlang.Object) (string, bool) {
 	if m, ok := obj.(charlang.Map); ok {
 		if n, ok := m[charlang.AttrModuleName]; ok {
-			return string(n.(charlang.String)), true
+			return string(n.(charlang.String).Value), true
 		}
 	}
 	return "", false

@@ -76,7 +76,7 @@ func init() {
 	gob.Register(charlang.Uint(0))
 	gob.Register(charlang.Char(0))
 	gob.Register(charlang.Float(0))
-	gob.Register(charlang.String(""))
+	gob.Register(charlang.String{Value: ""})
 	gob.Register(charlang.Bytes(nil))
 	gob.Register(charlang.Array(nil))
 	gob.Register(charlang.Map(nil))
@@ -385,7 +385,7 @@ func DecodeObject(r io.Reader) (charlang.Object, error) {
 			if err := v.UnmarshalBinary(buf); err != nil {
 				return nil, err
 			}
-			return charlang.String(v), nil
+			return charlang.String{Value: v.Value}, nil
 		case binMapV1:
 			var v = Map{}
 			if err := v.UnmarshalBinary(buf); err != nil {
@@ -635,7 +635,7 @@ func (o *Float) UnmarshalBinary(data []byte) error {
 func (o String) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteByte(binStringV1)
-	size := int64(len(o))
+	size := int64(len(o.Value))
 
 	if size == 0 {
 		buf.WriteByte(0)
@@ -645,7 +645,7 @@ func (o String) MarshalBinary() ([]byte, error) {
 	var vi varintConv
 	b := vi.toBytes(size)
 	buf.Write(b)
-	buf.WriteString(string(o))
+	buf.WriteString(string(o.Value))
 	return buf.Bytes(), nil
 }
 
@@ -669,7 +669,7 @@ func (o *String) UnmarshalBinary(data []byte) error {
 		return errors.New("invalid charlang.String data size")
 	}
 
-	*o = String(data[1+offset : ub])
+	*o = String{Value: string(data[1+offset : ub])}
 	return nil
 }
 
@@ -1050,7 +1050,7 @@ func (o *CompiledFunction) UnmarshalBinary(data []byte) error {
 // MarshalBinary implements encoding.BinaryMarshaler
 func (o *BuiltinFunction) MarshalBinary() ([]byte, error) {
 	// Note: use string name instead of index of builtin
-	s, err := String(o.Name).MarshalBinary()
+	s, err := String{Value: o.Name}.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
@@ -1084,7 +1084,7 @@ func (o *BuiltinFunction) UnmarshalBinary(data []byte) error {
 		return err
 	}
 
-	index, ok := charlang.BuiltinsMap[string(s)]
+	index, ok := charlang.BuiltinsMap[string(s.Value)]
 	if !ok {
 		return fmt.Errorf("builtin '%s' not found", s)
 	}
@@ -1100,7 +1100,7 @@ func (o *BuiltinFunction) UnmarshalBinary(data []byte) error {
 
 // MarshalBinary implements encoding.BinaryMarshaler
 func (o *Function) MarshalBinary() ([]byte, error) {
-	s, err := String(o.Name).MarshalBinary()
+	s, err := String{Value: o.Name}.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
@@ -1133,14 +1133,14 @@ func (o *Function) UnmarshalBinary(data []byte) error {
 	if err := s.UnmarshalBinary(data[1+offset:]); err != nil {
 		return err
 	}
-	o.Name = string(s)
+	o.Name = string(s.Value)
 	return nil
 }
 
 // MarshalBinary implements encoding.BinaryMarshaler
 func (sf *SourceFile) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
-	d, err := String(sf.Name).MarshalBinary()
+	d, err := String{Value: sf.Name}.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
@@ -1439,7 +1439,7 @@ func marshaler(o charlang.Object) encoding.BinaryMarshaler {
 	case charlang.Float:
 		return Float(v)
 	case charlang.String:
-		return String(v)
+		return String{Value: v.Value}
 	case charlang.Bytes:
 		return Bytes(v)
 	case charlang.Array:
