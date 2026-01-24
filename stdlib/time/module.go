@@ -13,7 +13,7 @@ import (
 
 var utcLoc charlang.Object = &Location{Value: time.UTC}
 var localLoc charlang.Object = &Location{Value: time.Local}
-var zeroTime charlang.Object = &Time{}
+var zeroTime charlang.Object = &charlang.Time{}
 
 // Module represents time module.
 var Module = map[string]charlang.Object{
@@ -84,21 +84,21 @@ var Module = map[string]charlang.Object{
 	// StampMilli
 	// StampMicro
 	// StampNano
-	"ANSIC":       charlang.String(time.ANSIC),
-	"UnixDate":    charlang.String(time.UnixDate),
-	"RubyDate":    charlang.String(time.RubyDate),
-	"RFC822":      charlang.String(time.RFC822),
-	"RFC822Z":     charlang.String(time.RFC822Z),
-	"RFC850":      charlang.String(time.RFC850),
-	"RFC1123":     charlang.String(time.RFC1123),
-	"RFC1123Z":    charlang.String(time.RFC1123Z),
-	"RFC3339":     charlang.String(time.RFC3339),
-	"RFC3339Nano": charlang.String(time.RFC3339Nano),
-	"Kitchen":     charlang.String(time.Kitchen),
-	"Stamp":       charlang.String(time.Stamp),
-	"StampMilli":  charlang.String(time.StampMilli),
-	"StampMicro":  charlang.String(time.StampMicro),
-	"StampNano":   charlang.String(time.StampNano),
+	"ANSIC":       charlang.String{Value: time.ANSIC},
+	"UnixDate":    charlang.String{Value: time.UnixDate},
+	"RubyDate":    charlang.String{Value: time.RubyDate},
+	"RFC822":      charlang.String{Value: time.RFC822},
+	"RFC822Z":     charlang.String{Value: time.RFC822Z},
+	"RFC850":      charlang.String{Value: time.RFC850},
+	"RFC1123":     charlang.String{Value: time.RFC1123},
+	"RFC1123Z":    charlang.String{Value: time.RFC1123Z},
+	"RFC3339":     charlang.String{Value: time.RFC3339},
+	"RFC3339Nano": charlang.String{Value: time.RFC3339Nano},
+	"Kitchen":     charlang.String{Value: time.Kitchen},
+	"Stamp":       charlang.String{Value: time.Stamp},
+	"StampMilli":  charlang.String{Value: time.StampMilli},
+	"StampMicro":  charlang.String{Value: time.StampMicro},
+	"StampNano":   charlang.String{Value: time.StampNano},
 
 	// char:doc
 	// ### Durations

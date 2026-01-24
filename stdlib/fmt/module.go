@@ -203,7 +203,7 @@ func newPrintf(fn func(string, ...interface{}) (int, error)) charlang.CallableEx
 func newSprint(fn func(...interface{}) string) charlang.CallableExFunc {
 	return func(c charlang.Call) (ret charlang.Object, err error) {
 		vargs := toPrintArgs(0, c)
-		return charlang.String(fn(vargs...)), nil
+		return charlang.String{Value: fn(vargs...)}, nil
 	}
 }
 
@@ -214,7 +214,7 @@ func newSprintf(fn func(string, ...interface{}) string) charlang.CallableExFunc 
 				"want>=1 got=" + strconv.Itoa(c.Len()))
 		}
 		vargs := toPrintArgs(1, c)
-		return charlang.String(fn(c.Get(0).String(), vargs...)), nil
+		return charlang.String{Value: fn(c.Get(0).String(), vargs...)}, nil
 	}
 }
 

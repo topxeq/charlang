@@ -107,7 +107,7 @@ func (st *stringType) Arg() interface{} {
 }
 
 func (st *stringType) Value() charlang.Object {
-	return charlang.String(st.v)
+	return charlang.String{Value: st.v}
 }
 
 type bytesType struct {
