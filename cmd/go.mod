@@ -19,7 +19,7 @@ require (
 	github.com/kbinani/screenshot v0.0.0-20230812210009-b87d31814237
 	github.com/ncruces/zenity v0.10.13
 	github.com/sijms/go-ora/v2 v2.7.17
-	github.com/topxeq/tkc 7734b6d
+	github.com/topxeq/tkc v0.0.0-20260115062048-7734b6d59f96
 )
 
 require (
