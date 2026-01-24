@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        go: [1.24, 1.24.0]
+        go: [1.24.0]
     steps:
     - uses: actions/checkout@v2
 
