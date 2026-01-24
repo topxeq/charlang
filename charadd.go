@@ -2806,7 +2806,7 @@ func ConvertToObject(vA interface{}) Object {
 			return Undefined
 		}
 
-		return NewCommonError(nv.Error(), nil)
+		return NewCommonError(nv.Error(), (make([]interface{}, 0))...)
 	case string:
 		return ToStringObject(nv)
 	case bool:
