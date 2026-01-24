@@ -14,7 +14,6 @@ import (
 	"github.com/topxeq/charlang"
 	"github.com/topxeq/charlang/parser"
 	"github.com/topxeq/charlang/stdlib/json"
-	"github.com/topxeq/charlang/stdlib/time"
 )
 
 // Bytecode signature and version are written to the header of encoded Bytecode.
@@ -85,7 +84,6 @@ func init() {
 	gob.Register((*charlang.RuntimeError)(nil))
 	gob.Register((*charlang.SyncMap)(nil))
 	gob.Register((*charlang.ObjectPtr)(nil))
-	gob.Register((*time.Time)(nil))
 	gob.Register((*json.EncoderOptions)(nil))
 	gob.Register((*json.RawMessage)(nil))
 }
