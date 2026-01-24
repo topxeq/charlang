@@ -13890,13 +13890,13 @@ func NewWebSocket(c Call) (Object, error) {
 	nv1, ok := argsA[0].(*HttpReq)
 
 	if !ok {
-		return NewCommonErrorWithPos(c, "unsupport type of paramter 1: %T", argsA[0]), nil
+		return NewCommonErrorWithPos(c, "unsupport type of parameter 1: %T", argsA[0]), nil
 	}
 
 	nv2, ok := argsA[1].(*HttpResp)
 
 	if !ok {
-		return NewCommonErrorWithPos(c, "unsupport type of paramter 2: %T", argsA[1]), nil
+		return NewCommonErrorWithPos(c, "unsupport type of parameter 2: %T", argsA[1]), nil
 	}
 
 	var upgraderT = websocket.Upgrader{}
@@ -14012,7 +14012,7 @@ func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
 		nv1, ok := argsA[0].(Int)
 
 		if !ok {
-			return NewCommonErrorWithPos(c, "unsupport type of paramter 1: %T", argsA[0]), nil
+			return NewCommonErrorWithPos(c, "unsupport type of parameter 1: %T", argsA[0]), nil
 		}
 
 		var nv2b []byte
@@ -14023,7 +14023,7 @@ func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
 			nv2s, ok := argsA[1].(String)
 
 			if !ok {
-				return NewCommonErrorWithPos(c, "unsupport type of paramter 2: %T", argsA[1]), nil
+				return NewCommonErrorWithPos(c, "unsupport type of parameter 2: %T", argsA[1]), nil
 			}
 
 			nv2b = []byte(nv2s.Value)
@@ -14077,7 +14077,7 @@ func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
 			nv2s, ok := argsA[0].(String)
 
 			if !ok {
-				return NewCommonErrorWithPos(c, "unsupport type of paramter 1: %T", argsA[0]), nil
+				return NewCommonErrorWithPos(c, "unsupport type of parameter 1: %T", argsA[0]), nil
 			}
 
 			nv2b = []byte(nv2s.Value)

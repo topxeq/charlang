@@ -10091,7 +10091,7 @@ func builtinCallMethodExFunc(c Call) (Object, error) {
 		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 	}
 
-	var name1 string = ""
+	name1 := ""
 
 	var objT interface{}
 
