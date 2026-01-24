@@ -6,6 +6,10 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", seqT.get(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "charCodeAsFunc.char")
+
+testByText(rs, "input: 12 8.5 2 3 16\nresult: 41.5\n", seqT.get(), "charCodeAsFunc.char")
+
 rs = systemCmd("char", "-gopath", "bool.char")
 
 testByText(rs, "(bool)true\n(string)false\n(string)true\n(bool)false\n(string)result: false\n(int)3\n(float)4.8\n(string)false\nfalse false true false true true true\n[bool] true\n[charlang.Bool] false\nb == c: false\n!b = false\n1 > 14: false\nb == true: true\nb && c: false\nb || c: true\n", seqT.get(), "bool.char")
