@@ -395,4 +395,3 @@ func (it *MapArrayIterator) Value() Object {
 	}
 	return Undefined
 }
-

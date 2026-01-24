@@ -245,7 +245,7 @@ func builtinSortByFuncQuickFunc(c charlang.Call) (ret charlang.Object, err error
 	if !ok {
 		return charlang.NewCommonErrorWithPos(c, "invalid type: (%T)%v", args[0], args[0]), nil
 	}
-	
+
 	vmT := c.VM()
 	if vmT == nil {
 		return charlang.NewCommonErrorWithPos(c, "VM empty"), nil

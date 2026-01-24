@@ -26,9 +26,9 @@ import (
 	"github.com/topxeq/sqltk"
 	tk "github.com/topxeq/tkc"
 
-	"github.com/xuri/excelize/v2"
 	"github.com/dop251/goja"
-//	"modernc.org/quickjs"
+	"github.com/xuri/excelize/v2"
+	//	"modernc.org/quickjs"
 	"github.com/gorilla/websocket"
 )
 
@@ -1681,7 +1681,7 @@ func (o String) CallName(nameA string, c Call) (Object, error) {
 		return ToStringObject(o), nil
 	case "contains":
 		args := c.GetArgs()
-	
+
 		if len(args) < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
@@ -1689,7 +1689,7 @@ func (o String) CallName(nameA string, c Call) (Object, error) {
 		return Bool(strings.Contains(o.Value, args[0].String())), nil
 	case "testByFunc":
 		args := c.GetArgs()
-	
+
 		lenT := len(args)
 
 		if lenT < 1 {
@@ -1720,16 +1720,16 @@ func (o String) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		retT, errT := NewInvoker(c.VM(), nv2).Invoke(nv1)
-		
+
 		if errT != nil {
 			return nil, NewCommonErrorWithPos(c, "test %v%v failed(compareFunc returns error: %v): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, errT, v1, v2, v1, v2)
 		}
-		
+
 		b1, ok := retT.(Bool)
 		if !ok {
 			return nil, NewCommonErrorWithPos(c, "test %v%v failed(compareFunc returns invalid type: %#v): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, retT, v1, v2, v1, v2)
 		}
-		
+
 		if !bool(b1) {
 			return nil, NewCommonErrorWithPos(c, "test %v%v failed(compareFunc returns false): %v -> %#v\n-----\n%v\n", v3, v4, retT, v1, v1)
 		}
@@ -1740,35 +1740,35 @@ func (o String) CallName(nameA string, c Call) (Object, error) {
 	}
 
 	args := c.GetArgs()
-	
+
 	rs1, errT := CallObjectMethodFunc(o, nameA, args...)
-	
-//	if errT != nil || tk.IsError(rs1) {
-//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
-//		return ConvertToObject(rs3), nil
-//	}
-	
+
+	//	if errT != nil || tk.IsError(rs1) {
+	//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
+	//		return ConvertToObject(rs3), nil
+	//	}
+
 	return rs1, errT
-	
-//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+
+	//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 }
 
 func (o String) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	return o.CallName(nameA, Call{Args: argsA})
-//	switch nameA {
-//	case "value":
-//		return o, nil
-//	case "toStr":
-//		return ToStringObject(o), nil
-//	case "contains":
-//		if len(argsA) < 1 {
-//			return NewCommonError("not enough parameters"), nil
-//		}
-//
-//		return Bool(strings.Contains(o.Value, argsA[0].String())), nil
-//	}
-//
-//	return CallObjectMethodFunc(o, nameA, argsA...)
+	//	switch nameA {
+	//	case "value":
+	//		return o, nil
+	//	case "toStr":
+	//		return ToStringObject(o), nil
+	//	case "contains":
+	//		if len(argsA) < 1 {
+	//			return NewCommonError("not enough parameters"), nil
+	//		}
+	//
+	//		return Bool(strings.Contains(o.Value, argsA[0].String())), nil
+	//	}
+	//
+	//	return CallObjectMethodFunc(o, nameA, argsA...)
 
 	// return Undefined, NewCommonError("unknown method: %v", nameA)
 }
@@ -3312,12 +3312,12 @@ func (o Array) HasMemeber() bool {
 }
 
 func (o Array) CallMethod(nameA string, argsA ...Object) (Object, error) {
-//	switch nameA {
-//	case "value":
-//		return o, nil
-//	case "toStr":
-//		return ToStringObject(o), nil
-//	}
+	//	switch nameA {
+	//	case "value":
+	//		return o, nil
+	//	case "toStr":
+	//		return ToStringObject(o), nil
+	//	}
 
 	return o.CallName(nameA, Call{Args: argsA})
 	// return Undefined, NewCommonError("unknown method: %v", nameA)
@@ -3333,36 +3333,36 @@ func (o Array) CallName(nameA string, c Call) (Object, error) {
 		return ToIntObject(len(o)), nil
 	case "remove":
 		args := c.GetArgs()
-		
+
 		if len(args) < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
-		
+
 		idxT := ToIntQuick(args[0])
 
 		rs := append(o[0:idxT], o[idxT+1:]...)
-		
+
 		return rs, nil
 	case "sort":
 		var err error
-		
-//		args := c.Args
-		
+
+		//		args := c.Args
+
 		vs := ObjectsToS(c.GetArgs())
 
 		keyT := tk.GetSwitch(vs, "-key=", "")
-//		if len(args) > 0 {
-//			keyT = args[0].String()
-//		}
+		//		if len(args) > 0 {
+		//			keyT = args[0].String()
+		//		}
 
-//		descT := false
+		//		descT := false
 		descT := tk.IfSwitchExists(vs, "-desc")
-//		if len(args) > 1 {
-//			optT := args[1].String()
-//			descT = (optT == "desc") // || (optT != "asc" && !(args[1].IsFalsy()))
-//		}
-		
-//		obj := o.(Array)
+		//		if len(args) > 1 {
+		//			optT := args[1].String()
+		//			descT = (optT == "desc") // || (optT != "asc" && !(args[1].IsFalsy()))
+		//		}
+
+		//		obj := o.(Array)
 
 		if keyT != "" {
 			sort.Slice(o, func(i, j int) bool {
@@ -3395,14 +3395,14 @@ func (o Array) CallName(nameA string, c Call) (Object, error) {
 					sort.Slice(o, func(i, j int) bool {
 						v, e := o[i].BinaryOp(tk.IfThenElse(descT, token.Greater, token.Less).(token.Token), o[j])
 						if e != nil && err == nil {
-		//					err = e
+							//					err = e
 							return false
 						}
-						
+
 						if v != nil {
 							return !v.IsFalsy()
 						}
-						
+
 						return false
 					})
 				}
@@ -3413,14 +3413,14 @@ func (o Array) CallName(nameA string, c Call) (Object, error) {
 			sort.Slice(o, func(i, j int) bool {
 				v, e := o[i].BinaryOp(tk.IfThenElse(descT, token.Greater, token.Less).(token.Token), o[j])
 				if e != nil && err == nil {
-//					err = e
+					//					err = e
 					return false
 				}
-				
+
 				if v != nil {
 					return !v.IsFalsy()
 				}
-				
+
 				return false
 			})
 		}
@@ -3428,43 +3428,42 @@ func (o Array) CallName(nameA string, c Call) (Object, error) {
 		if err != nil {
 			return NewCommonErrorWithPos(c, "error: %v", err), nil
 		}
-		
+
 		return o, nil
 
 	case "sortByFunc":
 		argsT := c.GetArgs()
-		
+
 		if c.Len() < 1 {
 			return Undefined, fmt.Errorf("not enough parameters")
 		}
-		
+
 		if true {
-//			fn, ok := argsT[0].(*Function)
-//			
-//			if ok {
-//				return fn.CallEx(c)
-//			}
-			
+			//			fn, ok := argsT[0].(*Function)
+			//
+			//			if ok {
+			//				return fn.CallEx(c)
+			//			}
+
 			cfn, ok := argsT[0].(*CompiledFunction)
-			
-//			tk.Plv(cfn, ok)
-			
+
+			//			tk.Plv(cfn, ok)
+
 			if ok {
 				lenT := len(o)
-			
+
 				var tmpv Object
-				
+
 				ivkT := NewInvoker(c.VM(), cfn)
 
-				for i := 0; i < lenT; i ++ {
-					for j := i + 1; j < lenT; j ++ {
+				for i := 0; i < lenT; i++ {
+					for j := i + 1; j < lenT; j++ {
 						retT, errT := ivkT.Invoke(Int(i), Int(j))
-//						tk.Plv(retT, errT)
+						//						tk.Plv(retT, errT)
 
-						
 						if errT == nil {
 							bv1, ok := retT.(Bool)
-							
+
 							if ok {
 								if !bool(bv1) {
 									tmpv = o[i]
@@ -3478,41 +3477,40 @@ func (o Array) CallName(nameA string, c Call) (Object, error) {
 
 				return o, nil
 			}
-			
-//			return NewCommonErrorWithPos(c, "member is not a function: %v", nameA), nil
-		}
 
+			//			return NewCommonErrorWithPos(c, "member is not a function: %v", nameA), nil
+		}
 
 		nv1, ok := c.Get(0).(*Delegate)
 
 		if !ok {
 			return NewCommonErrorWithPos(c, "invalid type: %#v", c.Get(0)), nil
 		}
-		
+
 		if nv1.Value == nil {
 			return NewCommonErrorWithPos(c, "func code not compiled"), nil
 		}
-		
+
 		func1 := func(i, j interface{}) bool {
 			rsT := nv1.Value(i, j)
-			
+
 			nvT, okT := rsT.(bool)
-			
-//			tk.Plv(rsT, nvT, okT)
-			
+
+			//			tk.Plv(rsT, nvT, okT)
+
 			if !okT {
 				return false
 			}
-			
+
 			return bool(nvT)
 		}
-		
+
 		lenT := len(o)
-	
+
 		var tmpv Object
 
-		for i := 0; i < lenT; i ++ {
-			for j := i + 1; j < lenT; j ++ {
+		for i := 0; i < lenT; i++ {
+			for j := i + 1; j < lenT; j++ {
 				if !func1(o[i], o[j]) {
 					tmpv = o[i]
 					o[i] = o[j]
@@ -3522,23 +3520,23 @@ func (o Array) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return o, nil
-		
+
 	}
 
 	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
-	
-//	if errT != nil || tk.IsError(rs1) {
-//		rs3 := tk.ReflectCallMethodCompact(o, nameA, ObjectsToI(c.GetArgs())...)
-//		return ConvertToObject(rs3), nil
-//	}
+
+	//	if errT != nil || tk.IsError(rs1) {
+	//		rs3 := tk.ReflectCallMethodCompact(o, nameA, ObjectsToI(c.GetArgs())...)
+	//		return ConvertToObject(rs3), nil
+	//	}
 
 	if errT != nil {
 		return NewCommonErrorWithPos(c, "failed to call method(%v): %v", nameA, errT), nil
 	}
-	
+
 	return rs1, errT
-	
-//	return Undefined, ErrInvalidIndex.NewError(nameA)
+
+	//	return Undefined, ErrInvalidIndex.NewError(nameA)
 }
 
 func (o Array) GetValue() Object {
@@ -3571,11 +3569,11 @@ func (o Array) IndexSet(index, value Object) error {
 	switch v := index.(type) {
 	case Int:
 		idx := int(v)
-		
+
 		if idx < 0 {
 			idx = len(o) + idx
 		}
-		
+
 		if idx >= 0 && idx < len(o) {
 			o[idx] = value
 			return nil
@@ -3586,7 +3584,7 @@ func (o Array) IndexSet(index, value Object) error {
 		if idx < 0 {
 			idx = len(o) + idx
 		}
-		
+
 		if idx >= 0 && idx < len(o) {
 			o[idx] = value
 			return nil
@@ -3598,14 +3596,14 @@ func (o Array) IndexSet(index, value Object) error {
 
 // IndexGet implements Object interface.
 func (o Array) IndexGet(index Object) (Object, error) {
-//	tk.Pln("Array", "IndexGet", index)
+	//	tk.Pln("Array", "IndexGet", index)
 	switch v := index.(type) {
 	case Int:
 		idx := int(v)
 		if idx < 0 {
 			idx = len(o) + idx
 		}
-		
+
 		if idx >= 0 && idx < len(o) {
 			return o[idx], nil
 		}
@@ -3615,7 +3613,7 @@ func (o Array) IndexGet(index Object) (Object, error) {
 		if idx < 0 {
 			idx = len(o) + idx
 		}
-		
+
 		if idx >= 0 && idx < len(o) {
 			return o[idx], nil
 		}
@@ -3886,59 +3884,59 @@ func (o Map) HasMemeber() bool {
 }
 
 func (o Map) CallName(nameA string, c Call) (Object, error) {
-//	tk.Pl("call: %#v", c)
+	//	tk.Pl("call: %#v", c)
 	rs, ok := o[nameA]
-	
+
 	if ok {
 		fn, ok := rs.(*Function)
-		
+
 		if ok {
 			return fn.CallEx(c)
 		}
-		
+
 		cfn, ok := rs.(*CompiledFunction)
-		
+
 		if ok {
 			retT, errT := NewInvoker(c.VM(), cfn).Invoke(c.GetArgs()...)
 
 			return retT, errT
 		}
-		
+
 		return NewCommonErrorWithPos(c, "member is not a function: %v", nameA), nil
 	}
-	
+
 	switch nameA {
 	case "remove":
 		args := c.GetArgs()
-		
+
 		if len(args) < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
 
 		delete(o, args[0].String())
-		
+
 		return Undefined, nil
-		
+
 	case "Set", "set":
 		args := c.GetArgs()
-		
+
 		if len(args) < 2 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
 
 		o[args[0].String()] = args[1]
-		
+
 		return Undefined, nil
-		
+
 	case "Get", "get":
 		args := c.GetArgs()
-		
+
 		if len(args) < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
-		
+
 		rs := o[args[0].String()]
-		
+
 		if rs == nil {
 			return Undefined, nil
 		}
@@ -3948,7 +3946,7 @@ func (o Map) CallName(nameA string, c Call) (Object, error) {
 		return ToIntObject(len(o)), nil
 	case "toOrdered":
 		lenT := len(o)
-		
+
 		rs := tk.NewOrderedMap()
 
 		if lenT < 1 {
@@ -3962,13 +3960,13 @@ func (o Map) CallName(nameA string, c Call) (Object, error) {
 		return &OrderedMap{Value: rs}, nil
 	case "hasKey":
 		args := c.GetArgs()
-		
+
 		if len(args) < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
-		
+
 		_, ok := o[args[0].String()]
-		
+
 		if ok {
 			return Bool(true), nil
 		}
@@ -3976,21 +3974,21 @@ func (o Map) CallName(nameA string, c Call) (Object, error) {
 		return Bool(false), nil
 	case "keys":
 		lenT := len(o)
-		
+
 		rs := Array{}
 
 		if lenT < 1 {
 			return rs, nil
 		}
 
-		for k, _ := range o {
+		for k := range o {
 			rs = append(rs, String{Value: k})
 		}
 
 		return rs, nil
 	case "values":
 		lenT := len(o)
-		
+
 		rs := Array{}
 
 		if lenT < 1 {
@@ -4004,28 +4002,28 @@ func (o Map) CallName(nameA string, c Call) (Object, error) {
 		return rs, nil
 	}
 
-//	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
-//	
-//	if errT != nil || tk.IsError(rs1) {
-//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
-//		return ConvertToObject(rs3), nil
-//	}
-//	
-//	return rs1, errT
-	
+	//	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
+	//
+	//	if errT != nil || tk.IsError(rs1) {
+	//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
+	//		return ConvertToObject(rs3), nil
+	//	}
+	//
+	//	return rs1, errT
+
 	return Undefined, ErrInvalidIndex.NewError(nameA)
 }
 
 func (o Map) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	return o.CallName(nameA, Call{Args: argsA})
-//	switch nameA {
-//	case "value":
-//		return o, nil
-//	case "toStr":
-//		return ToStringObject(o), nil
-//	}
-//
-//	return CallObjectMethodFunc(o, nameA, argsA...)
+	//	switch nameA {
+	//	case "value":
+	//		return o, nil
+	//	case "toStr":
+	//		return ToStringObject(o), nil
+	//	}
+	//
+	//	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o Map) GetValue() Object {
@@ -6878,7 +6876,7 @@ func (*StringBuilder) CanIterate() bool { return false }
 func (*StringBuilder) Iterate() Iterator { return nil }
 
 func (o *StringBuilder) CallName(nameA string, c Call) (Object, error) {
-//	tk.Pl("EvalMachine call: %#v", c)
+	//	tk.Pl("EvalMachine call: %#v", c)
 	switch nameA {
 	case "toStr":
 		return ToStringObject(o.Value.String()), nil
@@ -6886,11 +6884,11 @@ func (o *StringBuilder) CallName(nameA string, c Call) (Object, error) {
 		return ToStringObject(o.Value.String()), nil
 	case "writeStr", "WriteString":
 		args := c.GetArgs()
-		
+
 		if len(args) < 1 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
-		
+
 		rsT, errT := o.Value.WriteString(args[0].String())
 
 		if errT != nil {
@@ -6902,11 +6900,11 @@ func (o *StringBuilder) CallName(nameA string, c Call) (Object, error) {
 		var errT error
 
 		args := c.GetArgs()
-		
+
 		if len(args) < 1 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
-		
+
 		nv, ok := args[0].(Bytes)
 		if ok {
 			rsT, errT := o.Value.Write([]byte(nv))
@@ -6920,10 +6918,10 @@ func (o *StringBuilder) CallName(nameA string, c Call) (Object, error) {
 		nv1, ok := args[0].(Array)
 		if ok {
 			countT := 0
-			
+
 			for _, jv := range nv1 {
 				jnv := byte(ToIntQuick(jv))
-				
+
 				errT = o.Value.WriteByte(jnv)
 
 				if errT != nil {
@@ -6932,10 +6930,10 @@ func (o *StringBuilder) CallName(nameA string, c Call) (Object, error) {
 					countT++
 				}
 			}
-			
+
 			return Int(countT), nil
 		}
-		
+
 		nv2, ok := args[0].(String)
 		if ok {
 			rsT, errT := o.Value.Write([]byte(nv2.Value))
@@ -6947,16 +6945,16 @@ func (o *StringBuilder) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return NewCommonError("invalid parameter type: %v", args[0].TypeName()), nil
-		
-	case "write": 
+
+	case "write":
 		var errT error
 
 		args := c.GetArgs()
-		
+
 		if len(args) < 1 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
-		
+
 		countT := 0
 
 		for _, v := range args {
@@ -7030,10 +7028,10 @@ func (o *StringBuilder) CallName(nameA string, c Call) (Object, error) {
 							tmpCountT = 0
 						}
 					}
-					
+
 					countT += tmpCountT
 				}
-				
+
 				tmpCountT = 0
 			default:
 				tmpCountT, errT = o.Value.WriteString(nv.String())
@@ -7054,17 +7052,17 @@ func (o *StringBuilder) CallName(nameA string, c Call) (Object, error) {
 	}
 
 	args := c.GetArgs()
-	
+
 	rs1, errT := CallObjectMethodFunc(o, nameA, args...)
-	
+
 	if errT != nil || tk.IsError(rs1) {
 		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
 		return ConvertToObject(rs3), nil
 	}
-	
+
 	return rs1, errT
-	
-//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+
+	//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 }
 
 func (o *StringBuilder) IndexGet(index Object) (value Object, err error) {
@@ -8981,8 +8979,8 @@ func NewHttpHandler(c Call) (Object, error) {
 // Reader object is used for represent io.Reader type value
 type Reader struct {
 	ObjectImpl
-	Value io.Reader
-	SizeM int // may be not set
+	Value     io.Reader
+	SizeM     int // may be not set
 	CloseDele tk.QuickVarDelegate
 
 	// CloseHandler io.Closer
@@ -9021,11 +9019,11 @@ func (o *Reader) SetSize(sizeA int) {
 
 // comply to io.Closer
 func (o *Reader) Close() error {
-//	fmt.Printf("\n******* %#v ********\n", o)
-	
+	//	fmt.Printf("\n******* %#v ********\n", o)
+
 	if o.CloseDele != nil {
-		o.CloseDele() // rs := 
-//		fmt.Printf("\n -- close 1\n", rs)
+		o.CloseDele() // rs :=
+		//		fmt.Printf("\n -- close 1\n", rs)
 	}
 
 	methodT := o.GetMember("close")
@@ -9044,10 +9042,10 @@ func (o *Reader) Close() error {
 				return rs.(*Error).Unwrap()
 			}
 
-//			fmt.Printf("\n -- close 2: %v\n", rs)
+			//			fmt.Printf("\n -- close 2: %v\n", rs)
 			return nil
 		}
-		
+
 		return fmt.Errorf("unable to close")
 	}
 
@@ -9061,7 +9059,7 @@ func (o *Reader) Close() error {
 			return fmt.Errorf("failed to close: %v", errT)
 		}
 
-//		fmt.Printf("\n -- close 3: %v\n", errT)
+		//		fmt.Printf("\n -- close 3: %v\n", errT)
 		return nil
 	}
 
@@ -9096,14 +9094,14 @@ func (o *Reader) Read(p []byte) (n int, err error) {
 
 func (o *Reader) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	return o.CallName(nameA, Call{Args: argsA})
-//	switch nameA {
-//	case "value":
-//		return o, nil
-//	case "toStr":
-//		return ToStringObject(o), nil
-//	}
-//
-//	return CallObjectMethodFunc(o, nameA, argsA...)
+	//	switch nameA {
+	//	case "value":
+	//		return o, nil
+	//	case "toStr":
+	//		return ToStringObject(o), nil
+	//	}
+	//
+	//	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *Reader) CallName(nameA string, c Call) (Object, error) {
@@ -9117,19 +9115,19 @@ func (o *Reader) CallName(nameA string, c Call) (Object, error) {
 
 		return ConvertToObject(rs), nil
 	}
-	
+
 	args := c.GetArgs()
-	
+
 	rs1, errT := CallObjectMethodFunc(o, nameA, args...)
-	
-//	if errT != nil || tk.IsError(rs1) {
-//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
-//		return ConvertToObject(rs3), nil
-//	}
-	
+
+	//	if errT != nil || tk.IsError(rs1) {
+	//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
+	//		return ConvertToObject(rs3), nil
+	//	}
+
 	return rs1, errT
-	
-//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+
+	//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 }
 
 func (o *Reader) HasMemeber() bool {
@@ -9367,9 +9365,9 @@ func (o *Writer) Close() error {
 
 		return nil
 	}
-	
+
 	return fmt.Errorf("unable to close")
-	
+
 }
 
 // comply to io.Writer
@@ -9413,19 +9411,19 @@ func (o *Writer) CallName(nameA string, c Call) (Object, error) {
 
 		return ConvertToObject(rs), nil
 	}
-	
+
 	args := c.GetArgs()
-	
+
 	rs1, errT := CallObjectMethodFunc(o, nameA, args...)
-	
-//	if errT != nil || tk.IsError(rs1) {
-//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
-//		return ConvertToObject(rs3), nil
-//	}
-	
+
+	//	if errT != nil || tk.IsError(rs1) {
+	//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
+	//		return ConvertToObject(rs3), nil
+	//	}
+
 	return rs1, errT
-	
-//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+
+	//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 }
 
 func (o *Writer) GetValue() Object {
@@ -10455,27 +10453,27 @@ func (o *OrderedMap) CallMethod(nameA string, argsA ...Object) (Object, error) {
 }
 
 func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
-//	tk.Pl("call: %#v", c)
-//	rs, ok := o.GetMember[nameA]
-//	
-//	if ok {
-//		fn, ok := rs.(*Function)
-//		
-//		if ok {
-//			return fn.CallEx(c)
-//		}
-//		
-//		cfn, ok := rs.(*CompiledFunction)
-//		
-//		if ok {
-//			retT, errT := NewInvoker(c.VM(), cfn).Invoke(c.GetArgs()...)
-//
-//			return retT, errT
-//		}
-//		
-//		return NewCommonErrorWithPos(c, "member is not a function: %v", nameA), nil
-//	}
-	
+	//	tk.Pl("call: %#v", c)
+	//	rs, ok := o.GetMember[nameA]
+	//
+	//	if ok {
+	//		fn, ok := rs.(*Function)
+	//
+	//		if ok {
+	//			return fn.CallEx(c)
+	//		}
+	//
+	//		cfn, ok := rs.(*CompiledFunction)
+	//
+	//		if ok {
+	//			retT, errT := NewInvoker(c.VM(), cfn).Invoke(c.GetArgs()...)
+	//
+	//			return retT, errT
+	//		}
+	//
+	//		return NewCommonErrorWithPos(c, "member is not a function: %v", nameA), nil
+	//	}
+
 	switch nameA {
 	case "toStr":
 		return ToStringObject(o), nil
@@ -10489,49 +10487,49 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return o.CallMethod(args[0].String(), args[1:]...)
-	
+
 	case "size":
 		return ToIntObject(o.Value.Len()), nil
 	case "Set", "set":
 		args := c.GetArgs()
-		
+
 		if len(args) < 2 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
 
 		o.Value.Set(args[0].String(), args[1])
-		
+
 		return Undefined, nil
-		
+
 	case "Get", "get":
 		args := c.GetArgs()
-		
+
 		if len(args) < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
-		
+
 		rs := o.Value.GetCompact(args[0].String())
-		
+
 		if rs == nil {
 			return Undefined, nil
 		}
 
 		return ConvertToObject(rs), nil
-		
+
 	case "remove":
 		args := c.GetArgs()
-		
+
 		if len(args) < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
 
 		rs := o.Value.DeleteQuick(args[0].String())
-		
+
 		return ConvertToObject(rs), nil
-		
+
 	case "sort", "sortKeys":
 		args := c.GetArgs()
-		
+
 		errT := o.Value.SortStringKeys(ObjectsToS(args)...)
 
 		if errT != nil {
@@ -10539,10 +10537,10 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return o, nil
-		
+
 	case "sortReverse", "sortKeysReverse":
 		args := c.GetArgs()
-		
+
 		errT := o.Value.SortStringKeysDesc(ObjectsToS(args)...)
 
 		if errT != nil {
@@ -10550,7 +10548,7 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return o, nil
-		
+
 	case "toMap":
 		rs := make(Map)
 
@@ -10561,13 +10559,13 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		return rs, nil
 	case "hasKey":
 		args := c.GetArgs()
-		
+
 		if len(args) < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
-		
+
 		ok := o.Value.HasKey(args[0].String())
-		
+
 		if ok {
 			return Bool(true), nil
 		}
@@ -10589,7 +10587,7 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return ConvertToObject(rs1), nil
-		
+
 	case "moveToFront":
 		if c.Len() < 1 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
@@ -10602,7 +10600,7 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return o, nil
-		
+
 	case "moveToBack":
 		if c.Len() < 1 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
@@ -10615,7 +10613,7 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return o, nil
-		
+
 	case "moveBefore":
 		if c.Len() < 2 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
@@ -10628,7 +10626,7 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return o, nil
-		
+
 	case "moveAfter":
 		if c.Len() < 2 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
@@ -10641,7 +10639,7 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return o, nil
-		
+
 	case "getItemByIndex":
 		if c.Len() < 1 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
@@ -10654,7 +10652,7 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return Array{ToStringObject(rs1.Key), ConvertToObject(rs1.Value)}, nil
-		
+
 	case "oldest", "first":
 		rs1 := o.Value.Oldest()
 
@@ -10663,7 +10661,7 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return Array{ToStringObject(rs1.Key), ConvertToObject(rs1.Value)}, nil
-		
+
 	case "newest", "last":
 		rs1 := o.Value.Newest()
 
@@ -10672,7 +10670,7 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return Array{ToStringObject(rs1.Key), ConvertToObject(rs1.Value)}, nil
-		
+
 	case "sortByFunc":
 		if c.Len() < 1 {
 			return Undefined, fmt.Errorf("not enough parameters")
@@ -10683,25 +10681,25 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		if !ok {
 			return NewCommonErrorWithPos(c, "invalid type: %#v", c.Get(0)), nil
 		}
-		
+
 		if nv1.Value == nil {
 			return NewCommonErrorWithPos(c, "func code not compiled"), nil
 		}
-		
+
 		func1 := func(i, j string) bool {
 			rsT := nv1.Value(i, j)
-			
+
 			nvT, okT := rsT.(bool)
-			
-//			tk.Plv(rsT, nvT, okT)
-			
+
+			//			tk.Plv(rsT, nvT, okT)
+
 			if !okT {
 				return false
 			}
-			
+
 			return bool(nvT)
 		}
-		
+
 		errT := o.Value.SortByFunc(func1)
 
 		if errT != nil {
@@ -10709,21 +10707,21 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		return o, nil
-		
+
 	case "dump":
 		return String{Value: o.Value.Dump()}, nil
 	}
 
 	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
-	
+
 	if errT != nil || tk.IsError(rs1) {
 		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
 		return ConvertToObject(rs3), nil
 	}
-	
+
 	return rs1, errT
-	
-//	return Undefined, ErrInvalidIndex.NewError(nameA)
+
+	//	return Undefined, ErrInvalidIndex.NewError(nameA)
 }
 
 func (o *OrderedMap) GetValue() Object {
@@ -10966,10 +10964,10 @@ func NewOrderedMap(argsA ...Object) (Object, error) {
 	for k, v := range nv1 {
 		rs.Set(k, v)
 	}
-	
+
 	len1T := lenT / 2
-	
-	for i := 0; i < len1T; i ++ {
+
+	for i := 0; i < len1T; i++ {
 		rs.Set(argsA[i*2].String(), argsA[i*2+1])
 	}
 
@@ -12054,14 +12052,14 @@ func (o *Delegate) HasMemeber() bool {
 
 func (o *Delegate) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	return o.CallName(nameA, Call{Args: argsA})
-//	switch nameA {
-//	case "value":
-//		return o, nil
-//	case "toStr":
-//		return ToStringObject(o), nil
-//	}
-//
-//	return CallObjectMethodFunc(o, nameA, argsA...)
+	//	switch nameA {
+	//	case "value":
+	//		return o, nil
+	//	case "toStr":
+	//		return ToStringObject(o), nil
+	//	}
+	//
+	//	return CallObjectMethodFunc(o, nameA, argsA...)
 }
 
 func (o *Delegate) CallName(nameA string, c Call) (Object, error) {
@@ -12072,46 +12070,46 @@ func (o *Delegate) CallName(nameA string, c Call) (Object, error) {
 		return ToStringObject(o), nil
 	case "call":
 		args := c.GetArgs()
-		
+
 		rs := o.Value(ObjectsToI(args)...)
 
 		return ConvertToObject(rs), nil
 	}
-	
+
 	args := c.GetArgs()
-	
+
 	rs1, errT := CallObjectMethodFunc(o, nameA, args...)
-	
-//	if errT != nil || tk.IsError(rs1) {
-////		fmt.Printf("%#v\n", o)
-//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
-//		return ConvertToObject(rs3), nil
-//	}
+
+	//	if errT != nil || tk.IsError(rs1) {
+	////		fmt.Printf("%#v\n", o)
+	//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
+	//		return ConvertToObject(rs3), nil
+	//	}
 	if errT != nil || tk.IsError(rs1) {
 		if o.Value == nil {
 			return Undefined, NewCommonError("delegate nil: %v", nameA)
 		}
-		
+
 		args := c.GetArgs()
-		
-//		fmt.Printf("1args: %#v", args)
-		
+
+		//		fmt.Printf("1args: %#v", args)
+
 		aryT := make([]interface{}, 0, len(args)+1)
-		
+
 		aryT = append(aryT, nameA)
-		
+
 		for _, v := range args {
 			aryT = append(aryT, ConvertFromObject(v))
 		}
-		
+
 		rs := o.Value(aryT...)
 
 		return ConvertToObject(rs), nil
 	}
-	
+
 	return rs1, errT
-	
-//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+
+	//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 }
 
 func (o *Delegate) GetValue() Object {
@@ -13127,11 +13125,11 @@ func (o *JsVm) BinaryOp(tok token.Token, right Object) (Object, error) {
 }
 
 func (o *JsVm) CallName(nameA string, c Call) (Object, error) {
-//	tk.Pl("EvalMachine call: %#v", c)
+	//	tk.Pl("EvalMachine call: %#v", c)
 	switch nameA {
 	case "eval", "run":
 		args := c.GetArgs()
-		
+
 		if len(args) < 1 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
@@ -13143,14 +13141,14 @@ func (o *JsVm) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		if rs != nil {
-//			fmt.Println(lastResultT)
+			//			fmt.Println(lastResultT)
 			return ConvertToObject(rs.Export()), nil
 		}
 
 		return Undefined, nil
 	case "set":
 		args := c.GetArgs()
-		
+
 		if len(args) < 2 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
@@ -13164,7 +13162,7 @@ func (o *JsVm) CallName(nameA string, c Call) (Object, error) {
 		return Undefined, nil
 	case "get":
 		args := c.GetArgs()
-		
+
 		if len(args) < 1 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
@@ -13175,19 +13173,19 @@ func (o *JsVm) CallName(nameA string, c Call) (Object, error) {
 	}
 
 	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
-	
+
 	if errT != nil || tk.IsError(rs1) {
 		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
 		return ConvertToObject(rs3), nil
 	}
-	
+
 	return rs1, errT
-	
-//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+
+	//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 }
 
 func NewJsVm(c Call) (Object, error) {
-//	argsA := c.GetArgs()
+	//	argsA := c.GetArgs()
 
 	jsVmT := goja.New()
 
@@ -13338,7 +13336,7 @@ func NewJsVm(c Call) (Object, error) {
 //	switch nameA {
 //	case "eval", "run":
 //		args := c.GetArgs()
-//		
+//
 //		if len(args) < 1 {
 //			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 //		}
@@ -13360,15 +13358,15 @@ func NewJsVm(c Call) (Object, error) {
 //		if o.Value == nil {
 //			return NewCommonErrorWithPos(c, "invalid object"), nil
 //		}
-//		 
+//
 //		args := c.GetArgs()
-//		
+//
 //		if len(args) < 2 {
 //			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 //		}
-//		
+//
 //		globalObjT := o.Value.GlobalObject()
-//		
+//
 //		atomT, errT := o.Value.NewAtom(args[0].String())
 //		if errT != nil {
 //			return NewCommonErrorWithPos(c, "failed to new atom prop: %v", errT), nil
@@ -13385,31 +13383,31 @@ func NewJsVm(c Call) (Object, error) {
 //		if o.Value == nil {
 //			return NewCommonErrorWithPos(c, "invalid object"), nil
 //		}
-//		 
+//
 //		args := c.GetArgs()
-//		
+//
 //		if len(args) < 2 {
 //			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 //		}
-//		
+//
 //		f1 := ConvertFromObject(args[1])
-//		
+//
 ////		fmt.Printf("%T %v\n", f1, f1)
-//		
+//
 ////		var f2 = func(argsA ...interface{}) interface{} {
 ////			return f1.(tk.QuickVarDelegate)(argsA...)
 ////		}
-//		
+//
 ////		var f2 = func(this any, argsA ...interface{}) int {
 ////			return a1 + a2
 ////		}
-//		
+//
 ////		rs1 := f2(1, 2)
 ////		fmt.Printf("%T %v\n", rs1, rs1)
-//		
-//		
+//
+//
 ////		f2 = f1.(func(argsA ...interface{}) interface{})
-//		
+//
 //		errT := o.Value.RegisterFunc(args[0].String(), f1, false)
 //
 //		if errT != nil {
@@ -13419,13 +13417,13 @@ func NewJsVm(c Call) (Object, error) {
 //		return Undefined, nil
 //	case "get":
 //		args := c.GetArgs()
-//		
+//
 //		if len(args) < 1 {
 //			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 //		}
 //
 //		globalObjT := o.Value.GlobalObject()
-//		
+//
 //		atomT, errT := o.Value.NewAtom(args[0].String())
 //		if errT != nil {
 //			return NewCommonErrorWithPos(c, "failed to new atom prop: %v", errT), nil
@@ -13441,7 +13439,7 @@ func NewJsVm(c Call) (Object, error) {
 //		if o.Value == nil {
 //			return NewCommonErrorWithPos(c, "invalid object"), nil
 //		}
-//		
+//
 //		errT := o.Value.Close()
 //		if errT != nil {
 //			return NewCommonErrorWithPos(c, "failed to close: %v", errT), nil
@@ -13451,14 +13449,14 @@ func NewJsVm(c Call) (Object, error) {
 //	}
 //
 //	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
-//	
+//
 //	if errT != nil || tk.IsError(rs1) {
 //		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
 //		return ConvertToObject(rs3), nil
 //	}
-//	
+//
 //	return rs1, errT
-//	
+//
 ////	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 //}
 //
@@ -13466,7 +13464,7 @@ func NewJsVm(c Call) (Object, error) {
 ////	argsA := c.GetArgs()
 //
 //	qjsVmT, errT := quickjs.NewVM()
-//	
+//
 //	if errT != nil {
 //		return NewCommonError("faile to create QjsVm object: %v", errT), nil
 //	}
@@ -13479,7 +13477,7 @@ type EvalMachine struct {
 	// ObjectImpl
 
 	Value *Eval
-	
+
 	Members map[string]Object `json:"-"`
 }
 
@@ -13596,17 +13594,17 @@ func (o *EvalMachine) BinaryOp(tok token.Token, right Object) (Object, error) {
 }
 
 func (o *EvalMachine) CallName(nameA string, c Call) (Object, error) {
-//	tk.Pl("EvalMachine call: %#v", c)
+	//	tk.Pl("EvalMachine call: %#v", c)
 	switch nameA {
 	case "eval", "run":
 		args := c.GetArgs()
-		
+
 		if len(args) < 1 {
 			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
 		}
-		
+
 		codeT, ok := args[0].(*CharCode)
-		
+
 		if ok {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -13618,7 +13616,7 @@ func (o *EvalMachine) CallName(nameA string, c Call) (Object, error) {
 			}
 
 			if lastResultT != nil && lastResultT.TypeCode() != 0 {
-	//			fmt.Println(lastResultT)
+				//			fmt.Println(lastResultT)
 				return lastResultT, nil
 			}
 
@@ -13635,22 +13633,22 @@ func (o *EvalMachine) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		if lastResultT != nil && lastResultT.TypeCode() != 0 {
-//			fmt.Println(lastResultT)
+			//			fmt.Println(lastResultT)
 			return lastResultT, nil
 		}
 
 		return Undefined, nil
 	}
 
-//	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
-//	
-//	if errT != nil || tk.IsError(rs1) {
-//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
-//		return ConvertToObject(rs3), nil
-//	}
-//	
-//	return rs1, errT
-	
+	//	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
+	//
+	//	if errT != nil || tk.IsError(rs1) {
+	//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(c.GetArgs())...)
+	//		return ConvertToObject(rs3), nil
+	//	}
+	//
+	//	return rs1, errT
+
 	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 }
 
@@ -13670,9 +13668,9 @@ func NewEvalMachine(c Call) (Object, error) {
 		// OptimizeConst:     !noOptimizer,
 		// OptimizeExpr:      !noOptimizer,
 	}
-	
+
 	argsT := ObjectsToS(argsA)
-	
+
 	evalT := NewEvalQuick(map[string]interface{}{"versionG": VersionG, "argsG": argsT, "inputG": argsA, "scriptPathG": "", "runModeG": "eval"}, compilerOptionsT)
 
 	return &EvalMachine{Value: evalT}, nil
@@ -13728,33 +13726,33 @@ func (o *MapArray) SetValue(valueA Object) error {
 
 func (o *MapArray) GetMember(idxA string) Object {
 	return Undefined
-//	if o.Members == nil {
-//		return Undefined
-//	}
-//
-//	v1, ok := o.Members[idxA]
-//
-//	if !ok {
-//		return Undefined
-//	}
-//
-//	return v1
+	//	if o.Members == nil {
+	//		return Undefined
+	//	}
+	//
+	//	v1, ok := o.Members[idxA]
+	//
+	//	if !ok {
+	//		return Undefined
+	//	}
+	//
+	//	return v1
 }
 
 func (o *MapArray) SetMember(idxA string, valueA Object) error {
-//	if o.Members == nil {
-//		o.Members = map[string]Object{}
-//	}
-//
-//	if IsUndefInternal(valueA) {
-//		delete(o.Members, idxA)
-//		return nil
-//	}
-//
-//	o.Members[idxA] = valueA
+	//	if o.Members == nil {
+	//		o.Members = map[string]Object{}
+	//	}
+	//
+	//	if IsUndefInternal(valueA) {
+	//		delete(o.Members, idxA)
+	//		return nil
+	//	}
+	//
+	//	o.Members[idxA] = valueA
 
-	 return fmt.Errorf("unsupported action(set member)")
-//	return nil
+	return fmt.Errorf("unsupported action(set member)")
+	//	return nil
 }
 
 func (o *MapArray) Equal(right Object) bool {
@@ -13793,7 +13791,7 @@ func (o *MapArray) Len() int {
 
 func (o *MapArray) IndexSet(index, value Object) error {
 	var idxT int
-	
+
 	switch v := index.(type) {
 	case Int:
 		idxT = int(v)
@@ -13801,7 +13799,7 @@ func (o *MapArray) IndexSet(index, value Object) error {
 		idxT = int(v)
 	default:
 		keyT := index.String()
-		
+
 		idxT = o.Value.GetIndexByKey(keyT)
 	}
 
@@ -13810,13 +13808,13 @@ func (o *MapArray) IndexSet(index, value Object) error {
 	}
 
 	o.Value.Items[idxT] = value.String()
-	
+
 	return nil
 }
 
 func (o *MapArray) IndexGet(index Object) (Object, error) {
 	var idxT int
-	
+
 	switch v := index.(type) {
 	case Int:
 		idxT = int(v)
@@ -13824,7 +13822,7 @@ func (o *MapArray) IndexGet(index Object) (Object, error) {
 		idxT = int(v)
 	default:
 		keyT := index.String()
-		
+
 		idxT = o.Value.GetIndexByKey(keyT)
 	}
 
@@ -13840,15 +13838,15 @@ func (o *MapArray) BinaryOp(tok token.Token, right Object) (Object, error) {
 }
 
 func (o *MapArray) CallName(nameA string, c Call) (Object, error) {
-//	tk.Pl("EvalMachine call: %#v", c)
+	//	tk.Pl("EvalMachine call: %#v", c)
 	switch nameA {
 	case "encode":
 		args := c.GetArgs()
-		
-//		if len(args) < 1 {
-//			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
-//		}
-		
+
+		//		if len(args) < 1 {
+		//			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		//		}
+
 		rs := o.Value.Encode(ObjectsToS(args)...)
 
 		return ToStringObject(rs), nil
@@ -13877,30 +13875,30 @@ func NewWebSocket(c Call) (Object, error) {
 	if len(argsA) < 2 {
 		if len(argsA) > 0 { // client mode
 			nv1 := argsA[0].String()
-			
+
 			connT, _, errT := websocket.DefaultDialer.Dial(nv1, nil)
 			if errT != nil {
 				return NewCommonErrorWithPos(c, "failed to dial websocket server: %v", errT), nil
 			}
-	
+
 			return &WebSocket{Value: connT}, nil
 		}
-		
+
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
 	}
-	
+
 	nv1, ok := argsA[0].(*HttpReq)
-	
+
 	if !ok {
 		return NewCommonErrorWithPos(c, "unsupport type of paramter 1: %T", argsA[0]), nil
 	}
 
 	nv2, ok := argsA[1].(*HttpResp)
-	
+
 	if !ok {
 		return NewCommonErrorWithPos(c, "unsupport type of paramter 2: %T", argsA[1]), nil
 	}
-	
+
 	var upgraderT = websocket.Upgrader{}
 
 	conT, errT := upgraderT.Upgrade(nv2.Value, nv1.Value, nil)
@@ -13940,7 +13938,7 @@ func (o *WebSocket) CallMethod(nameA string, argsA ...Object) (Object, error) {
 }
 
 func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
-//	tk.Pl("here0 nameA: %#v", 1)
+	//	tk.Pl("here0 nameA: %#v", 1)
 	switch nameA {
 	case "toStr":
 		return ToStringObject(o), nil
@@ -13952,240 +13950,240 @@ func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to read message: %v", "connection is nil"), nil
 		}
-		
+
 		mt, message, errT := o.Value.ReadMessage()
-		
+
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to read message: %v", errT), nil
 		}
-		
+
 		return Array{ToIntObject(mt), Bytes(message)}, nil
 	case "readTextMsg", "getTextMsg":
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to read message: %v", "connection is nil"), nil
 		}
-		
+
 		mt, message, errT := o.Value.ReadMessage()
-		
+
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to read message: %v", errT), nil
 		}
-		
+
 		if mt == websocket.CloseMessage {
 			return NewCommonErrorWithPos(c, "is a close message: %v", mt), nil
 		}
-		
+
 		if mt != websocket.TextMessage {
 			return NewCommonErrorWithPos(c, "not a text message: %v", mt), nil
 		}
-		
+
 		return String{Value: string(message)}, nil
 	case "readBinMsg", "getBinMsg":
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to read message: %v", "connection is nil"), nil
 		}
-		
+
 		mt, message, errT := o.Value.ReadMessage()
-		
+
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to read message: %v", errT), nil
 		}
-		
+
 		if mt == websocket.CloseMessage {
 			return NewCommonErrorWithPos(c, "is a close message: %v", mt), nil
 		}
-		
+
 		if mt != websocket.BinaryMessage {
 			return NewCommonErrorWithPos(c, "not a binary message: %v", mt), nil
 		}
-		
+
 		return Bytes(message), nil
 	case "writeMsg", "sendMsg":
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to write message: %v", "connection is nil"), nil
 		}
-		
+
 		argsA := c.GetArgs()
 
 		if len(argsA) < 2 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
-		
+
 		nv1, ok := argsA[0].(Int)
-		
+
 		if !ok {
 			return NewCommonErrorWithPos(c, "unsupport type of paramter 1: %T", argsA[0]), nil
 		}
-		
+
 		var nv2b []byte
-		
+
 		nv2, ok := argsA[1].(Bytes)
-		
+
 		if !ok {
 			nv2s, ok := argsA[1].(String)
-			
+
 			if !ok {
 				return NewCommonErrorWithPos(c, "unsupport type of paramter 2: %T", argsA[1]), nil
 			}
-		
+
 			nv2b = []byte(nv2s.Value)
 		} else {
 			nv2b = []byte(nv2)
 		}
-		
+
 		errT := o.Value.WriteMessage(int(nv1), nv2b)
-		
+
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to write message: %v", errT), nil
 		}
-		
+
 		return Undefined, nil
 	case "writeTextMsg", "sendTextMsg":
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to write message: %v", "connection is nil"), nil
 		}
-		
+
 		argsA := c.GetArgs()
 
 		if len(argsA) < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
-		
+
 		nv1 := argsA[0].String()
-		
+
 		errT := o.Value.WriteMessage(websocket.TextMessage, []byte(nv1))
-		
+
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to write message: %v", errT), nil
 		}
-		
+
 		return Undefined, nil
 	case "writeBinMsg", "sendBinMsg":
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to write message: %v", "connection is nil"), nil
 		}
-		
+
 		argsA := c.GetArgs()
 
 		if len(argsA) < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
-		
+
 		var nv2b []byte
-		
+
 		nv1, ok := argsA[0].(Bytes)
-		
+
 		if !ok {
 			nv2s, ok := argsA[0].(String)
-			
+
 			if !ok {
 				return NewCommonErrorWithPos(c, "unsupport type of paramter 1: %T", argsA[0]), nil
 			}
-		
+
 			nv2b = []byte(nv2s.Value)
 		} else {
 			nv2b = []byte(nv1)
 		}
-		
+
 		errT := o.Value.WriteMessage(websocket.BinaryMessage, []byte(nv2b))
-		
+
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to write message: %v", errT), nil
 		}
-		
+
 		return Undefined, nil
 	case "writeCloseMsg", "sendCloseMsg":
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to write message: %v", "connection is nil"), nil
 		}
-		
+
 		errT := o.Value.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-		
+
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to write message: %v", errT), nil
 		}
-		
+
 		return Undefined, nil
 	case "close":
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to close connection: %v", "connection is nil"), nil
 		}
-		
+
 		errT := o.Value.Close()
 
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to close: %v", errT), nil
 		}
-		
+
 		return Undefined, nil
 	case "setReadTimeout": // 0 to no timeout
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "connection is nil"), nil
 		}
-		
+
 		argsA := c.GetArgs()
 
 		if len(argsA) < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
-		
+
 		nv1 := ToFloatQuick(argsA[0])
-		
+
 		errT := o.Value.SetReadDeadline(time.Now().Add(time.Duration(nv1 * float64(time.Second))))
-		
+
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to set timeout: %v", errT), nil
 		}
-		
+
 		return Undefined, nil
 	case "setWriteTimeout": // 0 to no timeout
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "connection is nil"), nil
 		}
-		
+
 		argsA := c.GetArgs()
 
 		if len(argsA) < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
-		
+
 		nv1 := ToFloatQuick(argsA[0])
-		
+
 		errT := o.Value.SetWriteDeadline(time.Now().Add(time.Duration(nv1 * float64(time.Second))))
-		
+
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to set timeout: %v", errT), nil
 		}
-		
+
 		return Undefined, nil
 	case "setReadLimit": // 0 to no limit
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "connection is nil"), nil
 		}
-		
+
 		argsA := c.GetArgs()
 
 		if len(argsA) < 1 {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
-		
+
 		nv1 := ToIntQuick(argsA[0])
-		
+
 		o.Value.SetReadLimit(int64(nv1))
-		
+
 		return Undefined, nil
 	}
 
-//	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
-//	
-//	if errT != nil || tk.IsError(rs1) {
-//	tk.Pl("here1 nameA: %#v", 2)
+	//	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
+	//
+	//	if errT != nil || tk.IsError(rs1) {
+	//	tk.Pl("here1 nameA: %#v", 2)
 	rs3 := tk.ReflectCallMethodCompactWithError(o.Value, nameA, ObjectsToI(c.GetArgs())...)
-//	tk.Pl("here2 nameA: %#v", rs3)
+	//	tk.Pl("here2 nameA: %#v", rs3)
 	return ConvertToObject(rs3), nil
-//	}
+	//	}
 
-//	return rs1, errT
+	//	return rs1, errT
 }
 
 func (o *WebSocket) GetValue() Object {
@@ -14245,7 +14243,6 @@ func (o *WebSocket) Close() error {
 	if errT != nil {
 		return fmt.Errorf("failed to close: %v", errT)
 	}
-	
+
 	return nil
 }
-

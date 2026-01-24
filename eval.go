@@ -61,7 +61,7 @@ func (r *Eval) Run(ctx context.Context, script []byte) (Object, *Bytecode, error
 	if err != nil {
 		return nil, bytecode, err
 	}
-	
+
 	return ret, bytecode, nil
 }
 
@@ -84,7 +84,7 @@ func (r *Eval) RunByteCode(ctx context.Context, byteCodeA *Bytecode) (Object, er
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return ret, nil
 }
 

@@ -137,22 +137,21 @@ var namedValueMapG = map[string]interface{}{
 	"time.TimeOnly": time.TimeOnly,
 
 	"time.Millisecond": time.Millisecond,
-	"time.Second": time.Second,
-	"time.Minute": time.Minute,
-	"time.Hour": time.Hour,
+	"time.Second":      time.Second,
+	"time.Minute":      time.Minute,
+	"time.Hour":        time.Hour,
 
-	"math.Pi":   math.Pi,
-	"math.E":   math.E,
+	"math.Pi": math.Pi,
+	"math.E":  math.E,
 
-	"maxInt":   math.MaxInt,
-	"minInt":   math.MinInt,
-	"maxFloat": math.MaxFloat64,
-	"minFloat": math.SmallestNonzeroFloat64,
+	"maxInt":        math.MaxInt,
+	"minInt":        math.MinInt,
+	"maxFloat":      math.MaxFloat64,
+	"minFloat":      math.SmallestNonzeroFloat64,
 	"math.MaxInt":   math.MaxInt,
 	"math.MinInt":   math.MinInt,
 	"math.MaxFloat": math.MaxFloat64,
 	"math.MinFloat": math.SmallestNonzeroFloat64,
-
 
 	"http.StatusContinue":           100, // RFC 9110, 15.2.1
 	"http.StatusSwitchingProtocols": 101, // RFC 9110, 15.2.2
@@ -253,8 +252,8 @@ var namedValueMapG = map[string]interface{}{
 
 // first arg of each func is the object reference
 var methodFuncMapG = map[int]map[string]*Function{
-	103: map[string]*Function{ // Bool
-		"toStr": &Function{
+	103: { // Bool
+		"toStr": {
 			Name: "toStr",
 			ValueEx: func(c Call) (Object, error) {
 				// tk.Pl("bool.toStr: %#v", c)
@@ -269,8 +268,8 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	105: map[string]*Function{ // String
-		"toStr": &Function{
+	105: { // String
+		"toStr": {
 			Name: "toStr",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(String)
@@ -282,7 +281,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(nv.Value), nil
 			},
 		},
-		"trim": &Function{
+		"trim": {
 			Name: "trim",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(String)
@@ -295,7 +294,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(tk.Trim(nv.Value, args...)), nil
 			},
 		},
-		"contains": &Function{
+		"contains": {
 			Name: "contains",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(String)
@@ -311,8 +310,8 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	106: map[string]*Function{ // *MutableString
-		"toStr": &Function{
+	106: { // *MutableString
+		"toStr": {
 			Name: "toStr",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*MutableString)
@@ -324,7 +323,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(nv.String()), nil
 			},
 		},
-		"trim": &Function{
+		"trim": {
 			Name: "trim",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*MutableString)
@@ -341,54 +340,54 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-//	115: map[string]*Function{ // Array
-//		"sortByFuncQuick": &Function{
-//			Name: "sortByFuncQuick",
-//			ValueEx: func(c Call) (Object, error) {
-//				nv, ok := c.This.(*CompiledFunction)
-//
-//				if !ok {
-//					return NewCommonError("invalid type: %#v", c.This), nil
-//				}
-//
-//				if nv.Instructions == nil {
-//					return NewCommonError("code not compiled"), nil
-//				}
-//
-//				if c.VM() == nil {
-//					return NewCommonError("no VM specified"), nil
-//				}
-//
-//				argsT := c.GetArgs()
-//
-//				retT, errT := NewInvoker(c.VM(), nv).Invoke(argsT...)
-//
-//				if errT != nil {
-//					return NewCommonError("failed to run compiled function: %v", errT), nil
-//				}
-//
-//				return retT, nil
-//			},
-//		},
-//		"trim": &Function{
-//			Name: "trim",
-//			ValueEx: func(c Call) (Object, error) {
-//				nv, ok := c.This.(*MutableString)
-//				if !ok {
-//					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
-//				}
-//
-//				args := toArgsS(0, c)
-//
-//				nv.Value = tk.Trim(nv.Value, args...)
-//				// tk.Pl("h1: %#v %#v %#v", c, args, nv.Value)
-//
-//				return ToStringObject(nv.Value), nil
-//			},
-//		},
-//	},
-	135: map[string]*Function{ // *OrderedMap
-		"toStr": &Function{
+	//	115: map[string]*Function{ // Array
+	//		"sortByFuncQuick": &Function{
+	//			Name: "sortByFuncQuick",
+	//			ValueEx: func(c Call) (Object, error) {
+	//				nv, ok := c.This.(*CompiledFunction)
+	//
+	//				if !ok {
+	//					return NewCommonError("invalid type: %#v", c.This), nil
+	//				}
+	//
+	//				if nv.Instructions == nil {
+	//					return NewCommonError("code not compiled"), nil
+	//				}
+	//
+	//				if c.VM() == nil {
+	//					return NewCommonError("no VM specified"), nil
+	//				}
+	//
+	//				argsT := c.GetArgs()
+	//
+	//				retT, errT := NewInvoker(c.VM(), nv).Invoke(argsT...)
+	//
+	//				if errT != nil {
+	//					return NewCommonError("failed to run compiled function: %v", errT), nil
+	//				}
+	//
+	//				return retT, nil
+	//			},
+	//		},
+	//		"trim": &Function{
+	//			Name: "trim",
+	//			ValueEx: func(c Call) (Object, error) {
+	//				nv, ok := c.This.(*MutableString)
+	//				if !ok {
+	//					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+	//				}
+	//
+	//				args := toArgsS(0, c)
+	//
+	//				nv.Value = tk.Trim(nv.Value, args...)
+	//				// tk.Pl("h1: %#v %#v %#v", c, args, nv.Value)
+	//
+	//				return ToStringObject(nv.Value), nil
+	//			},
+	//		},
+	//	},
+	135: { // *OrderedMap
+		"toStr": {
 			Name: "toStr",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*OrderedMap)
@@ -400,7 +399,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(nv.String()), nil
 			},
 		},
-		"toMap": &Function{
+		"toMap": {
 			Name: "toMap",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*OrderedMap)
@@ -417,7 +416,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return rs, nil
 			},
 		},
-		"sortKeys": &Function{
+		"sortKeys": {
 			Name: "sortKeys",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*OrderedMap)
@@ -434,7 +433,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return nv, nil
 			},
 		},
-		"sortKeysByFunc": &Function{
+		"sortKeysByFunc": {
 			Name: "sortKeysByFunc",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*OrderedMap)
@@ -461,7 +460,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return nv, nil
 			},
 		},
-		"moveToFront": &Function{
+		"moveToFront": {
 			Name: "moveToFront",
 			ValueEx: func(c Call) (Object, error) {
 				// tk.Plv("c", c)
@@ -483,7 +482,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"moveToBack": &Function{
+		"moveToBack": {
 			Name: "moveToBack",
 			ValueEx: func(c Call) (Object, error) {
 				// tk.Plv("c", c)
@@ -505,7 +504,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"moveBefore": &Function{
+		"moveBefore": {
 			Name: "moveBefore",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*OrderedMap)
@@ -526,7 +525,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"moveAfter": &Function{
+		"moveAfter": {
 			Name: "moveAfter",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*OrderedMap)
@@ -547,7 +546,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"oldest": &Function{
+		"oldest": {
 			Name: "oldest",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*OrderedMap)
@@ -568,7 +567,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Array{ToStringObject(rs1.Key), ConvertToObject(rs1.Value)}, nil
 			},
 		},
-		"newest": &Function{
+		"newest": {
 			Name: "newest",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*OrderedMap)
@@ -589,7 +588,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Array{ToStringObject(rs1.Key), ConvertToObject(rs1.Value)}, nil
 			},
 		},
-		"getItemByIndex": &Function{
+		"getItemByIndex": {
 			Name: "getItemByIndex",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*OrderedMap)
@@ -612,7 +611,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Array{ToStringObject(rs1.Key), ConvertToObject(rs1.Value)}, nil
 			},
 		},
-		"getKeys": &Function{
+		"getKeys": {
 			Name: "getKeys",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*OrderedMap)
@@ -629,7 +628,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ConvertToObject(rs1), nil
 			},
 		},
-		"dump": &Function{
+		"dump": {
 			Name: "dump",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*OrderedMap)
@@ -641,8 +640,8 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	181: map[string]*Function{ // *Function
-		"toStr": &Function{
+	181: { // *Function
+		"toStr": {
 			Name: "toStr",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*Function)
@@ -654,7 +653,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(nv.String()), nil
 			},
 		},
-		"run": &Function{
+		"run": {
 			Name: "run",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*Function)
@@ -676,7 +675,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return (*nv).Call(append([]Object{nv}, argsT...)...)
 			},
 		},
-		"threadRun": &Function{
+		"threadRun": {
 			Name: "threadRun",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*Function)
@@ -699,8 +698,8 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	185: map[string]*Function{ // *CompiledFunction
-		"toStr": &Function{
+	185: { // *CompiledFunction
+		"toStr": {
 			Name: "toStr",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*CompiledFunction)
@@ -712,7 +711,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(nv.String()), nil
 			},
 		},
-		"run": &Function{
+		"run": {
 			Name: "run",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*CompiledFunction)
@@ -740,7 +739,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return retT, nil
 			},
 		},
-		"threadRun": &Function{
+		"threadRun": {
 			Name: "threadRun",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*CompiledFunction)
@@ -767,8 +766,8 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	191: map[string]*Function{ // *CharCode
-		"toStr": &Function{
+	191: { // *CharCode
+		"toStr": {
 			Name: "toStr",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*CharCode)
@@ -780,7 +779,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(nv.String()), nil
 			},
 		},
-		"compile": &Function{
+		"compile": {
 			Name: "compile",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*CharCode)
@@ -801,7 +800,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return nv, nil
 			},
 		},
-		"run": &Function{
+		"run": {
 			Name: "run",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*CharCode)
@@ -848,7 +847,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return retT, nil
 			},
 		},
-		"runEx": &Function{
+		"runEx": {
 			Name: "runEx",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*CharCode)
@@ -882,7 +881,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 					return NewCommonErrorWithPos(c, "unsupported parameter type(expect map): %v", argsT[0].TypeName()), nil
 				}
 
-//				fmt.Printf("m: %#v", m)
+				//				fmt.Printf("m: %#v", m)
 
 				if m != nil {
 					for k, v := range m {
@@ -891,8 +890,8 @@ var methodFuncMapG = map[int]map[string]*Function{
 				}
 
 				envT := NewBaseEnv(globalsT) // Map{}
-				
-//				fmt.Printf("envT: %#v", envT)
+
+				//				fmt.Printf("envT: %#v", envT)
 
 				// if lenT > 1 {
 				// 	additionsA = argsT
@@ -910,7 +909,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return retT, nil
 			},
 		},
-		"threadRun": &Function{
+		"threadRun": {
 			Name: "threadRun",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*CharCode)
@@ -938,7 +937,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 				var globalsT map[string]interface{} = nil
 				// var additionsA []Object = nil
-				
+
 				envT := NewBaseEnv(globalsT) // Map{}
 
 				// if lenT > 1 {
@@ -954,8 +953,8 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	193: map[string]*Function{ // *Gel
-		"toStr": &Function{
+	193: { // *Gel
+		"toStr": {
 			Name: "toStr",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*Gel)
@@ -967,7 +966,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(nv.String()), nil
 			},
 		},
-		"compile": &Function{
+		"compile": {
 			Name: "compile",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*Gel)
@@ -992,7 +991,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return nv, nil
 			},
 		},
-		"decrypt": &Function{
+		"decrypt": {
 			Name: "decrypt",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*Gel)
@@ -1016,7 +1015,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"load": &Function{
+		"load": {
 			Name: "load",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*Gel)
@@ -1056,8 +1055,8 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	203: map[string]*Function{ // *BigFloat
-		"toStr": &Function{
+	203: { // *BigFloat
+		"toStr": {
 			Name: "toStr",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*BigFloat)
@@ -1069,7 +1068,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(nv.String()), nil
 			},
 		},
-		"text": &Function{
+		"text": {
 			Name: "text",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*BigFloat)
@@ -1099,20 +1098,20 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	307: map[string]*Function{ // *StringBuilder
-		"toStr": &Function{
+	307: { // *StringBuilder
+		"toStr": {
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
 				return ToStringObject(((*strings.Builder)(args[0].(*StringBuilder).Value)).String()), nil
 			},
 		},
-		"String": &Function{
+		"String": {
 			Name: "String",
 			Value: func(args ...Object) (Object, error) {
 				return ToStringObject(((*strings.Builder)(args[0].(*StringBuilder).Value)).String()), nil
 			},
 		},
-		"write": &Function{
+		"write": {
 			Name: "write",
 			Value: func(args ...Object) (Object, error) {
 				var errT error
@@ -1167,7 +1166,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Int(countT), nil
 			},
 		},
-		"writeStr": &Function{
+		"writeStr": {
 			Name: "writeStr",
 			Value: func(args ...Object) (Object, error) {
 				var errT error
@@ -1189,7 +1188,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Int(rsT), nil
 			},
 		},
-		"WriteString": &Function{
+		"WriteString": {
 			Name: "WriteString",
 			Value: func(args ...Object) (Object, error) {
 				var errT error
@@ -1211,7 +1210,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Int(rsT), nil
 			},
 		},
-		"writeBytes": &Function{
+		"writeBytes": {
 			Name: "writeBytes",
 			Value: func(argsA ...Object) (Object, error) {
 				var errT error
@@ -1237,7 +1236,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Int(rsT), nil
 			},
 		},
-		"clear": &Function{
+		"clear": {
 			Name: "clear",
 			Value: func(argsA ...Object) (Object, error) {
 				o := argsA[0].(*StringBuilder)
@@ -1246,7 +1245,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"reset": &Function{
+		"reset": {
 			Name: "reset",
 			Value: func(argsA ...Object) (Object, error) {
 				o := argsA[0].(*StringBuilder)
@@ -1256,20 +1255,20 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	308: map[string]*Function{ // *BytesBuffer
-		"toStr": &Function{
+	308: { // *BytesBuffer
+		"toStr": {
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
 				return ToStringObject(((*bytes.Buffer)(args[0].(*BytesBuffer).Value)).String()), nil
 			},
 		},
-		"bytes": &Function{
+		"bytes": {
 			Name: "bytes",
 			Value: func(args ...Object) (Object, error) {
 				return Bytes(((*bytes.Buffer)(args[0].(*BytesBuffer).Value)).Bytes()), nil
 			},
 		},
-		"write": &Function{
+		"write": {
 			Name: "write",
 			Value: func(args ...Object) (Object, error) {
 				var errT error
@@ -1324,7 +1323,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Int(countT), nil
 			},
 		},
-		"writeStr": &Function{
+		"writeStr": {
 			Name: "writeStr",
 			Value: func(args ...Object) (Object, error) {
 				var errT error
@@ -1346,7 +1345,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Int(rsT), nil
 			},
 		},
-		"writeBytes": &Function{
+		"writeBytes": {
 			Name: "writeBytes",
 			Value: func(argsA ...Object) (Object, error) {
 				var errT error
@@ -1372,7 +1371,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Int(rsT), nil
 			},
 		},
-		"clear": &Function{
+		"clear": {
 			Name: "clear",
 			Value: func(argsA ...Object) (Object, error) {
 				o := argsA[0].(*StringBuilder)
@@ -1381,7 +1380,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"reset": &Function{
+		"reset": {
 			Name: "reset",
 			Value: func(argsA ...Object) (Object, error) {
 				o := argsA[0].(*StringBuilder)
@@ -1391,40 +1390,40 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	311: map[string]*Function{ // *Time
-		"toStr": &Function{
+	311: { // *Time
+		"toStr": {
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
 				return ToStringObject(((time.Time)(args[0].(*Time).Value)).String()), nil
 			},
 		},
-		"now": &Function{
+		"now": {
 			Name: "now",
 			Value: func(args ...Object) (Object, error) {
 				return &Time{Value: time.Now()}, nil
 			},
 		},
 	},
-	315: map[string]*Function{ // *Seq
-		"toStr": &Function{
+	315: { // *Seq
+		"toStr": {
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
 				return ToStringObject(((*tk.Seq)(args[0].(*Seq).Value)).String()), nil
 			},
 		},
-		"get": &Function{
+		"get": {
 			Name: "get",
 			Value: func(args ...Object) (Object, error) {
 				return ToIntObject(((*tk.Seq)(args[0].(*Seq).Value)).Get()), nil
 			},
 		},
-		"getCurrent": &Function{
+		"getCurrent": {
 			Name: "getCurrent",
 			Value: func(args ...Object) (Object, error) {
 				return ToIntObject(((*tk.Seq)(args[0].(*Seq).Value)).GetCurrent()), nil
 			},
 		},
-		"reset": &Function{
+		"reset": {
 			Name: "reset",
 			Value: func(argsA ...Object) (Object, error) {
 				o := argsA[0].(*Seq)
@@ -1438,14 +1437,14 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	317: map[string]*Function{ // *Mutex
-		"toStr": &Function{
+	317: { // *Mutex
+		"toStr": {
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
 				return ToStringObject(fmt.Sprintf("%v", ((*sync.RWMutex)(args[0].(*Mutex).Value)))), nil
 			},
 		},
-		"lock": &Function{
+		"lock": {
 			Name: "lock",
 			Value: func(args ...Object) (Object, error) {
 				objT := (*sync.RWMutex)(args[0].(*Mutex).Value)
@@ -1455,7 +1454,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"unlock": &Function{
+		"unlock": {
 			Name: "unlock",
 			Value: func(args ...Object) (Object, error) {
 				objT := (*sync.RWMutex)(args[0].(*Mutex).Value)
@@ -1465,7 +1464,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"rLock": &Function{
+		"rLock": {
 			Name: "rLock",
 			Value: func(args ...Object) (Object, error) {
 				objT := (*sync.RWMutex)(args[0].(*Mutex).Value)
@@ -1475,7 +1474,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"rUnlock": &Function{
+		"rUnlock": {
 			Name: "rUnlock",
 			Value: func(args ...Object) (Object, error) {
 				objT := (*sync.RWMutex)(args[0].(*Mutex).Value)
@@ -1485,7 +1484,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"tryLock": &Function{
+		"tryLock": {
 			Name: "tryLock",
 			Value: func(args ...Object) (Object, error) {
 				objT := (*sync.RWMutex)(args[0].(*Mutex).Value)
@@ -1494,7 +1493,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 			},
 		},
-		"tryRLock": &Function{
+		"tryRLock": {
 			Name: "tryRLock",
 			Value: func(args ...Object) (Object, error) {
 				objT := (*sync.RWMutex)(args[0].(*Mutex).Value)
@@ -1504,14 +1503,14 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	319: map[string]*Function{ // *Mux
-		"toStr": &Function{
+	319: { // *Mux
+		"toStr": {
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
 				return ToStringObject(fmt.Sprintf("%v", ((*http.ServeMux)(args[0].(*Mux).Value)))), nil
 			},
 		},
-		"setHandler": &Function{
+		"setHandler": {
 			Name: "setHandler",
 			ValueEx: func(c Call) (Object, error) {
 				lenT := c.Len()
@@ -1629,7 +1628,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 			},
 		},
-		"startHttpServer": &Function{
+		"startHttpServer": {
 			Name: "startHttpServer",
 			ValueEx: func(c Call) (Object, error) {
 				args := ObjectsToS(c.GetArgs())
@@ -1657,7 +1656,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"startHttpsServer": &Function{
+		"startHttpsServer": {
 			Name: "startHttpsServer",
 			ValueEx: func(c Call) (Object, error) {
 				args := ObjectsToS(c.GetArgs())
@@ -1698,7 +1697,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"threadStartHttpServer": &Function{
+		"threadStartHttpServer": {
 			Name: "threadStartHttpServer",
 			ValueEx: func(c Call) (Object, error) {
 				args := ObjectsToS(c.GetArgs())
@@ -1716,7 +1715,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"threadStartHttpsServer": &Function{
+		"threadStartHttpsServer": {
 			Name: "threadStartHttpsServer",
 			ValueEx: func(c Call) (Object, error) {
 				args := ObjectsToS(c.GetArgs())
@@ -1748,21 +1747,21 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	321: map[string]*Function{ // *HttpReq
-		"toStr": &Function{
+	321: { // *HttpReq
+		"toStr": {
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
 				return ToStringObject(fmt.Sprintf("%v", (*http.Request)(args[0].(*HttpReq).Value))), nil
 			},
 		},
-		"parseMultipartForm": &Function{
+		"parseMultipartForm": {
 			Name: "parseMultipartForm",
 			ValueEx: func(c Call) (Object, error) {
 				objT := c.This.(*HttpReq)
 				return ConvertToObject(objT.Value.ParseMultipartForm(1000000000000)), nil
 			},
 		},
-		"saveFormFile": &Function{
+		"saveFormFile": {
 			Name: "saveFormFile",
 			ValueEx: func(c Call) (Object, error) {
 				objT := c.This.(*HttpReq)
@@ -1816,7 +1815,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 			},
 		},
-		"getFormFile": &Function{
+		"getFormFile": {
 			Name: "getFormFile",
 			ValueEx: func(c Call) (Object, error) {
 				objT := c.This.(*HttpReq)
@@ -1863,14 +1862,14 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	325: map[string]*Function{ // *HttpHandler
-		"toStr": &Function{
+	325: { // *HttpHandler
+		"toStr": {
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
 				return ToStringObject(fmt.Sprintf("%v", ((func(http.ResponseWriter, *http.Request))(args[0].(*HttpHandler).Value)))), nil
 			},
 		},
-		"set": &Function{
+		"set": {
 			Name: "set",
 			ValueEx: func(c Call) (Object, error) {
 				objT := c.This.(*HttpHandler)
@@ -2012,8 +2011,8 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	601: map[string]*Function{ // *Delegate
-		"toStr": &Function{
+	601: { // *Delegate
+		"toStr": {
 			Name: "toStr",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*Delegate)
@@ -2025,7 +2024,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(nv.String()), nil
 			},
 		},
-		"compile": &Function{
+		"compile": {
 			Name: "compile",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*Delegate)
@@ -2059,11 +2058,11 @@ var methodFuncMapG = map[int]map[string]*Function{
 					var globalsA map[string]interface{} = nil
 
 					envT := NewBaseEnv(globalsA) // Map{}
-//					 tk.Plo(c.GetArgs())
+					//					 tk.Plo(c.GetArgs())
 
 					(*envT)["inputG"] = inputGT
 
-//					 tk.Plo(envT)
+					//					 tk.Plo(envT)
 
 					var paramsA []Object = make([]Object, 0, len(argsA)+1)
 					for _, v := range argsA {
@@ -2086,7 +2085,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return nv, nil
 			},
 		},
-		"compileForThread": &Function{
+		"compileForThread": {
 			Name: "compile",
 			ValueEx: func(c Call) (Object, error) {
 				nv, ok := c.This.(*Delegate)
@@ -2120,11 +2119,11 @@ var methodFuncMapG = map[int]map[string]*Function{
 					var globalsA map[string]interface{} = nil
 
 					envT := NewBaseEnv(globalsA) // Map{}
-//					 tk.Plo(c.GetArgs())
+					//					 tk.Plo(c.GetArgs())
 
 					(*envT)["inputG"] = inputGT
 
-//					 tk.Plo(envT)
+					//					 tk.Plo(envT)
 
 					var paramsA []Object = make([]Object, 0, len(argsA)+1)
 					for _, v := range argsA {
@@ -2132,7 +2131,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 					}
 					// additionsA = append(additionsA, ToStringObject(strT))
 					// additionsA = append(additionsA, argsT...)
-					
+
 					vmT := NewVM(byteCodeT.(*Bytecode))
 
 					go vmT.Run(envT, paramsA...) // , additionsA...)
@@ -2146,66 +2145,66 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-//	711: map[string]*Function{ // *JsVm
-//		"setFunc": &Function{
-//			Name: "setFunc",
-//			ValueEx: func(c Call) (Object, error) {
-//				nv, ok := c.This.(*JsVm)
-//
-//				if !ok {
-//					return NewCommonError("invalid type: %#v", c.This), nil
-//				}
-//
-//				argsA := c.GetArgs()
-//
-//				if len(argsA) < 2 {
-//					return NewCommonErrorWithPos(c, "not enough parameters"), nil
-//				}
-//
-//				arg0 := argsA[0].String()
-//
-//				fnObjT := argsA[1]
-//
-//				fnT, ok := fnObjT.(*CompiledFunction)
-//
-//				if !ok {
-//					return NewCommonErrorWithPos(c, "invalid parameter 2: %T", fnObjT), nil
-//				}
-//				
-//				handlerT := func(argsA ...interface{}) interface{} {
-//					argsT := []Object{}
-//					
-//					for _, v := range argsA {
-//						argsT = append(argsT, ConvertToObject(v))
-//					}
-//					
-//					retT, errT := NewInvoker(c.VM(), fnT).Invoke(argsT...)
-//
-//					if errT != nil {
-//						return fmt.Errorf("failed to invoke handler: %v", errT)
-//					}
-//
-//					return ConvertFromObject(retT)
-//				}
-//				
-//				errT := nv.Value.Set(arg0, handlerT)
-//
-//				if errT != nil {
-//					return NewCommonErrorWithPos(c, "failed to set handler: %v", errT), nil
-//				}
-//
-//				return Undefined, nil
-//			},
-//		},
-//	},
-	1003: map[string]*Function{ // *Excel
-		"toStr": &Function{
+	//	711: map[string]*Function{ // *JsVm
+	//		"setFunc": &Function{
+	//			Name: "setFunc",
+	//			ValueEx: func(c Call) (Object, error) {
+	//				nv, ok := c.This.(*JsVm)
+	//
+	//				if !ok {
+	//					return NewCommonError("invalid type: %#v", c.This), nil
+	//				}
+	//
+	//				argsA := c.GetArgs()
+	//
+	//				if len(argsA) < 2 {
+	//					return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	//				}
+	//
+	//				arg0 := argsA[0].String()
+	//
+	//				fnObjT := argsA[1]
+	//
+	//				fnT, ok := fnObjT.(*CompiledFunction)
+	//
+	//				if !ok {
+	//					return NewCommonErrorWithPos(c, "invalid parameter 2: %T", fnObjT), nil
+	//				}
+	//
+	//				handlerT := func(argsA ...interface{}) interface{} {
+	//					argsT := []Object{}
+	//
+	//					for _, v := range argsA {
+	//						argsT = append(argsT, ConvertToObject(v))
+	//					}
+	//
+	//					retT, errT := NewInvoker(c.VM(), fnT).Invoke(argsT...)
+	//
+	//					if errT != nil {
+	//						return fmt.Errorf("failed to invoke handler: %v", errT)
+	//					}
+	//
+	//					return ConvertFromObject(retT)
+	//				}
+	//
+	//				errT := nv.Value.Set(arg0, handlerT)
+	//
+	//				if errT != nil {
+	//					return NewCommonErrorWithPos(c, "failed to set handler: %v", errT), nil
+	//				}
+	//
+	//				return Undefined, nil
+	//			},
+	//		},
+	//	},
+	1003: { // *Excel
+		"toStr": {
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
 				return ToStringObject(fmt.Sprintf("%v", (args[0].(*Excel).Value))), nil
 			},
 		},
-		"getSheetCount": &Function{
+		"getSheetCount": {
 			Name: "getSheetCount",
 			ValueEx: func(c Call) (Object, error) {
 				objT := c.This.(*Excel)
@@ -2223,7 +2222,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 			},
 		},
-		"getSheetName": &Function{
+		"getSheetName": {
 			Name: "getSheetName",
 			ValueEx: func(c Call) (Object, error) {
 				objT := c.This.(*Excel)
@@ -2239,7 +2238,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ToStringObject(objT.Value.GetSheetName(idxT)), nil
 			},
 		},
-		"getSheetNames": &Function{
+		"getSheetNames": {
 			Name: "getSheetNames",
 			ValueEx: func(c Call) (Object, error) {
 				objT := c.This.(*Excel)
@@ -2247,7 +2246,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return ConvertToObject(objT.Value.GetSheetList()), nil
 			},
 		},
-		"readSheet": &Function{
+		"readSheet": {
 			Name: "readSheet",
 			ValueEx: func(c Call) (Object, error) {
 				objT := c.This.(*Excel)
@@ -2587,8 +2586,8 @@ func NewEvalQuick(globalsA map[string]interface{}, optsA *CompilerOptions, local
 	// // moduleMap.AddBuiltinModule("time", ugotime.Module).
 	// // 	AddBuiltinModule("strings", ugostrings.Module).
 	// moduleMap.AddBuiltinModule("fmt", ugofmt.Module)
-	
-//	fmt.Printf("localsA: %#v\n", localsA)
+
+	//	fmt.Printf("localsA: %#v\n", localsA)
 
 	var optsT CompilerOptions
 
@@ -2634,7 +2633,7 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 	if tk.IfSwitchExists(optionsA, "-verbose") {
 		tk.Pl("Starting...")
 	}
-	
+
 	codeA = tk.RemoveBOM(codeA)
 
 	if strings.HasPrefix(codeA, "//INROUTE:") {
@@ -2665,7 +2664,7 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 
 	if req != nil {
 		req.ParseForm()
-//		req.ParseMultipartForm(100000000)
+		//		req.ParseMultipartForm(100000000)
 	}
 
 	reqT := tk.GetFormValueWithDefaultValue(req, "charms", "")
@@ -2991,7 +2990,7 @@ func ConvertToObject(vA interface{}) Object {
 
 		for k, v := range nv {
 			aryT := make(Array, 0, len(v))
-			
+
 			for _, jjv := range v {
 				mapT := make(Map, len(jjv))
 				for jk, jv := range jjv {
@@ -3000,7 +2999,7 @@ func ConvertToObject(vA interface{}) Object {
 
 				aryT = append(aryT, mapT)
 			}
-			
+
 			rsT[k] = aryT
 		}
 
@@ -3147,7 +3146,7 @@ func ConvertToObject(vA interface{}) Object {
 }
 
 func ConvertFromObject(vA Object) interface{} {
-//	 tk.Plo("ConvertFromObject:", vA)
+	//	 tk.Plo("ConvertFromObject:", vA)
 	// if vA.TypeName() == "int" {
 	// 	return int(vA)
 	// }
@@ -3595,4 +3594,3 @@ func ToFloatQuick(o Object) float64 {
 
 	return 0.0
 }
-
