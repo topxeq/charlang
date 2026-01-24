@@ -447,7 +447,7 @@ func fieldsFunc(s string) charlang.Object {
 	fields := strings.Fields(s)
 	out := make(charlang.Array, 0, len(fields))
 	for _, s := range fields {
-		out = append(out, charlang.String(s))
+		out = append(out, charlang.String{Value: s})
 	}
 	return out
 }
@@ -472,7 +472,7 @@ func fieldsFuncInv(c charlang.Call) (charlang.Object, error) {
 			}
 			out := make(charlang.Array, 0, len(fields))
 			for _, s := range fields {
-				out = append(out, charlang.String(s))
+				out = append(out, charlang.String{Value: s})
 			}
 			return out, nil
 		},
@@ -511,7 +511,7 @@ func joinFunc(arr charlang.Array, sep string) charlang.Object {
 	for i := range arr {
 		elems[i] = arr[i].String()
 	}
-	return charlang.String(strings.Join(elems, sep))
+	return charlang.String{Value: strings.Join(elems, sep)})
 }
 
 func lastIndexFunc(s, substr string) charlang.Object {
@@ -548,7 +548,7 @@ func mapFuncInv(c charlang.Call) (charlang.Object, error) {
 				}
 				return r
 			}, s)
-			return charlang.String(out), err
+			return charlang.String{Value: out}, err
 		},
 	)
 }
@@ -567,17 +567,17 @@ func pad(c charlang.Call, left bool) (charlang.Object, error) {
 	}
 	diff := padLen - len(s)
 	if diff <= 0 {
-		return charlang.String(s), nil
+		return charlang.String{Value: s}, nil
 	}
 	padWith := " "
 	if size > 2 {
 		if padWith = c.Get(2).String(); len(padWith) == 0 {
-			return charlang.String(s), nil
+			return charlang.String{Value: s}, nil
 		}
 	}
 	r := (diff-len(padWith))/len(padWith) + 2
 	if r <= 0 {
-		return charlang.String(s), nil
+		return charlang.String{Value: s}, nil
 	}
 	var sb strings.Builder
 	sb.Grow(padLen)
@@ -588,15 +588,15 @@ func pad(c charlang.Call, left bool) (charlang.Object, error) {
 		sb.WriteString(s)
 		sb.WriteString(strings.Repeat(padWith, r)[:diff])
 	}
-	return charlang.String(sb.String()), nil
+	return charlang.String{Value: sb.String()}, nil
 }
 
 func repeatFunc(s string, count int) charlang.Object {
 	// if n is negative strings.Repeat function panics
 	if count < 0 {
-		return charlang.String("")
+		return charlang.String{Value: ""}
 	}
-	return charlang.String(strings.Repeat(s, count))
+	return charlang.String{Value: strings.Repeat(s, count)}
 }
 
 func replaceFunc(c charlang.Call) (charlang.Object, error) {
@@ -617,19 +617,19 @@ func replaceFunc(c charlang.Call) (charlang.Object, error) {
 		}
 		n = v
 	}
-	return charlang.String(strings.Replace(s, old, news, n)), nil
+	return charlang.String{Value: strings.Replace(s, old, news, n)}, nil
 }
 
 func titleFunc(s string) charlang.Object {
 	//lint:ignore SA1019 Keep it for backward compatibility.
-	return charlang.String(strings.Title(s)) //nolint staticcheck Keep it for backward compatibility
+	return charlang.String{Value: strings.Title(s)} //nolint staticcheck Keep it for backward compatibility
 }
 
-func toLowerFunc(s string) charlang.Object { return charlang.String(strings.ToLower(s)) }
+func toLowerFunc(s string) charlang.Object { return charlang.String{Value: strings.ToLower(s)} }
 
-func toTitleFunc(s string) charlang.Object { return charlang.String(strings.ToTitle(s)) }
+func toTitleFunc(s string) charlang.Object { return charlang.String{Value: strings.ToTitle(s)} }
 
-func toUpperFunc(s string) charlang.Object { return charlang.String(strings.ToUpper(s)) }
+func toUpperFunc(s string) charlang.Object { return charlang.String{Value: strings.ToUpper(s)} }
 
 func toValidUTF8Func(c charlang.Call) (charlang.Object, error) {
 	size := c.Len()
@@ -642,31 +642,31 @@ func toValidUTF8Func(c charlang.Call) (charlang.Object, error) {
 	if size == 2 {
 		repl = c.Get(1).String()
 	}
-	return charlang.String(strings.ToValidUTF8(s, repl)), nil
+	return charlang.String{Value: strings.ToValidUTF8(s, repl)}, nil
 }
 
 func trimFunc(s, cutset string) charlang.Object {
-	return charlang.String(strings.Trim(s, cutset))
+	return charlang.String{Value: strings.Trim(s, cutset)}
 }
 
 func trimLeftFunc(s, cutset string) charlang.Object {
-	return charlang.String(strings.TrimLeft(s, cutset))
+	return charlang.String{Value: strings.TrimLeft(s, cutset)}
 }
 
 func trimPrefixFunc(s, prefix string) charlang.Object {
-	return charlang.String(strings.TrimPrefix(s, prefix))
+	return charlang.String{Value: strings.TrimPrefix(s, prefix)}
 }
 
 func trimRightFunc(s, cutset string) charlang.Object {
-	return charlang.String(strings.TrimRight(s, cutset))
+	return charlang.String{Value: strings.TrimRight(s, cutset)}
 }
 
 func trimSpaceFunc(s string) charlang.Object {
-	return charlang.String(strings.TrimSpace(s))
+	return charlang.String{Value: strings.TrimSpace(s)}
 }
 
 func trimSuffixFunc(s, suffix string) charlang.Object {
-	return charlang.String(strings.TrimSuffix(s, suffix))
+	return charlang.String{Value: strings.TrimSuffix(s, suffix)}
 }
 
 func newSplitFunc(fn func(string, string, int) []string) charlang.CallableExFunc {
@@ -690,7 +690,7 @@ func newSplitFunc(fn func(string, string, int) []string) charlang.CallableExFunc
 		strs := fn(s, sep, n)
 		out := make(charlang.Array, 0, len(strs))
 		for _, s := range strs {
-			out = append(out, charlang.String(s))
+			out = append(out, charlang.String{Value: s})
 		}
 		return out, nil
 	}
@@ -734,7 +734,7 @@ func newTrimFuncInv(fn func(string, func(rune) bool) string) charlang.CallableEx
 					}
 					return !ret.IsFalsy()
 				})
-				return charlang.String(out), err
+				return charlang.String{Value: out}, err
 			},
 		)
 	}
