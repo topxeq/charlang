@@ -590,6 +590,7 @@ const (
 	BuiltinPln
 	BuiltinPlv
 	BuiltinSpr
+	BuiltinSpt
 	BuiltinSpln
 	BuiltinTestByText
 	BuiltinTestByStartsWith
@@ -1039,8 +1040,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"plo":    BuiltinPlo,
 	"plErr":  BuiltinPlErr,
 	"fatalf": BuiltinFatalf,
-	"spr":    BuiltinSpr,
-	"spln":   BuiltinSpln,
+	"spr":    BuiltinSpr,	// the same as Sprintf in Golang
+	"sprf":    BuiltinSpr,	// the same as Sprintf in Golang
+	"spt":    BuiltinSpt,	// the same as Sprint in Golang
+	"spln":   BuiltinSpln,	// the same as Sprintln in Golang
 
 	// scan related
 	"sscanf": BuiltinSscanf,
@@ -2844,6 +2847,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "spr", // usage: the same as sprintf
 		Value:   FnASVaRS(fmt.Sprintf),
 		ValueEx: FnASVaRSex(fmt.Sprintf),
+	},
+	BuiltinSpt: &BuiltinFunction{
+		Name:    "spt", // usage: the same as sprint
+		Value:   FnAVaRS(fmt.Sprint),
+		ValueEx: FnAVaRSex(fmt.Sprint),
 	},
 	BuiltinSpln: &BuiltinFunction{
 		Name:    "spln", // usage: the same as sprintln

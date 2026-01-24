@@ -1,7 +1,7 @@
 package charlang_test
 
 import (
-	"fmt"
+//	"fmt"
 	"bytes"
 	"errors"
 	"testing"
@@ -117,7 +117,7 @@ func TestVMErrorHandlers(t *testing.T) {
 		newOpts().Skip2Pass(), &errZeroDiv, nil)
 	require.NotNil(t, errZeroDiv.Err)
 	require.Equal(t, "x", errZeroDiv.Err.Message)
-	fmt.Printf("ErrZeroDivision is %#v -> %#v\n", ErrZeroDivision, errZeroDiv.Err.Cause)
+//	fmt.Printf("ErrZeroDivision is %#v -> %#v\n", ErrZeroDivision, errZeroDiv.Err.Cause)
 //	require.Equal(t, ErrZeroDivision, errZeroDiv.Err.Cause)
 	require.Equal(t, 2, len(errZeroDiv.Trace))
 	require.Equal(t, parser.Pos(7), errZeroDiv.Trace[0])

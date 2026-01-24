@@ -2,7 +2,7 @@ package charlang_test
 
 import (
 //	"errors"
-	"fmt"
+//	"fmt"
 	"math"
 	"testing"
 
@@ -497,7 +497,7 @@ func TestObjectIndexSet(t *testing.T) {
 	v = Bytes{1}
 	err = v.IndexSet(Int(0), String{Value: ""})
 	require.Error(t, err)
-	fmt.Printf("err is %#v -> %#v\n", err, ErrType)
+//	fmt.Printf("err is %#v -> %#v\n", err, ErrType)
 //	require.True(t, errors.Is(err, ErrType))
 
 	v = Bytes{1}

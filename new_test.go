@@ -954,10 +954,10 @@ func TestVM_Invoke(t *testing.T) {
 				scr := `
 global apply
 sum := func(...args) {
-	println("called f", args)
+//	println("called f", args)
 	s := 0
 	for v in args {
-		println("v", v)
+//		println("v", v)
 		s += v
 	}
 	return s
@@ -974,10 +974,10 @@ return apply(sum, 1, 2, 3)
 				scr := `
 global apply
 sum := func(...args) {
-	println("sum args", args)
+//	println("sum args", args)
 	s := 0
 	for v in args {
-		println("v", v)
+//		println("v", v)
 		s += v
 	}
 	return s
@@ -997,10 +997,10 @@ return apply(f, sum, 1, 2, 3)
 				scr := `
 global apply
 sum := func(...args) {
-	println("sum args", args)
+//	println("sum args", args)
 	s := 0
 	for v in args {
-		println("v", v)
+//		println("v", v)
 		s += v
 	}
 	return s
