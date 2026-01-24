@@ -369,8 +369,8 @@ github.com/tklauser/numcpus v0.6.1 h1:ng9scYS7az0Bk4OZLvrNXNSAO2Pxr1XXRAPyjhIx+F
 github.com/tklauser/numcpus v0.6.1/go.mod h1:1XfjsgE2zo8GVw7POkMbHENHzVg3GzmoZ9fESEdAacY=
 github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff h1:8GSdYAugHcOI9k5X3zHYQkh0QsLStoKISscZ6vIsD7g=
 github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff/go.mod h1:4OH+jvJsOmDlZo0w/14dBxg/zQ6jnbrxdUdasWdgoR8=
-github.com/topxeq/charlang v0.0.0-20260124041440-e048e4d253f0 h1:+MuLaIwxOMEIS4Czm+XuJPqZSDloMnnOTWxVkulzrK0=
-github.com/topxeq/charlang v0.0.0-20260124041440-e048e4d253f0/go.mod h1:HPBaYY6ZvdMNoLUsA4y9BGMv3iIXxU4sbnN35COjsm0=
+github.com/topxeq/charlang v0.0.0-20260124120259-e65d2c86cf10 h1:Ix1ZIteyRNpK5ASmekg/yaB6DE7wxz3jO00pGrfNeT0=
+github.com/topxeq/charlang v0.0.0-20260124120259-e65d2c86cf10/go.mod h1:o+nfmymui1Ig4OhOjvoO+5v9gtMFZ/978FIauWdVeuI=
 github.com/topxeq/countingwriter v0.0.0-20230115115152-84660be6de09 h1:JtCULmOHEQb12ZWMFBCYec4gvbt9POZQN3ncD+2509Q=
 github.com/topxeq/countingwriter v0.0.0-20230115115152-84660be6de09/go.mod h1:S/DxGB7MRImGIuTaMZNJpWgguYvMD4a6OGrejBph0xI=
 github.com/topxeq/docxrepl v0.0.0-20250311080137-aa66335eab2e h1:gYiBPg9MvSbZKJb5P4d9kGsm3c5e62ygA9Aj0VuyD/A=

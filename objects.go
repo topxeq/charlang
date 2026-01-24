@@ -11914,14 +11914,34 @@ func (o *Image) HasMemeber() bool {
 }
 
 func (o *Image) CallMethod(nameA string, argsA ...Object) (Object, error) {
+	return o.CallName(nameA, Call{Args: argsA})
+}
+
+func (o *Image) CallName(nameA string, c Call) (Object, error) {
 	switch nameA {
 	case "value":
 		return o, nil
 	case "toStr":
 		return ToStringObject(o), nil
+	case "width":
+		rs := o.Value.Bounds().Max.X - o.Value.Bounds().Min.X
+		
+		if rs < 0 {
+			rs = -rs
+		}
+
+		return Int(rs), nil
+	case "height":
+		rs := o.Value.Bounds().Max.Y - o.Value.Bounds().Min.Y
+		
+		if rs < 0 {
+			rs = -rs
+		}
+
+		return Int(rs), nil
 	}
 
-	return CallObjectMethodFunc(o, nameA, argsA...)
+	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 }
 
 func (o *Image) GetValue() Object {
