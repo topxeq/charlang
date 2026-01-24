@@ -44,11 +44,11 @@ func TestScript(t *testing.T) {
 		// scan
 		{
 			s: `return string(fmt.ScanArg())`,
-			r: String("<scanArg>"),
+			r: String{Value: "<scanArg>"},
 		},
 		{
 			s: `return typeName(fmt.ScanArg())`,
-			r: String("scanArg"),
+			r: String{Value: "scanArg"},
 		},
 		{
 			s: `
@@ -56,7 +56,7 @@ func TestScript(t *testing.T) {
 		ret := fmt.Sscan("abc", a1)
 		return ret, bool(a1), a1.Value
 			`,
-			r: Array{Int(1), True, String("abc")},
+			r: Array{Int(1), True, String{Value: "abc"}},
 		},
 		{
 			s: `
@@ -64,7 +64,7 @@ func TestScript(t *testing.T) {
 		ret := fmt.Sscan("abc xyz", a1)
 		return ret, bool(a1), a1.Value
 			`,
-			r: Array{Int(1), True, String("abc")},
+			r: Array{Int(1), True, String{Value: "abc"}},
 		},
 		{
 			s: `
@@ -79,8 +79,8 @@ func TestScript(t *testing.T) {
 			`,
 			r: Array{
 				Int(2),
-				Array{True, String("abc")},
-				Array{True, String("xyz")},
+				Array{True, String{Value: "abc"}},
+				Array{True, String{Value: "xyz"}},
 			},
 		},
 		{
@@ -107,7 +107,7 @@ func TestScript(t *testing.T) {
 			`,
 			r: Array{
 				Int(7),
-				Array{True, String("abc")},
+				Array{True, String{Value: "abc"}},
 				Array{True, Int(1)},
 				Array{True, Uint(2)},
 				Array{True, Float(3.4)},
@@ -140,7 +140,7 @@ func TestScript(t *testing.T) {
 			`,
 			r: Array{
 				Int(7),
-				Array{True, String("abc")},
+				Array{True, String{Value: "abc"}},
 				Array{True, Int(1)},
 				Array{True, Uint(2)},
 				Array{True, Float(3.4)},
@@ -163,9 +163,9 @@ func TestScript(t *testing.T) {
 		]
 			`,
 			r: Array{
-				String("error: EOF"),
-				Array{True, String("abc")},
-				Array{True, String("xyz")},
+				String{Value: "error: EOF"},
+				Array{True, String{Value: "abc"}},
+				Array{True, String{Value: "xyz"}},
 				Array{False, Undefined},
 			},
 		},
@@ -183,8 +183,8 @@ func TestScript(t *testing.T) {
 		]
 			`,
 			r: Array{
-				String("error: too many operands"),
-				Array{True, String("abc")},
+				String{Value: "error: too many operands"},
+				Array{True, String{Value: "abc"}},
 				Array{True, Int(3)},
 				Array{False, Undefined},
 			},
@@ -203,8 +203,8 @@ func TestScript(t *testing.T) {
 		]
 			`,
 			r: Array{
-				String("error: unexpected newline"),
-				Array{True, String("abc")},
+				String{Value: "error: unexpected newline"},
+				Array{True, String{Value: "abc"}},
 				Array{True, Int(3)},
 				Array{False, Undefined},
 			},
@@ -212,15 +212,15 @@ func TestScript(t *testing.T) {
 		// sprint
 		{
 			s: `return fmt.Sprint(1, 2, "c", 'd')`,
-			r: String("1 2c100"),
+			r: String{Value: "1 2c100"},
 		},
 		{
 			s: `return fmt.Sprintf("%.1f%s%c%d", 1.2, "abc", 'e', 18u)`,
-			r: String("1.2abce18"),
+			r: String{Value: "1.2abce18"},
 		},
 		{
 			s: `return fmt.Sprintln(1.2, "abc", 'e', 18u)`,
-			r: String("1.2 abc 101 18\n"),
+			r: String{Value: "1.2 abc 101 18\n"},
 		},
 		// runtime errors
 		{
@@ -231,7 +231,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("WrongNumberOfArgumentsError: want>=1 got=0"),
+			r: String{Value: "WrongNumberOfArgumentsError: want>=1 got=0"},
 		},
 		{
 			s: `
@@ -241,7 +241,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("WrongNumberOfArgumentsError: want>=1 got=0"),
+			r: String{Value: "WrongNumberOfArgumentsError: want>=1 got=0"},
 		},
 		{
 			s: `
@@ -251,7 +251,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("TypeError: \"unknown\" not implemented"),
+			r: String{Value: "TypeError: \"unknown\" not implemented"},
 		},
 		{
 			s: `
@@ -261,7 +261,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("WrongNumberOfArgumentsError: want>=2 got=0"),
+			r: String{Value: "WrongNumberOfArgumentsError: want>=2 got=0"},
 		},
 		{
 			s: `
@@ -271,7 +271,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("WrongNumberOfArgumentsError: want>=3 got=0"),
+			r: String{Value: "WrongNumberOfArgumentsError: want>=3 got=0"},
 		},
 		{
 			s: `
@@ -281,7 +281,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("WrongNumberOfArgumentsError: want>=2 got=0"),
+			r: String{Value: "WrongNumberOfArgumentsError: want>=2 got=0"},
 		},
 		{
 			s: `
@@ -291,7 +291,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("TypeError: invalid type for argument '2': expected ScanArg interface, found int"),
+			r: String{Value: "TypeError: invalid type for argument '2': expected ScanArg interface, found int"},
 		},
 		{
 			s: `
@@ -301,7 +301,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("TypeError: invalid type for argument '1': expected ScanArg interface, found int"),
+			r: String{Value: "TypeError: invalid type for argument '1': expected ScanArg interface, found int"},
 		},
 	}
 	for _, tC := range testCases {
@@ -320,7 +320,7 @@ func expectRun(t *testing.T, script string, expected Object) {
 	mm.AddBuiltinModule("fmt", Module)
 	c := DefaultCompilerOptions
 	c.ModuleMap = mm
-	bc, err := Compile([]byte(script), c)
+	bc, err := Compile([]byte(script), &c)
 	require.NoError(t, err, script)
 	ret, err := NewVM(bc).Run(nil)
 	require.NoError(t, err, script)
@@ -332,7 +332,7 @@ func exampleRun(script string) {
 	mm.AddBuiltinModule("fmt", Module)
 	c := DefaultCompilerOptions
 	c.ModuleMap = mm
-	bc, err := Compile([]byte(script), c)
+	bc, err := Compile([]byte(script), &c)
 	if err != nil {
 		panic(err)
 	}
