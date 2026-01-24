@@ -511,7 +511,7 @@ func joinFunc(arr charlang.Array, sep string) charlang.Object {
 	for i := range arr {
 		elems[i] = arr[i].String()
 	}
-	return charlang.String{Value: strings.Join(elems, sep)})
+	return charlang.String{Value: strings.Join(elems, sep)}
 }
 
 func lastIndexFunc(s, substr string) charlang.Object {

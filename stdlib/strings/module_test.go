@@ -12,53 +12,53 @@ import (
 
 func TestModuleStrings(t *testing.T) {
 	contains := Module["Contains"]
-	ret, err := contains.Call(String("abc"), String("b"))
+	ret, err := contains.Call(String{Value: "abc"}, String{Value: "b"})
 	require.NoError(t, err)
 	require.EqualValues(t, true, ret)
-	ret, err = contains.Call(String("abc"), String("d"))
+	ret, err = contains.Call(String{Value: "abc"}, String{Value: "d"})
 	require.NoError(t, err)
 	require.EqualValues(t, false, ret)
-	_, err = contains.Call(String("abc"), String("d"), String("x"))
+	_, err = contains.Call(String{Value: "abc"}, String{Value: "d"}, String{Value: "x"})
 	require.Error(t, err)
-	_, err = contains.Call(String("abc"))
+	_, err = contains.Call(String{Value: "abc"})
 	require.Error(t, err)
 	_, err = contains.Call()
 	require.Error(t, err)
 
 	containsAny := Module["ContainsAny"]
-	ret, err = containsAny.Call(String("abc"), String("ax"))
+	ret, err = containsAny.Call(String{Value: "abc"}, String{Value: "ax"})
 	require.NoError(t, err)
 	require.EqualValues(t, true, ret)
-	ret, err = containsAny.Call(String("abc"), String("d"))
+	ret, err = containsAny.Call(String{Value: "abc"}, String{Value: "d"})
 	require.NoError(t, err)
 	require.EqualValues(t, false, ret)
 
 	containsChar := Module["ContainsChar"]
-	ret, err = containsChar.Call(String("abc"), Char('a'))
+	ret, err = containsChar.Call(String{Value: "abc"}, Char('a'))
 	require.NoError(t, err)
 	require.EqualValues(t, true, ret)
-	ret, err = containsChar.Call(String("abc"), Char('d'))
+	ret, err = containsChar.Call(String{Value: "abc"}, Char('d'))
 	require.NoError(t, err)
 	require.EqualValues(t, false, ret)
 
 	count := Module["Count"]
-	ret, err = count.Call(String("cheese"), String("e"))
+	ret, err = count.Call(String{Value: "cheese"}, String{Value: "e"})
 	require.NoError(t, err)
 	require.EqualValues(t, 3, ret)
-	ret, err = count.Call(String("cheese"), String("d"))
+	ret, err = count.Call(String{Value: "cheese"}, String{Value: "d"})
 	require.NoError(t, err)
 	require.EqualValues(t, 0, ret)
 
 	equalFold := Module["EqualFold"]
-	ret, err = equalFold.Call(String("CHAR"), String("char"))
+	ret, err = equalFold.Call(String{Value: "CHAR"}, String{Value: "char"})
 	require.NoError(t, err)
 	require.EqualValues(t, true, ret)
-	ret, err = equalFold.Call(String("CHAR"), String("char"))
+	ret, err = equalFold.Call(String{Value: "CHAR"}, String{Value: "char"})
 	require.NoError(t, err)
 	require.EqualValues(t, false, ret)
 
 	fields := Module["Fields"]
-	ret, err = fields.Call(String("\tfoo bar\nbaz"))
+	ret, err = fields.Call(String{Value: "\tfoo bar\nbaz"})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(ret.(Array)))
 	require.EqualValues(t, "foo", ret.(Array)[0].(String))
@@ -66,229 +66,229 @@ func TestModuleStrings(t *testing.T) {
 	require.EqualValues(t, "baz", ret.(Array)[2].(String))
 
 	hasPrefix := Module["HasPrefix"]
-	ret, err = hasPrefix.Call(String("foobarbaz"), String("foo"))
+	ret, err = hasPrefix.Call(String{Value: "foobarbaz"}, String{Value: "foo"})
 	require.NoError(t, err)
 	require.EqualValues(t, true, ret)
-	ret, err = hasPrefix.Call(String("foobarbaz"), String("baz"))
+	ret, err = hasPrefix.Call(String{Value: "foobarbaz"}, String{Value: "baz"})
 	require.NoError(t, err)
 	require.EqualValues(t, false, ret)
 
 	hasSuffix := Module["HasSuffix"]
-	ret, err = hasSuffix.Call(String("foobarbaz"), String("baz"))
+	ret, err = hasSuffix.Call(String{Value: "foobarbaz"}, String{Value: "baz"})
 	require.NoError(t, err)
 	require.EqualValues(t, true, ret)
-	ret, err = hasSuffix.Call(String("foobarbaz"), String("foo"))
+	ret, err = hasSuffix.Call(String{Value: "foobarbaz"}, String{Value: "foo"})
 	require.NoError(t, err)
 	require.EqualValues(t, false, ret)
 
 	index := Module["Index"]
-	ret, err = index.Call(String("foobarbaz"), String("bar"))
+	ret, err = index.Call(String{Value: "foobarbaz"}, String{Value: "bar"})
 	require.NoError(t, err)
 	require.EqualValues(t, 3, ret)
-	ret, err = index.Call(String("foobarbaz"), String("x"))
+	ret, err = index.Call(String{Value: "foobarbaz"}, String{Value: "x"})
 	require.NoError(t, err)
 	require.EqualValues(t, -1, ret)
 
 	indexAny := Module["IndexAny"]
-	ret, err = indexAny.Call(String("foobarbaz"), String("xz"))
+	ret, err = indexAny.Call(String{Value: "foobarbaz"}, String{Value: "xz"})
 	require.NoError(t, err)
 	require.EqualValues(t, 8, ret)
-	ret, err = indexAny.Call(String("foobarbaz"), String("x"))
+	ret, err = indexAny.Call(String{Value: "foobarbaz"}, String{Value: "x"})
 	require.NoError(t, err)
 	require.EqualValues(t, -1, ret)
 
 	indexByte := Module["IndexByte"]
-	ret, err = indexByte.Call(String("foobarbaz"), Char('z'))
+	ret, err = indexByte.Call(String{Value: "foobarbaz"}, Char('z'))
 	require.NoError(t, err)
 	require.EqualValues(t, 8, ret)
-	ret, err = indexByte.Call(String("foobarbaz"), Int('z'))
+	ret, err = indexByte.Call(String{Value: "foobarbaz"}, Int('z'))
 	require.NoError(t, err)
 	require.EqualValues(t, 8, ret)
-	ret, err = indexByte.Call(String("foobarbaz"), Char('x'))
+	ret, err = indexByte.Call(String{Value: "foobarbaz"}, Char('x'))
 	require.NoError(t, err)
 	require.EqualValues(t, -1, ret)
 
 	indexChar := Module["IndexChar"]
-	ret, err = indexChar.Call(String("foobarbaz"), Char('z'))
+	ret, err = indexChar.Call(String{Value: "foobarbaz"}, Char('z'))
 	require.NoError(t, err)
 	require.EqualValues(t, 8, ret)
-	ret, err = indexChar.Call(String("foobarbaz"), Char('x'))
+	ret, err = indexChar.Call(String{Value: "foobarbaz"}, Char('x'))
 	require.NoError(t, err)
 	require.EqualValues(t, -1, ret)
 
 	join := Module["Join"]
-	ret, err = join.Call(Array{String("foo"), String("bar")}, String(";"))
+	ret, err = join.Call(Array{String{Value: "foo"}, String{Value: "bar"}}, String{Value: ";"})
 	require.NoError(t, err)
 	require.EqualValues(t, "foo;bar", ret)
 
 	lastIndex := Module["LastIndex"]
-	ret, err = lastIndex.Call(String("zfoobarbaz"), String("z"))
+	ret, err = lastIndex.Call(String{Value: "zfoobarbaz"}, String{Value: "z"})
 	require.NoError(t, err)
 	require.EqualValues(t, 9, ret)
-	ret, err = lastIndex.Call(String("zfoobarbaz"), String("x"))
+	ret, err = lastIndex.Call(String{Value: "zfoobarbaz"}, String{Value: "x"})
 	require.NoError(t, err)
 	require.EqualValues(t, -1, ret)
 
 	lastIndexAny := Module["LastIndexAny"]
-	ret, err = lastIndexAny.Call(String("zfoobarbaz"), String("xz"))
+	ret, err = lastIndexAny.Call(String{Value: "zfoobarbaz"}, String{Value: "xz"})
 	require.NoError(t, err)
 	require.EqualValues(t, 9, ret)
-	ret, err = lastIndexAny.Call(String("foobarbaz"), String("o"))
+	ret, err = lastIndexAny.Call(String{Value: "foobarbaz"}, String{Value: "o"})
 	require.NoError(t, err)
 	require.EqualValues(t, 2, ret)
-	ret, err = lastIndexAny.Call(String("foobarbaz"), String("p"))
+	ret, err = lastIndexAny.Call(String{Value: "foobarbaz"}, String{Value: "p"})
 	require.NoError(t, err)
 	require.EqualValues(t, -1, ret)
 
 	lastIndexByte := Module["LastIndexByte"]
-	ret, err = lastIndexByte.Call(String("zfoobarbaz"), Char('z'))
+	ret, err = lastIndexByte.Call(String{Value: "zfoobarbaz"}, Char('z'))
 	require.NoError(t, err)
 	require.EqualValues(t, 9, ret)
-	ret, err = lastIndexByte.Call(String("zfoobarbaz"), Int('z'))
+	ret, err = lastIndexByte.Call(String{Value: "zfoobarbaz"}, Int('z'))
 	require.NoError(t, err)
 	require.EqualValues(t, 9, ret)
-	ret, err = lastIndexByte.Call(String("zfoobarbaz"), Char('x'))
+	ret, err = lastIndexByte.Call(String{Value: "zfoobarbaz"}, Char('x'))
 	require.NoError(t, err)
 	require.EqualValues(t, -1, ret)
 
 	padLeft := Module["PadLeft"]
-	ret, err = padLeft.Call(String("abc"), Int(3))
+	ret, err = padLeft.Call(String{Value: "abc"}, Int(3))
 	require.NoError(t, err)
 	require.EqualValues(t, "abc", ret)
-	ret, err = padLeft.Call(String("abc"), Int(4))
+	ret, err = padLeft.Call(String{Value: "abc"}, Int(4))
 	require.NoError(t, err)
 	require.EqualValues(t, " abc", ret)
-	ret, err = padLeft.Call(String("abc"), Int(5))
+	ret, err = padLeft.Call(String{Value: "abc"}, Int(5))
 	require.NoError(t, err)
 	require.EqualValues(t, "  abc", ret)
-	ret, err = padLeft.Call(String("abc"), Int(5), String("="))
+	ret, err = padLeft.Call(String{Value: "abc"}, Int(5), String{Value: "="})
 	require.NoError(t, err)
 	require.EqualValues(t, "==abc", ret)
-	ret, err = padLeft.Call(String(""), Int(6), String("="))
+	ret, err = padLeft.Call(String{Value: ""}, Int(6), String{Value: "="})
 	require.NoError(t, err)
 	require.EqualValues(t, "======", ret)
 
 	padRight := Module["PadRight"]
-	ret, err = padRight.Call(String("abc"), Int(3))
+	ret, err = padRight.Call(String{Value: "abc"}, Int(3))
 	require.NoError(t, err)
 	require.EqualValues(t, "abc", ret)
-	ret, err = padRight.Call(String("abc"), Int(4))
+	ret, err = padRight.Call(String{Value: "abc"}, Int(4))
 	require.NoError(t, err)
 	require.EqualValues(t, "abc ", ret)
-	ret, err = padRight.Call(String("abc"), Int(5))
+	ret, err = padRight.Call(String{Value: "abc"}, Int(5))
 	require.NoError(t, err)
 	require.EqualValues(t, "abc  ", ret)
-	ret, err = padRight.Call(String("abc"), Int(5), String("="))
+	ret, err = padRight.Call(String{Value: "abc"}, Int(5), String{Value: "="})
 	require.NoError(t, err)
 	require.EqualValues(t, "abc==", ret)
-	ret, err = padRight.Call(String(""), Int(6), String("="))
+	ret, err = padRight.Call(String{Value: ""}, Int(6), String{Value: "="})
 	require.NoError(t, err)
 	require.EqualValues(t, "======", ret)
 
 	repeat := Module["Repeat"]
-	ret, err = repeat.Call(String("abc"), Int(3))
+	ret, err = repeat.Call(String{Value: "abc"}, Int(3))
 	require.NoError(t, err)
 	require.EqualValues(t, "abcabcabc", ret)
-	ret, err = repeat.Call(String("abc"), Int(-1))
+	ret, err = repeat.Call(String{Value: "abc"}, Int(-1))
 	require.NoError(t, err)
 	require.EqualValues(t, "", ret)
 
 	replace := Module["Replace"]
-	ret, err = replace.Call(String("abcdefbc"), String("bc"), String("(bc)"))
+	ret, err = replace.Call(String{Value: "abcdefbc"}, String{Value: "bc"}, String{Value: "(bc}"})
 	require.NoError(t, err)
 	require.EqualValues(t, "a(bc)def(bc)", ret)
 	ret, err = replace.Call(
-		String("abcdefbc"), String("bc"), String("(bc)"), Int(1))
+		String{Value: "abcdefbc"}, String{Value: "bc"}, String{Value: "(bc}"}, Int(1))
 	require.NoError(t, err)
 	require.EqualValues(t, "a(bc)defbc", ret)
 
 	split := Module["Split"]
-	ret, err = split.Call(String("abc;def;"), String(";"))
+	ret, err = split.Call(String{Value: "abc;def;"}, String{Value: ";"})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(ret.(Array)))
 	require.EqualValues(t, "abc", ret.(Array)[0])
 	require.EqualValues(t, "def", ret.(Array)[1])
 	require.EqualValues(t, "", ret.(Array)[2])
-	ret, err = split.Call(String("abc;def;"), String("!"), Int(0))
+	ret, err = split.Call(String{Value: "abc;def;"}, String{Value: "!"}, Int(0))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ret.(Array)))
-	ret, err = split.Call(String("abc;def;"), String(";"), Int(1))
+	ret, err = split.Call(String{Value: "abc;def;"}, String{Value: ";"}, Int(1))
 	require.NoError(t, err)
 	require.Equal(t, 1, len(ret.(Array)))
 	require.EqualValues(t, "abc;def;", ret.(Array)[0])
-	ret, err = split.Call(String("abc;def;"), String(";"), Int(2))
+	ret, err = split.Call(String{Value: "abc;def;"}, String{Value: ";"}, Int(2))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(ret.(Array)))
 	require.EqualValues(t, "abc", ret.(Array)[0])
 	require.EqualValues(t, "def;", ret.(Array)[1])
 
 	splitAfter := Module["SplitAfter"]
-	ret, err = splitAfter.Call(String("abc;def;"), String(";"))
+	ret, err = splitAfter.Call(String{Value: "abc;def;"}, String{Value: ";"})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(ret.(Array)))
 	require.EqualValues(t, "abc;", ret.(Array)[0])
 	require.EqualValues(t, "def;", ret.(Array)[1])
 	require.EqualValues(t, "", ret.(Array)[2])
-	ret, err = splitAfter.Call(String("abc;def;"), String("!"), Int(0))
+	ret, err = splitAfter.Call(String{Value: "abc;def;"}, String{Value: "!"}, Int(0))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ret.(Array)))
-	ret, err = splitAfter.Call(String("abc;def;"), String(";"), Int(1))
+	ret, err = splitAfter.Call(String{Value: "abc;def;"}, String{Value: ";"}, Int(1))
 	require.NoError(t, err)
 	require.Equal(t, 1, len(ret.(Array)))
 	require.EqualValues(t, "abc;def;", ret.(Array)[0])
-	ret, err = splitAfter.Call(String("abc;def;"), String(";"), Int(2))
+	ret, err = splitAfter.Call(String{Value: "abc;def;"}, String{Value: ";"}, Int(2))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(ret.(Array)))
 	require.EqualValues(t, "abc;", ret.(Array)[0])
 	require.EqualValues(t, "def;", ret.(Array)[1])
 
 	title := Module["Title"]
-	ret, err = title.Call(String("хлеб"))
+	ret, err = title.Call(String{Value: "хлеб"})
 	require.NoError(t, err)
 	require.EqualValues(t, "Хлеб", ret)
 
 	toLower := Module["ToLower"]
-	ret, err = toLower.Call(String("ÇİĞÖŞÜ"))
+	ret, err = toLower.Call(String{Value: "ÇİĞÖŞÜ"})
 	require.NoError(t, err)
 	require.EqualValues(t, "çiğöşü", ret)
 
 	toTitle := Module["ToTitle"]
-	ret, err = toTitle.Call(String("хлеб"))
+	ret, err = toTitle.Call(String{Value: "хлеб"})
 	require.NoError(t, err)
 	require.EqualValues(t, "ХЛЕБ", ret)
 
 	toUpper := Module["ToUpper"]
-	ret, err = toUpper.Call(String("çığöşü"))
+	ret, err = toUpper.Call(String{Value: "çığöşü"})
 	require.NoError(t, err)
 	require.EqualValues(t, "ÇIĞÖŞÜ", ret)
 
 	trim := Module["Trim"]
-	ret, err = trim.Call(String("!!??abc?!"), String("!?"))
+	ret, err = trim.Call(String{Value: "!!??abc?!"}, String{Value: "!?"})
 	require.NoError(t, err)
 	require.EqualValues(t, "abc", ret)
 
 	trimLeft := Module["TrimLeft"]
-	ret, err = trimLeft.Call(String("!!??abc?!"), String("!?"))
+	ret, err = trimLeft.Call(String{Value: "!!??abc?!"}, String{Value: "!?"})
 	require.NoError(t, err)
 	require.EqualValues(t, "abc?!", ret)
 
 	trimPrefix := Module["TrimPrefix"]
-	ret, err = trimPrefix.Call(String("abcdef"), String("abc"))
+	ret, err = trimPrefix.Call(String{Value: "abcdef"}, String{Value: "abc"})
 	require.NoError(t, err)
 	require.EqualValues(t, "def", ret)
 
 	trimRight := Module["TrimRight"]
-	ret, err = trimRight.Call(String("!!??abc?!"), String("!?"))
+	ret, err = trimRight.Call(String{Value: "!!??abc?!"}, String{Value: "!?"})
 	require.NoError(t, err)
 	require.EqualValues(t, "!!??abc", ret)
 
 	trimSpace := Module["TrimSpace"]
-	ret, err = trimSpace.Call(String("\n \tabcdef\t \n"))
+	ret, err = trimSpace.Call(String{Value: "\n \tabcdef\t \n"})
 	require.NoError(t, err)
 	require.EqualValues(t, "abcdef", ret)
 
 	trimSuffix := Module["TrimSuffix"]
-	ret, err = trimSuffix.Call(String("abcdef"), String("def"))
+	ret, err = trimSuffix.Call(String{Value: "abcdef"}, String{Value: "def"})
 	require.NoError(t, err)
 	require.EqualValues(t, "abc", ret)
 }
@@ -309,17 +309,17 @@ func TestScript(t *testing.T) {
 		}`, s)
 	}
 	wrongArgs := func(want, got int) String {
-		return String(ErrWrongNumArguments.NewError(
+		return String{Value: ErrWrongNumArguments.NewError(
 			fmt.Sprintf("want=%d got=%d", want, got),
-		).String())
+		).String()}
 	}
 	nwrongArgs := func(want1, want2, got int) String {
-		return String(ErrWrongNumArguments.NewError(
+		return String{Value: ErrWrongNumArguments.NewError(
 			fmt.Sprintf("want=%d..%d got=%d", want1, want2, got),
-		).String())
+		).String()}
 	}
 	typeErr := func(pos, expected, got string) String {
-		return String(NewArgumentTypeError(pos, expected, got).String())
+		return String{Value: NewArgumentTypeError(pos, expected, got).String()}
 	}
 	testCases := []struct {
 		s string
@@ -367,18 +367,18 @@ func TestScript(t *testing.T) {
 		{s: `strings.EqualFold("x", "y")`, e: False},
 
 		{s: `strings.Fields()`, m: catch, e: wrongArgs(1, 0)},
-		{s: `strings.Fields(1)`, e: Array{String("1")}},
+		{s: `strings.Fields(1)`, e: Array{String{Value: "1"}}},
 		{s: `strings.Fields(1, 2)`, m: catch, e: wrongArgs(1, 2)},
 		{s: `strings.Fields("a\nb c\td ")`,
-			e: Array{String("a"), String("b"), String("c"), String("d")}},
+			e: Array{String{Value: "a"}, String{Value: "b"}, String{Value: "c"}, String{Value: "d"}}},
 		{s: `strings.Fields("")`, e: Array{}},
 
 		{s: `strings.FieldsFunc()`, m: catch, e: wrongArgs(2, 0)},
 		{s: `strings.FieldsFunc("")`, m: catch, e: wrongArgs(2, 1)},
 		{s: `strings.FieldsFunc("axbxcx", func(c){ return c == 'x' })`,
-			e: Array{String("a"), String("b"), String("c")}},
+			e: Array{String{Value: "a"}, String{Value: "b"}, String{Value: "c"}}},
 		{s: `strings.FieldsFunc("axbxcx", func(c){ return false })`,
-			e: Array{String("axbxcx")}},
+			e: Array{String{Value: "axbxcx"}}},
 
 		{s: `strings.HasPrefix()`, m: catch, e: wrongArgs(2, 0)},
 		{s: `strings.HasPrefix(1)`, m: catch, e: wrongArgs(2, 1)},
@@ -440,8 +440,8 @@ func TestScript(t *testing.T) {
 		{s: `strings.Join(1, 2, 3)`, m: catch, e: wrongArgs(2, 3)},
 		{s: `strings.Join(1, 2)`, m: catch,
 			e: typeErr("1st", "array", "int")},
-		{s: `strings.Join([], 1)`, e: String("")},
-		{s: `strings.Join(["a", "b", "c"], "\t")`, e: String("a\tb\tc")},
+		{s: `strings.Join([], 1)`, e: String{Value: ""}},
+		{s: `strings.Join(["a", "b", "c"], "\t")`, e: String{Value: "a\tb\tc"}},
 
 		{s: `strings.LastIndex()`, m: catch, e: wrongArgs(2, 0)},
 		{s: `strings.LastIndex(1)`, m: catch, e: wrongArgs(2, 1)},
@@ -484,221 +484,221 @@ func TestScript(t *testing.T) {
 				if c == 'o' { return 'O' }
 				return c
 			},
-			"tengo")`, e: String("I❤Charlang")},
+			"tengo")`, e: String{Value: "I❤Charlang"}},
 		{s: `strings.Map(func(c){return c}, "test")`,
-			m: catch, e: String("test")},
+			m: catch, e: String{Value: "test"}},
 
 		{s: `strings.PadLeft()`, m: catch, e: nwrongArgs(2, 3, 0)},
 		{s: `strings.PadLeft(1)`, m: catch, e: nwrongArgs(2, 3, 1)},
 		{s: `strings.PadLeft(1, 2, 3, 4)`, m: catch, e: nwrongArgs(2, 3, 4)},
-		{s: `strings.PadLeft(1, 2, 3)`, e: String("31")},
+		{s: `strings.PadLeft(1, 2, 3)`, e: String{Value: "31"}},
 		{s: `strings.PadLeft("", "", "")`, m: catch,
 			e: typeErr("2nd", "int", "string")},
-		{s: `strings.PadLeft("", 0, "")`, e: String("")},
-		{s: `strings.PadLeft("", -1, "")`, e: String("")},
-		{s: `strings.PadLeft("", 1, "")`, e: String("")},
-		{s: `strings.PadLeft("", 1, "x")`, e: String("x")},
-		{s: `strings.PadLeft("abc", 3)`, e: String("abc")},
-		{s: `strings.PadLeft("abc", 4)`, e: String(" abc")},
-		{s: `strings.PadLeft("abc", 5)`, e: String("  abc")},
-		{s: `strings.PadLeft("abc", 6)`, e: String("   abc")},
-		{s: `strings.PadLeft("abc", -1, "x")`, e: String("abc")},
-		{s: `strings.PadLeft("abc", 0, "x")`, e: String("abc")},
-		{s: `strings.PadLeft("abc", 1, "x")`, e: String("abc")},
-		{s: `strings.PadLeft("abc", 2, "x")`, e: String("abc")},
-		{s: `strings.PadLeft("abc", 3, "x")`, e: String("abc")},
-		{s: `strings.PadLeft("abc", 4, "x")`, e: String("xabc")},
-		{s: `strings.PadLeft("abc", 5, "x")`, e: String("xxabc")},
-		{s: `strings.PadLeft("abc", 5, "xy")`, e: String("xyabc")},
-		{s: `strings.PadLeft("abc", 6, "xy")`, e: String("xyxabc")},
-		{s: `strings.PadLeft("abc", 6, "wxyz")`, e: String("wxyabc")},
+		{s: `strings.PadLeft("", 0, "")`, e: String{Value: ""}},
+		{s: `strings.PadLeft("", -1, "")`, e: String{Value: ""}},
+		{s: `strings.PadLeft("", 1, "")`, e: String{Value: ""}},
+		{s: `strings.PadLeft("", 1, "x")`, e: String{Value: "x"}},
+		{s: `strings.PadLeft("abc", 3)`, e: String{Value: "abc"}},
+		{s: `strings.PadLeft("abc", 4)`, e: String{Value: " abc"}},
+		{s: `strings.PadLeft("abc", 5)`, e: String{Value: "  abc"}},
+		{s: `strings.PadLeft("abc", 6)`, e: String{Value: "   abc"}},
+		{s: `strings.PadLeft("abc", -1, "x")`, e: String{Value: "abc"}},
+		{s: `strings.PadLeft("abc", 0, "x")`, e: String{Value: "abc"}},
+		{s: `strings.PadLeft("abc", 1, "x")`, e: String{Value: "abc"}},
+		{s: `strings.PadLeft("abc", 2, "x")`, e: String{Value: "abc"}},
+		{s: `strings.PadLeft("abc", 3, "x")`, e: String{Value: "abc"}},
+		{s: `strings.PadLeft("abc", 4, "x")`, e: String{Value: "xabc"}},
+		{s: `strings.PadLeft("abc", 5, "x")`, e: String{Value: "xxabc"}},
+		{s: `strings.PadLeft("abc", 5, "xy")`, e: String{Value: "xyabc"}},
+		{s: `strings.PadLeft("abc", 6, "xy")`, e: String{Value: "xyxabc"}},
+		{s: `strings.PadLeft("abc", 6, "wxyz")`, e: String{Value: "wxyabc"}},
 
 		{s: `strings.PadRight()`, m: catch, e: nwrongArgs(2, 3, 0)},
 		{s: `strings.PadRight(1)`, m: catch, e: nwrongArgs(2, 3, 1)},
 		{s: `strings.PadRight(1, 2, 3, 4)`, m: catch, e: nwrongArgs(2, 3, 4)},
-		{s: `strings.PadRight(1, 2, 3)`, e: String("13")},
+		{s: `strings.PadRight(1, 2, 3)`, e: String{Value: "13"}},
 		{s: `strings.PadRight("", "", "")`, m: catch,
 			e: typeErr("2nd", "int", "string")},
-		{s: `strings.PadRight("", 0, "")`, e: String("")},
-		{s: `strings.PadRight("", -1, "")`, e: String("")},
-		{s: `strings.PadRight("", 1, "")`, e: String("")},
-		{s: `strings.PadRight("", 1, "x")`, e: String("x")},
-		{s: `strings.PadRight("abc", 3)`, e: String("abc")},
-		{s: `strings.PadRight("abc", 4)`, e: String("abc ")},
-		{s: `strings.PadRight("abc", 5)`, e: String("abc  ")},
-		{s: `strings.PadRight("abc", 6)`, e: String("abc   ")},
-		{s: `strings.PadRight("abc", -1, "x")`, e: String("abc")},
-		{s: `strings.PadRight("abc", 0, "x")`, e: String("abc")},
-		{s: `strings.PadRight("abc", 1, "x")`, e: String("abc")},
-		{s: `strings.PadRight("abc", 2, "x")`, e: String("abc")},
-		{s: `strings.PadRight("abc", 3, "x")`, e: String("abc")},
-		{s: `strings.PadRight("abc", 4, "x")`, e: String("abcx")},
-		{s: `strings.PadRight("abc", 5, "x")`, e: String("abcxx")},
-		{s: `strings.PadRight("abc", 5, "xy")`, e: String("abcxy")},
-		{s: `strings.PadRight("abc", 6, "xy")`, e: String("abcxyx")},
-		{s: `strings.PadRight("abc", 6, "wxyz")`, e: String("abcwxy")},
+		{s: `strings.PadRight("", 0, "")`, e: String{Value: ""}},
+		{s: `strings.PadRight("", -1, "")`, e: String{Value: ""}},
+		{s: `strings.PadRight("", 1, "")`, e: String{Value: ""}},
+		{s: `strings.PadRight("", 1, "x")`, e: String{Value: "x"}},
+		{s: `strings.PadRight("abc", 3)`, e: String{Value: "abc"}},
+		{s: `strings.PadRight("abc", 4)`, e: String{Value: "abc "}},
+		{s: `strings.PadRight("abc", 5)`, e: String{Value: "abc  "}},
+		{s: `strings.PadRight("abc", 6)`, e: String{Value: "abc   "}},
+		{s: `strings.PadRight("abc", -1, "x")`, e: String{Value: "abc"}},
+		{s: `strings.PadRight("abc", 0, "x")`, e: String{Value: "abc"}},
+		{s: `strings.PadRight("abc", 1, "x")`, e: String{Value: "abc"}},
+		{s: `strings.PadRight("abc", 2, "x")`, e: String{Value: "abc"}},
+		{s: `strings.PadRight("abc", 3, "x")`, e: String{Value: "abc"}},
+		{s: `strings.PadRight("abc", 4, "x")`, e: String{Value: "abcx"}},
+		{s: `strings.PadRight("abc", 5, "x")`, e: String{Value: "abcxx"}},
+		{s: `strings.PadRight("abc", 5, "xy")`, e: String{Value: "abcxy"}},
+		{s: `strings.PadRight("abc", 6, "xy")`, e: String{Value: "abcxyx"}},
+		{s: `strings.PadRight("abc", 6, "wxyz")`, e: String{Value: "abcwxy"}},
 
 		{s: `strings.Repeat()`, m: catch, e: wrongArgs(2, 0)},
 		{s: `strings.Repeat(1)`, m: catch, e: wrongArgs(2, 1)},
 		{s: `strings.Repeat(1, 2, 3)`, m: catch, e: wrongArgs(2, 3)},
-		{s: `strings.Repeat(1, 2)`, e: String("11")},
+		{s: `strings.Repeat(1, 2)`, e: String{Value: "11"}},
 		{s: `strings.Repeat("", "")`, m: catch,
 			e: typeErr("2nd", "int", "string")},
-		{s: `strings.Repeat("a", -1)`, e: String("")},
-		{s: `strings.Repeat("a", 0)`, e: String("")},
-		{s: `strings.Repeat("a", 2)`, e: String("aa")},
+		{s: `strings.Repeat("a", -1)`, e: String{Value: ""}},
+		{s: `strings.Repeat("a", 0)`, e: String{Value: ""}},
+		{s: `strings.Repeat("a", 2)`, e: String{Value: "aa"}},
 
 		{s: `strings.Replace()`, m: catch, e: nwrongArgs(3, 4, 0)},
 		{s: `strings.Replace(1)`, m: catch, e: nwrongArgs(3, 4, 1)},
 		{s: `strings.Replace(1, 2)`, m: catch, e: nwrongArgs(3, 4, 2)},
 		{s: `strings.Replace(1, 2, 3, 4, 5)`, m: catch, e: nwrongArgs(3, 4, 5)},
-		{s: `strings.Replace(1, 2, 3)`, e: String("1")},
-		{s: `strings.Replace("", 1, 3)`, e: String("")},
-		{s: `strings.Replace("", "", 1)`, e: String("1")},
+		{s: `strings.Replace(1, 2, 3)`, e: String{Value: "1"}},
+		{s: `strings.Replace("", 1, 3)`, e: String{Value: ""}},
+		{s: `strings.Replace("", "", 1)`, e: String{Value: "1"}},
 		{s: `strings.Replace("", "", "", "")`, m: catch,
 			e: typeErr("4th", "int", "string")},
-		{s: `strings.Replace("abc", "s", "ş")`, e: String("abc")},
-		{s: `strings.Replace("abbc", "b", "a")`, e: String("aaac")},
-		{s: `strings.Replace("abbc", "b", "a", 0)`, e: String("abbc")},
-		{s: `strings.Replace("abbc", "b", "a", 1)`, e: String("aabc")},
+		{s: `strings.Replace("abc", "s", "ş")`, e: String{Value: "abc"}},
+		{s: `strings.Replace("abbc", "b", "a")`, e: String{Value: "aaac"}},
+		{s: `strings.Replace("abbc", "b", "a", 0)`, e: String{Value: "abbc"}},
+		{s: `strings.Replace("abbc", "b", "a", 1)`, e: String{Value: "aabc"}},
 
 		{s: `strings.Split()`, m: catch, e: nwrongArgs(2, 3, 0)},
 		{s: `strings.Split(1)`, m: catch, e: nwrongArgs(2, 3, 1)},
 		{s: `strings.Split(1, 2, 3, 4)`, m: catch, e: nwrongArgs(2, 3, 4)},
-		{s: `strings.Split(1, 2)`, e: Array{String("1")}},
-		{s: `strings.Split("", 1, 3)`, e: Array{String("")}},
+		{s: `strings.Split(1, 2)`, e: Array{String{Value: "1"}}},
+		{s: `strings.Split("", 1, 3)`, e: Array{String{Value: ""}}},
 		{s: `strings.Split("", "", "")`, m: catch,
 			e: typeErr("3rd", "int", "string")},
 		{s: `strings.Split("a.b.c", ".", 0)`, e: Array{}},
-		{s: `strings.Split("a.b.c", ".", 1)`, e: Array{String("a.b.c")}},
+		{s: `strings.Split("a.b.c", ".", 1)`, e: Array{String{Value: "a.b.c"}}},
 		{s: `strings.Split("a.b.c", ".", -1)`,
-			e: Array{String("a"), String("b"), String("c")}},
+			e: Array{String{Value: "a"}, String{Value: "b"}, String{Value: "c"}}},
 		{s: `strings.Split("a.b.c", ".")`,
-			e: Array{String("a"), String("b"), String("c")}},
+			e: Array{String{Value: "a"}, String{Value: "b"}, String{Value: "c"}}},
 		{s: `strings.Split("a.b.c.", ".")`,
-			e: Array{String("a"), String("b"), String("c"), String("")}},
+			e: Array{String{Value: "a"}, String{Value: "b"}, String{Value: "c"}, String{Value: ""}}},
 		{s: `strings.Split("a.b.c.", ".", 5)`,
-			e: Array{String("a"), String("b"), String("c"), String("")}},
+			e: Array{String{Value: "a"}, String{Value: "b"}, String{Value: "c"}, String{Value: ""}}},
 
 		{s: `strings.SplitAfter()`, m: catch, e: nwrongArgs(2, 3, 0)},
 		{s: `strings.SplitAfter(1)`, m: catch, e: nwrongArgs(2, 3, 1)},
 		{s: `strings.SplitAfter(1, 2, 3, 4)`, m: catch, e: nwrongArgs(2, 3, 4)},
-		{s: `strings.SplitAfter(1, 2)`, e: Array{String("1")}},
-		{s: `strings.SplitAfter("", 1, 3)`, e: Array{String("")}},
+		{s: `strings.SplitAfter(1, 2)`, e: Array{String{Value: "1"}}},
+		{s: `strings.SplitAfter("", 1, 3)`, e: Array{String{Value: ""}}},
 		{s: `strings.SplitAfter("", "", "")`, m: catch,
 			e: typeErr("3rd", "int", "string")},
 		{s: `strings.SplitAfter("a.b.c", ".", 0)`, e: Array{}},
-		{s: `strings.SplitAfter("a.b.c", ".", 1)`, e: Array{String("a.b.c")}},
+		{s: `strings.SplitAfter("a.b.c", ".", 1)`, e: Array{String{Value: "a.b.c"}}},
 		{s: `strings.SplitAfter("a.b.c", ".", -1)`,
-			e: Array{String("a."), String("b."), String("c")}},
+			e: Array{String{Value: "a."}, String{Value: "b."}, String{Value: "c"}}},
 		{s: `strings.SplitAfter("a.b.c", ".")`,
-			e: Array{String("a."), String("b."), String("c")}},
+			e: Array{String{Value: "a."}, String{Value: "b."}, String{Value: "c"}}},
 		{s: `strings.SplitAfter("a.b.c.", ".")`,
-			e: Array{String("a."), String("b."), String("c."), String("")}},
+			e: Array{String{Value: "a."}, String{Value: "b."}, String{Value: "c."}, String{Value: ""}}},
 		{s: `strings.SplitAfter("a.b.c.", ".", 5)`,
-			e: Array{String("a."), String("b."), String("c."), String("")}},
+			e: Array{String{Value: "a."}, String{Value: "b."}, String{Value: "c."}, String{Value: ""}}},
 
 		{s: `strings.Title()`, m: catch, e: wrongArgs(1, 0)},
 		{s: `strings.Title(1, 2)`, m: catch, e: wrongArgs(1, 2)},
-		{s: `strings.Title(1)`, e: String("1")},
-		{s: `strings.Title("")`, e: String("")},
-		{s: `strings.Title("abc def")`, e: String("Abc Def")},
+		{s: `strings.Title(1)`, e: String{Value: "1"}},
+		{s: `strings.Title("")`, e: String{Value: ""}},
+		{s: `strings.Title("abc def")`, e: String{Value: "Abc Def"}},
 
 		{s: `strings.ToLower()`, m: catch, e: wrongArgs(1, 0)},
 		{s: `strings.ToLower(1, 2)`, m: catch, e: wrongArgs(1, 2)},
-		{s: `strings.ToLower(1)`, e: String("1")},
-		{s: `strings.ToLower("")`, e: String("")},
-		{s: `strings.ToLower("XYZ")`, e: String("xyz")},
+		{s: `strings.ToLower(1)`, e: String{Value: "1"}},
+		{s: `strings.ToLower("")`, e: String{Value: ""}},
+		{s: `strings.ToLower("XYZ")`, e: String{Value: "xyz"}},
 
 		{s: `strings.ToTitle()`, m: catch, e: wrongArgs(1, 0)},
 		{s: `strings.ToTitle(1, 2)`, m: catch, e: wrongArgs(1, 2)},
-		{s: `strings.ToTitle(1)`, e: String("1")},
-		{s: `strings.ToTitle("")`, e: String("")},
-		{s: `strings.ToTitle("çğ öşü")`, e: String("ÇĞ ÖŞÜ")},
+		{s: `strings.ToTitle(1)`, e: String{Value: "1"}},
+		{s: `strings.ToTitle("")`, e: String{Value: ""}},
+		{s: `strings.ToTitle("çğ öşü")`, e: String{Value: "ÇĞ ÖŞÜ"}},
 
 		{s: `strings.ToUpper()`, m: catch, e: wrongArgs(1, 0)},
 		{s: `strings.ToUpper(1, 2)`, m: catch, e: wrongArgs(1, 2)},
-		{s: `strings.ToUpper(1)`, e: String("1")},
-		{s: `strings.ToUpper("")`, e: String("")},
-		{s: `strings.ToUpper("çğ öşü")`, e: String("ÇĞ ÖŞÜ")},
+		{s: `strings.ToUpper(1)`, e: String{Value: "1"}},
+		{s: `strings.ToUpper("")`, e: String{Value: ""}},
+		{s: `strings.ToUpper("çğ öşü")`, e: String{Value: "ÇĞ ÖŞÜ"}},
 
 		{s: `strings.ToValidUTF8()`, m: catch, e: nwrongArgs(1, 2, 0)},
 		{s: `strings.ToValidUTF8(1, 2, 2)`, m: catch, e: nwrongArgs(1, 2, 3)},
-		{s: `strings.ToValidUTF8("a")`, e: String("a")},
-		{s: `strings.ToValidUTF8("a☺\xffb☺\xC0\xAFc☺\xff", "日本語")`, e: String("a☺日本語b☺日本語c☺日本語")},
-		{s: `strings.ToValidUTF8("a☺\xffb☺\xC0\xAFc☺\xff", "")`, e: String("a☺b☺c☺")},
+		{s: `strings.ToValidUTF8("a")`, e: String{Value: "a"}},
+		{s: `strings.ToValidUTF8("a☺\xffb☺\xC0\xAFc☺\xff", "日本語")`, e: String{Value: "a☺日本語b☺日本語c☺日本語"}},
+		{s: `strings.ToValidUTF8("a☺\xffb☺\xC0\xAFc☺\xff", "")`, e: String{Value: "a☺b☺c☺"}},
 
 		{s: `strings.Trim()`, m: catch, e: wrongArgs(2, 0)},
 		{s: `strings.Trim(1)`, m: catch, e: wrongArgs(2, 1)},
 		{s: `strings.Trim(1, 2, 3)`, m: catch, e: wrongArgs(2, 3)},
-		{s: `strings.Trim(1, 2)`, e: String("1")},
-		{s: `strings.Trim("", 2)`, e: String("")},
-		{s: `strings.Trim("!!xyz!!", "")`, e: String("!!xyz!!")},
-		{s: `strings.Trim("!!xyz!!", "!")`, e: String("xyz")},
-		{s: `strings.Trim("!!xyz!!", "!?")`, e: String("xyz")},
+		{s: `strings.Trim(1, 2)`, e: String{Value: "1"}},
+		{s: `strings.Trim("", 2)`, e: String{Value: ""}},
+		{s: `strings.Trim("!!xyz!!", "")`, e: String{Value: "!!xyz!!"}},
+		{s: `strings.Trim("!!xyz!!", "!")`, e: String{Value: "xyz"}},
+		{s: `strings.Trim("!!xyz!!", "!?")`, e: String{Value: "xyz"}},
 
 		{s: `strings.TrimFunc()`, m: catch, e: wrongArgs(2, 0)},
 		{s: `strings.TrimFunc("")`, m: catch, e: wrongArgs(2, 1)},
 		{s: `strings.TrimFunc("xabcxx",
-			func(c){return c=='x'})`, e: String("abc")},
+			func(c){return c=='x'})`, e: String{Value: "abc"}},
 
 		{s: `strings.TrimLeft()`, m: catch, e: wrongArgs(2, 0)},
 		{s: `strings.TrimLeft(1)`, m: catch, e: wrongArgs(2, 1)},
 		{s: `strings.TrimLeft(1, 2, 3)`, m: catch, e: wrongArgs(2, 3)},
-		{s: `strings.TrimLeft(1, 2)`, e: String("1")},
-		{s: `strings.TrimLeft("", 2)`, e: String("")},
-		{s: `strings.TrimLeft("!!xyz!!", "")`, e: String("!!xyz!!")},
-		{s: `strings.TrimLeft("!!xyz!!", "!")`, e: String("xyz!!")},
-		{s: `strings.TrimLeft("!!?xyz!!", "!?")`, e: String("xyz!!")},
+		{s: `strings.TrimLeft(1, 2)`, e: String{Value: "1"}},
+		{s: `strings.TrimLeft("", 2)`, e: String{Value: ""}},
+		{s: `strings.TrimLeft("!!xyz!!", "")`, e: String{Value: "!!xyz!!"}},
+		{s: `strings.TrimLeft("!!xyz!!", "!")`, e: String{Value: "xyz!!"}},
+		{s: `strings.TrimLeft("!!?xyz!!", "!?")`, e: String{Value: "xyz!!"}},
 
 		{s: `strings.TrimLeftFunc()`, m: catch, e: wrongArgs(2, 0)},
 		{s: `strings.TrimLeftFunc("")`, m: catch, e: wrongArgs(2, 1)},
 		{s: `strings.TrimLeftFunc("xxabcxx",
-			func(c){return c=='x'})`, e: String("abcxx")},
+			func(c){return c=='x'})`, e: String{Value: "abcxx"}},
 		{s: `strings.TrimLeftFunc("abcxx",
-			func(c){return c=='x'})`, e: String("abcxx")},
+			func(c){return c=='x'})`, e: String{Value: "abcxx"}},
 
 		{s: `strings.TrimPrefix()`, m: catch, e: wrongArgs(2, 0)},
 		{s: `strings.TrimPrefix(1)`, m: catch, e: wrongArgs(2, 1)},
 		{s: `strings.TrimPrefix(1, 2, 3)`, m: catch, e: wrongArgs(2, 3)},
-		{s: `strings.TrimPrefix(1, 2)`, e: String("1")},
-		{s: `strings.TrimPrefix("", 2)`, e: String("")},
-		{s: `strings.TrimPrefix("!!xyz!!", "")`, e: String("!!xyz!!")},
-		{s: `strings.TrimPrefix("!!xyz!!", "!")`, e: String("!xyz!!")},
-		{s: `strings.TrimPrefix("!!xyz!!", "!!")`, e: String("xyz!!")},
-		{s: `strings.TrimPrefix("!!xyz!!", "!!x")`, e: String("yz!!")},
+		{s: `strings.TrimPrefix(1, 2)`, e: String{Value: "1"}},
+		{s: `strings.TrimPrefix("", 2)`, e: String{Value: ""}},
+		{s: `strings.TrimPrefix("!!xyz!!", "")`, e: String{Value: "!!xyz!!"}},
+		{s: `strings.TrimPrefix("!!xyz!!", "!")`, e: String{Value: "!xyz!!"}},
+		{s: `strings.TrimPrefix("!!xyz!!", "!!")`, e: String{Value: "xyz!!"}},
+		{s: `strings.TrimPrefix("!!xyz!!", "!!x")`, e: String{Value: "yz!!"}},
 
 		{s: `strings.TrimRight()`, m: catch, e: wrongArgs(2, 0)},
 		{s: `strings.TrimRight(1)`, m: catch, e: wrongArgs(2, 1)},
 		{s: `strings.TrimRight(1, 2, 3)`, m: catch, e: wrongArgs(2, 3)},
-		{s: `strings.TrimRight(1, 2)`, e: String("1")},
-		{s: `strings.TrimRight("", 2)`, e: String("")},
-		{s: `strings.TrimRight("!!xyz!!", "")`, e: String("!!xyz!!")},
-		{s: `strings.TrimRight("!!xyz!!", "!")`, e: String("!!xyz")},
-		{s: `strings.TrimRight("!!xyz?!!", "!?")`, e: String("!!xyz")},
+		{s: `strings.TrimRight(1, 2)`, e: String{Value: "1"}},
+		{s: `strings.TrimRight("", 2)`, e: String{Value: ""}},
+		{s: `strings.TrimRight("!!xyz!!", "")`, e: String{Value: "!!xyz!!"}},
+		{s: `strings.TrimRight("!!xyz!!", "!")`, e: String{Value: "!!xyz"}},
+		{s: `strings.TrimRight("!!xyz?!!", "!?")`, e: String{Value: "!!xyz"}},
 
 		{s: `strings.TrimRightFunc()`, m: catch, e: wrongArgs(2, 0)},
 		{s: `strings.TrimRightFunc("")`, m: catch, e: wrongArgs(2, 1)},
 		{s: `strings.TrimRightFunc("xxabcxx",
-			func(c){return c=='x'})`, e: String("xxabc")},
+			func(c){return c=='x'})`, e: String{Value: "xxabc"}},
 		{s: `strings.TrimRightFunc("xxabc",
-			func(c){return c=='x'})`, e: String("xxabc")},
+			func(c){return c=='x'})`, e: String{Value: "xxabc"}},
 
 		{s: `strings.TrimSpace()`, m: catch, e: wrongArgs(1, 0)},
 		{s: `strings.TrimSpace(1, 2)`, m: catch, e: wrongArgs(1, 2)},
-		{s: `strings.TrimSpace(1)`, e: String("1")},
-		{s: `strings.TrimSpace(" \txyz\n\r")`, e: String("xyz")},
-		{s: `strings.TrimSpace("xyz")`, e: String("xyz")},
+		{s: `strings.TrimSpace(1)`, e: String{Value: "1"}},
+		{s: `strings.TrimSpace(" \txyz\n\r")`, e: String{Value: "xyz"}},
+		{s: `strings.TrimSpace("xyz")`, e: String{Value: "xyz"}},
 
 		{s: `strings.TrimSuffix()`, m: catch, e: wrongArgs(2, 0)},
 		{s: `strings.TrimSuffix(1)`, m: catch, e: wrongArgs(2, 1)},
 		{s: `strings.TrimSuffix(1, 2, 3)`, m: catch, e: wrongArgs(2, 3)},
-		{s: `strings.TrimSuffix(1, 2)`, e: String("1")},
-		{s: `strings.TrimSuffix("", 2)`, e: String("")},
-		{s: `strings.TrimSuffix("!!xyz!!", "")`, e: String("!!xyz!!")},
-		{s: `strings.TrimSuffix("!!xyz!!", "!")`, e: String("!!xyz!")},
-		{s: `strings.TrimSuffix("!!xyz!!", "!!")`, e: String("!!xyz")},
-		{s: `strings.TrimSuffix("!!xyz!!", "z!!")`, e: String("!!xy")},
+		{s: `strings.TrimSuffix(1, 2)`, e: String{Value: "1"}},
+		{s: `strings.TrimSuffix("", 2)`, e: String{Value: ""}},
+		{s: `strings.TrimSuffix("!!xyz!!", "")`, e: String{Value: "!!xyz!!"}},
+		{s: `strings.TrimSuffix("!!xyz!!", "!")`, e: String{Value: "!!xyz!"}},
+		{s: `strings.TrimSuffix("!!xyz!!", "!!")`, e: String{Value: "!!xyz"}},
+		{s: `strings.TrimSuffix("!!xyz!!", "z!!")`, e: String{Value: "!!xy"}},
 	}
 	for _, tt := range testCases {
 		var s string
@@ -719,7 +719,7 @@ func expectRun(t *testing.T, script string, expected Object) {
 	mm.AddBuiltinModule("strings", Module)
 	c := DefaultCompilerOptions
 	c.ModuleMap = mm
-	bc, err := Compile([]byte(script), c)
+	bc, err := Compile([]byte(script), &c)
 	require.NoError(t, err)
 	ret, err := NewVM(bc).Run(nil)
 	require.NoError(t, err)
