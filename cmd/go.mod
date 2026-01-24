@@ -2,8 +2,6 @@ module github.com/topxeq/charlang/cmd/char
 
 go 1.24.0
 
-toolchain go1.24.1
-
 // replace github.com/topxeq/gods v0.0.0 => ../../../gods
 
 // replace github.com/topxeq/goph v0.0.0 => ../../../goph

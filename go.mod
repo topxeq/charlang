@@ -2,8 +2,6 @@ module github.com/topxeq/charlang
 
 go 1.24.0
 
-toolchain go1.24.1
-
 require (
 	github.com/domodwyer/mailyak v3.1.1+incompatible
 	github.com/dop251/goja v0.0.0-20250309171923-bcd7cc6bf64c
