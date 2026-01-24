@@ -44,5 +44,34 @@ func TestBuiltinObjects(t *testing.T) {
 	expectRun(t, `return spr("%v", bytes(1, 2, 3))`, nil, String{Value: "[1 2 3]"})
 
 	expectRun(t, `return spt(bytesBuffer(bytes(1, 2, 3)).bytes())`, nil, String{Value: "[1 2 3]"})
+
+	expectRun(t, `o1 := image("-height=200"); return spt(o1.width(), o1.height())`, nil, String{Value: "100 200"})
+	
+	o1, errT := NewImage(Call{Args: []Object{String{Value: "-width=300"}}})
+	
+	if errT != nil {
+		t.Fatalf("error occur: %v", errT)
+	}
+	
+	o1c, ok := o1.(NameCallerObject)
+	
+	if !ok {
+		t.Fatalf("failed to create object: %v", "image")
+	}
+	
+	r1, errT := o1c.CallName("width", Call{})
+
+	if errT != nil {
+		t.Fatalf("error occur: %v", errT)
+	}
+	
+	r2, errT := o1c.CallName("height", Call{})
+
+	if errT != nil {
+		t.Fatalf("error occur: %v", errT)
+	}
+	
+	require.Equal(t, fmt.Sprintf("%v,%v", r1, r2), "300,100")
+
 }
 

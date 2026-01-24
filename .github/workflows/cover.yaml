@@ -33,10 +33,9 @@ jobs:
         go tool cover -func coverage.out -o coverage.out  # Replaces coverage.out with the analysis of coverage.out
 
     - name: Go Coverage Badge
-      uses: tj-actions/coverage-badge-go@v1
-      if: ${{ runner.os == 'Windows' && matrix.go == '1.24.0' }} # Runs this on only one of the ci builds.
+      uses: tj-actions/coverage-badge-go@v3
+      if: ${{ runner.os == 'Linux' && matrix.go == '1.24.0' }} # Runs this on only one of the ci builds.
       with:
-        green: 80
         filename: coverage.out
 
     - uses: stefanzweifel/git-auto-commit-action@v4
