@@ -36,11 +36,11 @@ func TestEval(t *testing.T) {
 		},
 		{
 			name:   "globals",
-			global: Map{"g": String("test")},
+			global: Map{"g": String{Value: "test"}},
 			sr: []scriptResult{
 				{`global g`, Undefined},
-				{`return g`, String("test")},
-				{`globals()["g"]`, String("test")},
+				{`return g`, String{Value: "test"}},
+				{`globals()["g"]`, String{Value: "test"}},
 			},
 		},
 		{

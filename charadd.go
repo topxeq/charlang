@@ -1866,7 +1866,8 @@ var methodFuncMapG = map[int]map[string]*Function{
 		"toStr": {
 			Name: "toStr",
 			Value: func(args ...Object) (Object, error) {
-				return ToStringObject(fmt.Sprintf("%v", ((func(http.ResponseWriter, *http.Request))(args[0].(*HttpHandler).Value)))), nil
+//				return ToStringObject(fmt.Sprintf("%v", ((func(http.ResponseWriter, *http.Request))(args[0].(*HttpHandler).Value)))), nil
+				return ToStringObject(fmt.Sprintf("%v", args[0])), nil
 			},
 		},
 		"set": {
@@ -2805,7 +2806,7 @@ func ConvertToObject(vA interface{}) Object {
 			return Undefined
 		}
 
-		return NewCommonError(nv.Error())
+		return NewCommonError(nv.Error(), nil)
 	case string:
 		return ToStringObject(nv)
 	case bool:

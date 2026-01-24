@@ -276,7 +276,7 @@ func (ObjectImpl) TypeName() string {
 
 // String implements Object interface.
 func (o ObjectImpl) String() string {
-	return fmt.Sprintf("%v", o)
+	return fmt.Sprintf("(objectImpl)")
 	// panic(ErrNotImplemented)
 }
 
@@ -8731,7 +8731,7 @@ func (*HttpHandler) TypeName() string {
 }
 
 func (o *HttpHandler) String() string {
-	return fmt.Sprintf("%v", o.Value)
+	return fmt.Sprintf("(httpHandler)%v", &o.Value)
 }
 
 // func (o *HttpResp) SetValue(valueA Object) error {

@@ -183,13 +183,13 @@ func TestCompiler_Compile(t *testing.T) {
 		),
 	))
 	expectCompile(t, `global a`, bytecode(
-		Array{String("a")},
+		Array{String{Value: "a"}},
 		compFunc(concatInsts(
 			makeInst(OpReturn, 0),
 		)),
 	))
 	expectCompile(t, `global (a, b); var c`, bytecode(
-		Array{String("a"), String("b")},
+		Array{String{Value: "a"}, String{Value: "b"}},
 		compFunc(concatInsts(
 			makeInst(OpNull),
 			makeInst(OpDefineLocal, 0),
@@ -199,7 +199,7 @@ func TestCompiler_Compile(t *testing.T) {
 		),
 	))
 	expectCompile(t, `param (arg1, ...varg); global (a, b); var c = arg1; c = b`, bytecode(
-		Array{String("a"), String("b")},
+		Array{String{Value: "a"}, String{Value: "b"}},
 		compFunc(concatInsts(
 			makeInst(OpGetLocal, 0),
 			makeInst(OpDefineLocal, 2),
@@ -500,7 +500,7 @@ func TestCompiler_Compile(t *testing.T) {
 	))
 
 	expectCompile(t, `"string"`, bytecode(
-		Array{String("string")},
+		Array{String{Value: "string"}},
 		compFunc(concatInsts(
 			makeInst(OpConstant, 0),
 			makeInst(OpPop),
@@ -509,7 +509,7 @@ func TestCompiler_Compile(t *testing.T) {
 	))
 
 	expectCompile(t, `"str" + "ing"`, bytecode(
-		Array{String("str"), String("ing")},
+		Array{String{Value: "str"}, String{Value: "ing"}},
 		compFunc(concatInsts(
 			makeInst(OpConstant, 0),
 			makeInst(OpConstant, 1),
@@ -644,7 +644,7 @@ func TestCompiler_Compile(t *testing.T) {
 	))
 
 	expectCompile(t, `{a: 2, b: 4, c: 6}`, bytecode(
-		Array{String("a"), Int(2), String("b"), Int(4), String("c"), Int(6)},
+		Array{String{Value: "a"}, Int(2), String{Value: "b"}, Int(4), String{Value: "c"}, Int(6)},
 		compFunc(concatInsts(
 			makeInst(OpConstant, 0),
 			makeInst(OpConstant, 1),
@@ -659,7 +659,7 @@ func TestCompiler_Compile(t *testing.T) {
 	))
 
 	expectCompile(t, `{a: 2 + 3, b: 5 * 6}`, bytecode(
-		Array{String("a"), Int(2), Int(3), String("b"), Int(5), Int(6)},
+		Array{String{Value: "a"}, Int(2), Int(3), String{Value: "b"}, Int(5), Int(6)},
 		compFunc(concatInsts(
 			makeInst(OpConstant, 0),
 			makeInst(OpConstant, 1),
@@ -692,7 +692,7 @@ func TestCompiler_Compile(t *testing.T) {
 	))
 
 	expectCompile(t, `{a: 2}[2 - 1]`, bytecode(
-		Array{String("a"), Int(2), Int(1)},
+		Array{String{Value: "a"}, Int(2), Int(1)},
 		compFunc(concatInsts(
 			makeInst(OpConstant, 0),
 			makeInst(OpConstant, 1),
@@ -1462,7 +1462,7 @@ func TestCompiler_Compile(t *testing.T) {
 	))
 
 	expectCompile(t, `try { a:=0; throw "an error" } catch { }`, bytecode(
-		Array{Int(0), String("an error")},
+		Array{Int(0), String{Value: "an error"}},
 		compFunc(concatInsts(
 			makeInst(OpSetupTry, 18, 20), // 0000
 			makeInst(OpConstant, 0),      // 0005
@@ -1525,7 +1525,7 @@ func TestCompiler_Compile(t *testing.T) {
 		},
 		bytecode(
 			Array{
-				Map{AttrModuleName: String("mod")},
+				Map{AttrModuleName: String{Value: "mod"}},
 			},
 			compFunc(concatInsts(
 				makeInst(OpLoadModule, 0, 0), // 0000 constant, module indexes
@@ -1618,7 +1618,7 @@ func TestCompiler_Compile(t *testing.T) {
 
 	expectCompile(t, `var a; return a["b"]`,
 		bytecode(
-			Array{String("b")},
+			Array{String{Value: "b"}},
 			compFunc(concatInsts(
 				makeInst(OpNull),
 				makeInst(OpDefineLocal, 0),
@@ -1634,7 +1634,7 @@ func TestCompiler_Compile(t *testing.T) {
 
 	expectCompile(t, `var a; return a["b"]["c"][2]`,
 		bytecode(
-			Array{String("b"), String("c"), Int(2)},
+			Array{String{Value: "b"}, String{Value: "c"}, Int(2)},
 			compFunc(concatInsts(
 				makeInst(OpNull),
 				makeInst(OpDefineLocal, 0),
@@ -1731,7 +1731,7 @@ func expectCompileErrorWithOpts(t *testing.T,
 	script string, opts CompilerOptions, errStr string) {
 
 	t.Helper()
-	_, err := Compile([]byte(script), opts)
+	_, err := Compile([]byte(script), &opts)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), errStr)
 }
@@ -1746,7 +1746,7 @@ func expectCompileWithOpts(t *testing.T,
 	script string, opts CompilerOptions, expected *Bytecode) {
 
 	t.Helper()
-	got, err := Compile([]byte(script), opts)
+	got, err := Compile([]byte(script), &opts)
 	require.NoError(t, err)
 	testBytecodesEqual(t, expected, got, expected.Main.SourceMap != nil)
 }

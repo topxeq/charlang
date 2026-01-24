@@ -6335,7 +6335,7 @@ func FnASSRSE(fn func(string, string) (string, error)) CallableFunc {
 		rs, errT := fn(args[0].String(), args[1].String())
 
 		if errT != nil {
-			return NewCommonError(errT.Error()), nil
+			return NewCommonError(errT.Error(), nil), nil
 		}
 
 		return ToStringObject(rs), nil
@@ -6353,7 +6353,7 @@ func FnASSRSEex(fn func(string, string) (string, error)) CallableExFunc {
 		rs, errT := fn(args[0].String(), args[1].String())
 
 		if errT != nil {
-			return NewCommonError(errT.Error()), nil
+			return NewCommonError(errT.Error(), nil), nil
 		}
 
 		return ToStringObject(rs), nil
@@ -6409,7 +6409,7 @@ func FnASRSE(fn func(string) (string, error)) CallableFunc {
 		rs, errT := fn(args[0].String())
 
 		if errT != nil {
-			return NewCommonError(errT.Error()), nil
+			return NewCommonError(errT.Error(), nil), nil
 		}
 
 		return ToStringObject(rs), nil
@@ -6427,7 +6427,7 @@ func FnASRSEex(fn func(string) (string, error)) CallableExFunc {
 		rs, errT := fn(args[0].String())
 
 		if errT != nil {
-			return NewCommonError(errT.Error()), nil
+			return NewCommonError(errT.Error(), nil), nil
 		}
 
 		return ToStringObject(rs), nil
@@ -10794,22 +10794,22 @@ func builtinCheckEmptyFunc(c Call) (Object, error) {
 	}
 
 	if IsUndefInternal(args[0]) {
-		vs := ObjectsToS(args[1:])
+		vs := ObjectsToI(args[1:])
 
-		formatT := tk.GetSwitch(vs, "-format=", "Empty\n")
+		formatT := tk.GetSwitchI(vs, "-format=", "Empty\n")
 
-		fmt.Printf(formatT)
+		fmt.Printf(formatT, vs...)
 		os.Exit(0)
 	}
 
 	strT := args[0].String()
 
 	if strT == "" {
-		vs := ObjectsToS(args[1:])
+		vs := ObjectsToI(args[1:])
 
-		formatT := tk.GetSwitch(vs, "-format=", "Empty\n\n")
+		formatT := tk.GetSwitchI(vs, "-format=", "Empty\n\n")
 
-		fmt.Printf(formatT)
+		fmt.Printf(formatT, vs...)
 		os.Exit(0)
 	}
 

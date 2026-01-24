@@ -57,9 +57,9 @@ func TestVMErrorHandlers(t *testing.T) {
 	expectRun(t, `var a = 1; try { throw "an error" } catch {} finally { a = 2 }; return a`,
 		newOpts().Skip2Pass(), Int(2))
 	expectRun(t, `var a = 1; try { throw "an error" } catch err {} finally { return string(err) }; return a`,
-		newOpts().Skip2Pass(), String((&Error{Message: "an error"}).String()))
+		newOpts().Skip2Pass(), String{Value: (&Error{Message: "an error"}).String()}) 
 	expectRun(t, `var a = 1; try { throw "an error" } catch err {} finally { return typeName(err) }; return a`,
-		newOpts().Skip2Pass(), String("error"))
+		newOpts().Skip2Pass(), String{Value: "error"})
 	expectRun(t, `var a = 1; try { a = 2 } finally { return a }; return 0`,
 		newOpts().Skip2Pass(), Int(2))
 	expectRun(t, `var a = 1; try { return a } finally { return 2 }; return 0`,
@@ -153,7 +153,7 @@ func TestVMNoPanic(t *testing.T) {
 			}
 		}()
 		// expectRun() is not used because panic somehow cannot be recovered in testing.
-		c, err := Compile([]byte(`param panic; panic();`), CompilerOptions{})
+		c, err := Compile([]byte(`param panic; panic();`), &CompilerOptions{})
 		require.NoError(t, err)
 		vm := NewVM(c)
 		v, err := vm.Run(nil, panicFunc)
@@ -277,11 +277,11 @@ func TestVMCatchAll(t *testing.T) {
 	])
 	`, newOpts().Module("catchAll", catchAll),
 		Array{
-			String("6"),
-			String("WrongNumberOfArgumentsError: want=3 got=2"),
-			String("WrongNumberOfArgumentsError: want=3 got=1"),
-			String("WrongNumberOfArgumentsError: want=3 got=0"),
-			String("WrongNumberOfArgumentsError: want=3 got=4"),
+			String{Value: "6"},
+			String{Value: "WrongNumberOfArgumentsError: want=3 got=2"},
+			String{Value: "WrongNumberOfArgumentsError: want=3 got=1"},
+			String{Value: "WrongNumberOfArgumentsError: want=3 got=0"},
+			String{Value: "WrongNumberOfArgumentsError: want=3 got=4"},
 		},
 	)
 
@@ -382,8 +382,8 @@ func TestVMAssert(t *testing.T) {
 	)
 	require.Equal(t, 1, len(g))
 	require.Equal(t, Array{
-		String("error: #3 is not true"),
-		String("error: #4 is not true"),
+		String{Value: "error: #3 is not true"},
+		String{Value: "error: #4 is not true"},
 	}, g["errs"])
 }
 
@@ -726,7 +726,7 @@ func TestVMExamples(t *testing.T) {
 				},
 			},
 		}).Args(Int(1), Int(2), Int(3)).Skip2Pass(),
-		Map{"Total": Int(6), "ModuleErrors": Int(0), "Error": String("undefined")})
+		Map{"Total": Int(6), "ModuleErrors": Int(0), "Error": String{Value: "undefined"}})
 	require.Equal(t, 1, cleanupCall)
 
 	oldPrintWriter := PrintWriter
@@ -749,11 +749,11 @@ func TestVMExamples(t *testing.T) {
 		Map{
 			"Total":        Undefined,
 			"ModuleErrors": Int(1),
-			"Error": String(`TypeError: want int, got undefined
+			"Error": String{Value: `TypeError: want int, got undefined
 	at (main):27:4
 	   (main):16:3
 	   module:16:4
-	   module:10:6`),
+	   module:10:6`},
 		})
 	require.Equal(t, 1, cleanupCall)
 	require.Equal(t,
