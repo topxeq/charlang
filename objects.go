@@ -516,6 +516,8 @@ func (o Bool) Equal(right Object) bool {
 // IsFalsy implements Object interface.
 func (o Bool) IsFalsy() bool { return bool(!o) }
 
+func (o Bool) BoolValue() bool { return bool(o) }
+
 // CanCall implements Object interface.
 func (Bool) CanCall() bool { return false }
 
