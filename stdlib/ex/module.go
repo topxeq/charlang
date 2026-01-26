@@ -619,6 +619,30 @@ func builtinCloseFunc(c charlang.Call) (charlang.Object, error) {
 	return charlang.NewCommonErrorWithPos(c, "unsupported type: %v", typeNameT), nil
 }
 
+func fnAFRF(fn func(float64) float64) charlang.CallableFunc {
+	return func(args ...charlang.Object) (ret charlang.Object, err error) {
+		if len(args) < 1 {
+			return charlang.Undefined, charlang.ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(charlang.ToFloatQuick(args[0]))
+
+		return charlang.Float(rs), nil
+	}
+}
+
+func fnAFRFex(fn func(float64) float64) charlang.CallableExFunc {
+	return func(c charlang.Call) (ret charlang.Object, err error) {
+		if c.Len() < 1 {
+			return charlang.Undefined, charlang.ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs := fn(charlang.ToFloatQuick(c.Get(0)))
+
+		return charlang.Float(rs), nil
+	}
+}
+
 // Module represents ex module.
 var Module = map[string]charlang.Object{
 	// modules
@@ -630,8 +654,8 @@ var Module = map[string]charlang.Object{
 		// funcs
 		"sqrt": &charlang.Function{
 			Name:    "sqrt", // sqrt
-			Value:   charlang.FnAFRF(math.Sqrt),
-			ValueEx: charlang.FnAFRFex(math.Sqrt),
+			Value:   fnAFRF(math.Sqrt),
+			ValueEx: fnAFRFex(math.Sqrt),
 		},
 	},
 	// "big": charlang.Map{
@@ -642,8 +666,8 @@ var Module = map[string]charlang.Object{
 	// 	// funcs
 	// 	"sqrt": &charlang.Function{
 	// 		Name:    "compile", // compile a piece of code
-	// 		Value:   charlang.FnAFRF(math.Sqrt),
-	// 		ValueEx: charlang.FnAFRFex(math.Sqrt),
+	// 		Value:   charlang.fnAFRF(math.Sqrt),
+	// 		ValueEx: charlang.fnAFRFex(math.Sqrt),
 	// 	},
 	// },
 	// funcs start

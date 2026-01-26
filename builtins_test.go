@@ -16,6 +16,7 @@ import (
 	tk "github.com/topxeq/tkc"
 
 	"github.com/topxeq/charlang/token"
+	"github.com/topxeq/charlang/internal/compat"
 )
 
 func TestBuiltinTypes(t *testing.T) {
@@ -46,6 +47,26 @@ func TestBuiltinFuncs(t *testing.T) {
 		OriginalType: "",
 		OriginalCode: -1,
 	})
+}
+
+type Struct1 struct {
+	
+}
+
+func (o *Struct1) Write(p []byte) (n int, err error) {
+	return 0, nil
+}
+
+func (o *Struct1) Width() (wid int, ok bool) {
+	return 0, true
+}
+
+func (o *Struct1) Precision() (prec int, ok bool) {
+	return 0, true
+}
+
+func (o *Struct1) Flag(c int) bool {
+	return true
 }
 
 func TestBuiltinObjects(t *testing.T) {
@@ -169,6 +190,14 @@ func TestBuiltinObjects(t *testing.T) {
 	chars1, _ := builtinCharsFunc(ToStringObject("abc今天"))
 
 	b1 = builtinIsCharsFunc(chars1).(Bool)
+	
+	b1.Format(&Struct1{}, 3)
+	
+	require.Equal(t, "FmtFormatString: % +-#00.0\x03", fmt.Sprintf("FmtFormatString: %v", compat.FmtFormatString(&Struct1{}, 3)))
+	
+	require.Equal(t, `bool: true`, fmt.Sprintf("bool: %v", b1))
+
+	require.Equal(t, `bool: %!d(bool=true)`, fmt.Sprintf("bool: %d", b1))
 
 	require.True(t, bool(b1))
 
@@ -184,11 +213,11 @@ func TestBuiltinObjects(t *testing.T) {
 
 	require.Equal(t, `[0 3]`, fmt.Sprintf("%v", sn1))
 
-	f1 := FnAFRF(math.Sqrt)
+	f1 := fnAFRF(math.Sqrt)
 
 	require.Equal(t, `func(...charlang.Object) (charlang.Object, error)`, fmt.Sprintf("%T", f1))
 
-	f2 := FnAFRFex(math.Sqrt)
+	f2 := fnAFRFex(math.Sqrt)
 
 	require.Equal(t, `func(charlang.Call) (charlang.Object, error)`, fmt.Sprintf("%T", f2))
 
