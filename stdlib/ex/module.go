@@ -48,17 +48,23 @@ func quickCompileFunc(c charlang.Call) (charlang.Object, error) {
 	lenT := len(argsA)
 
 	if lenT < 1 {
-		return charlang.NewCommonError("not enough parameters"), nil
+		return charlang.NewCommonErrorWithPos(c, "not enough parameters"), nil
 		// return nil, fmt.Errorf("not enough parameters")
 	}
+	
+	vmT := c.VM()
+	
+	if vmT == nil {
+		return charlang.NewCommonErrorWithPos(c, "VM is nil"), nil
+	}
 
-	codeT := charlang.NewCharCode(argsA[0].String(), c.VM().GetCompilerOptions())
+	codeT := charlang.NewCharCode(argsA[0].String(), vmT.GetCompilerOptions())
 
 	byteCodeT := charlang.QuickCompile(codeT.Source, codeT.CompilerOptions)
 
 	if tk.IsError(byteCodeT) {
 		codeT.LastError = fmt.Sprintf("%v", byteCodeT)
-		return charlang.NewCommonError("%v", byteCodeT), nil
+		return charlang.NewCommonErrorWithPos(c, "%v", byteCodeT), nil
 		// return nil, byteCodeT.(error)
 	}
 
@@ -82,11 +88,17 @@ func quickCompileGelFunc(c charlang.Call) (charlang.Object, error) {
 	lenT := len(argsA)
 
 	if lenT < 1 {
-		return charlang.NewCommonError("not enough parameters"), nil
+		return charlang.NewCommonErrorWithPos(c, "not enough parameters"), nil
 		// return nil, fmt.Errorf("not enough parameters")
 	}
 
-	codeT := charlang.NewCharCode(argsA[0].String(), c.VM().GetCompilerOptions())
+	vmT := c.VM()
+	
+	if vmT == nil {
+		return charlang.NewCommonErrorWithPos(c, "VM is nil"), nil
+	}
+
+	codeT := charlang.NewCharCode(argsA[0].String(), vmT.GetCompilerOptions())
 
 	byteCodeT := charlang.QuickCompile(codeT.Source, codeT.CompilerOptions)
 
