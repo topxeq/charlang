@@ -2251,6 +2251,12 @@ file: [calculatorInWebView.char](https://topget.org/dc/c/charlang/example/calcul
 
 A tiny GUI calculator running in WebView2, use the HTML/CSS/JavaScript example code from github.com/WebDevSimplified/Vanilla-JavaScript-Calculator. Demonstrate how to embed WEB applications in Charlang.
 
+#### Estimating the Value of Pi(π) using Monte Carlo Algorithm in WebView2
+
+file: [guiCalPi.char](https://topget.org/dc/c/charlang/example/guiCalPi.char)
+
+Demonstrate how to run a thread to update the WEB page by JavaScript continously in a WebView2 applications in Charlang.
+
 #### Byte Queue
 
 file: [byteQueue.char](https://topget.org/dc/c/charlang/example/byteQueue.char)

@@ -69,6 +69,10 @@ func (o *Struct1) Flag(c int) bool {
 	return true
 }
 
+func isResultBool(strA string, optsA ...interface{}) bool {
+	return tk.ToBool(strA)
+}
+
 func TestBuiltinObjects(t *testing.T) {
 	require.True(t, Char(99) == Char('c'))
 
@@ -220,6 +224,92 @@ func TestBuiltinObjects(t *testing.T) {
 	f2 := fnAFRFex(math.Sqrt)
 
 	require.Equal(t, `func(charlang.Call) (charlang.Object, error)`, fmt.Sprintf("%T", f2))
+
+	require.Equal(t, `func(...charlang.Object) (charlang.Object, error)`, fmt.Sprintf("%T", fnASSRF(tk.CalTextSimilarity)))
+
+	require.Equal(t, `func(charlang.Call) (charlang.Object, error)`, fmt.Sprintf("%T", fnASSRFex(tk.CalTextSimilarity)))
+
+	require.Equal(t, `func(...charlang.Object) (charlang.Object, error)`, fmt.Sprintf("%T", fnARI(tk.GetSeq)))
+
+	require.Equal(t, `charlang.Int`, fmt.Sprintf("%T", OneResultCallAdapter(fnARI(tk.GetSeq))()))
+
+	require.Equal(t, `func(...charlang.Object) (charlang.Object, error)`, fmt.Sprintf("%T", fnALyRB(tk.IsDataEncryptedByTXDEF)))
+
+	require.Equal(t, `func(charlang.Call) (charlang.Object, error)`, fmt.Sprintf("%T", fnALyRBex(tk.IsDataEncryptedByTXDEF)))
+
+	require.Equal(t, `func(...charlang.Object) (charlang.Object, error)`, fmt.Sprintf("%T", fnASVaRB(isResultBool)))
+
+	require.Equal(t, `func(charlang.Call) (charlang.Object, error)`, fmt.Sprintf("%T", fnASVaRBex(isResultBool)))
+
+	require.Equal(t, `func(charlang.Call) (charlang.Object, error)`, fmt.Sprintf("%T", fnASVaRIEex(fmt.Printf)))
+
+	require.Equal(t, `func(...charlang.Object) charlang.Object`, fmt.Sprintf("%T", OneResultCallExAdapter(builtinTestByTextFunc)))
+
+	require.Equal(t, `*charlang.Error`, fmt.Sprintf("%T", OneResultCallExAdapter(builtinTestByTextFunc)()))
+
+	require.True(t, tk.StartsWith(fmt.Sprintf("%v", OneResultCallExAdapter(builtinTestByTextFunc)(Int(1), Int(1))), "error: test 2 failed"))
+
+	require.True(t, tk.StartsWith(fmt.Sprintf("%v", OneResultCallExAdapter(builtinTestByTextFunc)(ToStringObject("aa"), Int(1))), "error: test 3 failed"))
+
+	require.Equal(t, `undefined`, fmt.Sprintf("%v", OneResultCallExAdapter(builtinTestByTextFunc)(ToStringObject("aa"), ToStringObject("aa"))))
+
+	require.True(t, tk.StartsWith(fmt.Sprintf("%v", OneResultCallExAdapter(builtinTestByTextFunc)(ToStringObject("aa"), ToStringObject("ab"))), "error: test "))
+
+	require.Equal(t, `abc`, fmt.Sprintf("%v", GetSwitchFromObjects([]Object{ToStringObject("-p1=1"), ToStringObject("2"), ToStringObject("-p2=abc")}, "-p2=", "")))
+
+	require.Equal(t, ``, fmt.Sprintf("%v", GetSwitchFromObjects(nil, "-p2=", "")))
+
+	require.Equal(t, ``, fmt.Sprintf("%v", GetSwitchFromObjects([]Object{}, "-p2=", "")))
+
+	require.Equal(t, `abc3`, fmt.Sprintf("%v", GetSwitchFromObjects([]Object{ToStringObject("-p1=1"), ToStringObject("2"), ToStringObject("-p2=\"abc3\"")}, "-p2=", "")))
+
+	require.Equal(t, `999`, fmt.Sprintf("%v", GetSwitchFromObjects([]Object{ToStringObject("-p1=1"), ToStringObject("2"), ToStringObject("-p2=\"abc3\"")}, "-a1=", "999")))
+
+	codeT := NewCharCode("a := 1; return a+2", nil)
+
+	byteCodeT := QuickCompile(codeT.Source, codeT.CompilerOptions)
+	
+	codeT.Value = byteCodeT.(*Bytecode)
+
+	vmT := NewVM(byteCodeT.(*Bytecode))
+
+	require.Equal(t, `0`, fmt.Sprintf("%v", vmT.GetSrcPos()))
+
+	vmT.Run(nil)
+	
+	require.Equal(t, `0`, fmt.Sprintf("%v", vmT.GetSrcPos()))
+
+	require.Equal(t, `[1]`, fmt.Sprintf("%v", vmT.GetLocalsQuick()))
+
+	require.Equal(t, `12 39 RETURN`, fmt.Sprintf("%v", vmT.GetCurInstr()))
+
+	require.Equal(t, `<compiledFunction>`, fmt.Sprintf("%v", vmT.GetCurFunc()))
+
+	require.Equal(t, `*charlang.CompilerOptions`, fmt.Sprintf("%T", vmT.GetCompilerOptions()))
+
+	require.Equal(t, `string`, fmt.Sprintf("%T", vmT.GetBytecodeInfo()))
+
+	require.Equal(t, `*charlang.Bytecode`, fmt.Sprintf("%T", vmT.GetBytecode()))
+
+	evalT := NewEvalQuick(map[string]interface{}{"scriptPathG": "", "runModeG": "repl"}, MainCompilerOptions)
+	
+	r, e := evalT.RunByteCode(nil, codeT.Value)
+
+	require.Equal(t, `3-<nil>`, fmt.Sprintf("%v-%v", r, e))
+
+	rr := NewModuleMap()
+	rr.Add("abc", nil)
+	rr.Remove("abc")
+	
+	require.Equal(t, `&{map[] <nil>}`, fmt.Sprintf("%v", rr))
+
+	rr2 := rr.Fork("module2")
+	
+	require.Equal(t, `&{map[] <nil>}`, fmt.Sprintf("%v", rr2))
+
+	rr2.SetExtImporter(nil)
+
+	require.Equal(t, `&{map[] <nil>}`, fmt.Sprintf("%v", rr2))
 
 }
 

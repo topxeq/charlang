@@ -5867,6 +5867,34 @@ func CallExAdapter(fn CallableExFunc) CallableFunc {
 }
 
 // char add start
+func OneResultCallAdapter(fn CallableFunc) func(args ...Object) Object {
+	// tk.Pl("CallExAdapter: %v", fn)
+	return func(args ...Object) Object {
+		// tk.Pl("func in CallExAdapter: %v", fn)
+		rs, err := fn(args...)
+		
+		if err != nil {
+			return NewCommonError("%v", err)
+		}
+		
+		return rs
+	}
+}
+
+func OneResultCallExAdapter(fn CallableExFunc) func(args ...Object) Object {
+	// tk.Pl("CallExAdapter: %v", fn)
+	return func(args ...Object) Object {
+		// tk.Pl("func in CallExAdapter: %v", fn)
+		rs, err := fn(Call{Args: args})
+		
+		if err != nil {
+			return NewCommonError("%v", err)
+		}
+		
+		return rs
+	}
+}
+
 func toArgsA(offset int, c Call) []interface{} {
 	size := c.Len()
 	vargs := make([]interface{}, 0, size-offset)
@@ -8469,7 +8497,7 @@ func fnAVaR(fn func(...interface{})) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		vargs := ObjectsToI(args)
 		fn(vargs...)
-		return nil, nil
+		return Undefined, nil
 	}
 }
 
@@ -8477,7 +8505,7 @@ func fnAVaRex(fn func(...interface{})) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		vargs := toArgsA(0, c)
 		fn(vargs...)
-		return nil, nil
+		return Undefined, nil
 	}
 }
 
@@ -8566,7 +8594,7 @@ func fnAAR(fn func(interface{})) CallableFunc {
 
 		fn(ConvertFromObject(args[0]))
 
-		return nil, nil
+		return Undefined, nil
 	}
 }
 
@@ -8578,7 +8606,7 @@ func fnAARex(fn func(interface{})) CallableExFunc {
 
 		fn(ConvertFromObject(c.Get(0)))
 
-		return nil, nil
+		return Undefined, nil
 	}
 }
 
@@ -8593,7 +8621,7 @@ func fnASVaR(fn func(string, ...interface{})) CallableFunc {
 
 		fn(args[0].String(), vargs...)
 
-		return nil, nil
+		return Undefined, nil
 	}
 }
 
@@ -8609,7 +8637,7 @@ func fnASVaRex(fn func(string, ...interface{})) CallableExFunc {
 
 		fn(args[0].String(), vargs...)
 
-		return nil, nil
+		return Undefined, nil
 	}
 }
 
@@ -8666,7 +8694,7 @@ func fnAWSVaRIEex(fn func(io.Writer, string, ...interface{}) (int, error)) Calla
 	}
 }
 
-// like fmt.printf
+// like fmt.Printf
 func fnASVaRIEex(fn func(string, ...interface{}) (int, error)) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
@@ -8722,7 +8750,7 @@ func builtinTestByTextFunc(c Call) (ret Object, err error) {
 		return nil, fmt.Errorf("test %v%v failed: (pos: %v) %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, tk.FindFirstDiffIndex(nv1.Value, nv2.Value), v1, v2, v1, v2)
 	}
 
-	return nil, nil
+	return Undefined, nil
 }
 
 func builtinTestByStartsWithFunc(c Call) (Object, error) {
@@ -8766,7 +8794,7 @@ func builtinTestByStartsWithFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
 	}
 
-	return nil, nil
+	return Undefined, nil
 }
 
 func builtinTestByEndsWithFunc(c Call) (Object, error) {
@@ -8810,7 +8838,7 @@ func builtinTestByEndsWithFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
 	}
 
-	return nil, nil
+	return Undefined, nil
 }
 
 func builtinTestByContainsFunc(c Call) (Object, error) {
@@ -8854,7 +8882,7 @@ func builtinTestByContainsFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
 	}
 
-	return nil, nil
+	return Undefined, nil
 }
 
 func builtinTestByRegContainsFunc(c Call) (Object, error) {
@@ -8898,7 +8926,7 @@ func builtinTestByRegContainsFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
 	}
 
-	return nil, nil
+	return Undefined, nil
 }
 
 //func builtinTestByFuncFunc(c Call) (Object, error) {
@@ -8946,7 +8974,7 @@ func builtinTestByRegContainsFunc(c Call) (Object, error) {
 //
 //	tk.Pl("test %v%v passed", v3, v4)
 //
-//	return nil, nil
+//	return Undefined, nil
 //}
 
 //func builtinTestByLineRulesFunc(c Call) (Object, error) {
@@ -9047,7 +9075,7 @@ func builtinTestByRegContainsFunc(c Call) (Object, error) {
 //
 //	tk.Pl("test %v%v passed", v3, v4)
 //
-//	return nil, nil
+//	return Undefined, nil
 //}
 
 func builtinTestByRegFunc(c Call) (Object, error) {
@@ -9091,7 +9119,7 @@ func builtinTestByRegFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
 	}
 
-	return nil, nil
+	return Undefined, nil
 }
 
 func builtinPassFunc(c Call) (Object, error) {
@@ -10553,7 +10581,7 @@ func builtinDumpVarFunc(c Call) (Object, error) {
 
 	tk.Dump(args[0])
 
-	return nil, nil
+	return Undefined, nil
 }
 
 func builtinDebugInfoFunc(c Call) (Object, error) {
