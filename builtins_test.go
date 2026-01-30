@@ -74,6 +74,15 @@ func isResultBool(strA string, optsA ...interface{}) bool {
 }
 
 func TestBuiltinObjects(t *testing.T) {
+	var tmpr Object
+	var tmpi interface{}
+	var err, errT error
+	var ok bool
+	var gob1, gob2 bool
+	var c Call
+	
+	c = Call{Args: Array{Int(0), Int(1), Int(2)}}
+	
 	require.True(t, Char(99) == Char('c'))
 
 	expectRun(t, `return spr("%v", bytes(1, 2, 3))`, nil, String{Value: "[1 2 3]"})
@@ -108,9 +117,9 @@ func TestBuiltinObjects(t *testing.T) {
 
 	require.Equal(t, "300,100", fmt.Sprintf("%v,%v", r1, r2))
 
-	o1, _ = builtinResetFunc(Call{Args: Array{ToStringObject("abcd")}})
+	o1, err = builtinResetFunc(Call{Args: Array{ToStringObject("abcd")}})
 
-	require.Equal(t, ``, fmt.Sprintf("%v", o1))
+	require.Equal(t, `-<nil>`, fmt.Sprintf("%v-%v", o1, err))
 
 	require.Equal(t, `[]`, fmt.Sprintf("%v", QuickRun(`a1 := [1, "a", true]; return reset(a1)`, nil)))
 
@@ -310,6 +319,102 @@ func TestBuiltinObjects(t *testing.T) {
 	rr2.SetExtImporter(nil)
 
 	require.Equal(t, `&{map[] <nil>}`, fmt.Sprintf("%v", rr2))
+
+	require.Equal(t, `<nil>`, fmt.Sprintf("%v", (&CompilerError{}).Unwrap()))
+	
+	gob1, gob2 = ToGoBool(Int(1))
+
+	require.Equal(t, `true - true`, fmt.Sprintf("%v - %v", gob1, gob2))
+
+	require.Equal(t, `18`, fmt.Sprintf("%v", ToGoIntWithDefault(Float(18.8), 0)))
+
+	require.Equal(t, `18`, fmt.Sprintf("%v", ToGoIntWithDefault(Float(18.8), 0)))
+	
+	tmpr, ok = ToSyncMap(Float(18.8))
+
+	require.Equal(t, `<nil> - false`, fmt.Sprintf("%v - %v", tmpr, ok))
+
+	tmpr, ok = ToMap(Float(18.8))
+
+	require.Equal(t, `{} - false`, fmt.Sprintf("%v - %v", tmpr, ok))
+
+	tmpr, ok = ToArray(Float(18.8))
+
+	require.Equal(t, `[] - false`, fmt.Sprintf("%v - %v", tmpr, ok))
+
+	tmpr, ok = ToBool(Float(18.8))
+
+	require.Equal(t, `true - true`, fmt.Sprintf("%v - %v", tmpr, ok))
+
+	tmpr, ok = ToFloat(Float(18.8))
+
+	require.Equal(t, `18.8 - true`, fmt.Sprintf("%v - %v", tmpr, ok))
+
+	tmpr, ok = ToUint(Float(18.8))
+
+	require.Equal(t, `18 - true`, fmt.Sprintf("%v - %v", tmpr, ok))
+
+	tmpr, ok = ToInt(Float(18.8))
+
+	require.Equal(t, `18 - true`, fmt.Sprintf("%v - %v", tmpr, ok))
+
+	tmpr, ok = ToString(Float(18.8))
+
+	require.Equal(t, `18.8 - true`, fmt.Sprintf("%v - %v", tmpr, ok))
+
+	require.Equal(t, `18.8`, fmt.Sprintf("%v", ToFloatQuick(Float(18.8))))
+
+	require.Equal(t, `1`, fmt.Sprintf("%v", ToFloatQuick(Bool(true))))
+
+	require.Equal(t, `1`, fmt.Sprintf("%v", ToFloatQuick(Byte(1))))
+
+	require.Equal(t, `1`, fmt.Sprintf("%v", ToFloatQuick(Char(1))))
+
+	require.Equal(t, `1`, fmt.Sprintf("%v", ToFloatQuick(Int(1))))
+
+	require.Equal(t, `1`, fmt.Sprintf("%v", ToFloatQuick(Uint(1))))
+
+	require.Equal(t, `1`, fmt.Sprintf("%v", ToFloatQuick(ToStringObject(1))))
+
+	require.Equal(t, `1`, fmt.Sprintf("%v", ToFloatQuick(&MutableString{Value: "1"})))
+
+	require.Equal(t, `0`, fmt.Sprintf("%v", ToFloatQuick(m1)))
+
+	require.Equal(t, `TXERROR:invalid magic number`, fmt.Sprintf("%v", GetMagic(-1)))
+
+	require.Equal(t, `TXERROR:response status: 404`, fmt.Sprintf("%v", GetMagic(111)))
+
+	require.Equal(t, `<nil>`, fmt.Sprintf("%v", WrapError(nil)))
+
+	require.Equal(t, `Error: error: test`, fmt.Sprintf("%v", WrapError(NewCommonError("test"))))
+
+	require.Equal(t, `<nil>`, fmt.Sprintf("%v", NewFromError(nil)))
+
+	require.Equal(t, `error: error: test`, fmt.Sprintf("%v", NewFromError(NewCommonError("test"))))
+
+	require.Equal(t, `test: 1`, fmt.Sprintf("%v", NewError("test", "%v", "1")))
+
+	require.Equal(t, `error: [pos: ]1`, fmt.Sprintf("%v", NewCommonErrorWithPos(c, "%v", "1")))
+
+	tmpi, err = NewChar("return 1")
+
+	require.Equal(t, `*charlang.Bytecode - <nil>`, fmt.Sprintf("%T - %v", tmpi, err))
+
+	require.Equal(t, ``, fmt.Sprintf("%v", RemoveCfgString("abc")))
+
+	require.Equal(t, `TXERROR:failed to get config string: file not exists`, fmt.Sprintf("%v", GetCfgString("abc")))
+
+	require.Equal(t, ``, fmt.Sprintf("%v", SetCfgString("abc", "123")))
+
+	require.Equal(t, `123`, fmt.Sprintf("%v", GetCfgString("abc")))
+
+	require.Equal(t, `TXERROR:invalid ssh config: `, fmt.Sprintf("%v", DownloadStringFromSSH("abc", "abc")))
+
+	require.Equal(t, `[]byte{0x8, 0x7, 0x9}`, fmt.Sprintf("%#v", ObjectsToBytes(Array{Int(8), Int(7), Int(9)})))
+
+	require.Equal(t, `[]interface {}{}`, fmt.Sprintf("%#v", AnysToOriginal(Array{Int(8), Int(7), Int(9)})))
+
+	require.Equal(t, `[]int{8, 7, 9}`, fmt.Sprintf("%#v", ObjectsToN(Array{Int(8), Int(7), Int(9)})))
 
 }
 

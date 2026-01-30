@@ -2091,6 +2091,76 @@ func ToIntObject(argA interface{}, defaultA ...int) Int {
 	return Int(defaultT)
 }
 
+func ToByteObject(argA interface{}, defaultA ...byte) Byte {
+	var defaultT byte = 0
+	
+	if len(defaultA) > 0 {
+		defaultT = defaultA[0]
+	}
+	
+	switch nv := argA.(type) {
+	case Bool:
+		if nv {
+			return Byte(1)
+		}
+
+		return Byte(0)
+	case Byte:
+		return nv
+	case Char:
+		return Byte(nv)
+	case Int:
+		return Byte(nv)
+	case Uint:
+		return Byte(nv)
+	case Float:
+		return Byte(nv)
+	case String:
+		return Byte(tk.StrToInt(nv.Value, int(defaultT)))
+	case Object:
+		return Byte(tk.StrToInt(nv.String(), int(defaultT)))
+	case bool:
+		if nv {
+			return Byte(1)
+		}
+
+		return Byte(0)
+	case byte:
+		return Byte(nv)
+	case int:
+		return Byte(nv)
+	case rune:
+		return Byte(nv)
+	case int64:
+		return Byte(nv)
+	case uint:
+		return Byte(nv)
+	case uint64:
+		return Byte(nv)
+	case float64:
+		return Byte(nv)
+	case float32:
+		return Byte(nv)
+	case *big.Int:
+		return Byte(nv.Int64())
+	case *big.Float:
+		n1, _ := nv.Int64()
+		return Byte(n1)
+	case string:
+		return Byte(tk.StrToInt(nv, int(defaultT)))
+	case nil:
+		return Byte(defaultT)
+	case []byte:
+		return Byte(tk.StrToInt(string(nv), int(defaultT)))
+	case time.Duration:
+		return Byte(nv)
+	case *tk.Seq:
+		return Byte(nv.GetCurrent())
+	}
+
+	return Byte(defaultT)
+}
+
 // Bytes represents byte slice and implements Object interface.
 type Bytes []byte
 

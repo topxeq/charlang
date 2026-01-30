@@ -71,6 +71,7 @@
       - [Plot Simple Data Graph to Web View](#plot-simple-data-graph-to-web-view)
       - [Plot Line Charts](#plot-line-charts)
       - [Calculator in WebView2](#calculator-in-webview2)
+      - [Estimating the Value of Pi(π) using Monte Carlo Algorithm in WebView2](#estimating-the-value-of-piπ-using-monte-carlo-algorithm-in-webview2)
       - [Byte Queue](#byte-queue)
     - [7.8 Advance Topics](#78-advance-topics)
       - [Language Considerations](#language-considerations)

@@ -85,6 +85,9 @@ const (
 	BuiltinDocxReplacePattern
 	BuiltinDocxGetPlaceholders
 	BuiltinDeepClone
+	BuiltinGetCfgStr
+	BuiltinSetCfgStr
+	BuiltinRemoveCfgStr
 	BuiltinShowTable
 	BuiltinGuiServerCommand
 	BuiltinGetMapItem
@@ -1556,6 +1559,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"showTable": BuiltinShowTable,
 
 	"deepClone": BuiltinDeepClone,
+	
+	"getCfgStr": BuiltinGetCfgStr, // get a config string value by a key, the value will be stored in the sub directory 'char' in user's home path
+	"setCfgStr": BuiltinSetCfgStr,
+	"removeCfgStr": BuiltinRemoveCfgStr,
 
 	// "sortByFunc": BuiltinSortByFunc,
 
@@ -4564,6 +4571,21 @@ var BuiltinObjects = [...]Object{
 		Name:    "deepClone",
 		Value:   fnAARA(tk.DeepClone),
 		ValueEx: fnAARAex(tk.DeepClone),
+	},
+	BuiltinGetCfgStr: &BuiltinFunction{
+		Name:    "getCfgStr",
+		Value:   fnASRS(GetCfgString),
+		ValueEx: fnASRSex(GetCfgString),
+	},
+	BuiltinSetCfgStr: &BuiltinFunction{
+		Name:    "setCfgStr",
+		Value:   fnASSRS(SetCfgString),
+		ValueEx: fnASSRSex(SetCfgString),
+	},
+	BuiltinRemoveCfgStr: &BuiltinFunction{
+		Name:    "removeCfgStr",
+		Value:   fnASRS(RemoveCfgString),
+		ValueEx: fnASRSex(RemoveCfgString),
 	},
 
 	// original internal related

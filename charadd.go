@@ -3375,7 +3375,7 @@ func ObjectsToBytes(aryA []Object) []byte {
 	rs := make([]byte, 0, len(aryA))
 
 	for _, v := range aryA {
-		rs = append(rs, byte(v.(Byte)))
+		rs = append(rs, byte(ToIntQuick(v)))
 	}
 
 	return rs
@@ -3468,6 +3468,25 @@ func SetCfgString(fileNameA string, strA string) string {
 	}
 
 	return tk.ErrStrf("failed to save config string: %v", basePathT[8:])
+}
+
+func RemoveCfgString(fileNameA string) string {
+	basePathT := tk.EnsureBasePathInHome("char")
+
+	if !strings.HasPrefix(basePathT, "TXERROR:") {
+		cfgPathT := tk.JoinPath(basePathT, fileNameA)
+
+		rsT := tk.RemoveFile(cfgPathT)
+
+		if tk.IsError(rsT) {
+			return tk.ErrStrF("failed to remove config string: %v", rsT)
+		}
+
+		return ""
+
+	}
+
+	return tk.ErrStrf("failed to remove config string: %v", basePathT[8:])
 }
 
 func NewChar(codeA string) (interface{}, error) {
