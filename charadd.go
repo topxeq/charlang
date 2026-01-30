@@ -2656,17 +2656,27 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 			codeA = tmps
 		}
 	}
+	
+	retT := ""
 
-	if res != nil {
-		res.Header().Set("Access-Control-Allow-Origin", "*")
-		res.Header().Set("Access-Control-Allow-Headers", "*")
-		res.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if res == nil {
+		return "", fmt.Errorf("res nil")
 	}
 
-	if req != nil {
-		req.ParseForm()
+	if req == nil {
+		return "", fmt.Errorf("req nil")
+	}
+
+//	if res != nil {
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+	res.Header().Set("Access-Control-Allow-Headers", "*")
+	res.Header().Set("Content-Type", "text/html; charset=utf-8")
+//	}
+
+//	if req != nil {
+	req.ParseForm()
 		//		req.ParseMultipartForm(100000000)
-	}
+//	}
 
 	reqT := tk.GetFormValueWithDefaultValue(req, "charms", "")
 	// if req.RequestURI != "/charms/ed01/addAccessLog" {
@@ -2694,8 +2704,6 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 
 	var paraMapT map[string]string
 	var errT error
-
-	retT := ""
 
 	vo := tk.GetFormValueWithDefaultValue(req, "vo", "")
 
@@ -2772,7 +2780,7 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 
 	if errT != nil {
 		res.Write([]byte(tk.ErrStrf("%v", errT.Error())))
-		tk.Plv(retObjectT)
+//		tk.Plv(retObjectT)
 
 		if retObjectT == nil {
 			return "", nil

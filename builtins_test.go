@@ -417,6 +417,18 @@ func TestBuiltinObjects(t *testing.T) {
 	require.Equal(t, `[]int{8, 7, 9}`, fmt.Sprintf("%#v", ObjectsToN(Array{Int(8), Int(7), Int(9)})))
 
 	require.Equal(t, `[]interface {}{8, 7, 9}`, fmt.Sprintf("%#v", ObjectsToO(Array{Int(8), Int(7), Int(9)})))
+	
+	rstr, err := RunScriptOnHttp("return 1", nil, nil, nil, "", nil, nil, nil)
+
+	require.Equal(t, `-res nil`, fmt.Sprintf("%v-%v", rstr, err))
+
+	tmpi, err = RunCharCode("return 1", nil, nil)
+
+	require.Equal(t, `1-<nil>`, fmt.Sprintf("%v-%v", tmpi, err))
+
+	tmpi, err = RunCharCode("re turn 1", nil, nil)
+
+	require.Equal(t, "<nil>-Parse Error: expected ';', found turn\n\tat (main):1:4", fmt.Sprintf("%v-%v", tmpi, err))
 
 }
 
