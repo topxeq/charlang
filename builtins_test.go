@@ -416,6 +416,8 @@ func TestBuiltinObjects(t *testing.T) {
 
 	require.Equal(t, `[]int{8, 7, 9}`, fmt.Sprintf("%#v", ObjectsToN(Array{Int(8), Int(7), Int(9)})))
 
+	require.Equal(t, `[]interface {}{8, 7, 9}`, fmt.Sprintf("%#v", ObjectsToO(Array{Int(8), Int(7), Int(9)})))
+
 }
 
 type testopts struct {
