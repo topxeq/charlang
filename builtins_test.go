@@ -430,6 +430,10 @@ func TestBuiltinObjects(t *testing.T) {
 
 	require.Equal(t, "<nil>-Parse Error: expected ';', found turn\n\tat (main):1:4", fmt.Sprintf("%v-%v", tmpi, err))
 
+	require.Equal(t, `1`, fmt.Sprintf("%v", RunAsFunc("return 1")))
+
+	require.Equal(t, "Parse Error: expected ';', found rn\n\tat (main):1:6", fmt.Sprintf("%v", RunAsFunc("retu rn 1")))
+
 }
 
 type testopts struct {
