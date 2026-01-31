@@ -400,7 +400,7 @@ func TestBuiltinObjects(t *testing.T) {
 
 	require.Equal(t, `*charlang.Bytecode - <nil>`, fmt.Sprintf("%T - %v", tmpi, err))
 
-	require.Equal(t, ``, fmt.Sprintf("%v", RemoveCfgString("abc")))
+	require.Equal(t, `string`, fmt.Sprintf("%T", RemoveCfgString("abc")))
 
 	require.Equal(t, `TXERROR:failed to get config string: file not exists`, fmt.Sprintf("%v", GetCfgString("abc")))
 
@@ -434,6 +434,92 @@ func TestBuiltinObjects(t *testing.T) {
 
 	require.Equal(t, "Parse Error: expected ';', found rn\n\tat (main):1:6", fmt.Sprintf("%v", RunAsFunc("retu rn 1")))
 
+	tmpr, err = CallObjectMethodFunc(Bool(true), "toStr")
+	
+	require.Equal(t, `true-<nil>`, fmt.Sprintf("%v-%v", tmpr, err))
+
+	rsa1, err := newRSAEncryption("MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu9g9642B/REkLIhYhYUpt0JcwNKXnCEUbfX601W6704D+8pdmpcNAPXSUFIySc9/lNwKy/GZ2KVC2x6mJKMichORJw7yYp9YjcZfmOQUgenXxhcp0TuJw/dFJDT/dcbd42C0M6iSJZDPW8yq1J4lZKWlrkHLD0bYjVFHNe7P++2JKkO7RH1+WkI93xi0VhaP1rq9RsgtYA9l6GVOOFPUOmNoZ4f9e/OWKFyPzU5ZqaN52CcBMn6xY7hrIoQpekU8NI3niFZFaJa/l3L+VQCmzzUZkZAbt+0pZycjONRGcehwEjGqqxrs8Z6dx9ifcn39mWM/R/ug0JJkwfS1CasZYwIDAQAB")
+	
+	require.Equal(t, `*charlang.RSAEncryption-<nil>`, fmt.Sprintf("%T-%v", rsa1, err))
+	
+	enced1, err := rsa1.Encrypt("abc")
+	
+	require.Equal(t, `string-<nil>`, fmt.Sprintf("%T-%v", enced1, err))
+	
+	tmpr, err = builtinGetSha256WithKeyYYFunc(Call{Args: []Object{ToStringObject("abc"), ToStringObject("def")}})
+	
+	require.Equal(t, `aa17835964e8ace8a0cae190bbcda2182d648f6bc8bfd0d0ab66afb26ab173d7-<nil>`, fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = BuiltinDelegateFunc(Call{Args: []Object{ToStringObject("return 1+2")}})
+	
+	require.Equal(t, `(delegate)Code: true, Value: false-<nil>`, fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = BuiltinDealStrFunc(Call{Args: []Object{ToStringObject("HEX_EE1111")}})
+	
+	require.Equal(t, "\xee\x11\x11-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = BuiltinFuzzyFindFunc(Call{Args: []Object{ToStringObject("HEX_EE1111"), ToStringObject("E1")}})
+	
+	require.Equal(t, "[{\"Index\":0,\"MatchedIndexes\":[4,6],\"Score\":-3,\"Str\":\"HEX_EE1111\"}]-<nil>", fmt.Sprintf("%v-%v", tk.ToJSONX(tmpr, "-sort"), err))
+	
+	tmpr, err = BuiltinDbCloseFunc(Call{Args: []Object{ToStringObject("HEX_EE1111"), ToStringObject("E1")}})
+	
+	require.Equal(t, "{\"Name\":\"error\",\"Message\":\"invalid parameter type: (charlang.String)HEX_EE1111\",\"Cause\":null}-<nil>", fmt.Sprintf("%v-%v", tk.ToJSONX(tmpr, "-sort"), err))
+	
+	bool1 := IfSwitchExistsInObjects([]Object{ToStringObject("HEX_EE1111"), ToStringObject("-bose")}, "-verbose")
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", bool1))
+	
+	bool1 = IfSwitchExistsInObjects([]Object{ToStringObject("HEX_EE1111"), ToStringObject("-verbose")}, "-verbose")
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", bool1))
+	
+	require.Equal(t, "{\"Vm\":null,\"This\":null,\"Args\":[\"HEX_EE1111\",\"-verbose\"],\"Vargs\":null}", fmt.Sprintf("%v", tk.ToJSONX(NewCall(nil, []Object{ToStringObject("HEX_EE1111"), ToStringObject("-verbose")}), "-sort")))
+	
+	require.Panics(t, func(){ ObjectImpl{}.TypeCode() })
+	
+	require.False(t, ObjectImpl{}.HasMemeber())
+	
+	tmpr, err = ObjectImpl{}.CallMethod("value")
+	
+	require.Equal(t, "%!v(PANIC=String method: NotImplementedError: )-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Panics(t, func(){ ObjectImpl{}.CallMethod("toStr") })
+	
+	require.Panics(t, func(){ ObjectImpl{}.CallMethod("a") })
+	
+	require.Equal(t, "%!v(PANIC=String method: NotImplementedError: )", fmt.Sprintf("%v", ObjectImpl{}.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", ObjectImpl{}.GetMember("a")))
+	
+	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", ObjectImpl{}.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "0", fmt.Sprintf("%v", (&UndefinedType{}).TypeCode()))
+	
+	require.False(t, Undefined.HasMemeber())
+	
+	tmpr, err = Undefined.CallMethod("value")
+	
+	require.Equal(t, "undefined-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", Undefined.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", Undefined.GetMember("a")))
+	
+	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", Undefined.SetMember("a", ToStringObject("b"))))
+	
+	require.False(t, Bool(true).HasMemeber())
+	
+	tmpr, err = Bool(true).CallMethod("value")
+	
+	require.Equal(t, "true-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", Bool(true).GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", Bool(true).GetMember("a")))
+	
+	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", Bool(true).SetMember("a", ToStringObject("b"))))
+	
 }
 
 type testopts struct {
