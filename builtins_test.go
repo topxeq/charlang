@@ -85,13 +85,13 @@ func TestBuiltinObjects(t *testing.T) {
 	
 	require.True(t, Char(99) == Char('c'))
 
-	expectRun(t, `return spr("%v", bytes(1, 2, 3))`, nil, String{Value: "[1 2 3]"})
+	expectRun(t, `return spr("%v", bytes(1, 2, 3))`, nil, String("[1 2 3]"))
 
-	expectRun(t, `return spt(bytesBuffer(bytes(1, 2, 3)).bytes())`, nil, String{Value: "[1 2 3]"})
+	expectRun(t, `return spt(bytesBuffer(bytes(1, 2, 3)).bytes())`, nil, String("[1 2 3]"))
 
-	expectRun(t, `o1 := image("-height=200"); return spt(o1.width(), o1.height())`, nil, String{Value: "100 200"})
+	expectRun(t, `o1 := image("-height=200"); return spt(o1.width(), o1.height())`, nil, String("100 200"))
 
-	o1, errT := NewImage(Call{Args: []Object{String{Value: "-width=300"}}})
+	o1, errT := NewImage(Call{Args: []Object{String("-width=300")}})
 
 	if errT != nil {
 		t.Fatalf("error occur: %v", errT)
@@ -507,7 +507,8 @@ func TestBuiltinObjects(t *testing.T) {
 	require.Equal(t, "undefined", fmt.Sprintf("%v", Undefined.GetMember("a")))
 	
 	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", Undefined.SetMember("a", ToStringObject("b"))))
-	
+
+	// Bool
 	require.False(t, Bool(true).HasMemeber())
 	
 	tmpr, err = Bool(true).CallMethod("value")
@@ -520,6 +521,290 @@ func TestBuiltinObjects(t *testing.T) {
 	
 	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", Bool(true).SetMember("a", ToStringObject("b"))))
 	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", Bool(true).IndexSet(Int(1), Int(1))))
+	
+	// Int
+	require.Equal(t, "107", fmt.Sprintf("%v", Int(1).TypeCode()))
+	
+	require.False(t, Int(1).HasMemeber())
+	
+	tmpr, err = Int(1).CallMethod("value")
+	
+	require.Equal(t, "1-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "1", fmt.Sprintf("%v", Int(1).GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", Int(1).GetMember("a")))
+	
+	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", Int(1).SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", Int(1).IndexSet(Int(1), Int(1))))
+	
+	require.Equal(t, "&{1 0}", fmt.Sprintf("%v", Int(1).Iterate()))
+	
+	// Uint
+	require.Equal(t, "111", fmt.Sprintf("%v", Uint(1).TypeCode()))
+	
+	require.False(t, Uint(1).HasMemeber())
+	
+	tmpr, err = Uint(1).CallMethod("value")
+	
+	require.Equal(t, "1-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "1", fmt.Sprintf("%v", Uint(1).GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", Uint(1).GetMember("a")))
+	
+	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", Uint(1).SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", Uint(1).IndexSet(Int(1), Int(1))))
+	
+	require.Equal(t, "&{1 0}", fmt.Sprintf("%v", Uint(1).Iterate()))
+	
+	// Float
+	require.Equal(t, "115", fmt.Sprintf("%v", Float(1).TypeCode()))
+	
+	require.False(t, Float(1).HasMemeber())
+	
+	tmpr, err = Float(1).CallMethod("value")
+	
+	require.Equal(t, "1-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "1", fmt.Sprintf("%v", Float(1).GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", Float(1).GetMember("a")))
+	
+	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", Float(1).SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", Float(1).IndexSet(Int(1), Int(1))))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", Float(1).Iterate()))
+	
+	// Char
+	require.Equal(t, "113", fmt.Sprintf("%v", Char(1).TypeCode()))
+	
+	require.False(t, Char(1).HasMemeber())
+	
+	tmpr, err = Char(1).CallMethod("value")
+	
+	require.Equal(t, "1-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "1", fmt.Sprintf("%v", Char(1).GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", Char(1).GetMember("a")))
+	
+	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", Char(1).SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", Char(1).IndexSet(Int(1), Int(1))))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", Char(1).Iterate()))
+	
+	// Byte
+	require.Equal(t, "109", fmt.Sprintf("%v", Byte(1).TypeCode()))
+	
+	require.Equal(t, "byte", fmt.Sprintf("%v", Byte(1).TypeName()))
+	
+	require.False(t, Byte(1).HasMemeber())
+	
+	tmpr, err = Byte(1).CallMethod("value")
+	
+	require.Equal(t, "1-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "1", fmt.Sprintf("%v", Byte(1).GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", Byte(1).GetMember("a")))
+	
+	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", Byte(1).SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", Byte(1).Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", Byte(1).IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", Byte(1).CanCall()))
+	
+	tmpr, err = Byte(1).Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", Byte(1).CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", Byte(1).Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", Byte(1).IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = Byte(1).IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: byte", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = Byte(1).IndexGet(Int(2))
+	
+	require.Equal(t, "<nil>-NotIndexableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = Byte(1).BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "4-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+
+	// String
+	ss1 := ToStringObject(1)
+	
+	require.Equal(t, "105", fmt.Sprintf("%v", ToStringObject(1).TypeCode()))
+	
+	require.Equal(t, "string", fmt.Sprintf("%v", ToStringObject(1).TypeName()))
+	
+	require.False(t, ToStringObject(1).HasMemeber())
+	
+	tmpr, err = ToStringObject(1).CallMethod("value")
+	
+	require.Equal(t, "1-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "1", fmt.Sprintf("%v", ToStringObject(1).GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", ss1.GetMember("a")))
+	
+//	tk.Pl("%T %#v %+v", ss1, ss1, ss1.Members)
+	
+	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", ss1.SetMember("a", ToStringObject("b"))))
+	
+//	require.Equal(t, "b", fmt.Sprintf("%v", ss1.GetMember("a")))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", ToStringObject(1).Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", ToStringObject(1).IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", ToStringObject(1).CanCall()))
+	
+	tmpr, err = ToStringObject(1).Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", ToStringObject(1).CanIterate()))
+	
+	require.Equal(t, "&{1 0}", fmt.Sprintf("%v", ToStringObject(1).Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", ToStringObject(1).IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = ToStringObject(1).IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: string", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = ToStringObject(1).IndexGet(Int(2))
+	
+	require.Equal(t, "<nil>-IndexOutOfBoundsError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = String("abcdefg").IndexGet(Int(2))
+	
+	require.Equal(t, "99-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = ToStringObject(12).BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "123-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "123-<nil>", fmt.Sprintf("%v-%v", FromStringObject(tmpr.(String)), err))
+
+	require.Equal(t, "123-<nil>", fmt.Sprintf("%v-%v", ToByteObject(tmpr.(String)), err))
+
+	// Bytes
+	bo1 := Bytes([]byte{1, 2, 3})
+	
+	require.Equal(t, "137", fmt.Sprintf("%v", bo1.TypeCode()))
+	
+	require.Equal(t, "bytes", fmt.Sprintf("%v", bo1.TypeName()))
+	
+	require.False(t, bo1.HasMemeber())
+	
+	tmpr, err = bo1.CallMethod("value")
+	
+	require.Equal(t, "[1 2 3]-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "[1 2 3]", fmt.Sprintf("%v", bo1.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", bo1.GetMember("a")))
+	
+	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", bo1.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", bo1.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", bo1.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", bo1.CanCall()))
+	
+	tmpr, err = bo1.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", bo1.CanIterate()))
+	
+	require.Equal(t, "&{[1 2 3] 0}", fmt.Sprintf("%v", bo1.Iterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", bo1.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = bo1.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: bytes", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = bo1.IndexGet(Int(2))
+	
+	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = bo1.IndexGet(Int(5))
+	
+	require.Equal(t, "<nil>-IndexOutOfBoundsError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = bo1.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'bytes' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
+
+	// Chars
+	co1 := Chars([]rune{1, 2, 3})
+	
+	require.Equal(t, "139", fmt.Sprintf("%v", co1.TypeCode()))
+	
+	require.Equal(t, "chars", fmt.Sprintf("%v", co1.TypeName()))
+	
+	require.False(t, co1.HasMemeber())
+	
+	tmpr, err = co1.CallMethod("value")
+	
+	require.Equal(t, "[1 2 3]-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "[1 2 3]", fmt.Sprintf("%v", co1.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", co1.GetMember("a")))
+	
+	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", co1.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", co1.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", co1.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", co1.CanCall()))
+	
+	tmpr, err = co1.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", co1.CanIterate()))
+	
+	require.Equal(t, "&{[1 2 3] 0}", fmt.Sprintf("%v", co1.Iterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", co1.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = co1.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: chars", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = co1.IndexGet(Int(2))
+	
+	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = co1.IndexGet(Int(5))
+	
+	require.Equal(t, "<nil>-IndexOutOfBoundsError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = co1.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'chars' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
+
 }
 
 type testopts struct {

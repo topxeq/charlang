@@ -6,6 +6,10 @@ rs = systemCmd("char", "-gopath", "basic.char")
 
 testByText(rs, "3.4000000000000004\n", seqT.get(), "basic.char")
 
+rs = systemCmd("char", "-gopath", "commonTest.char")
+
+testByText(rs, "2\n", seqT.get(), "commonTest.char")
+
 rs = systemCmd("char", "-gopath", "charCodeAsFunc.char")
 
 testByText(rs, "input: 12 8.5 2 3 16\nresult: 41.5\n", seqT.get(), "charCodeAsFunc.char")

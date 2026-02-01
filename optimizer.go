@@ -260,9 +260,9 @@ func (so *SimpleOptimizer) slowEvalExpr(expr parser.Expr) (parser.Expr, bool) {
 
 	switch v := obj.(type) {
 	case String:
-		l := strconv.Quote(v.Value)
+		l := strconv.Quote(v.String())
 		expr = &parser.StringLit{
-			Value:    v.Value,
+			Value:    v.String(),
 			Literal:  l,
 			ValuePos: expr.Pos(),
 		}

@@ -98,7 +98,7 @@ func TestVMDestructuring(t *testing.T) {
 		return [1, error("abc")]
 	}
 	x, y := fn()
-	return [x, string(y)]`, nil, Array{Int(1), String{Value: "error: abc"}})
+	return [x, string(y)]`, nil, Array{Int(1), String("error: abc")})
 
 	expectRun(t, `
 	fn := func() { 
@@ -309,7 +309,7 @@ func TestVMDestructuring(t *testing.T) {
 	a, b := func() {
 		return 1, error("x")
 	}()
-	return a, "" + b`, nil, Array{Int(1), String{Value: "error: x"}})
+	return a, "" + b`, nil, Array{Int(1), String("error: x")})
 	expectRun(t, `
 	a, b := func(a, b) {
 		return a + 1, b + 1
@@ -377,7 +377,7 @@ func TestVMDestructuring(t *testing.T) {
 				}, nil
 			},
 		}}),
-		String{Value: "IndexOutOfBoundsError: message"})
+		String("IndexOutOfBoundsError: message"))
 }
 
 func TestVMConst(t *testing.T) {
@@ -503,18 +503,18 @@ func TestVMConst(t *testing.T) {
 	`, nil, Int(1))
 
 	expectRun(t, `const x = 1; return x`, nil, Int(1))
-	expectRun(t, `const x = "1"; return x`, nil, String{Value: "1"})
+	expectRun(t, `const x = "1"; return x`, nil, String("1"))
 	expectRun(t, `const x = []; return x`, nil, Array{})
 	expectRun(t, `const x = []; return x`, nil, Array{})
 	expectRun(t, `const x = undefined; return x`, nil, Undefined)
 	expectRun(t, `const (x = 1, y = "2"); return x, y`, nil,
-		Array{Int(1), String{Value: "2"}})
+		Array{Int(1), String("2")})
 	expectRun(t, `
 	const (
 		x = 1
 		y = "2"
 	)
-	return x, y`, nil, Array{Int(1), String{Value: "2"}})
+	return x, y`, nil, Array{Int(1), String("2")})
 	expectRun(t, `
 	const (
 		x = 1
@@ -920,7 +920,7 @@ func TestConstIota(t *testing.T) {
 
 	expectRun(t, `
 	const (x = iota%2?"odd":"even", y, z)
-	return x,y,z`, nil, Array{String{Value: "even"}, String{Value: "odd"}, String{Value: "even"}})
+	return x,y,z`, nil, Array{String("even"), String("odd"), String("even")})
 }
 
 func TestVM_Invoke(t *testing.T) {

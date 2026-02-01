@@ -101,7 +101,7 @@ func TestVMDecl(t *testing.T) {
 	expectRun(t, `global (a, b); return [a, b]`,
 		nil, Array{Undefined, Undefined})
 	expectRun(t, `global a; return a`,
-		newOpts().Globals(Map{"a": String{Value: "ok"}}), String{Value: "ok"})
+		newOpts().Globals(Map{"a": String("ok")}), String("ok"))
 	expectRun(t, `global (a, b); return a+b`,
 		newOpts().Globals(Map{"a": Int(1), "b": Int(2)}), Int(3))
 	expectErrHas(t, `func() { global a }`, newOpts().CompilerError(),
@@ -116,7 +116,7 @@ func TestVMDecl(t *testing.T) {
 		b = 1); return a`, nil, Undefined)
 	expectRun(t, `var (a,
 		b = 1); return b`, nil, Int(1))
-	expectRun(t, `var (a = 1, b = "x"); return b`, nil, String{Value: "x"})
+	expectRun(t, `var (a = 1, b = "x"); return b`, nil, String("x"))
 	expectRun(t, `var (a = 1, b = "x"); return a`, nil, Int(1))
 	expectRun(t, `var (a = 1, b); return a`, nil, Int(1))
 	expectRun(t, `var (a = 1, b); return b`, nil, Undefined)
@@ -405,8 +405,8 @@ func TestVMAssignment(t *testing.T) {
 	`, nil, Int(136))
 
 	// assigning different type value
-	expectRun(t, `a := 1; a = "foo"; return a`, nil, String{Value: "foo"})
-	expectRun(t, `return func() { a := 1; a = "foo"; return a }()`, nil, String{Value: "foo"})
+	expectRun(t, `a := 1; a = "foo"; return a`, nil, String("foo"))
+	expectRun(t, `return func() { a := 1; a = "foo"; return a }()`, nil, String("foo"))
 	expectRun(t, `
 	return func() {
 		a := 5
@@ -414,12 +414,12 @@ func TestVMAssignment(t *testing.T) {
 			a = "foo"
 			return a
 		}()
-	}()`, nil, String{Value: "foo"}) // free
+	}()`, nil, String("foo")) // free
 
 	// variables declared in if/for blocks
-	expectRun(t, `for a:=0; a<5; a++ {}; a := "foo"; return a`, nil, String{Value: "foo"})
+	expectRun(t, `for a:=0; a<5; a++ {}; a := "foo"; return a`, nil, String("foo"))
 	expectRun(t, `var out; func() { for a:=0; a<5; a++ {}; a := "foo"; out = a }(); return out`,
-		nil, String{Value: "foo"})
+		nil, String("foo"))
 	expectRun(t, `a:=0; if a:=1; a>0 { return a }; return 0`, nil, Int(1))
 	expectRun(t, `a:=1; if a:=0; a>0 { return a }; return a`, nil, Int(1))
 
@@ -454,7 +454,7 @@ func TestVMAssignment(t *testing.T) {
 	}
 	a.c.h = "bar"
 	return a.c.h
-	`, nil, String{Value: "bar"})
+	`, nil, String("bar"))
 
 //	expectErrIs(t, `
 //	a := {
@@ -671,7 +671,7 @@ func TestVMBuiltinFunction(t *testing.T) {
 	expectRun(t, `return copy(1u)`, nil, Uint(1))
 	expectRun(t, `return copy('a')`, nil, Char('a'))
 	expectRun(t, `return copy(1.0)`, nil, Float(1.0))
-	expectRun(t, `return copy("x")`, nil, String{Value: "x"})
+	expectRun(t, `return copy("x")`, nil, String("x"))
 	expectRun(t, `return copy(true)`, nil, True)
 	expectRun(t, `return copy(false)`, nil, False)
 	expectRun(t, `a := {x: 1}; b := copy(a); a.x = 2; return b`,
@@ -695,10 +695,10 @@ func TestVMBuiltinFunction(t *testing.T) {
 //	expectErrIs(t, `copy()`, nil, ErrWrongNumArguments)
 //	expectErrIs(t, `copy(1, 2)`, nil, ErrWrongNumArguments)
 
-	expectRun(t, `return repeat("abc", 3)`, nil, String{Value: "abcabcabc"})
-	expectRun(t, `return repeat("abc", 2)`, nil, String{Value: "abcabc"})
-	expectRun(t, `return repeat("abc", 1)`, nil, String{Value: "abc"})
-	expectRun(t, `return repeat("abc", 0)`, nil, String{Value: ""})
+	expectRun(t, `return repeat("abc", 3)`, nil, String("abcabcabc"))
+	expectRun(t, `return repeat("abc", 2)`, nil, String("abcabc"))
+	expectRun(t, `return repeat("abc", 1)`, nil, String("abc"))
+	expectRun(t, `return repeat("abc", 0)`, nil, String(""))
 	expectRun(t, `return repeat(bytes(1, 2, 3), 3)`,
 		nil, Bytes{1, 2, 3, 1, 2, 3, 1, 2, 3})
 	expectRun(t, `return repeat(bytes(1, 2, 3), 2)`,
@@ -715,7 +715,7 @@ func TestVMBuiltinFunction(t *testing.T) {
 		nil, Array{})
 	expectRun(t, `return repeat([true], 1)`, nil, Array{True})
 	expectRun(t, `return repeat([true], 2)`, nil, Array{True, True})
-	expectRun(t, `return repeat("", 3)`, nil, String{Value: ""})
+	expectRun(t, `return repeat("", 3)`, nil, String(""))
 	expectRun(t, `return repeat(bytes(), 3)`, nil, Bytes{})
 	expectRun(t, `return repeat([], 2)`, nil, Array{})
 //	expectErrIs(t, `return repeat("abc", -1)`, nil, ErrType)
@@ -794,9 +794,9 @@ func TestVMBuiltinFunction(t *testing.T) {
 	expectRun(t, `return sort(undefined)`,
 		nil, Undefined)
 	expectRun(t, `return sort("acb")`,
-		nil, String{Value: "abc"})
+		nil, String("abc"))
 	expectRun(t, `return sort(bytes("acb"))`,
-		nil, Bytes(String{Value: "abc"}.Value))
+		nil, Bytes(String("abc")))
 	expectRun(t, `return sort([3, 2, 1])`,
 		nil, Array{Int(1), Int(2), Int(3)})
 	expectRun(t, `return sort([3u, 2.0, 1])`,
@@ -810,9 +810,9 @@ func TestVMBuiltinFunction(t *testing.T) {
 	expectRun(t, `return sortReverse(undefined)`,
 		nil, Undefined)
 	expectRun(t, `return sortReverse("acb")`,
-		nil, String{Value: "cba"})
+		nil, String("cba"))
 	expectRun(t, `return sortReverse(bytes("acb"))`,
-		nil, Bytes(String{Value: "cba"}.Value))
+		nil, Bytes(String("cba")))
 	expectRun(t, `return sortReverse([1, 2, 3])`,
 		nil, Array{Int(3), Int(2), Int(1)})
 	expectRun(t, `a := [1, 2, 3]; sortReverse(a); return a`,
@@ -830,19 +830,19 @@ func TestVMBuiltinFunction(t *testing.T) {
 //	expectErrIs(t, `error()`, nil, ErrWrongNumArguments)
 //	expectErrIs(t, `error(1,2,3)`, nil, ErrWrongNumArguments)
 
-	expectRun(t, `return typeName(true)`, nil, String{Value: "bool"})
-	expectRun(t, `return typeName(undefined)`, nil, String{Value: "undefined"})
-	expectRun(t, `return typeName(1)`, nil, String{Value: "int"})
-	expectRun(t, `return typeName(1u)`, nil, String{Value: "uint"})
-	expectRun(t, `return typeName(1.1)`, nil, String{Value: "float"})
-	expectRun(t, `return typeName('a')`, nil, String{Value: "char"})
-	expectRun(t, `return typeName("")`, nil, String{Value: "string"})
-	expectRun(t, `return typeName([])`, nil, String{Value: "array"})
-	expectRun(t, `return typeName({})`, nil, String{Value: "map"})
-	expectRun(t, `return typeName(error(""))`, nil, String{Value: "error"})
-	expectRun(t, `return typeName(bytes())`, nil, String{Value: "bytes"})
-	expectRun(t, `return typeName(func(){})`, nil, String{Value: "compiledFunction"})
-	expectRun(t, `return typeName(append)`, nil, String{Value: "builtinFunction"})
+	expectRun(t, `return typeName(true)`, nil, String("bool"))
+	expectRun(t, `return typeName(undefined)`, nil, String("undefined"))
+	expectRun(t, `return typeName(1)`, nil, String("int"))
+	expectRun(t, `return typeName(1u)`, nil, String("uint"))
+	expectRun(t, `return typeName(1.1)`, nil, String("float"))
+	expectRun(t, `return typeName('a')`, nil, String("char"))
+	expectRun(t, `return typeName("")`, nil, String("string"))
+	expectRun(t, `return typeName([])`, nil, String("array"))
+	expectRun(t, `return typeName({})`, nil, String("map"))
+	expectRun(t, `return typeName(error(""))`, nil, String("error"))
+	expectRun(t, `return typeName(bytes())`, nil, String("bytes"))
+	expectRun(t, `return typeName(func(){})`, nil, String("compiledFunction"))
+	expectRun(t, `return typeName(append)`, nil, String("builtinFunction"))
 //	expectErrIs(t, `typeName()`, nil, ErrWrongNumArguments)
 //	expectErrIs(t, `typeName("", "")`, nil, ErrWrongNumArguments)
 
@@ -912,21 +912,21 @@ func TestVMBuiltinFunction(t *testing.T) {
 		{
 			"string",
 			map[string]Object{
-				"1":                 String{Value: "1"},
-				"1u":                String{Value: "1"},
-				"1.0":               String{Value: "1"},
-				`'\x01'`:            String{Value: "\x01"},
-				"true":              String{Value: "true"},
-				"false":             String{Value: "false"},
-				`"1"`:               String{Value: "1"},
-				`"1.1"`:             String{Value: "1.1"},
-				`undefined`:         String{Value: "undefined"},
-				`[]`:                String{Value: "[]"},
-				`[1]`:               String{Value: "[1]"},
-				`[1, 2]`:            String{Value: "[1, 2]"},
-				`{}`:                String{Value: "{}"},
-				`{a: 1}`:            String{Value: `{"a": 1}`},
-				`error("an error")`: String{Value: `error: an error`},
+				"1":                 String("1"),
+				"1u":                String("1"),
+				"1.0":               String("1"),
+				`'\x01'`:            String("\x01"),
+				"true":              String("true"),
+				"false":             String("false"),
+				`"1"`:               String("1"),
+				`"1.1"`:             String("1.1"),
+				`undefined`:         String("undefined"),
+				`[]`:                String("[]"),
+				`[1]`:               String("[1]"),
+				`[1, 2]`:            String("[1, 2]"),
+				`{}`:                String("{}"),
+				`{a: 1}`:            String(`{"a": 1}`),
+				`error("an error")`: String(`error: an error`),
 			},
 		},
 		{
@@ -1127,10 +1127,10 @@ func TestVMBuiltinFunction(t *testing.T) {
 		{
 			`isIterable`,
 			trueValues{
-				"1", "-1", `[]`, `{}`, `"abc"`, `""`, `bytes()`,
+				"1u", "1", "-1", `[]`, `{}`, `"abc"`, `""`, `bytes()`,
 			},
 			falseValues{
-				"1u", "1.1", "'\x01'", "undefined", `error("x")`,
+				"1.1", "'\x01'", "undefined", `error("x")`,
 				"true", "false",
 			},
 		},
@@ -1219,11 +1219,11 @@ func TestVMBuiltinFunction(t *testing.T) {
 	require.Equal(t, "test 1 2\n", stdOut.String())
 
 	expectRun(t, `return sprintf("test")`,
-		newOpts().Skip2Pass(), String{Value: "test"})
+		newOpts().Skip2Pass(), String("test"))
 	expectRun(t, `return sprintf("test %d", 1)`,
-		newOpts().Skip2Pass(), String{Value: "test 1"})
+		newOpts().Skip2Pass(), String("test 1"))
 	expectRun(t, `return sprintf("test %d %t", 1, true)`,
-		newOpts().Skip2Pass(), String{Value: "test 1 true"})
+		newOpts().Skip2Pass(), String("test 1 true"))
 
 //	expectErrIs(t, `printf()`, nil, ErrWrongNumArguments)
 //	expectErrIs(t, `sprintf()`, nil, ErrWrongNumArguments)
@@ -1236,22 +1236,22 @@ func TestBytes(t *testing.T) {
 	expectRun(t, `return bytes("Hello") + bytes(" ") + "World!"`,
 		nil, Bytes("Hello World!"))
 	expectRun(t, `return "Hello " + bytes("World!")`,
-		nil, String{Value: "Hello World!"})
+		nil, String("Hello World!"))
 
 	//slice
 	expectRun(t, `return bytes("")[:]`, nil, Bytes{})
-	expectRun(t, `return bytes("abcde")[:]`, nil, Bytes(String{Value: "abcde"}.Value))
-	expectRun(t, `return bytes("abcde")[0:]`, nil, Bytes(String{Value: "abcde"}.Value))
+	expectRun(t, `return bytes("abcde")[:]`, nil, Bytes(String("abcde")))
+	expectRun(t, `return bytes("abcde")[0:]`, nil, Bytes(String("abcde")))
 	expectRun(t, `return bytes("abcde")[:0]`, nil, Bytes{})
-	expectRun(t, `return bytes("abcde")[:1]`, nil, Bytes(String{Value: "a"}.Value))
-	expectRun(t, `return bytes("abcde")[:2]`, nil, Bytes(String{Value: "ab"}.Value))
-	expectRun(t, `return bytes("abcde")[0:2]`, nil, Bytes(String{Value: "ab"}.Value))
-	expectRun(t, `return bytes("abcde")[1:]`, nil, Bytes(String{Value: "bcde"}.Value))
-	expectRun(t, `return bytes("abcde")[1:5]`, nil, Bytes(String{Value: "bcde"}.Value))
+	expectRun(t, `return bytes("abcde")[:1]`, nil, Bytes(String("a")))
+	expectRun(t, `return bytes("abcde")[:2]`, nil, Bytes(String("ab")))
+	expectRun(t, `return bytes("abcde")[0:2]`, nil, Bytes(String("ab")))
+	expectRun(t, `return bytes("abcde")[1:]`, nil, Bytes(String("bcde")))
+	expectRun(t, `return bytes("abcde")[1:5]`, nil, Bytes(String("bcde")))
 	expectRun(t, `
 	b1 := bytes("abcde")
 	b2 := b1[:2]
-	return b2[:len(b1)]`, nil, Bytes(String{Value: "abcde"}.Value))
+	return b2[:len(b1)]`, nil, Bytes(String("abcde")))
 	expectRun(t, `
 	b1 := bytes("abcde")
 	b2 := b1[:2]
@@ -1284,8 +1284,8 @@ func TestVMChar(t *testing.T) {
 	expectRun(t, `return '4' > '4'`, nil, False)
 	expectRun(t, `return '4' <= '4'`, nil, True)
 	expectRun(t, `return '4' >= '4'`, nil, True)
-	expectRun(t, `return '九' + "Hello"`, nil, String{Value: "九Hello"})
-	expectRun(t, `return "Hello" + '九'`, nil, String{Value: "Hello九"})
+	expectRun(t, `return '九' + "Hello"`, nil, String("九Hello"))
+	expectRun(t, `return "Hello" + '九'`, nil, String("Hello九"))
 }
 
 func TestVMCondExpr(t *testing.T) {
@@ -1381,8 +1381,8 @@ func testEquality(t *testing.T, lhs, rhs string, expected bool) {
 
 func TestVMBuiltinError(t *testing.T) {
 	expectRun(t, `return error(1)`, nil, &Error{Name: "error", Message: "1"})
-	expectRun(t, `return error(1).Name`, nil, String{Value: "error"})
-	expectRun(t, `return error(1).Message`, nil, String{Value: "1"})
+	expectRun(t, `return error(1).Name`, nil, String("error"))
+	expectRun(t, `return error(1).Message`, nil, String("1"))
 	expectRun(t, `return error("some error")`, nil,
 		&Error{Name: "error", Message: "some error"})
 	expectRun(t, `return error("some" + " error")`, nil,
@@ -1392,10 +1392,10 @@ func TestVMBuiltinError(t *testing.T) {
 		&Error{Name: "error", Message: "5"})
 	expectRun(t, `return error(error("foo"))`, nil, &Error{Name: "error", Message: "error: foo"})
 
-	expectRun(t, `return error("some error").Name`, nil, String{Value: "error"})
-	expectRun(t, `return error("some error")["Name"]`, nil, String{Value: "error"})
-	expectRun(t, `return error("some error").Message`, nil, String{Value: "some error"})
-	expectRun(t, `return error("some error")["Message"]`, nil, String{Value: "some error"})
+	expectRun(t, `return error("some error").Name`, nil, String("error"))
+	expectRun(t, `return error("some error")["Name"]`, nil, String("error"))
+	expectRun(t, `return error("some error").Message`, nil, String("some error"))
+	expectRun(t, `return error("some error")["Message"]`, nil, String("some error"))
 
 //	expectRun(t, `error("error").err`, nil, Undefined)
 //	expectRun(t, `error("error").value_`, nil, Undefined)
@@ -1429,36 +1429,36 @@ func TestVMForIn(t *testing.T) {
 	expectRun(t, `out := 0; for v in {a:2,b:3,c:4} { out += v }; return out`,
 		nil, Int(9)) // value
 	expectRun(t, `out := ""; for k, v in {a:2,b:3,c:4} { out = k; if v==3 { break } }; return out`,
-		nil, String{Value: "b"}) // key, value
+		nil, String("b")) // key, value
 	expectRun(t, `out := ""; for k, _ in {a:2} { out += k }; return out`,
-		nil, String{Value: "a"}) // key, _
+		nil, String("a")) // key, _
 	expectRun(t, `out := 0; for _, v in {a:2,b:3,c:4} { out += v }; return out`,
 		nil, Int(9)) // _, value
 	expectRun(t, `out := ""; func() { for k, v in {a:2,b:3,c:4} { out = k; if v==3 { break } } }(); return out`,
-		nil, String{Value: "b"}) // key, value
+		nil, String("b")) // key, value
 
 	// syncMap
 	g := Map{"syncMap": &SyncMap{Value: Map{"a": Int(2), "b": Int(3), "c": Int(4)}}}
 	expectRun(t, `out := 0; for v in globals().syncMap { out += v }; return out`,
 		newOpts().Globals(g).Skip2Pass(), Int(9)) // value
 	expectRun(t, `out := ""; for k, v in globals().syncMap { out = k; if v==3 { break } }; return out`,
-		newOpts().Globals(g).Skip2Pass(), String{Value: "b"}) // key, value
+		newOpts().Globals(g).Skip2Pass(), String("b")) // key, value
 	expectRun(t, `out := ""; for k, _ in globals().syncMap { out += k }; return out`,
-		newOpts().Globals(Map{"syncMap": &SyncMap{Value: Map{"a": Int(2)}}}).Skip2Pass(), String{Value: "a"}) // key, _
+		newOpts().Globals(Map{"syncMap": &SyncMap{Value: Map{"a": Int(2)}}}).Skip2Pass(), String("a")) // key, _
 	expectRun(t, `out := 0; for _, v in globals().syncMap { out += v }; return out`,
 		newOpts().Globals(g).Skip2Pass(), Int(9)) // _, value
 	expectRun(t, `out := ""; func() { for k, v in globals().syncMap { out = k; if v==3 { break } } }(); return out`,
-		newOpts().Globals(g).Skip2Pass(), String{Value: "b"}) // key, value
+		newOpts().Globals(g).Skip2Pass(), String("b")) // key, value
 
 	// string
-	expectRun(t, `out := ""; for c in "abcde" { out += c }; return out`, nil, String{Value: "979899100101"})
+	expectRun(t, `out := ""; for c in "abcde" { out += c }; return out`, nil, String("979899100101"))
 	expectRun(t, `out := ""; for i, c in "abcde" { if i == 2 { continue }; out += c }; return out`,
-		nil, String{Value: "9798100101"})
+		nil, String("9798100101"))
 
 	// bytes
-	expectRun(t, `out := ""; for c in bytes("abcde") { out += char(c) }; return out`, nil, String{Value: "abcde"})
+	expectRun(t, `out := ""; for c in bytes("abcde") { out += char(c) }; return out`, nil, String("abcde"))
 	expectRun(t, `out := ""; for i, c in bytes("abcde") { if i == 2 { continue }; out += char(c) }; return out`,
-		nil, String{Value: "abde"})
+		nil, String("abde"))
 
 //	expectErrIs(t, `a := 1; for k,v in a {}`, nil, ErrNotIterable)
 }
@@ -1714,7 +1714,7 @@ func TestVMFunction(t *testing.T) {
 		nil, Array{Int(8), Int(9), Array{Int(1), Int(2), Int(3)}})
 
 	expectRun(t, `f := func(v) { x := 2; return func(a, ...b){ return [a, b, v+x]}; }; return f(5)("a", "b");`,
-		nil, Array{String{Value: "a"}, Array{String{Value: "b"}}, Int(7)})
+		nil, Array{String("a"), Array{String("b")}, Int(7)})
 
 	expectRun(t, `f := func(...x) { return x; }; return f();`, nil, Array{})
 
@@ -1722,7 +1722,7 @@ func TestVMFunction(t *testing.T) {
 		nil, Array{Int(8), Int(9), Array{}})
 
 	expectRun(t, `f := func(v) { x := 2; return func(a, ...b){ return [a, b, v+x]}; }; return f(5)("a");`,
-		nil, Array{String{Value: "a"}, Array{}, Int(7)})
+		nil, Array{String("a"), Array{}, Int(7)})
 
 //	expectErrIs(t, `f := func(a, b, ...x) { return [a, b, x]; }; f();`, nil, ErrWrongNumArguments)
 	expectErrHas(t, `f := func(a, b, ...x) { return [a, b, x]; }; f();`, nil, "want>=2 got=0")
@@ -1772,7 +1772,7 @@ func TestVMFunction(t *testing.T) {
 			out = k
 		}()
 	}
-	return out`, nil, String{Value: "a"})
+	return out`, nil, String("a"))
 
 	expectRun(t, `
 	var out
@@ -2218,7 +2218,7 @@ func TestVMIncDec(t *testing.T) {
 
 	// this seems strange but it works because 'a += b' is
 	// translated into 'a = a + b' and string type takes other types for + operator.
-	expectRun(t, `a := "foo"; a++; return a`, nil, String{Value: "foo1"})
+	expectRun(t, `a := "foo"; a++; return a`, nil, String("foo1"))
 //	expectErrIs(t, `a := "foo"; a--`, nil, ErrType)
 	expectErrHas(t, `a := "foo"; a--`, nil,
 		`TypeError: unsupported operand types for '-': 'string' and 'int'`)
@@ -2386,7 +2386,7 @@ func TestVMSourceModules(t *testing.T) {
 	expectRun(t, `return import("mod1")`,
 		newOpts().Module("mod1", `return 5`), Int(5))
 	expectRun(t, `return import("mod1")`,
-		newOpts().Module("mod1", `return "foo"`), String{Value: "foo"})
+		newOpts().Module("mod1", `return "foo"`), String("foo"))
 
 	// module return compound types
 	expectRun(t, `out := import("mod1"); return out`,
@@ -2491,7 +2491,7 @@ func TestVMSourceModules(t *testing.T) {
 
 	// make sure module has same builtin functions
 	expectRun(t, `out := import("mod1"); return out`,
-		newOpts().Module("mod1", `return func() { return typeName(0) }()`), String{Value: "int"})
+		newOpts().Module("mod1", `return func() { return typeName(0) }()`), String("int"))
 
 	// module cannot access outer scope
 	expectErrHas(t, `a := 5; import("mod1")`, newOpts().Module("mod1", `return a`).CompilerError(),
@@ -2746,7 +2746,7 @@ func TestVMScopes(t *testing.T) {
 
 func TestVMSelector(t *testing.T) {
 	expectRun(t, `a := {k1: 5, k2: "foo"}; return a.k1`, nil, Int(5))
-	expectRun(t, `a := {k1: 5, k2: "foo"}; return a.k2`, nil, String{Value: "foo"})
+	expectRun(t, `a := {k1: 5, k2: "foo"}; return a.k2`, nil, String("foo"))
 	expectRun(t, `a := {k1: 5, k2: "foo"}; return a.k3`, nil, Undefined)
 
 	expectRun(t, `
@@ -2815,7 +2815,7 @@ func TestVMSelector(t *testing.T) {
 		},
 	}
 	return [a.b[2], a.c.d, a.c.e, a.c.f[1]]
-	`, nil, Array{Int(3), Int(8), String{Value: "foo"}, Int(8)})
+	`, nil, Array{Int(3), Int(8), String("foo"), Int(8)})
 
 	expectRun(t, `
 	var out
@@ -2842,8 +2842,8 @@ func TestVMStackOverflow(t *testing.T) {
 }
 
 func TestVMString(t *testing.T) {
-	expectRun(t, `return "Hello World!"`, nil, String{Value: "Hello World!"})
-	expectRun(t, `return "Hello" + " " + "World!"`, nil, String{Value: "Hello World!"})
+	expectRun(t, `return "Hello World!"`, nil, String("Hello World!"))
+	expectRun(t, `return "Hello" + " " + "World!"`, nil, String("Hello World!"))
 
 	expectRun(t, `return "Hello" == "Hello"`, nil, True)
 	expectRun(t, `return "Hello" == "World"`, nil, False)
@@ -2875,31 +2875,31 @@ func TestVMString(t *testing.T) {
 
 	// slice operator
 	for low := 0; low < strLen; low++ {
-		expectRun(t, fmt.Sprintf("return %s[%d:%d]", strStr, low, low), nil, String{Value: ""})
+		expectRun(t, fmt.Sprintf("return %s[%d:%d]", strStr, low, low), nil, String(""))
 		for high := low; high <= strLen; high++ {
 			expectRun(t, fmt.Sprintf("return %s[%d:%d]", strStr, low, high),
-				nil, String{Value: str[low:high]})
+				nil, String(str[low:high]))
 			expectRun(t,
 				fmt.Sprintf("return %s[0 + %d : 0 + %d]", strStr, low, high),
-				nil, String{Value: str[low:high]})
+				nil, String(str[low:high]))
 			expectRun(t,
 				fmt.Sprintf("return %s[1 + %d - 1 : 1 + %d - 1]",
 					strStr, low, high),
-				nil, String{Value: str[low:high]})
+				nil, String(str[low:high]))
 			expectRun(t,
 				fmt.Sprintf("return %s[:%d]", strStr, high),
-				nil, String{Value: str[:high]})
+				nil, String(str[:high]))
 			expectRun(t,
 				fmt.Sprintf("return %s[%d:]", strStr, low),
-				nil, String{Value: str[low:]})
+				nil, String(str[low:]))
 		}
 	}
 
-	expectRun(t, fmt.Sprintf("return %s[:]", strStr), nil, String{Value: str[:]})
-	expectRun(t, fmt.Sprintf("return %s[:]", strStr), nil, String{Value: str})
-	expectRun(t, fmt.Sprintf("return %s[%d:]", strStr, 0), nil, String{Value: str})
-	expectRun(t, fmt.Sprintf("return %s[:%d]", strStr, strLen), nil, String{Value: str})
-	expectRun(t, fmt.Sprintf("return %s[%d:%d]", strStr, 2, 2), nil, String{Value: ""})
+	expectRun(t, fmt.Sprintf("return %s[:]", strStr), nil, String(str[:]))
+	expectRun(t, fmt.Sprintf("return %s[:]", strStr), nil, String(str))
+	expectRun(t, fmt.Sprintf("return %s[%d:]", strStr, 0), nil, String(str))
+	expectRun(t, fmt.Sprintf("return %s[:%d]", strStr, strLen), nil, String(str))
+	expectRun(t, fmt.Sprintf("return %s[%d:%d]", strStr, 2, 2), nil, String(""))
 
 //	expectErrIs(t, fmt.Sprintf("%s[:%d]", strStr, -1), nil, ErrInvalidIndex)
 //	expectErrIs(t, fmt.Sprintf("%s[%d:]", strStr, strLen+1), nil, ErrInvalidIndex)
@@ -2907,26 +2907,26 @@ func TestVMString(t *testing.T) {
 //	expectErrIs(t, fmt.Sprintf("%s[%d:%d]", strStr, 2, 1), nil, ErrInvalidIndex)
 
 	// string concatenation with other types
-	expectRun(t, `return "foo" + 1`, nil, String{Value: "foo1"})
+	expectRun(t, `return "foo" + 1`, nil, String("foo1"))
 	// Float.String() returns the smallest number of digits
 	// necessary such that ParseFloat will return f exactly.
 //	expectErrIs(t, `return 1 + "foo"`, nil, ErrType)
-	expectRun(t, `return "foo" + 1.0`, nil, String{Value: "foo1"}) // <- note '1' instead of '1.0'
+	expectRun(t, `return "foo" + 1.0`, nil, String("foo1")) // <- note '1' instead of '1.0'
 //	expectErrIs(t, `return 1.0 + "foo"`, nil, ErrType)
-	expectRun(t, `return "foo" + 1.5`, nil, String{Value: "foo1.5"})
+	expectRun(t, `return "foo" + 1.5`, nil, String("foo1.5"))
 //	expectErrIs(t, `return 1.5 + "foo"`, nil, ErrType)
-	expectRun(t, `return "foo" + true`, nil, String{Value: "footrue"})
+	expectRun(t, `return "foo" + true`, nil, String("footrue"))
 //	expectErrIs(t, `return true + "foo"`, nil, ErrType)
-	expectRun(t, `return "foo" + 'X'`, nil, String{Value: "fooX"})
-	expectRun(t, `return 'X' + "foo"`, nil, String{Value: "Xfoo"})
-	expectRun(t, `return "foo" + error(5)`, nil, String{Value: "fooerror: 5"})
-	expectRun(t, `return "foo" + undefined`, nil, String{Value: "fooundefined"})
+	expectRun(t, `return "foo" + 'X'`, nil, String("fooX"))
+	expectRun(t, `return 'X' + "foo"`, nil, String("Xfoo"))
+	expectRun(t, `return "foo" + error(5)`, nil, String("fooerror: 5"))
+	expectRun(t, `return "foo" + undefined`, nil, String("fooundefined"))
 //	expectErrIs(t, `return undefined + "foo"`, nil, ErrType)
 	// array adds rhs object to the array
 	expectRun(t, `return [1, 2, 3] + "foo"`,
-		nil, Array{Int(1), Int(2), Int(3), String{Value: "foo"}})
+		nil, Array{Int(1), Int(2), Int(3), String("foo")})
 	// also works with "+=" operator
-	expectRun(t, `out := "foo"; out += 1.5; return out`, nil, String{Value: "foo1.5"})
+	expectRun(t, `out := "foo"; out += 1.5; return out`, nil, String("foo1.5"))
 	expectErrHas(t, `"foo" - "bar"`,
 		nil, `TypeError: unsupported operand types for '-': 'string' and 'string'`)
 }
@@ -3194,8 +3194,8 @@ func TestVMCall(t *testing.T) {
 //	b(a, c)
 //	`, nil, ErrNotCallable)
 
-	expectRun(t, `return {a: string(...[0])}`, nil, Map{"a": String{Value: "0"}})
-	expectRun(t, `return {a: string([0])}`, nil, Map{"a": String{Value: "[0]"}})
+	expectRun(t, `return {a: string(...[0])}`, nil, Map{"a": String("0")})
+	expectRun(t, `return {a: string([0])}`, nil, Map{"a": String("[0]")})
 	expectRun(t, `return {a: bytes(...repeat([0], 4096))}`,
 		nil, Map{"a": make(Bytes, 4096)})
 }

@@ -4944,7 +4944,7 @@ func builtinResetFunc(c Call) (Object, error) {
 
 		return obj, nil
 	case String:
-		obj.Value = ""
+		obj = ""
 
 		return obj, nil
 	case Map:
@@ -5330,7 +5330,7 @@ func builtinSortReverseFunc(arg Object) (Object, error) {
 // 	if !ok {
 // 		nv2 := args[1].String()
 
-// 		nv3, errT := builtinCharCodeFunc(Call{Vm: c.VM(), Args: []Object{String{Value: nv2}}})
+// 		nv3, errT := builtinCharCodeFunc(Call{Vm: c.VM(), Args: []Object{String(nv2)}})
 
 // 		if errT != nil {
 // 			return NewCommonErrorWithPos(c, "failed to compile function: (%T)%v", args[1], errT), nil
@@ -5505,28 +5505,28 @@ func builtinStringFunc(c Call) (Object, error) {
 
 	lenT := len(args)
 	if lenT < 1 {
-		return String{Value: ""}, nil
+		return String(""), nil
 	}
 
-	if lenT < 2 {
-		return String{Value: args[0].String()}, nil
-	}
+//	if lenT > 0 {
+	return String(args[0].String()), nil
+//	}
 
-	addLenT := (lenT - 1) / 2
+//	addLenT := (lenT - 1) / 2
 
-	mbT := make(map[string]Object)
+//	mbT := make(map[string]Object)
+//
+//	for i := 0; i < addLenT; i++ {
+//		mbT[args[1+i*2].String()] = args[1+i*2+1]
+//	}
+//
+//	if (lenT - 1) > (addLenT * 2) {
+//		mbT[args[1+addLenT*2].String()] = ToStringObject("")
+//	}
+//
+//	s1 := String{Value: args[0].String(), Members: mbT}
 
-	for i := 0; i < addLenT; i++ {
-		mbT[args[1+i*2].String()] = args[1+i*2+1]
-	}
-
-	if (lenT - 1) > (addLenT * 2) {
-		mbT[args[1+addLenT*2].String()] = ToStringObject("")
-	}
-
-	s1 := String{Value: args[0].String(), Members: mbT}
-
-	return s1, nil
+//	return s1, nil
 }
 
 func builtinMutableStringFunc(c Call) (Object, error) {
@@ -5635,9 +5635,9 @@ func builtinCharsFunc(arg Object) (ret Object, err error) {
 		ret = aryT
 		return
 	case String:
-		s := obj.Value
+		s := string(obj)
 		ret = make(Chars, 0, utf8.RuneCountInString(s))
-		sz := len(obj.Value)
+		sz := len(s)
 		i := 0
 
 		for i < sz {
@@ -6022,7 +6022,7 @@ func fnATRS(fn func(time.Time) string) CallableFunc {
 		}
 
 		rs := fn(nv.Value)
-		return String{Value: rs}, nil
+		return String(rs), nil
 	}
 }
 
@@ -6041,7 +6041,7 @@ func fnATRSex(fn func(time.Time) string) CallableExFunc {
 		}
 
 		rs := fn(nv.Value)
-		return String{Value: rs}, nil
+		return String(rs), nil
 	}
 }
 
@@ -6061,7 +6061,7 @@ func fnATVsRS(fn func(time.Time, ...string) string) CallableFunc {
 		vs := ObjectsToS(args[1:])
 
 		rs := fn(nv.Value, vs...)
-		return String{Value: rs}, nil
+		return String(rs), nil
 	}
 }
 
@@ -6082,7 +6082,7 @@ func fnATVsRSex(fn func(time.Time, ...string) string) CallableExFunc {
 		vs := ObjectsToS(args[1:])
 
 		rs := fn(nv.Value, vs...)
-		return String{Value: rs}, nil
+		return String(rs), nil
 	}
 }
 
@@ -6433,7 +6433,7 @@ func fnASSVsRSE(fn func(string, string, ...string) (string, error)) CallableFunc
 			return NewCommonError("%v", errT.Error()), nil
 		}
 
-		return String{Value: rs}, nil
+		return String(rs), nil
 	}
 }
 
@@ -6453,7 +6453,7 @@ func fnASSVsRSEex(fn func(string, string, ...string) (string, error)) CallableEx
 			return NewCommonErrorWithPos(c, "%v", errT.Error()), nil
 		}
 
-		return String{Value: rs}, nil
+		return String(rs), nil
 	}
 }
 
@@ -8766,10 +8766,10 @@ func builtinTestByTextFunc(c Call) (ret Object, err error) {
 		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
 	}
 
-	if nv1.Value == nv2.Value {
+	if nv1 == nv2 {
 		tk.Pl("test %v%v passed", v3, v4)
 	} else {
-		return nil, fmt.Errorf("test %v%v failed: (pos: %v) %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, tk.FindFirstDiffIndex(nv1.Value, nv2.Value), v1, v2, v1, v2)
+		return nil, fmt.Errorf("test %v%v failed: (pos: %v) %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, tk.FindFirstDiffIndex(string(nv1), string(nv2)), v1, v2, v1, v2)
 	}
 
 	return Undefined, nil
@@ -8810,7 +8810,7 @@ func builtinTestByStartsWithFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
 	}
 
-	if strings.HasPrefix(nv1.Value, nv2.Value) {
+	if strings.HasPrefix(string(nv1), string(nv2)) {
 		tk.Pl("test %v%v passed", v3, v4)
 	} else {
 		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
@@ -8854,7 +8854,7 @@ func builtinTestByEndsWithFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
 	}
 
-	if strings.HasSuffix(nv1.Value, nv2.Value) {
+	if strings.HasSuffix(string(nv1), string(nv2)) {
 		tk.Pl("test %v%v passed", v3, v4)
 	} else {
 		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
@@ -8898,7 +8898,7 @@ func builtinTestByContainsFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
 	}
 
-	if strings.Contains(nv1.Value, nv2.Value) {
+	if strings.Contains(string(nv1), string(nv2)) {
 		tk.Pl("test %v%v passed", v3, v4)
 	} else {
 		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
@@ -8942,7 +8942,7 @@ func builtinTestByRegContainsFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
 	}
 
-	if tk.RegContainsX(nv1.Value, nv2.Value) {
+	if tk.RegContainsX(string(nv1), string(nv2)) {
 		tk.Pl("test %v%v passed", v3, v4)
 	} else {
 		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
@@ -9135,7 +9135,7 @@ func builtinTestByRegFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("test %v%v failed(invalid type v2): %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
 	}
 
-	if tk.RegMatchX(nv1.Value, nv2.Value) {
+	if tk.RegMatchX(string(nv1), string(nv2)) {
 		tk.Pl("test %v%v passed", v3, v4)
 	} else {
 		return nil, fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
@@ -9419,13 +9419,13 @@ func builtinBase64EncodeFunc(c Call) (Object, error) {
 
 	switch nv := args[0].(type) {
 	case String:
-		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv.Value))}, nil
+		return String(base64.StdEncoding.EncodeToString([]byte(string(nv)))), nil
 	case Bytes:
-		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv))}, nil
+		return String(base64.StdEncoding.EncodeToString([]byte(nv))), nil
 	case *StringBuilder:
-		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv.String()))}, nil
+		return String(base64.StdEncoding.EncodeToString([]byte(nv.Value.String()))), nil
 	case *BytesBuffer:
-		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv.Value.Bytes()))}, nil
+		return String(base64.StdEncoding.EncodeToString(nv.Value.Bytes())), nil
 	case *Image:
 		formatT := strings.TrimSpace(tk.GetSwitch(vs, "-format=", ".png"))
 		bytesT := tk.SaveImageToBytes(nv.Value, formatT)
@@ -9436,9 +9436,9 @@ func builtinBase64EncodeFunc(c Call) (Object, error) {
 			tmps = "data:image/" + strings.Trim(formatT, ".") + ";base64," + tmps
 		}
 
-		return String{Value: tmps}, nil
+		return String(tmps), nil
 	default:
-		return String{Value: base64.StdEncoding.EncodeToString([]byte(nv.String()))}, nil
+		return String(base64.StdEncoding.EncodeToString([]byte(nv.String()))), nil
 	}
 }
 
@@ -9455,13 +9455,13 @@ func builtinBase64EncodeByRawUrlFunc(c Call) (Object, error) {
 
 	switch nv := args[0].(type) {
 	case String:
-		return String{Value: base64.RawURLEncoding.EncodeToString([]byte(nv.Value))}, nil
+		return String(base64.RawURLEncoding.EncodeToString([]byte(string(nv)))), nil
 	case Bytes:
-		return String{Value: base64.RawURLEncoding.EncodeToString([]byte(nv))}, nil
+		return String(base64.RawURLEncoding.EncodeToString([]byte(nv))), nil
 	case *StringBuilder:
-		return String{Value: base64.RawURLEncoding.EncodeToString([]byte(nv.String()))}, nil
+		return String(base64.RawURLEncoding.EncodeToString([]byte(nv.String()))), nil
 	case *BytesBuffer:
-		return String{Value: base64.RawURLEncoding.EncodeToString([]byte(nv.Value.Bytes()))}, nil
+		return String(base64.RawURLEncoding.EncodeToString([]byte(nv.Value.Bytes()))), nil
 	case *Image:
 		formatT := strings.TrimSpace(tk.GetSwitch(vs, "-format=", ".png"))
 		bytesT := tk.SaveImageToBytes(nv.Value, formatT)
@@ -9472,9 +9472,9 @@ func builtinBase64EncodeByRawUrlFunc(c Call) (Object, error) {
 			tmps = "data:image/" + strings.Trim(formatT, ".") + ";base64," + tmps
 		}
 
-		return String{Value: tmps}, nil
+		return String(tmps), nil
 	default:
-		return String{Value: base64.RawURLEncoding.EncodeToString([]byte(nv.String()))}, nil
+		return String(base64.RawURLEncoding.EncodeToString([]byte(nv.String()))), nil
 	}
 }
 
@@ -9509,7 +9509,7 @@ func builtinFromJSONFunc(c Call) (Object, error) {
 
 	switch nv := objT.(type) {
 	case String:
-		jsonTextT = nv.Value
+		jsonTextT = string(nv)
 	case Bytes:
 		jsonTextT = string(nv)
 	case Chars:
@@ -9543,7 +9543,7 @@ func builtinFromXmlFunc(c Call) (Object, error) {
 
 	switch nv := objT.(type) {
 	case String:
-		xmlTextT = nv.Value
+		xmlTextT = string(nv)
 	case Bytes:
 		xmlTextT = string(nv)
 	case Chars:
@@ -9585,7 +9585,7 @@ func builtinEncodeSimpleMapFunc(c Call) (Object, error) {
 
 	strT := tk.SimpleMapToString(mapT)
 
-	return String{Value: strT}, nil
+	return String(strT), nil
 }
 
 func builtinDecodeSimpleMapFunc(c Call) (Object, error) {
@@ -9602,7 +9602,7 @@ func builtinDecodeSimpleMapFunc(c Call) (Object, error) {
 	map1T := Map{}
 
 	for k, v := range mapT {
-		map1T[k] = String{Value: v}
+		map1T[k] = String(v)
 	}
 
 	return map1T, nil
@@ -9619,7 +9619,7 @@ func builtinIsErrXFunc(c Call) (Object, error) {
 	case *Error, *RuntimeError:
 		return True, nil
 	case String:
-		if strings.HasPrefix(nv.Value, "TXERROR:") {
+		if strings.HasPrefix(string(nv), "TXERROR:") {
 			return True, nil
 		}
 	case *MutableString:
@@ -9708,7 +9708,7 @@ func isErrX(objA Object) bool {
 }
 
 func builtinGetNowTimeStampFunc(c Call) (Object, error) {
-	return String{Value: tk.GetTimeStampMid(time.Now())}, nil
+	return String(tk.GetTimeStampMid(time.Now())), nil
 }
 
 func builtinRunTickerFunc(c Call) (Object, error) {
@@ -9820,7 +9820,7 @@ func builtinIsNilOrErrFunc(c Call) (Object, error) {
 			return Bool(true), nil
 		}
 	case String:
-		if strings.HasPrefix(nv.Value, "TXERROR:") {
+		if strings.HasPrefix(string(nv), "TXERROR:") {
 			return Bool(true), nil
 		}
 
@@ -10031,7 +10031,7 @@ func builtinTimeFunc(c Call) (Object, error) {
 	case *Time:
 		return &Time{Value: obj.Value}, nil
 	case String:
-		rsT := tk.ToTime(obj.Value, ObjectsToI(args[1:])...)
+		rsT := tk.ToTime(string(obj), ObjectsToI(args[1:])...)
 
 		if tk.IsError(rsT) {
 			return Undefined, NewCommonErrorWithPos(c, "failed to convert time: %v", rsT)
@@ -10064,7 +10064,7 @@ func builtinToTimeFunc(c Call) (Object, error) {
 	case *Time:
 		return &Time{Value: obj.Value}, nil
 	case String:
-		rsT := tk.ToTime(obj.Value, ObjectsToI(args[1:])...)
+		rsT := tk.ToTime(string(obj), ObjectsToI(args[1:])...)
 
 		if tk.IsError(rsT) {
 			return NewCommonErrorWithPos(c, "failed to convert time: %v", rsT), nil
@@ -10281,7 +10281,7 @@ func builtinAnyFunc(c Call) (Object, error) {
 	case Chars:
 		return &Any{Value: []rune(obj), OriginalType: fmt.Sprintf("%T", obj), OriginalCode: obj.TypeCode()}, nil
 	case String:
-		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
+		return &Any{Value: string(obj), OriginalType: fmt.Sprintf("%T", string(obj)), OriginalCode: obj.TypeCode()}, nil
 	case *MutableString:
 		return &Any{Value: obj.Value, OriginalType: fmt.Sprintf("%T", obj.Value), OriginalCode: obj.TypeCode()}, nil
 	case Array:
@@ -10568,7 +10568,7 @@ func builtinUnrefFunc(c Call) (Object, error) {
 		case *float64:
 			return Float(*nv1), nil
 		case *string:
-			return String{Value: *nv1}, nil
+			return String(*nv1), nil
 		case *interface{}:
 			return &Any{Value: *nv1, OriginalType: fmt.Sprintf("%T", *nv1), OriginalCode: -1}, nil
 		}
@@ -10885,27 +10885,27 @@ func builtinErrToEmptyFunc(c Call) (Object, error) {
 
 	switch nv := args[0].(type) {
 	case *Error, *RuntimeError:
-		return String{Value: ""}, nil
+		return String(""), nil
 	case String:
-		if strings.HasPrefix(nv.Value, "TXERROR:") {
-			return String{Value: ""}, nil
+		if strings.HasPrefix(string(nv), "TXERROR:") {
+			return String(""), nil
 		}
 	case *MutableString:
 		if strings.HasPrefix(nv.Value, "TXERROR:") {
-			return String{Value: ""}, nil
+			return String(""), nil
 		}
 	case *Any:
 		_, ok := nv.Value.(error)
 
 		if ok {
-			return String{Value: ""}, nil
+			return String(""), nil
 		}
 
 		s1, ok := nv.Value.(string)
 
 		if ok {
 			if strings.HasPrefix(s1, "TXERROR:") {
-				return String{Value: ""}, nil
+				return String(""), nil
 			}
 		}
 
@@ -10998,7 +10998,7 @@ func builtinStrTrimStartFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("invalid type: %v", arg0.TypeName())
 	}
 
-	return ToStringObject(strings.TrimPrefix(s1.Value, s2.Value)), nil
+	return String(strings.TrimPrefix(string(s1), string(s2))), nil
 }
 
 func builtinStrTrimEndFunc(c Call) (Object, error) {
@@ -11018,7 +11018,7 @@ func builtinStrTrimEndFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("invalid type of arg 2: %v", args[1].TypeName())
 	}
 
-	return ToStringObject(strings.TrimSuffix(s1.Value, s2.Value)), nil
+	return String(strings.TrimSuffix(string(s1), string(s2))), nil
 }
 
 func builtinStrTrimLeftFunc(c Call) (Object, error) {
@@ -11042,7 +11042,7 @@ func builtinStrTrimLeftFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("invalid type: %v", arg0.TypeName())
 	}
 
-	return ToStringObject(strings.TrimLeft(s1.Value, s2.Value)), nil
+	return String(strings.TrimLeft(string(s1), string(s2))), nil
 }
 
 func builtinStrTrimRightFunc(c Call) (Object, error) {
@@ -11066,7 +11066,7 @@ func builtinStrTrimRightFunc(c Call) (Object, error) {
 		return nil, fmt.Errorf("invalid type: %v", arg0.TypeName())
 	}
 
-	return ToStringObject(strings.TrimRight(s1.Value, s2.Value)), nil
+	return String(strings.TrimRight(string(s1), string(s2))), nil
 }
 
 func builtinRemoveDirFunc(c Call) (Object, error) {
@@ -11253,7 +11253,7 @@ func builtinGetMultiLineInputFunc(c Call) (Object, error) {
 	//	fmt.Printf("funcT: %#v\n", funcT)
 	rs := tk.GetMultiLineInput(funcT, vs...)
 
-	return String{Value: rs}, nil
+	return String(rs), nil
 }
 
 func builtinSetStdoutFunc(c Call) (Object, error) {
@@ -12294,7 +12294,7 @@ func builtinExcelReadCellImagesFunc(c Call) (Object, error) {
 	aryT := Array{}
 
 	for i, v := range picsT {
-		aryT = append(aryT, Map{"idx": String{Value: fmt.Sprintf("%v", i)}, "ext": String{Value: v.Extension}, "data": Bytes(v.File), "format": String{Value: fmt.Sprintf("%v", v.Format)}, "insertType": String{Value: fmt.Sprintf("%v", v.InsertType)}})
+		aryT = append(aryT, Map{"idx": String(fmt.Sprintf("%v", i)), "ext": String(v.Extension), "data": Bytes(v.File), "format": String(fmt.Sprintf("%v", v.Format)), "insertType": String(fmt.Sprintf("%v", v.InsertType))})
 	}
 
 	return aryT, nil
@@ -12470,7 +12470,7 @@ func builtinExcelGetColumnNameByIndexFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "failed to convert: %v", errT), nil
 	}
 
-	return String{Value: rs}, nil
+	return String(rs), nil
 
 }
 
@@ -14057,7 +14057,7 @@ func builtinSshJoinPathFunc(c Call) (Object, error) {
 
 	rs := sshT.JoinPath(pas2...)
 
-	return String{Value: rs}, nil
+	return String(rs), nil
 }
 
 func builtinSshRemoveFileFunc(c Call) (Object, error) {
@@ -14375,7 +14375,7 @@ func builtinWriteRespFunc(c Call) (Object, error) {
 	v1, ok := args[1].(String)
 
 	if ok {
-		contentT = Bytes(v1.Value)
+		contentT = Bytes(v1.String())
 	}
 
 	if contentT == nil {
@@ -14472,7 +14472,7 @@ func builtinIsEncryptedFunc(c Call) (Object, error) {
 
 	v2, ok := args[0].(String)
 	if ok {
-		return Bool(tk.IsStringEncryptedByTXDEF(v2.Value)), nil
+		return Bool(tk.IsStringEncryptedByTXDEF(v2.String())), nil
 	}
 
 	v3, ok := args[0].(*MutableString)
@@ -14523,7 +14523,7 @@ func builtinGenJwtTokenFunc(c Call) (Object, error) {
 
 	rs := tk.GenerateJwtToken(args[0], v2Bytes, vs...)
 
-	return String{Value: rs}, nil
+	return String(rs), nil
 }
 
 func builtinParseJwtTokenFunc(c Call) (Object, error) {
@@ -14721,7 +14721,7 @@ func builtinGetReqHeadersFunc(c Call) (Object, error) {
 	mapT := make(Map)
 
 	for k, v := range reqT.Header {
-		mapT[k] = String{Value: v[0]}
+		mapT[k] = String(v[0])
 	}
 
 	return mapT, nil
@@ -14990,9 +14990,9 @@ func builtinNewFunc(c Call) (Object, error) {
 	// 	}
 	// case "str", "string":
 	// 	if len(args) > 1 {
-	// 		return String{Value: args[1].String()}, nil
+	// 		return String(args[1].String()), nil
 	// 	} else {
-	// 		return String{Value: ""}, nil
+	// 		return String(""), nil
 	// 	}
 	// case "array", "list":
 	// 	if len(args) > 1 {
@@ -15062,9 +15062,9 @@ func builtinMakeFunc(c Call) (Object, error) {
 		}
 	case "str", "string":
 		if len(args) > 1 {
-			return String{Value: args[1].String()}, nil
+			return String(args[1].String()), nil
 		} else {
-			return String{Value: ""}, nil
+			return String(""), nil
 		}
 	case "mutableStr", "mutableString":
 		if len(args) > 1 {
@@ -15206,7 +15206,7 @@ func builtinReadAllStrFunc(c Call) (Object, error) {
 			return NewCommonErrorWithPos(c, "failed to read all string: %v", errT), nil
 		}
 
-		return String{Value: string(bufT)}, nil
+		return String(string(bufT)), nil
 	}
 
 	nv1a, ok := args[0].(*File)
@@ -15217,7 +15217,7 @@ func builtinReadAllStrFunc(c Call) (Object, error) {
 			return NewCommonErrorWithPos(c, "failed to read all string: %v", errT), nil
 		}
 
-		return String{Value: string(bufT)}, nil
+		return String(string(bufT)), nil
 	}
 
 	nv2, ok := args[0].(io.Reader)
@@ -15228,14 +15228,14 @@ func builtinReadAllStrFunc(c Call) (Object, error) {
 			return NewCommonErrorWithPos(c, "failed to read all string: %v", errT), nil
 		}
 
-		return String{Value: string(bufT)}, nil
+		return String(string(bufT)), nil
 	}
 
 	nv3, ok := args[0].(*Any)
 
 	switch nv := nv3.Value.(type) {
 	case string:
-		return String{Value: nv}, nil
+		return String(nv), nil
 	default:
 		return NewCommonErrorWithPos(c, "invalid type in any: %T", nv3.Value), nil
 	}
@@ -15415,7 +15415,7 @@ func builtinWriteStrFunc(c Call) (Object, error) {
 	nv1, ok := args[0].(*Writer)
 
 	if ok {
-		n, errT := nv1.Value.Write([]byte(s1.Value))
+		n, errT := nv1.Value.Write([]byte(string(s1)))
 
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to write string: %v", errT), nil
@@ -15427,7 +15427,7 @@ func builtinWriteStrFunc(c Call) (Object, error) {
 	nv2, ok := args[0].(*File)
 
 	if ok {
-		n, errT := nv2.Value.Write([]byte(s1.Value))
+		n, errT := nv2.Value.Write([]byte(string(s1)))
 
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to write string: %v", errT), nil
@@ -15440,7 +15440,7 @@ func builtinWriteStrFunc(c Call) (Object, error) {
 		vT := args[0].(*Any)
 		switch nv := vT.Value.(type) {
 		case *strings.Builder:
-			n, errT := nv.WriteString(s1.Value)
+			n, errT := nv.WriteString(string(s1))
 
 			if errT != nil {
 				return NewCommonErrorWithPos(c, "%v", errT), nil
@@ -15449,10 +15449,11 @@ func builtinWriteStrFunc(c Call) (Object, error) {
 			return Int(n), nil
 
 		case string:
-			s1.Value = nv + s1.Value
-			return Int(len(s1.Value)), nil
+			len1T := len(string(s1))
+			vT.Value = nv + string(s1)
+			return Int(len1T), nil
 		case io.StringWriter:
-			n, errT := nv.WriteString(s1.Value)
+			n, errT := nv.WriteString(string(s1))
 
 			if errT != nil {
 				return Int(n), nil
@@ -15465,7 +15466,7 @@ func builtinWriteStrFunc(c Call) (Object, error) {
 		}
 	} else if args[0].TypeName() == "stringBuilder" {
 		vT := args[0].(*StringBuilder)
-		n, errT := vT.Value.WriteString(s1.Value)
+		n, errT := vT.Value.WriteString(string(s1))
 
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "%v", errT), nil
@@ -15492,7 +15493,7 @@ func builtinWriteBytesFunc(c Call) (Object, error) {
 	case Bytes:
 		bufT = []byte(nv)
 	case String:
-		bufT = []byte(nv.Value)
+		bufT = []byte(string(nv))
 	case *MutableString:
 		bufT = []byte(nv.Value)
 	default:
@@ -15617,7 +15618,7 @@ func builtinWriteBytesFunc(c Call) (Object, error) {
 		vT := args[0].(*Any)
 		switch nv := vT.Value.(type) {
 		case *strings.Builder:
-			n, errT := nv.WriteString(s1.Value)
+			n, errT := nv.WriteString(string(s1))
 
 			if errT != nil {
 				return NewCommonErrorWithPos(c, "%v", errT), nil
@@ -15626,10 +15627,11 @@ func builtinWriteBytesFunc(c Call) (Object, error) {
 			return Int(n), nil
 
 		case string:
-			s1.Value = nv + s1.Value
-			return Int(len(s1.Value)), nil
+			len1T := len(string(s1))
+			vT.Value = nv + string(s1)
+			return Int(len1T), nil
 		case io.StringWriter:
-			n, errT := nv.WriteString(s1.Value)
+			n, errT := nv.WriteString(string(s1))
 
 			if errT != nil {
 				return Int(n), nil
@@ -15642,7 +15644,7 @@ func builtinWriteBytesFunc(c Call) (Object, error) {
 		}
 	} else if args[0].TypeName() == "stringBuilder" {
 		vT := args[0].(*StringBuilder)
-		n, errT := vT.Value.WriteString(s1.Value)
+		n, errT := vT.Value.WriteString(string(s1))
 
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "%v", errT), nil
@@ -15677,7 +15679,7 @@ func builtinWriteBytesAtFunc(c Call) (Object, error) {
 	case Bytes:
 		bufT = []byte(nv)
 	case String:
-		bufT = []byte(nv.Value)
+		bufT = []byte(string(nv))
 	case *MutableString:
 		bufT = []byte(nv.Value)
 	default:
@@ -15758,8 +15760,8 @@ func builtinDatabaseFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "invalid parameter 2"), nil
 	}
 
-	v1 := nv0.Value
-	v2 := nv1.Value
+	v1 := string(nv0)
+	v2 := string(nv1)
 
 	if v1 == "godror" {
 		matchesT := tk.RegFindFirstGroupsX(v2, `^(.*?)/(.*?)@(.*?)$`)
@@ -15951,7 +15953,7 @@ func builtinLeSaveToStrFunc(c Call) (Object, error) {
 		builtinLeClearFunc(c)
 	}
 
-	return String{Value: tk.JoinLines(vmT.LeBuf, "\n")}, nil
+	return String(tk.JoinLines(vmT.LeBuf, "\n")), nil
 }
 
 func builtinLeLoadFromFileFunc(c Call) (Object, error) {
@@ -16090,7 +16092,7 @@ func builtinLeLoadFromSshFunc(c Call) (Object, error) {
 	vmT.LeSshInfo["Password"] = v4
 	vmT.LeSshInfo["Path"] = v5
 
-	rsT, errT := builtinLeLoadFromStrFunc(Call{Vm: vmT, Args: []Object{String{Value: string(bufT)}}})
+	rsT, errT := builtinLeLoadFromStrFunc(Call{Vm: vmT, Args: []Object{String(string(bufT))}})
 
 	if errT != nil {
 		return NewCommonErrorWithPos(c, "failed to load file content into le buffer: %v", errT), nil
@@ -16454,7 +16456,7 @@ func builtinLeGetListFunc(c Call) (Object, error) {
 	rs := make(Array, 0, lenT)
 
 	for i := startT; i <= endT; i++ {
-		rs = append(rs, String{Value: vmT.LeBuf[i]})
+		rs = append(rs, String(vmT.LeBuf[i]))
 	}
 
 	return rs, nil
@@ -16557,7 +16559,7 @@ func builtinStrToUtf8Func(c Call) (Object, error) {
 
 	encT := tk.GetSwitch(vs, "-encoding=", "")
 
-	return String{Value: tk.ConvertStringToUTF8(args[0].String(), encT)}, nil
+	return String(tk.ConvertStringToUTF8(args[0].String(), encT)), nil
 }
 
 func builtinIsUtf8Func(c Call) (Object, error) {
@@ -16576,7 +16578,7 @@ func builtinIsUtf8Func(c Call) (Object, error) {
 	nv2, ok := args[0].(String)
 
 	if ok {
-		return Bool(utf8.ValidString(nv2.Value)), nil
+		return Bool(utf8.ValidString(string(nv2))), nil
 	}
 
 	nv3, ok := args[0].(*MutableString)
@@ -16658,7 +16660,7 @@ func builtinReverseMapFunc(c Call) (Object, error) {
 
 	for k, v := range nv1 {
 		//		fmt.Printf("k: %#v, v: %#v\n", k, v)
-		mapT[v.String()] = String{Value: k}
+		mapT[v.String()] = String(k)
 	}
 
 	return mapT, nil
@@ -16687,7 +16689,7 @@ func builtinLeGetLineFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "%v", "line index out of range"), nil
 	}
 
-	return String{Value: vmT.LeBuf[idxA]}, nil
+	return String(vmT.LeBuf[idxA]), nil
 }
 
 func builtinLeSetLineFunc(c Call) (Object, error) {
@@ -16951,7 +16953,7 @@ func builtinLeFindLinesFunc(c Call) (Object, error) {
 
 	for i, v := range vmT.LeBuf {
 		if tk.RegContains(v, regA) {
-			aryT = append(aryT, Map{"Index": Int(i), "Value": String{Value: v}})
+			aryT = append(aryT, Map{"Index": Int(i), "Value": String(v)})
 
 			if ifPrintT {
 				tk.Pl("%v: %v", i, v)
@@ -16991,7 +16993,7 @@ func builtinLeFindFunc(c Call) (Object, error) {
 		findT := tk.RegFindFirstGroupIndexX(v, regA, groupT)
 
 		if findT != nil {
-			return Map{"Line": Int(i), "Group": Int(groupT), "Count": Int(0), "Start": Int(findT[0]), "End": Int(findT[1]), "Text": String{Value: v[findT[0]:findT[1]]}}, nil
+			return Map{"Line": Int(i), "Group": Int(groupT), "Count": Int(0), "Start": Int(findT[0]), "End": Int(findT[1]), "Text": String(v[findT[0]:findT[1]])}, nil
 		}
 	}
 
@@ -17030,7 +17032,7 @@ func builtinLeFindAllFunc(c Call) (Object, error) {
 
 		if findsT != nil {
 			for j, jv := range findsT {
-				totalFindsT = append(totalFindsT, Map{"Line": Int(i), "Group": Int(groupT), "Count": Int(j), "Start": Int(jv[0]), "End": Int(jv[1]), "Text": String{Value: v[jv[0]:jv[1]]}})
+				totalFindsT = append(totalFindsT, Map{"Line": Int(i), "Group": Int(groupT), "Count": Int(j), "Start": Int(jv[0]), "End": Int(jv[1]), "Text": String(v[jv[0]:jv[1]])})
 			}
 		}
 	}
@@ -17063,7 +17065,7 @@ func builtinLeReplaceFunc(c Call) (Object, error) {
 	for i, v := range vmT.LeBuf {
 		if tk.RegContains(v, regA) {
 			vmT.LeBuf[i] = tk.RegReplace(v, regA, replA)
-			aryT = append(aryT, String{Value: fmt.Sprintf("%v: %v -> %v", i, v, vmT.LeBuf[i])})
+			aryT = append(aryT, String(fmt.Sprintf("%v: %v -> %v", i, v, vmT.LeBuf[i])))
 		}
 	}
 
@@ -17125,7 +17127,7 @@ func builtinAwsSignFunc(c Call) (Object, error) {
 
 	rsT := awsapi.Sign(postDataT, nv2)
 
-	return String{Value: rsT}, nil
+	return String(rsT), nil
 }
 
 func builtinMagicFunc(c Call) (Object, error) {
@@ -17595,7 +17597,7 @@ func builtinS3GetObjectTextFunc(c Call) (Object, error) {
 
 	objT.Close()
 
-	return &String{Value: string(bytesT)}, nil
+	return String(string(bytesT)), nil
 }
 
 func builtinS3GetObjectReaderFunc(c Call) (Object, error) {
@@ -18325,7 +18327,7 @@ func builtinShowTableFunc(c Call) (Object, error) {
 
 	rs := tk.ShowTableCompact(aryT, funcT, vs...)
 
-	return String{Value: rs}, nil
+	return String(rs), nil
 }
 
 func builtinDocxToStrsFunc(c Call) (Object, error) {
@@ -18628,7 +18630,7 @@ func builtinGetRandomStrFunc(c Call) (Object, error) {
 
 	rs := tk.GenerateRandomStringX(ObjectsToS(args)...)
 
-	return &String{Value: rs}, nil
+	return String(rs), nil
 }
 
 func builtintStrUnquoteFunc(c Call) (Object, error) {
@@ -18644,7 +18646,7 @@ func builtintStrUnquoteFunc(c Call) (Object, error) {
 		return NewCommonError("%v", errT), nil
 	}
 
-	return &String{Value: rs}, nil
+	return String(rs), nil
 }
 
 func builtinStrToTimeFunc(c Call) (Object, error) {
@@ -18691,7 +18693,7 @@ func BuiltinDealStrFunc(c Call) (Object, error) {
 			return NewCommonError("failed to decode hex: %v", errT), nil
 		}
 
-		return &String{Value: string(buf)}, nil
+		return String(string(buf)), nil
 	} else if strings.HasPrefix(strT, "//TXHEX#") {
 		strT = strT[8:]
 
@@ -18700,7 +18702,7 @@ func BuiltinDealStrFunc(c Call) (Object, error) {
 			return NewCommonError("failed to decode hex: %v", errT), nil
 		}
 
-		return &String{Value: string(buf)}, nil
+		return String(string(buf)), nil
 	} else if strings.HasPrefix(strT, "//TXUE#") {
 		strT = strT[7:]
 
@@ -18709,7 +18711,7 @@ func BuiltinDealStrFunc(c Call) (Object, error) {
 			return NewCommonError("failed to urlDecode: %v", errT), nil
 		}
 
-		return &String{Value: rStrT}, nil
+		return String(rStrT), nil
 	} else if strings.HasPrefix(strT, "//TXTE#") {
 		codeT := ""
 
@@ -18717,7 +18719,7 @@ func BuiltinDealStrFunc(c Call) (Object, error) {
 			codeT = args[1].String()
 		}
 
-		return &String{Value: tk.DecryptStringByTXTE(strT[7:], codeT)}, nil
+		return String(tk.DecryptStringByTXTE(strT[7:], codeT)), nil
 	} else if strings.HasPrefix(strT, "//TXDEF#") || strings.HasPrefix(strT, "740404") {
 		codeT := ""
 
@@ -18725,7 +18727,7 @@ func BuiltinDealStrFunc(c Call) (Object, error) {
 			codeT = args[1].String()
 		}
 
-		return &String{Value: tk.DecryptStringByTXDEF(strT, codeT)}, nil
+		return String(tk.DecryptStringByTXDEF(strT, codeT)), nil
 	} else if strings.HasPrefix(strT, "//TXRR#") {
 		strT = strT[7:]
 
@@ -18745,10 +18747,10 @@ func BuiltinDealStrFunc(c Call) (Object, error) {
 			strT = tk.ToStr(tk.GetWeb(strings.TrimSpace(strT)))
 		}
 
-		return &String{Value: strT}, nil
+		return String(strT), nil
 	}
 
-	return &String{Value: strT}, nil
+	return String(strT), nil
 }
 
 func BuiltinFuzzyFindFunc(c Call) (Object, error) {
@@ -18770,13 +18772,13 @@ func BuiltinFuzzyFindFunc(c Call) (Object, error) {
 		matchesT := Array{}
 
 		if ifSortT {
-			rs1 = fuzzy.Find(args[1].String(), []string{v1.Value})
+			rs1 = fuzzy.Find(args[1].String(), []string{v1.String()})
 		} else {
-			rs1 = fuzzy.FindNoSort(args[1].String(), []string{v1.Value})
+			rs1 = fuzzy.FindNoSort(args[1].String(), []string{v1.String()})
 		}
 
 		for _, v := range rs1 {
-			matchesT = append(matchesT, Map{"Str": String{Value: v.Str}, "Index": Int(v.Index), "MatchedIndexes": ConvertToObject(v.MatchedIndexes), "Score": Int(v.Score)})
+			matchesT = append(matchesT, Map{"Str": String(v.Str), "Index": Int(v.Index), "MatchedIndexes": ConvertToObject(v.MatchedIndexes), "Score": Int(v.Score)})
 		}
 
 		return matchesT, nil
@@ -18800,7 +18802,7 @@ func BuiltinFuzzyFindFunc(c Call) (Object, error) {
 		}
 
 		for _, v := range rs1 {
-			matchesT = append(matchesT, Map{"Str": String{Value: v.Str}, "Index": Int(v.Index), "MatchedIndexes": ConvertToObject(v.MatchedIndexes), "Score": Int(v.Score)})
+			matchesT = append(matchesT, Map{"Str": String(v.Str), "Index": Int(v.Index), "MatchedIndexes": ConvertToObject(v.MatchedIndexes), "Score": Int(v.Score)})
 		}
 
 		return matchesT, nil
@@ -18847,7 +18849,7 @@ func builtinBitNotFunc(c Call) (Object, error) {
 	case Char:
 		return Char(^nv1), nil
 	case String:
-		return ConvertToObject(tk.GetBitNotResult(nv1.Value)), nil
+		return ConvertToObject(tk.GetBitNotResult(nv1.String())), nil
 	case *MutableString:
 		return ConvertToObject(tk.GetBitNotResult(nv1.Value)), nil
 	case Bytes:
@@ -19283,10 +19285,10 @@ func builtinWriteRespHeaderFunc(c Call) (Object, error) {
 		statusT = int(nv)
 	case String:
 
-		v1, ok := namedValueMapG[nv.Value]
+		v1, ok := namedValueMapG[nv.String()]
 
 		if !ok {
-			return NewCommonError("status code not found: (%T)%v", nv.Value, nv.Value), nil
+			return NewCommonError("status code not found: (%T)%v", nv.String(), nv.String()), nil
 		}
 
 		statusT = tk.ToInt(v1)
@@ -19673,7 +19675,7 @@ func builtinScanQrFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "failed to scan QR code: %v", qrCodeT), nil
 	}
 
-	return String{Value: qrCodeT}, nil
+	return String(qrCodeT), nil
 }
 
 func builtinAesEncryptFunc(c Call) (Object, error) {
@@ -19712,7 +19714,7 @@ func builtinAesEncryptFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "failed to encrypt with AES: %v", errT), nil
 	}
 
-	return String{Value: string(rs)}, nil
+	return String(string(rs)), nil
 }
 
 func builtinAesDecryptFunc(c Call) (Object, error) {
@@ -19751,7 +19753,7 @@ func builtinAesDecryptFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "failed to decrypt with AES: %v", errT), nil
 	}
 
-	return String{Value: string(rs)}, nil
+	return String(string(rs)), nil
 }
 
 func SHA1(data []byte) []byte {
@@ -19909,7 +19911,7 @@ func builtinGetSha256WithKeyYYFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "failed to create key: %v", errT), nil
 	}
 
-	return String{Value: rs}, nil
+	return String(rs), nil
 }
 
 func builtinRsaEncryptStrYYFunc(c Call) (Object, error) {
@@ -19933,7 +19935,7 @@ func builtinRsaEncryptStrYYFunc(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "failed to encrypt: %v", errT), nil
 	}
 
-	return String{Value: encrypted}, nil
+	return String(encrypted), nil
 }
 
 func builtinSaveImageToFileFunc(c Call) (Object, error) {
@@ -20981,7 +20983,7 @@ func builtinSortArrayFunc(c Call) (Object, error) {
 
 		return obj, nil
 	case String:
-		s := []rune(obj.Value)
+		s := []rune(obj.String())
 		sort.Slice(s, func(i, j int) bool {
 			return s[i] < s[j]
 		})
@@ -21031,7 +21033,7 @@ func builtinShuffleFunc(c Call) (Object, error) {
 
 		return nv, nil
 	case String:
-		s := []rune(nv.Value)
+		s := []rune(nv.String())
 
 		var x, y int
 

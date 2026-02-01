@@ -536,7 +536,7 @@ func (Bool) Iterate() Iterator { return nil }
 func (o Bool) IndexGet(index Object) (value Object, err error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o, nil
@@ -767,7 +767,7 @@ func (Int) IndexSet(index, value Object) error {
 func (o Int) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o, nil
@@ -961,10 +961,13 @@ func (o Uint) Call(_ ...Object) (Object, error) {
 }
 
 // CanIterate implements Object interface.
-func (Uint) CanIterate() bool { return false }
+func (Uint) CanIterate() bool { return true }
 
 // Iterate implements Object interface.
-func (Uint) Iterate() Iterator { return nil }
+func (o Uint) Iterate() Iterator { 
+	return &UintIterator{V: o}
+//	return nil 
+}
 
 // IndexSet implements Object interface.
 func (Uint) IndexSet(index, value Object) error {
@@ -975,7 +978,7 @@ func (Uint) IndexSet(index, value Object) error {
 func (o Uint) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o, nil
@@ -1174,7 +1177,7 @@ func (Float) IndexSet(index, value Object) error {
 func (o Float) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o, nil
@@ -1352,7 +1355,7 @@ func (Char) IndexSet(index, value Object) error {
 func (o Char) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o, nil
@@ -1431,9 +1434,9 @@ func (o Char) BinaryOp(tok token.Token, right Object) (Object, error) {
 	case String:
 		if tok == token.Add {
 			var sb strings.Builder
-			sb.Grow(len(v.Value) + 4)
+			sb.Grow(len(v.String()) + 4)
 			sb.WriteRune(rune(o))
-			sb.WriteString(v.Value)
+			sb.WriteString(v.String())
 			return ToStringObject(sb.String()), nil
 		}
 	case *UndefinedType:
@@ -1550,7 +1553,7 @@ func (Byte) IndexSet(index, value Object) error {
 func (o Byte) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o, nil
@@ -1648,13 +1651,14 @@ func (o Byte) Format(s fmt.State, verb rune) {
 }
 
 // String represents string values and implements Object interface.
-type String struct {
-	ObjectImpl
-	Value string
-
-	Members map[string]Object `json:"-"`
-	// Methods map[string]*Function
-}
+type String string
+//type String struct {
+//	ObjectImpl
+//	Value string
+//
+////	Members map[string]Object `json:"-"`
+//	// Methods map[string]*Function
+//}
 
 var _ LengthGetter = ToStringObject("")
 
@@ -1668,11 +1672,11 @@ func (String) TypeName() string {
 }
 
 func (o String) String() string {
-	return o.Value // tk.ToJSONX(o)
+	return string(o) // tk.ToJSONX(o)
 }
 
 func (o String) HasMemeber() bool {
-	return true
+	return false
 }
 
 func (o String) CallName(nameA string, c Call) (Object, error) {
@@ -1688,7 +1692,7 @@ func (o String) CallName(nameA string, c Call) (Object, error) {
 			return NewCommonErrorWithPos(c, "not enough parameters"), nil
 		}
 
-		return Bool(strings.Contains(o.Value, args[0].String())), nil
+		return Bool(strings.Contains(o.String(), args[0].String())), nil
 	case "testByFunc":
 		args := c.GetArgs()
 
@@ -1780,40 +1784,43 @@ func (o String) GetValue() Object {
 }
 
 func (o String) GetMember(idxA string) Object {
-	if o.Members == nil {
-		return Undefined
-	}
-
-	v1, ok := o.Members[idxA]
-
-	if !ok {
-		return Undefined
-	}
-
-	return v1
+	return Undefined
+//	if o.Members == nil {
+//		return Undefined
+//	}
+//
+//	v1, ok := o.Members[idxA]
+//
+//	if !ok {
+//		return Undefined
+//	}
+//
+//	return v1
 }
 
 func (o String) SetMember(idxA string, valueA Object) error {
-	if o.Members == nil {
-		o.Members = map[string]Object{}
-	}
-
-	if IsUndefInternal(valueA) {
-		delete(o.Members, idxA)
-		return nil
-	}
-
-	o.Members[idxA] = valueA
-
-	// return fmt.Errorf("unsupported action(set member)")
-	return nil
+//	if o.Members == nil {
+//		o.Members = map[string]Object{}
+//	}
+//
+//	if IsUndefInternal(valueA) {
+//		delete(o.Members, idxA)
+//		return nil
+//	}
+//
+//	o.Members[idxA] = valueA
+//
+////	tk.Pln(idxA, valueA, o.Members)
+//	return nil
+	 return fmt.Errorf("unsupported action(set member)")
 }
 
 func (o String) Copy() Object {
 	if DebugModeG {
 		tk.Pl("string copy: %#v", o)
 	}
-	return String{Value: o.Value, Members: o.Members} // , Methods: o.Methods
+	
+	return String(o.String()) // , Methods: o.Methods, Members: o.Members
 }
 
 // CanIterate implements Object interface.
@@ -1860,10 +1867,10 @@ func (o String) IndexGet(index Object) (Object, error) {
 	case Char:
 		idx = int(v)
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
-			return ToStringObject(o.Value), nil
+			return ToStringObject(o.String()), nil
 		}
 
 		rs := o.GetMember(strT)
@@ -1877,8 +1884,8 @@ func (o String) IndexGet(index Object) (Object, error) {
 		return nil, NewIndexTypeError("int|uint|char|string", index.TypeName())
 	}
 
-	if idx >= 0 && idx < len(o.Value) {
-		return Int(o.Value[idx]), nil
+	if idx >= 0 && idx < len(o.String()) {
+		return Int(o.String()[idx]), nil
 	}
 
 	return nil, ErrIndexOutOfBounds
@@ -1887,17 +1894,17 @@ func (o String) IndexGet(index Object) (Object, error) {
 // Equal implements Object interface.
 func (o String) Equal(right Object) bool {
 	if v, ok := right.(String); ok {
-		return o.Value == v.Value
+		return o.String() == v.String()
 	}
 
 	if v, ok := right.(Bytes); ok {
-		return o.Value == string(v)
+		return o.String() == string(v)
 	}
 	return false
 }
 
 // IsFalsy implements Object interface.
-func (o String) IsFalsy() bool { return len(o.Value) == 0 }
+func (o String) IsFalsy() bool { return len(o.String()) == 0 }
 
 // CanCall implements Object interface.
 func (o String) CanCall() bool { return false }
@@ -1913,31 +1920,31 @@ func (o String) BinaryOp(tok token.Token, right Object) (Object, error) {
 	case String:
 		switch tok {
 		case token.Add:
-			return String{Value: o.Value + v.Value}, nil
+			return String(o.String() + v.String()), nil
 		case token.Less:
-			return Bool(o.Value < v.Value), nil
+			return Bool(o.String() < v.String()), nil
 		case token.LessEq:
-			return Bool(o.Value <= v.Value), nil
+			return Bool(o.String() <= v.String()), nil
 		case token.Greater:
-			return Bool(o.Value > v.Value), nil
+			return Bool(o.String() > v.String()), nil
 		case token.GreaterEq:
-			return Bool(o.Value >= v.Value), nil
+			return Bool(o.String() >= v.String()), nil
 		}
 	case Bytes:
 		switch tok {
 		case token.Add:
 			var sb strings.Builder
-			sb.WriteString(string(o.Value))
+			sb.WriteString(string(o))
 			sb.Write(v)
 			return ToStringObject(sb.String()), nil
 		case token.Less:
-			return Bool(o.Value < string(v)), nil
+			return Bool(o.String() < string(v)), nil
 		case token.LessEq:
-			return Bool(o.Value <= string(v)), nil
+			return Bool(o.String() <= string(v)), nil
 		case token.Greater:
-			return Bool(o.Value > string(v)), nil
+			return Bool(o.String() > string(v)), nil
 		case token.GreaterEq:
-			return Bool(o.Value >= string(v)), nil
+			return Bool(o.String() >= string(v)), nil
 		}
 	case *UndefinedType:
 		switch tok {
@@ -1949,7 +1956,7 @@ func (o String) BinaryOp(tok token.Token, right Object) (Object, error) {
 	}
 
 	if tok == token.Add {
-		return String{Value: o.Value + right.String()}, nil
+		return String(o.String() + right.String()), nil
 	}
 
 	return nil, NewOperandTypeError(
@@ -1960,67 +1967,67 @@ func (o String) BinaryOp(tok token.Token, right Object) (Object, error) {
 
 // Len implements LengthGetter interface.
 func (o String) Len() int {
-	return len(o.Value)
+	return len(o.String())
 }
 
 // Format implements fmt.Formatter interface.
 func (o String) Format(s fmt.State, verb rune) {
 	format := compat.FmtFormatString(s, verb)
-	fmt.Fprintf(s, format, o.Value)
+	fmt.Fprintf(s, format, o.String())
 }
 
 func (o String) MarshalJSON() ([]byte, error) {
-	b1, err := json.Marshal(o.Value)
+	b1, err := json.Marshal(o.String())
 	return b1, err
 }
 
 func ToStringObject(argA interface{}) String {
 	switch nv := argA.(type) {
 	case String:
-		return String{Value: nv.Value}
+		return String(nv.String())
 	case Chars:
-		return String{Value: string(nv)}
+		return String(string(nv))
 	case Bytes:
-		return String{Value: string(nv)}
+		return String(string(nv))
 	case string:
-		return String{Value: nv}
+		return String(nv)
 	case *strings.Builder:
-		return String{Value: nv.String()}
+		return String(nv.String())
 	case strings.Builder:
-		return String{Value: nv.String()}
+		return String(nv.String())
 	case *bytes.Buffer:
-		return String{Value: string(nv.Bytes())}
+		return String(string(nv.Bytes()))
 	case bytes.Buffer:
-		return String{Value: string(nv.Bytes())}
+		return String(string(nv.Bytes()))
 	case nil:
-		return String{Value: ""}
+		return String("")
 	case []byte:
-		return String{Value: string(nv)}
+		return String(string(nv))
 	case []rune:
-		return String{Value: string(nv)}
+		return String(string(nv))
 	case *big.Int:
-		return String{Value: nv.String()}
+		return String(nv.String())
 	case *big.Float:
-		return String{Value: nv.String()}
+		return String(nv.String())
 	case *BigInt:
-		return String{Value: nv.Value.String()}
+		return String(nv.Value.String())
 	case *BigFloat:
-		return String{Value: nv.Value.String()}
+		return String(nv.Value.String())
 	case *tk.Seq:
-		return String{Value: nv.String()}
+		return String(nv.String())
 	case *sync.RWMutex:
-		return String{Value: fmt.Sprintf("%v", nv)}
+		return String(fmt.Sprintf("%v", nv))
 	case *Image:
-		return String{Value: nv.String()}
+		return String(nv.String())
 	case Object:
-		return String{Value: nv.String()}
+		return String(nv.String())
 	}
 
-	return String{Value: fmt.Sprintf("%v", argA)}
+	return String(fmt.Sprintf("%v", argA))
 }
 
 func FromStringObject(argA String) string {
-	return argA.Value
+	return argA.String()
 }
 
 func ToIntObject(argA interface{}, defaultA ...int) Int {
@@ -2046,7 +2053,7 @@ func ToIntObject(argA interface{}, defaultA ...int) Int {
 	case Float:
 		return Int(nv)
 	case String:
-		return Int(tk.StrToInt(nv.Value, defaultT))
+		return Int(tk.StrToInt(nv.String(), defaultT))
 	case Object:
 		return Int(tk.StrToInt(nv.String(), defaultT))
 	case bool:
@@ -2116,7 +2123,7 @@ func ToByteObject(argA interface{}, defaultA ...byte) Byte {
 	case Float:
 		return Byte(nv)
 	case String:
-		return Byte(tk.StrToInt(nv.Value, int(defaultT)))
+		return Byte(tk.StrToInt(nv.String(), int(defaultT)))
 	case Object:
 		return Byte(tk.StrToInt(nv.String(), int(defaultT)))
 	case bool:
@@ -2261,7 +2268,7 @@ func (o Bytes) IndexGet(index Object) (Object, error) {
 	case Uint:
 		idx = int(v)
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o, nil
@@ -2291,7 +2298,7 @@ func (o Bytes) Equal(right Object) bool {
 	}
 
 	if v, ok := right.(String); ok {
-		return string(o) == v.Value
+		return string(o) == v.String()
 	}
 	return false
 }
@@ -2328,15 +2335,15 @@ func (o Bytes) BinaryOp(tok token.Token, right Object) (Object, error) {
 	case String:
 		switch tok {
 		case token.Add:
-			return append(o, v.Value...), nil
+			return append(o, v.String()...), nil
 		case token.Less:
-			return Bool(string(o) < v.Value), nil
+			return Bool(string(o) < v.String()), nil
 		case token.LessEq:
-			return Bool(string(o) <= v.Value), nil
+			return Bool(string(o) <= v.String()), nil
 		case token.Greater:
-			return Bool(string(o) > v.Value), nil
+			return Bool(string(o) > v.String()), nil
 		case token.GreaterEq:
-			return Bool(string(o) >= v.Value), nil
+			return Bool(string(o) >= v.String()), nil
 		}
 	case *UndefinedType:
 		switch tok {
@@ -2467,7 +2474,7 @@ func (o Chars) IndexGet(index Object) (Object, error) {
 	case Uint:
 		idx = int(v)
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o, nil
@@ -2497,7 +2504,7 @@ func (o Chars) Equal(right Object) bool {
 	}
 
 	if v, ok := right.(String); ok {
-		return string(o) == v.Value
+		return string(o) == v.String()
 	}
 	return false
 }
@@ -2733,7 +2740,7 @@ func (*CompiledFunction) Iterate() Iterator { return nil }
 func (o *CompiledFunction) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		rs := o.GetMember(strT)
 
@@ -3107,7 +3114,7 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 		return Undefined, NewIndexTypeError("string", index.TypeName())
 	}
 
-	fNameT := o.Name + "." + nv.Value
+	fNameT := o.Name + "." + string(nv)
 
 	if o.Methods == nil {
 		o.Methods = map[string]*Function{}
@@ -3149,12 +3156,12 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 						return NewCommonError("invalid parameter 2"), nil
 					}
 
-					rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
+					rsT := sqltk.ConnectDBX(string(nv0), string(nv1))
 					if tk.IsError(rsT) {
 						return NewFromError(rsT.(error)), nil
 					}
 
-					return &Database{DBType: nv0.Value, DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
+					return &Database{DBType: string(nv0), DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
 				}}
 			fT = o.Methods["database.connect"]
 		}
@@ -3318,7 +3325,7 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 		return mT, nil
 	}
 
-	strT := nv.Value
+	strT := string(nv)
 
 	if strT == "value" {
 		return o, nil
@@ -3704,7 +3711,7 @@ func (o Array) IndexGet(index Object) (Object, error) {
 		}
 		return nil, ErrIndexOutOfBounds
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o, nil
@@ -4067,7 +4074,7 @@ func (o Map) CallName(nameA string, c Call) (Object, error) {
 		}
 
 		for k := range o {
-			rs = append(rs, String{Value: k})
+			rs = append(rs, String(k))
 		}
 
 		return rs, nil
@@ -4610,7 +4617,7 @@ func (o *Error) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			if nv, ok := value.(*Error); ok {
 				o.Name = nv.Name
@@ -4833,7 +4840,7 @@ func (o *RuntimeError) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			return ErrNotIndexAssignable
 		}
@@ -5154,7 +5161,7 @@ func (o *Time) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			if nv, ok := value.(*Time); ok {
 				o.Value = nv.Value
@@ -5210,16 +5217,16 @@ func (o *Time) IndexGet(index Object) (Object, error) {
 	// For simplicity, we use method call for now. As getters are deprecated, we
 	// will return callable object in the future here.
 
-	switch v.Value {
+	strT := v.String()
+
+	switch strT {
 	case "Date", "Clock", "UTC", "Unix", "UnixNano", "Year", "Month", "Day",
 		"Hour", "Minute", "Second", "Nanosecond", "IsZero", "Local", "Location",
 		"YearDay", "Weekday", "ISOWeek", "Zone", "AddDate":
-		return o.CallName(v.Value, Call{})
+		return o.CallName(strT, Call{})
 	case "value":
 		return o, nil
 	}
-
-	strT := v.Value
 
 	if strT == "value" {
 		return ToStringObject(o.Value), nil
@@ -5367,7 +5374,7 @@ var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
 		// 		return newArgTypeErr("1st", "string", c.Get(0).TypeName())
 		// 	}
 		// }
-		return String{Value: tk.FormatTime(o.Value, ObjectsToS(c.GetArgs())...)}, nil
+		return String(tk.FormatTime(o.Value, ObjectsToS(c.GetArgs())...)), nil
 		// return timeFormat(o, format), nil
 	},
 	"appendFormat": func(o *Time, c *Call) (Object, error) {
@@ -5437,7 +5444,7 @@ var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
 			return Undefined, err
 		}
 		zoneT, offsetT := o.Value.Zone()
-		return Map{"Time": o, "Formal": String{Value: o.Value.Format(tk.TimeFormat)}, "Compact": String{Value: o.Value.Format(tk.TimeFormatCompact)}, "Full": String{Value: fmt.Sprintf("%v", o.Value)}, "Year": Int(o.Value.Year()), "Month": Int(o.Value.Month()), "Day": Int(o.Value.Day()), "Hour": Int(o.Value.Hour()), "Minute": Int(o.Value.Minute()), "Second": Int(o.Value.Second()), "Zone": ConvertToObject(zoneT), "Offset": ConvertToObject(offsetT), "UnixNano": Int(o.Value.UnixNano()), "WeekDay": Int(o.Value.Weekday()), "NanoSec": Int(o.Value.Nanosecond()), "MilliSec": Int(o.Value.Nanosecond() / 1000000)}, nil
+		return Map{"Time": o, "Formal": String(o.Value.Format(tk.TimeFormat)), "Compact": String(o.Value.Format(tk.TimeFormatCompact)), "Full": String(fmt.Sprintf("%v", o.Value)), "Year": Int(o.Value.Year()), "Month": Int(o.Value.Month()), "Day": Int(o.Value.Day()), "Hour": Int(o.Value.Hour()), "Minute": Int(o.Value.Minute()), "Second": Int(o.Value.Second()), "Zone": ConvertToObject(zoneT), "Offset": ConvertToObject(offsetT), "UnixNano": Int(o.Value.UnixNano()), "WeekDay": Int(o.Value.Weekday()), "NanoSec": Int(o.Value.Nanosecond()), "MilliSec": Int(o.Value.Nanosecond() / 1000000)}, nil
 	},
 	"clock": func(o *Time, c *Call) (Object, error) {
 		if err := c.CheckLen(0); err != nil {
@@ -5640,9 +5647,9 @@ func ToTime(o Object) (ret *Time, ok bool) {
 		v := time.Unix(int64(o), 0)
 		ret, ok = &Time{Value: v}, true
 	case String:
-		v, err := time.Parse(time.RFC3339Nano, string(o.Value))
+		v, err := time.Parse(time.RFC3339Nano, o.String())
 		if err != nil {
-			v, err = time.Parse(time.RFC3339, string(o.Value))
+			v, err = time.Parse(time.RFC3339, o.String())
 		}
 		if err == nil {
 			ret, ok = &Time{Value: v}, true
@@ -5655,7 +5662,7 @@ func ToTime(o Object) (ret *Time, ok bool) {
 func ToLocation(o Object) (ret *Location, ok bool) {
 	if v, isString := o.(String); isString {
 		var err error
-		o, err = loadLocationFunc(v.Value)
+		o, err = loadLocationFunc(v.String())
 		if err != nil {
 			return
 		}
@@ -5866,13 +5873,13 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 		return nil, ErrNotIndexable
 	}
 
-	strT := nv.Value
+	strT := nv.String()
 
 	if strT == "value" {
 		return o, nil
 	}
 
-	fNameT := nv.Value
+	fNameT := nv.String()
 
 	if o.Members == nil {
 		o.Members = map[string]Object{}
@@ -5918,13 +5925,13 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 						return NewCommonError("invalid parameter 2"), nil
 					}
 
-					rsT := sqltk.ConnectDBX(nv0.Value, nv1.Value)
+					rsT := sqltk.ConnectDBX(string(nv0), nv1.String())
 					if tk.IsError(rsT) {
 						return NewFromError(rsT.(error)), nil
 					}
 
-					o.DBType = nv0.Value
-					o.DBConnectString = nv1.Value
+					o.DBType = string(nv0)
+					o.DBConnectString = nv1.String()
 					o.Value = rsT.(*sql.DB)
 
 					return Undefined, nil
@@ -5951,7 +5958,7 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 
 					objsT := ObjectsToI(args[1:])
 
-					return ConvertToObject(sqltk.QueryDBX(o.Value, s0.Value, objsT...)), nil
+					return ConvertToObject(sqltk.QueryDBX(o.Value, s0.String(), objsT...)), nil
 				},
 			}
 
@@ -5975,7 +5982,7 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 
 					objsT := ObjectsToI(args[1:])
 
-					return ConvertToObject(sqltk.QueryDBRecsX(o.Value, s0.Value, objsT...)), nil
+					return ConvertToObject(sqltk.QueryDBRecsX(o.Value, s0.String(), objsT...)), nil
 				},
 			}
 
@@ -6005,7 +6012,7 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 
 					objsT := ObjectsToI(args[2:])
 
-					return ConvertToObject(sqltk.QueryDBMapX(o.Value, s0.Value, s1.Value, objsT...)), nil
+					return ConvertToObject(sqltk.QueryDBMapX(o.Value, s0.String(), s1.String(), objsT...)), nil
 				},
 			}
 
@@ -6035,7 +6042,7 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 
 					objsT := ObjectsToI(args[2:])
 
-					return ConvertToObject(sqltk.QueryDBMapArrayX(o.Value, s0.Value, s1.Value, objsT...)), nil
+					return ConvertToObject(sqltk.QueryDBMapArrayX(o.Value, s0.String(), s1.String(), objsT...)), nil
 				},
 			}
 
@@ -6059,7 +6066,7 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 
 					objsT := ObjectsToI(args[1:])
 
-					return ConvertToObject(sqltk.QueryCountX(o.Value, s0.Value, objsT...)), nil
+					return ConvertToObject(sqltk.QueryCountX(o.Value, s0.String(), objsT...)), nil
 				},
 			}
 
@@ -6083,7 +6090,7 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 
 					objsT := ObjectsToI(args[1:])
 
-					return ConvertToObject(sqltk.QueryFloatX(o.Value, s0.Value, objsT...)), nil
+					return ConvertToObject(sqltk.QueryFloatX(o.Value, s0.String(), objsT...)), nil
 				},
 			}
 
@@ -6107,7 +6114,7 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 
 					objsT := ObjectsToI(args[1:])
 
-					return ConvertToObject(sqltk.QueryStringX(o.Value, s0.Value, objsT...)), nil
+					return ConvertToObject(sqltk.QueryStringX(o.Value, s0.String(), objsT...)), nil
 				},
 			}
 
@@ -6131,7 +6138,7 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 
 					objsT := ObjectsToI(args[1:])
 
-					return ConvertToObject(sqltk.ExecDBX(o.Value, s0.Value, objsT...)), nil
+					return ConvertToObject(sqltk.ExecDBX(o.Value, s0.String(), objsT...)), nil
 				},
 			}
 
@@ -6173,7 +6180,7 @@ func (o *Database) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			if nv, ok := value.(*Database); ok {
 				o.Value = nv.Value
@@ -6297,7 +6304,7 @@ func GenStatusResult(args ...Object) (Object, error) {
 			return &StatusResultInvalid, nil
 		}
 
-		mapT := tk.JSONToMapStringString(nv.Value)
+		mapT := tk.JSONToMapStringString(nv.String())
 		if mapT == nil {
 			return &StatusResultInvalid, nil
 		}
@@ -6322,7 +6329,7 @@ func GenStatusResult(args ...Object) (Object, error) {
 		return &StatusResultInvalid, nil
 	}
 
-	return &StatusResult{Status: nv0.Value, Value: nv1.Value}, nil
+	return &StatusResult{Status: string(nv0), Value: nv1.String()}, nil
 
 }
 
@@ -6332,7 +6339,7 @@ func (o *StatusResult) IndexGet(index Object) (Object, error) {
 		return nil, ErrNotIndexable
 	}
 
-	fNameT := nv.Value
+	fNameT := nv.String()
 
 	if fNameT == "v" || fNameT == "value" {
 		return o, nil
@@ -6363,7 +6370,7 @@ func (o *StatusResult) IndexGet(index Object) (Object, error) {
 						return &StatusResultInvalid, nil
 					}
 
-					o.Status = nv.Value
+					o.Status = nv.String()
 					return &StatusResultSuccess, nil
 				}}
 			fT = o.Methods["status"]
@@ -6385,7 +6392,7 @@ func (o *StatusResult) IndexGet(index Object) (Object, error) {
 						return &StatusResultInvalid, nil
 					}
 
-					o.Value = nv.Value
+					o.Value = nv.String()
 					return &StatusResultSuccess, nil
 				}}
 			fT = o.Methods["value"]
@@ -6445,7 +6452,7 @@ func (o *StatusResult) IndexGet(index Object) (Object, error) {
 							return &StatusResultInvalid, nil
 						}
 
-						mapT := tk.JSONToMapStringString(nv.Value)
+						mapT := tk.JSONToMapStringString(nv.String())
 						if mapT == nil {
 							o.Status = ""
 							o.Value = ""
@@ -6480,8 +6487,8 @@ func (o *StatusResult) IndexGet(index Object) (Object, error) {
 						return &StatusResultInvalid, nil
 					}
 
-					o.Status = nv0.Value
-					o.Value = nv1.Value
+					o.Status = string(nv0)
+					o.Value = string(nv1)
 					return &StatusResultSuccess, nil
 				}}
 			fT = o.Methods["fromString"]
@@ -6489,7 +6496,7 @@ func (o *StatusResult) IndexGet(index Object) (Object, error) {
 		return fT, nil
 	}
 
-	strT := nv.Value
+	strT := nv.String()
 
 	// if strT == "value" {
 	// 	return o, nil
@@ -6510,7 +6517,7 @@ func (o *StatusResult) IndexSet(key, value Object) error {
 	idxT, ok := key.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			if nv, ok := value.(*StatusResult); ok {
 				o.Status = nv.Status
@@ -6671,7 +6678,7 @@ func (o *Any) IsFalsy() bool { return o.Value == nil }
 func (o *Any) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o, nil
@@ -6784,7 +6791,7 @@ func (o *Any) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			return o.SetValue(value)
 		}
@@ -7029,7 +7036,7 @@ func (o *StringBuilder) CallName(nameA string, c Call) (Object, error) {
 
 		nv2, ok := args[0].(String)
 		if ok {
-			rsT, errT := o.Value.Write([]byte(nv2.Value))
+			rsT, errT := o.Value.Write([]byte(nv2.String()))
 			if errT != nil {
 				return NewCommonErrorWithPos(c, "%v", errT), nil
 			}
@@ -7054,7 +7061,7 @@ func (o *StringBuilder) CallName(nameA string, c Call) (Object, error) {
 			tmpCountT := 0
 			switch nv := v.(type) {
 			case String:
-				tmpCountT, errT = o.Value.WriteString(nv.Value)
+				tmpCountT, errT = o.Value.WriteString(nv.String())
 
 				if errT != nil {
 					tmpCountT = 0
@@ -7089,7 +7096,7 @@ func (o *StringBuilder) CallName(nameA string, c Call) (Object, error) {
 				for _, jv := range nv {
 					switch jnv := jv.(type) {
 					case String:
-						tmpCountT, errT = o.Value.WriteString(jnv.Value)
+						tmpCountT, errT = o.Value.WriteString(jnv.String())
 
 						if errT != nil {
 							tmpCountT = 0
@@ -7161,7 +7168,7 @@ func (o *StringBuilder) CallName(nameA string, c Call) (Object, error) {
 func (o *StringBuilder) IndexGet(index Object) (value Object, err error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return ToStringObject(o.Value.String()), nil
@@ -7338,11 +7345,11 @@ func (o *StringBuilder) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			if nv, ok := value.(String); ok {
 				o.Value.Reset()
-				o.Value.WriteString(nv.Value)
+				o.Value.WriteString(nv.String())
 				return nil
 			}
 
@@ -7475,7 +7482,7 @@ func (*BytesBuffer) Iterate() Iterator { return nil }
 func (o *BytesBuffer) IndexGet(index Object) (value Object, err error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return Bytes(o.Value.Bytes()), nil
@@ -7510,7 +7517,7 @@ func (o *BytesBuffer) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			if nv, ok := value.(Bytes); ok {
 				o.Value.Reset()
@@ -7779,7 +7786,7 @@ func (o *MutableString) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			o.Value = value.String()
 			return nil
@@ -7802,7 +7809,7 @@ func (o *MutableString) IndexGet(index Object) (Object, error) {
 	case Char:
 		idx = int(v)
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return ToStringObject(o.Value), nil
@@ -7830,7 +7837,7 @@ func (o *MutableString) IndexGet(index Object) (Object, error) {
 // Equal implements Object interface.
 func (o *MutableString) Equal(right Object) bool {
 	if v, ok := right.(String); ok {
-		return o.Value == v.Value
+		return o.Value == v.String()
 	}
 	if v, ok := right.(Bytes); ok {
 		return o.Value == string(v)
@@ -7856,15 +7863,15 @@ func (o *MutableString) BinaryOp(tok token.Token, right Object) (Object, error) 
 	case String:
 		switch tok {
 		case token.Add:
-			return String{Value: o.Value + v.Value}, nil
+			return String(o.Value + v.String()), nil
 		case token.Less:
-			return Bool(o.Value < v.Value), nil
+			return Bool(o.Value < v.String()), nil
 		case token.LessEq:
-			return Bool(o.Value <= v.Value), nil
+			return Bool(o.Value <= v.String()), nil
 		case token.Greater:
-			return Bool(o.Value > v.Value), nil
+			return Bool(o.Value > v.String()), nil
 		case token.GreaterEq:
-			return Bool(o.Value >= v.Value), nil
+			return Bool(o.Value >= v.String()), nil
 		}
 	case *MutableString:
 		switch tok {
@@ -7905,7 +7912,7 @@ func (o *MutableString) BinaryOp(tok token.Token, right Object) (Object, error) 
 	}
 
 	if tok == token.Add {
-		return String{Value: o.Value + right.String()}, nil
+		return String(o.Value + right.String()), nil
 	}
 
 	return nil, NewOperandTypeError(
@@ -7928,7 +7935,7 @@ func (o *MutableString) Format(s fmt.State, verb rune) {
 func ToMutableStringObject(argA interface{}) *MutableString {
 	switch nv := argA.(type) {
 	case String:
-		return &MutableString{Value: nv.Value}
+		return &MutableString{Value: nv.String()}
 	case Object:
 		return &MutableString{Value: nv.String()}
 	case string:
@@ -8031,7 +8038,7 @@ func (o *Seq) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			o.Value.Reset(int(ToIntObject(value)))
 			return nil
@@ -8046,7 +8053,7 @@ func (o *Seq) IndexSet(index, value Object) error {
 func (o *Seq) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			// return builtinAnyFunc(Call{Args: []Object{o}})
@@ -8193,7 +8200,7 @@ func (o *Mutex) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
@@ -8208,7 +8215,7 @@ func (o *Mutex) IndexSet(index, value Object) error {
 func (o *Mutex) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return builtinAnyFunc(Call{Args: []Object{o}})
@@ -8403,7 +8410,7 @@ func (o *Mux) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
@@ -8418,7 +8425,7 @@ func (o *Mux) IndexSet(index, value Object) error {
 func (o *Mux) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return builtinAnyFunc(Call{Args: []Object{o}})
@@ -8557,7 +8564,7 @@ func (o *HttpReq) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
@@ -8572,7 +8579,7 @@ func (o *HttpReq) IndexSet(index, value Object) error {
 func (o *HttpReq) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return builtinAnyFunc(Call{Args: []Object{o}})
@@ -8746,7 +8753,7 @@ func (o *HttpResp) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
@@ -8761,7 +8768,7 @@ func (o *HttpResp) IndexSet(index, value Object) error {
 func (o *HttpResp) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return builtinAnyFunc(Call{Args: []Object{o}})
@@ -8892,7 +8899,7 @@ func (o *HttpHandler) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
@@ -8907,7 +8914,7 @@ func (o *HttpHandler) IndexSet(index, value Object) error {
 func (o *HttpHandler) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return builtinAnyFunc(Call{Args: []Object{o}})
@@ -9271,7 +9278,7 @@ func (o *Reader) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
@@ -9286,7 +9293,7 @@ func (o *Reader) IndexSet(index, value Object) error {
 func (o *Reader) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "close" {
 			errT := o.Close()
@@ -9563,7 +9570,7 @@ func (o *Writer) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
@@ -9578,7 +9585,7 @@ func (o *Writer) IndexSet(index, value Object) error {
 func (o *Writer) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "close" {
 			errT := o.Close()
@@ -9884,7 +9891,7 @@ func (o *File) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
@@ -9899,7 +9906,7 @@ func (o *File) IndexSet(index, value Object) error {
 func (o *File) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "close" {
 			errT := o.Close()
@@ -10078,7 +10085,7 @@ func (o *CharCode) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
@@ -10093,7 +10100,7 @@ func (o *CharCode) IndexSet(index, value Object) error {
 func (o *CharCode) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return builtinAnyFunc(Call{Args: []Object{o}})
@@ -10326,7 +10333,7 @@ func (o *Gel) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		// if strT == "value" {
 		// 	o.Value.Reset(int(ToIntObject(value)))
 		// 	return nil
@@ -10341,7 +10348,7 @@ func (o *Gel) IndexSet(index, value Object) error {
 func (o *Gel) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return builtinAnyFunc(Call{Args: []Object{o}})
@@ -10802,7 +10809,7 @@ func (o *OrderedMap) CallName(nameA string, c Call) (Object, error) {
 		return o, nil
 
 	case "dump":
-		return String{Value: o.Value.Dump()}, nil
+		return String(o.Value.Dump()), nil
 	}
 
 	rs1, errT := CallObjectMethodFunc(o, nameA, c.GetArgs()...)
@@ -11135,7 +11142,7 @@ func (o *BigInt) SetValue(valueA Object) error {
 	case Float:
 		o.Value.Set(big.NewInt(int64(nv)))
 	case String:
-		rs, ok := big.NewInt(0).SetString(nv.Value, 10)
+		rs, ok := big.NewInt(0).SetString(nv.String(), 10)
 		if !ok {
 			return NewCommonError("failed to parse bigInt: %v", nv)
 		}
@@ -11226,7 +11233,7 @@ func (o *BigInt) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			return o.SetValue(value)
 		}
@@ -11240,7 +11247,7 @@ func (o *BigInt) IndexSet(index, value Object) error {
 func (o *BigInt) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o.GetValue(), nil
@@ -11579,7 +11586,7 @@ func NewBigInt(c Call) (Object, error) {
 
 		return &BigInt{Value: big.NewInt(0)}, nil
 	case String:
-		rs, ok := big.NewInt(0).SetString(nv.Value, 10)
+		rs, ok := big.NewInt(0).SetString(nv.String(), 10)
 		if !ok {
 			return NewCommonErrorWithPos(c, "failed to parse bigInt: %v", nv), nil
 		}
@@ -11663,7 +11670,7 @@ func (o *BigFloat) SetValue(valueA Object) error {
 	case Float:
 		o.Value.Set(big.NewFloat(float64(nv)))
 	case String:
-		rs, _, errT := big.NewFloat(0).Parse(nv.Value, 10)
+		rs, _, errT := big.NewFloat(0).Parse(nv.String(), 10)
 		if errT != nil {
 			return fmt.Errorf("failed to parse bigFloat: %v", errT)
 		}
@@ -11757,7 +11764,7 @@ func (o *BigFloat) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			return o.SetValue(value)
 		}
@@ -11771,7 +11778,7 @@ func (o *BigFloat) IndexSet(index, value Object) error {
 func (o *BigFloat) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o.GetValue(), nil
@@ -11929,13 +11936,13 @@ func NewBigFloat(c Call) (Object, error) {
 
 		return &BigFloat{Value: big.NewFloat(0)}, nil
 	case String:
-		nv1 := nv.Value
+		nv1 := nv.String()
 		integerDigitCount := strings.Index(nv1, ".")
 
 		fractionalDigitCount := len(nv1) - (integerDigitCount + 1) // exclude the decimal from the count
 
 		if integerDigitCount < 1 || fractionalDigitCount < 1 {
-			rs, _, errT := big.NewFloat(0).Parse(nv.Value, 10)
+			rs, _, errT := big.NewFloat(0).Parse(nv.String(), 10)
 			if errT != nil {
 				return NewCommonErrorWithPos(c, "failed to parse bigFloat: %v", errT), nil
 			}
@@ -12093,7 +12100,7 @@ func (o *Image) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			return o.SetValue(value)
 		}
@@ -12107,7 +12114,7 @@ func (o *Image) IndexSet(index, value Object) error {
 func (o *Image) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o.GetValue(), nil
@@ -12305,7 +12312,7 @@ func (o *Delegate) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			return o.SetValue(value)
 		}
@@ -12319,7 +12326,7 @@ func (o *Delegate) IndexSet(index, value Object) error {
 func (o *Delegate) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o.GetValue(), nil
@@ -12530,7 +12537,7 @@ func (o *Excel) IndexSet(index, value Object) error {
 	idxT, ok := index.(String)
 
 	if ok {
-		strT := idxT.Value
+		strT := idxT.String()
 		if strT == "value" {
 			return o.SetValue(value)
 		}
@@ -12544,7 +12551,7 @@ func (o *Excel) IndexSet(index, value Object) error {
 func (o *Excel) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o.GetValue(), nil
@@ -12958,7 +12965,7 @@ func (o *Queue) IndexSet(index, value Object) error {
 func (o *Queue) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o, nil
@@ -13214,7 +13221,7 @@ func (o *JsVm) IndexSet(index, value Object) error {
 func (o *JsVm) IndexGet(index Object) (Object, error) {
 	switch v := index.(type) {
 	case String:
-		strT := v.Value
+		strT := v.String()
 
 		if strT == "value" {
 			return o, nil
@@ -14090,7 +14097,7 @@ func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
 			return NewCommonErrorWithPos(c, "not a text message: %v", mt), nil
 		}
 
-		return String{Value: string(message)}, nil
+		return String(string(message)), nil
 	case "readBinMsg", "getBinMsg":
 		if o.Value == nil {
 			return NewCommonErrorWithPos(c, "failed to read message: %v", "connection is nil"), nil
@@ -14139,7 +14146,7 @@ func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
 				return NewCommonErrorWithPos(c, "unsupport type of parameter 2: %T", argsA[1]), nil
 			}
 
-			nv2b = []byte(nv2s.Value)
+			nv2b = []byte(nv2s.String())
 		} else {
 			nv2b = []byte(nv2)
 		}
@@ -14193,7 +14200,7 @@ func (o *WebSocket) CallName(nameA string, c Call) (Object, error) {
 				return NewCommonErrorWithPos(c, "unsupport type of parameter 1: %T", argsA[0]), nil
 			}
 
-			nv2b = []byte(nv2s.Value)
+			nv2b = []byte(nv2s.String())
 		} else {
 			nv2b = []byte(nv1)
 		}

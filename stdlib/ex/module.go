@@ -305,7 +305,7 @@ func builtinSortByFuncFunc(c charlang.Call) (ret charlang.Object, err error) {
 		if !ok {
 			nv2 := args[1].String()
 
-			nv3, errT := charlang.BuiltinCharCodeFunc(charlang.Call{Vm: c.VM(), Args: []charlang.Object{charlang.String{Value: nv2}}})
+			nv3, errT := charlang.BuiltinCharCodeFunc(charlang.Call{Vm: c.VM(), Args: []charlang.Object{charlang.String(nv2)}})
 
 			if errT != nil {
 				return charlang.NewCommonErrorWithPos(c, "failed to compile function: (%T)%v", args[1], errT), nil

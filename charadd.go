@@ -268,48 +268,48 @@ var methodFuncMapG = map[int]map[string]*Function{
 			},
 		},
 	},
-	105: { // String
-		"toStr": {
-			Name: "toStr",
-			ValueEx: func(c Call) (Object, error) {
-				nv, ok := c.This.(String)
-
-				if !ok {
-					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
-				}
-
-				return ToStringObject(nv.Value), nil
-			},
-		},
-		"trim": {
-			Name: "trim",
-			ValueEx: func(c Call) (Object, error) {
-				nv, ok := c.This.(String)
-				if !ok {
-					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
-				}
-
-				args := toArgsS(0, c)
-
-				return ToStringObject(tk.Trim(nv.Value, args...)), nil
-			},
-		},
-		"contains": {
-			Name: "contains",
-			ValueEx: func(c Call) (Object, error) {
-				nv, ok := c.This.(String)
-				if !ok {
-					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
-				}
-
-				if c.Len() < 1 {
-					return Undefined, fmt.Errorf("not enough parameters")
-				}
-
-				return Bool(strings.Contains(nv.Value, c.Get(0).String())), nil
-			},
-		},
-	},
+//	105: { // String
+//		"toStr": {
+//			Name: "toStr",
+//			ValueEx: func(c Call) (Object, error) {
+//				nv, ok := c.This.(String)
+//
+//				if !ok {
+//					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+//				}
+//
+//				return ToStringObject(nv.Value), nil
+//			},
+//		},
+//		"trim": {
+//			Name: "trim",
+//			ValueEx: func(c Call) (Object, error) {
+//				nv, ok := c.This.(String)
+//				if !ok {
+//					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+//				}
+//
+//				args := toArgsS(0, c)
+//
+//				return ToStringObject(tk.Trim(nv.Value, args...)), nil
+//			},
+//		},
+//		"contains": {
+//			Name: "contains",
+//			ValueEx: func(c Call) (Object, error) {
+//				nv, ok := c.This.(String)
+//				if !ok {
+//					return Undefined, fmt.Errorf("invalid type: %#v", c.This)
+//				}
+//
+//				if c.Len() < 1 {
+//					return Undefined, fmt.Errorf("not enough parameters")
+//				}
+//
+//				return Bool(strings.Contains(nv.Value, c.Get(0).String())), nil
+//			},
+//		},
+//	},
 	106: { // *MutableString
 		"toStr": {
 			Name: "toStr",
@@ -636,7 +636,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 					return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
 				}
 
-				return String{Value: nv.Value.Dump()}, nil
+				return String(nv.Value.Dump()), nil
 			},
 		},
 	},
@@ -1094,7 +1094,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 					precT = ToIntQuick(argsT[1])
 				}
 
-				return String{Value: nv.Value.Text(formatT[0], precT)}, nil
+				return String(nv.Value.Text(formatT[0], precT)), nil
 			},
 		},
 	},
@@ -1126,7 +1126,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 					tmpCountT := 0
 					switch nv := v.(type) {
 					case String:
-						tmpCountT, errT = o.Value.WriteString(nv.Value)
+						tmpCountT, errT = o.Value.WriteString(nv.String())
 
 						if errT != nil {
 							tmpCountT = 0
@@ -1283,7 +1283,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 					tmpCountT := 0
 					switch nv := v.(type) {
 					case String:
-						tmpCountT, errT = o.Value.WriteString(nv.Value)
+						tmpCountT, errT = o.Value.WriteString(nv.String())
 
 						if errT != nil {
 							tmpCountT = 0
@@ -1572,7 +1572,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 						}
 					}
 
-					ccT := NewCharCode(fnsT.Value, compilerOptionsT)
+					ccT := NewCharCode(fnsT.String(), compilerOptionsT)
 
 					byteCodeT := QuickCompile(ccT.Source, ccT.CompilerOptions) // quickCompile(tk.ToStr(argsA[0])) //
 
@@ -1945,7 +1945,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 							}
 						}
 
-						ccT := NewCharCode(fnsT.Value, compilerOptionsT)
+						ccT := NewCharCode(fnsT.String(), compilerOptionsT)
 
 						byteCodeT := QuickCompile(ccT.Source, ccT.CompilerOptions) // quickCompile(tk.ToStr(argsA[0])) //
 
@@ -3173,9 +3173,9 @@ func ConvertFromObject(vA Object) interface{} {
 	case Float:
 		return float64(nv)
 	case String:
-		return nv.Value
+		return nv.String()
 	case *String:
-		return nv.Value
+		return nv.String()
 	case *MutableString:
 		return nv.Value
 	case *StringBuilder:
@@ -3580,7 +3580,7 @@ func ToIntQuick(o Object) int {
 	case Float:
 		return int(o)
 	case String:
-		if vv, err := strconv.ParseInt(o.Value, 0, 0); err == nil {
+		if vv, err := strconv.ParseInt(o.String(), 0, 0); err == nil {
 			return int(vv)
 		}
 	case *MutableString:
@@ -3611,7 +3611,7 @@ func ToFloatQuick(o Object) float64 {
 	case Float:
 		return float64(o)
 	case String:
-		if vv, err := strconv.ParseFloat(o.Value, 64); err == nil {
+		if vv, err := strconv.ParseFloat(o.String(), 64); err == nil {
 			return float64(vv)
 		}
 	case *MutableString:

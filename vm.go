@@ -1442,7 +1442,7 @@ func (vm *VM) xOpSliceIndex() error {
 	case Array:
 		objlen = len(obj)
 	case String:
-		objlen = len(obj.Value)
+		objlen = len(obj.String())
 	case Bytes:
 		isbytes = true
 		objlen = len(obj)
@@ -1513,7 +1513,7 @@ func (vm *VM) xOpSliceIndex() error {
 	case Array:
 		vm.stack[vm.sp] = obj[low:high]
 	case String:
-		vm.stack[vm.sp] = ToStringObject(obj.Value[low:high])
+		vm.stack[vm.sp] = ToStringObject(obj.String()[low:high])
 	case Bytes:
 		vm.stack[vm.sp] = obj[low:high]
 	case Chars:

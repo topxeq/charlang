@@ -222,7 +222,7 @@ func ToInterface(o Object) (ret interface{}) {
 	case Int:
 		ret = int64(o)
 	case String:
-		ret = o.Value
+		ret = o.String()
 	case Bytes:
 		ret = []byte(o)
 	case Array:
@@ -388,8 +388,8 @@ func ToGoByteSlice(o Object) (v []byte, ok bool) {
 	case *BytesBuffer:
 		v, ok = nv.Value.Bytes(), true
 	case String:
-		v, ok = make([]byte, len(nv.Value)), true
-		copy(v, nv.Value)
+		v, ok = make([]byte, len(nv.String())), true
+		copy(v, nv.String())
 	case Array:
 		lenT := len(nv)
 		bufT := make([]byte, lenT)
@@ -438,7 +438,7 @@ func ToGoInt(o Object) (v int, ok bool) {
 	case Float:
 		v, ok = int(o), true
 	case String:
-		if vv, err := strconv.ParseInt(o.Value, 0, 0); err == nil {
+		if vv, err := strconv.ParseInt(o.String(), 0, 0); err == nil {
 			v = int(vv)
 			ok = true
 		}
@@ -471,7 +471,7 @@ func ToGoIntWithDefault(o Object, defaultA int) int {
 	case Float:
 		return int(o)
 	case String:
-		if vv, err := strconv.ParseInt(o.Value, 0, 0); err == nil {
+		if vv, err := strconv.ParseInt(o.String(), 0, 0); err == nil {
 			return int(vv)
 		}
 	case *MutableString:
@@ -534,7 +534,7 @@ func ToGoInt64(o Object) (v int64, ok bool) {
 			v = 1
 		}
 	case String:
-		if vv, err := strconv.ParseInt(o.Value, 0, 64); err == nil {
+		if vv, err := strconv.ParseInt(o.String(), 0, 64); err == nil {
 			v = vv
 			ok = true
 		}
@@ -562,7 +562,7 @@ func ToGoUint64(o Object) (v uint64, ok bool) {
 			v = 1
 		}
 	case String:
-		if vv, err := strconv.ParseUint(o.Value, 0, 64); err == nil {
+		if vv, err := strconv.ParseUint(o.String(), 0, 64); err == nil {
 			v = vv
 			ok = true
 		}
@@ -590,7 +590,7 @@ func ToGoFloat64(o Object) (v float64, ok bool) {
 			v = 1
 		}
 	case String:
-		if vv, err := strconv.ParseFloat(o.Value, 64); err == nil {
+		if vv, err := strconv.ParseFloat(o.String(), 64); err == nil {
 			v = vv
 			ok = true
 		}
@@ -613,7 +613,7 @@ func ToGoRune(o Object) (v rune, ok bool) {
 		v, ok = rune(o), true
 	case String:
 		ok = true
-		v, _ = utf8.DecodeRuneInString(o.Value)
+		v, _ = utf8.DecodeRuneInString(o.String())
 	case Bool:
 		ok = true
 		if o {

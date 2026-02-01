@@ -188,7 +188,7 @@ func newWindowWebView2(paramsA []interface{}) interface{} {
 			} else {
 				if s1, ok = codeT.(string); ok {
 					// s1 = strings.ReplaceAll(s1, "~~~", "`")
-					deleObjT, _ := charlang.BuiltinDelegateFunc(charlang.Call{Args: []charlang.Object{charlang.String{Value: s1}}})
+					deleObjT, _ := charlang.BuiltinDelegateFunc(charlang.Call{Args: []charlang.Object{charlang.String(s1)}})
 
 					deleObjT.CallMethod("compile")
 				} else {
@@ -234,7 +234,7 @@ func newWindowWebView2(paramsA []interface{}) interface{} {
 			} else {
 				if s1, ok = codeT.(string); ok {
 					// s1 = strings.ReplaceAll(s1, "~~~", "`")
-					deleObjT, _ := charlang.BuiltinDelegateFunc(charlang.Call{Args: []charlang.Object{charlang.String{Value: s1}}})
+					deleObjT, _ := charlang.BuiltinDelegateFunc(charlang.Call{Args: []charlang.Object{charlang.String(s1)}})
 
 					deleObjT.CallMethod("compile")
 				} else {

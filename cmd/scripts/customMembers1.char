@@ -1,4 +1,4 @@
-s1 := string("abc", "f1", "v1", "f2", "v2", "f3") // mutableString("abc")
+s1 := mutableString("abc", "f1", "v1", "f2", "v2", "f3") // mutableString("abc")
 
 pl("s1: %v", s1)
 

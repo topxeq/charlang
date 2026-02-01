@@ -127,14 +127,14 @@ func TestOptimizer(t *testing.T) {
 		{s: `bool(0)`, cf: falseF},
 		{s: `bool(1)`, cf: trueF},
 
-		{s: `"a" + "b"`, c: String{Value: "ab"}, cf: defF},
-		{s: `"a" + 1`, c: String{Value: "a1"}, cf: defF},
-		{s: `"a" + 1u`, c: String{Value: "a1"}, cf: defF},
-		{s: `"a" + 'c'`, c: String{Value: "ac"}, cf: defF},
-		{s: `'c' + "a"`, c: String{Value: "ca"}, cf: defF},
-		{s: `"a" + "b" + "c"`, c: String{Value: "abc"}, cf: defF},
-		{s: `"a" + 'b' + "c"`, c: String{Value: "abc"}, cf: defF},
-		{s: `"a" + 1 + "c"`, c: String{Value: "a1c"}, cf: defF},
+		{s: `"a" + "b"`, c: String("ab"), cf: defF},
+		{s: `"a" + 1`, c: String("a1"), cf: defF},
+		{s: `"a" + 1u`, c: String("a1"), cf: defF},
+		{s: `"a" + 'c'`, c: String("ac"), cf: defF},
+		{s: `'c' + "a"`, c: String("ca"), cf: defF},
+		{s: `"a" + "b" + "c"`, c: String("abc"), cf: defF},
+		{s: `"a" + 'b' + "c"`, c: String("abc"), cf: defF},
+		{s: `"a" + 1 + "c"`, c: String("a1c"), cf: defF},
 		{s: `char(0)`, c: Char(0), cf: defF},
 
 		{s: `!undefined`, cf: trueF},
@@ -347,7 +347,7 @@ func TestOptimizerTryThrow(t *testing.T) {
 			throw "a" + string(1) + "b"
 		}`,
 		bytecode(
-			Array{Int(3), Float(7), String{Value: "a1b"}},
+			Array{Int(3), Float(7), String("a1b")},
 			compFunc(concatInsts(
 				makeInst(OpSetupTry, 12, 18),
 				makeInst(OpConstant, 0),
@@ -481,7 +481,7 @@ func TestOptimizerMapSliceExpr(t *testing.T) {
 		))
 	expectEval(t, `{a: 1+2}`,
 		bytecode(
-			Array{String{Value: "a"}, Int(3)},
+			Array{String("a"), Int(3)},
 			compFunc(concatInsts(
 				makeInst(OpConstant, 0),
 				makeInst(OpConstant, 1),
@@ -492,7 +492,7 @@ func TestOptimizerMapSliceExpr(t *testing.T) {
 		))
 	expectEval(t, `{a: uint(1+2)}`,
 		bytecode(
-			Array{String{Value: "a"}, Uint(3)},
+			Array{String("a"), Uint(3)},
 			compFunc(concatInsts(
 				makeInst(OpConstant, 0),
 				makeInst(OpConstant, 1),
@@ -553,7 +553,7 @@ func TestOptimizerShadowing(t *testing.T) {
 	// int is shadowed by a param declaration, should not evalute int("1") to 1
 	expectEval(t, `param int; return int("1")`,
 		bytecode(
-			Array{String{Value: "1"}},
+			Array{String("1")},
 			compFunc(concatInsts(
 				makeInst(OpGetLocal, 0),
 				makeInst(OpConstant, 0),
@@ -567,7 +567,7 @@ func TestOptimizerShadowing(t *testing.T) {
 	// int is shadowed by a var declaration, should not evalute int("1") to 1
 	expectEval(t, `var int; return int("1")`,
 		bytecode(
-			Array{String{Value: "1"}},
+			Array{String("1")},
 			compFunc(concatInsts(
 				makeInst(OpNull),
 				makeInst(OpDefineLocal, 0),
@@ -584,7 +584,7 @@ func TestOptimizerShadowing(t *testing.T) {
 	expectEval(t, `var int; return func() {return int("1")}`,
 		bytecode(
 			Array{
-				String{Value: "1"},
+				String("1"),
 				compFunc(concatInsts(
 					makeInst(OpGetFree, 0),
 					makeInst(OpConstant, 0),
@@ -612,7 +612,7 @@ func TestOptimizerShadowing(t *testing.T) {
 	opts.SymbolTable = st
 	expectCompileWithOpts(t, `return int("1")`, opts,
 		bytecode(
-			Array{String{Value: "1"}},
+			Array{String("1")},
 			compFunc(concatInsts(
 				makeInst(OpGetLocal, 0),
 				makeInst(OpConstant, 0),
@@ -631,7 +631,7 @@ func TestOptimizerShadowing(t *testing.T) {
 	opts.SymbolTable = st
 	expectCompileWithOpts(t, `return int("1")`, opts,
 		bytecode(
-			Array{String{Value: "int"}, String{Value: "1"}},
+			Array{String("int"), String("1")},
 			compFunc(concatInsts(
 				makeInst(OpGetGlobal, 0),
 				makeInst(OpConstant, 1),
@@ -649,8 +649,8 @@ func TestOptimizerShadowing(t *testing.T) {
 	expectCompileWithOpts(t, `return func() {return  int("1")}()`, opts,
 		bytecode(
 			Array{
-				String{Value: "int"},
-				String{Value: "1"},
+				String("int"),
+				String("1"),
 				compFunc(concatInsts(
 					makeInst(OpGetGlobal, 0),
 					makeInst(OpConstant, 1),
@@ -673,7 +673,7 @@ func TestOptimizerShadowing(t *testing.T) {
 		opts,
 		bytecode(
 			Array{
-				String{Value: "1"},
+				String("1"),
 				compFunc(concatInsts(
 					makeInst(OpGetLocal, 0),
 					makeInst(OpConstant, 0),
@@ -699,7 +699,7 @@ func TestOptimizerShadowing(t *testing.T) {
 	expectRun(t, `
 	string := func(x) { return "ok" }
 	return string(1)
-	`, nil, String{Value: "ok"})
+	`, nil, String("ok"))
 }
 
 func TestOptimizerError(t *testing.T) {

@@ -205,11 +205,11 @@ var _ Iterator = (*StringIterator)(nil)
 
 // Next implements Iterator interface.
 func (it *StringIterator) Next() bool {
-	if it.i > len(it.V.Value)-1 {
+	if it.i > len(it.V.String())-1 {
 		return false
 	}
 
-	// r, s := utf8.DecodeRuneInString(it.V.Value[it.i:])
+	// r, s := utf8.DecodeRuneInString(it.V.String()[it.i:])
 	// if r == utf8.RuneError || s == 0 {
 	// 	return false
 	// }
@@ -231,8 +231,8 @@ func (it *StringIterator) Key() Object {
 func (it *StringIterator) Value() Object {
 	// return Char(it.r)
 	i := it.i - 1
-	if i > -1 && i < len(it.V.Value) {
-		return Byte(it.V.Value[i])
+	if i > -1 && i < len(it.V.String()) {
+		return Byte(it.V.String()[i])
 	}
 
 	return Undefined
@@ -305,6 +305,35 @@ func (it *IntIterator) Value() Object {
 	i := it.i - 1
 	if i > -1 && i < int(it.V) {
 		return Int(i)
+	}
+
+	return Undefined
+}
+
+// UintIterator represents an iterator for the Int.
+type UintIterator struct {
+	V Uint
+	i uint64
+}
+
+var _ Iterator = (*UintIterator)(nil)
+
+// Next implements Iterator interface.
+func (it *UintIterator) Next() bool {
+	it.i++
+	return it.i-1 < uint64(it.V)
+}
+
+// Key implements Iterator interface.
+func (it *UintIterator) Key() Object {
+	return Uint(it.i - 1)
+}
+
+// Value implements Iterator interface.
+func (it *UintIterator) Value() Object {
+	i := it.i - 1
+	if i >= 0 && i < uint64(it.V) {
+		return Uint(i)
 	}
 
 	return Undefined
@@ -391,7 +420,7 @@ func (it *MapArrayIterator) Key() Object {
 func (it *MapArrayIterator) Value() Object {
 	i := it.i - 1
 	if i > -1 && i < it.V.Value.Size() {
-		return String{Value: it.V.Value.Items[i]}
+		return String(it.V.Value.Items[i])
 	}
 	return Undefined
 }
