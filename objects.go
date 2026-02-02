@@ -2673,6 +2673,10 @@ func (o *CompiledFunction) GetValue() Object {
 }
 
 func (o *CompiledFunction) GetMember(idxA string) Object {
+	if o == nil {
+		return NewCommonError("nil object")
+	}
+	
 	if o.Members == nil {
 		return Undefined
 	}
@@ -2687,6 +2691,10 @@ func (o *CompiledFunction) GetMember(idxA string) Object {
 }
 
 func (o *CompiledFunction) SetMember(idxA string, valueA Object) error {
+	if o == nil {
+		return fmt.Errorf("nil object")
+	}
+	
 	if o.Members == nil {
 		o.Members = map[string]Object{}
 	}
@@ -2775,7 +2783,13 @@ func (*CompiledFunction) BinaryOp(token.Token, Object) (Object, error) {
 }
 
 // IsFalsy implements Object interface.
-func (o *CompiledFunction) IsFalsy() bool { return o.Instructions == nil }
+func (o *CompiledFunction) IsFalsy() bool { 
+	if o == nil {
+		return true
+	}
+	
+	return o.Instructions == nil 
+}
 
 // Equal implements Object interface.
 func (o *CompiledFunction) Equal(right Object) bool {
@@ -2900,6 +2914,10 @@ func (*Function) TypeName() string {
 
 // String implements Object interface.
 func (o *Function) String() string {
+	if o == nil {
+		return "<nil>"
+	}
+	
 	return fmt.Sprintf("<function:%s>", o.Name)
 }
 
@@ -2924,6 +2942,10 @@ func (o *Function) GetValue() Object {
 }
 
 func (o *Function) GetMember(idxA string) Object {
+	if o == nil {
+		return NewCommonError("nil object")
+	}
+	
 	if o.Members == nil {
 		return Undefined
 	}
@@ -2938,6 +2960,10 @@ func (o *Function) GetMember(idxA string) Object {
 }
 
 func (o *Function) SetMember(idxA string, valueA Object) error {
+	if o == nil {
+		return fmt.Errorf("nil object")
+	}
+	
 	if o.Members == nil {
 		o.Members = map[string]Object{}
 	}
@@ -2972,13 +2998,23 @@ func (o *Function) Equal(right Object) bool {
 }
 
 // IsFalsy implements Object interface.
-func (o *Function) IsFalsy() bool { return o.Value == nil && o.ValueEx == nil }
+func (o *Function) IsFalsy() bool { 
+	if o == nil {
+		return true
+	}
+	
+	return o.Value == nil && o.ValueEx == nil 
+}
 
 // CanCall implements Object interface.
 func (*Function) CanCall() bool { return true }
 
 // Call implements Object interface.
 func (o *Function) Call(args ...Object) (Object, error) {
+	if o == nil {
+		return Undefined, NewCommonError("nil object")
+	}
+	
 	return o.Value(args...)
 }
 
@@ -2987,6 +3023,38 @@ func (o *Function) CallEx(call Call) (Object, error) {
 		return o.ValueEx(call)
 	}
 	return o.Value(call.callArgs()...)
+}
+
+func (o *Function) CanIterate() bool { return false }
+
+// Iterate implements Iterable interface.
+func (o *Function) Iterate() Iterator {
+	return nil
+}
+
+func (*Function) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+func (o *Function) IndexGet(index Object) (Object, error) {
+	switch v := index.(type) {
+	case String:
+		strT := v.String()
+
+		rs := o.GetMember(strT)
+
+		if !IsUndefInternal(rs) {
+			return rs, nil
+		}
+
+		return GetObjectMethodFunc(o, strT)
+	}
+
+	return nil, ErrNotIndexable
+}
+
+func (*Function) BinaryOp(token.Token, Object) (Object, error) {
+	return nil, ErrInvalidOperator
 }
 
 // BuiltinFunction represents a builtin function object and implements Object interface.
@@ -3015,6 +3083,10 @@ func (*BuiltinFunction) TypeName() string {
 
 // String implements Object interface.
 func (o *BuiltinFunction) String() string {
+	if o == nil {
+		return "<nil>"
+	}
+	
 	return fmt.Sprintf("<builtinFunction:%s>", o.Name)
 }
 
@@ -3039,6 +3111,10 @@ func (o *BuiltinFunction) GetValue() Object {
 }
 
 func (o *BuiltinFunction) GetMember(idxA string) Object {
+	if o == nil {
+		return NewCommonError("nil object")
+	}
+	
 	if o.Members == nil {
 		return Undefined
 	}
@@ -3053,6 +3129,10 @@ func (o *BuiltinFunction) GetMember(idxA string) Object {
 }
 
 func (o *BuiltinFunction) SetMember(idxA string, valueA Object) error {
+	if o == nil {
+		return fmt.Errorf("nil object")
+	}
+	
 	if o.Members == nil {
 		o.Members = map[string]Object{}
 	}
@@ -3070,6 +3150,10 @@ func (o *BuiltinFunction) SetMember(idxA string, valueA Object) error {
 
 // Copy implements Copier interface.
 func (o *BuiltinFunction) Copy() Object {
+	if o == nil {
+		return NewCommonError("nil object")
+	}
+	
 	return &BuiltinFunction{
 		Name:    o.Name,
 		Value:   o.Value,
@@ -3087,13 +3171,23 @@ func (o *BuiltinFunction) Equal(right Object) bool {
 }
 
 // IsFalsy implements Object interface.
-func (o *BuiltinFunction) IsFalsy() bool { return o.Value == nil && o.ValueEx == nil }
+func (o *BuiltinFunction) IsFalsy() bool { 
+	if o == nil {
+		return true
+	}
+	
+	return o.Value == nil && o.ValueEx == nil 
+}
 
 // CanCall implements Object interface.
 func (*BuiltinFunction) CanCall() bool { return true }
 
 // Call implements Object interface.
 func (o *BuiltinFunction) Call(args ...Object) (Object, error) {
+	if o == nil {
+		return Undefined, NewCommonError("nil object")
+	}
+	
 	// tk.Pl("*BuiltinFunction Call: %v", args)
 	return o.Value(args...)
 }
@@ -3106,8 +3200,20 @@ func (o *BuiltinFunction) CallEx(c Call) (Object, error) {
 	return o.Value(c.callArgs()...)
 }
 
+func (o *BuiltinFunction) CanIterate() bool { return false }
+
+// Iterate implements Iterable interface.
+func (o *BuiltinFunction) Iterate() Iterator {
+	return nil
+}
+
+
 func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 	// tk.Pl("*BuiltinFunction IndexGet: %v", index)
+	if o == nil {
+		return Undefined, NewCommonError("nil object")
+	}
+	
 
 	nv, ok := index.(String)
 	if !ok {
@@ -3349,6 +3455,15 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 
 	// return Undefined, nil
 }
+
+func (*BuiltinFunction) IndexSet(index, value Object) error {
+	return ErrNotIndexAssignable
+}
+
+func (*BuiltinFunction) BinaryOp(token.Token, Object) (Object, error) {
+	return nil, ErrInvalidOperator
+}
+
 
 // Array represents array of objects and implements Object interface.
 type Array []Object
