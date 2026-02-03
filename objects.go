@@ -3956,7 +3956,7 @@ func (o *ObjectPtr) HasMemeber() bool {
 func (o *ObjectPtr) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return o, nil
+		return *o.Value, nil
 	case "toStr":
 		return ToStringObject(o), nil
 	}
@@ -4015,10 +4015,23 @@ func (o *ObjectPtr) Equal(x Object) bool {
 
 // BinaryOp implements Object interface.
 func (o *ObjectPtr) BinaryOp(tok token.Token, right Object) (Object, error) {
+	if o == nil {
+		return nil, errors.New("nil object")
+	}
+	
 	if o.Value == nil {
 		return nil, errors.New("nil pointer")
 	}
-	return (*o.Value).BinaryOp(tok, right)
+	
+	objT := *(o.Value)
+	
+	if objT == nil {
+		return nil, NewCommonError("nil object pointer")
+	}
+	
+//	tk.Pl("ObjectPtr BinaryOp: %T", objT)
+	
+	return (objT).BinaryOp(tok, right)
 }
 
 // CanCall implements Object interface.
@@ -4032,9 +4045,20 @@ func (o *ObjectPtr) CanCall() bool {
 // Call implements Object interface.
 func (o *ObjectPtr) Call(args ...Object) (Object, error) {
 	if o.Value == nil {
-		return nil, errors.New("nil pointer")
+		return nil, NewCommonError("nil pointer")
 	}
-	return (*o.Value).Call(args...)
+	
+	objT := *o.Value
+	
+	if objT == nil {
+		return nil, NewCommonError("nil object")
+	}
+	
+	if !objT.CanCall() {
+		return nil, NewCommonError("not callable")
+	}
+	
+	return (objT).Call(args...)
 }
 
 // Map represents map of objects and implements Object interface.

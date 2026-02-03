@@ -12,6 +12,182 @@ import (
 	"github.com/topxeq/charlang/token"
 )
 
+func TestObjects3(t *testing.T) {
+	var tmpr Object
+	var err error
+	
+	// Array
+	ary1 := Array{Int(1), Int(2), Int(3)}
+	
+	require.Equal(t, "131", fmt.Sprintf("%v", ary1.TypeCode()))
+	
+	require.Equal(t, "array", fmt.Sprintf("%v", ary1.TypeName()))
+	
+	require.Equal(t, "[1, 2, 3]", fmt.Sprintf("%v", ary1.String()))
+	
+	require.False(t, ary1.HasMemeber())
+	
+	tmpr, err = ary1.CallMethod("value")
+	
+	require.Equal(t, "[1, 2, 3]-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "[1, 2, 3]", fmt.Sprintf("%v", ary1.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", ary1.GetMember("a")))
+	
+	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", ary1.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "[1, 2, 3]", fmt.Sprintf("%v", ary1.Copy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", ary1.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", ary1.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", ary1.CanCall()))
+	
+	tmpr, err = ary1.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", ary1.CanIterate()))
+	
+	require.Equal(t, "&{[1, 2, 3] 0}", fmt.Sprintf("%v", ary1.Iterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", ary1.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = ary1.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: array", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = ary1.IndexGet(Int(2))
+	
+	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = ary1.IndexGet(Int(5))
+	
+	require.Equal(t, "<nil>-IndexOutOfBoundsError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = ary1.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "[1, 1, 3, 3]-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+
+	// *ObjectPtr
+	objP1 := &ObjectPtr{Value: &tmpr}
+	
+	require.Equal(t, "151", fmt.Sprintf("%v", objP1.TypeCode()))
+	
+	require.Equal(t, "objectPtr", fmt.Sprintf("%v", objP1.TypeName()))
+	
+	require.Equal(t, "<objectPtr:[1, 1, 3, 3]>", fmt.Sprintf("%v", objP1.String()))
+	
+	require.True(t, objP1.HasMemeber())
+	
+	tmpr, err = objP1.CallMethod("value")
+	
+	require.Equal(t, "[1, 1, 3, 3]-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "<objectPtr:[1, 1, 3, 3]>", fmt.Sprintf("%v", objP1.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", objP1.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", objP1.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "<objectPtr:[1, 1, 3, 3]>", fmt.Sprintf("%v", objP1.Copy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", objP1.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", objP1.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", objP1.CanCall()))
+	
+	tmpr, err = objP1.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-error: not callable", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", objP1.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", objP1.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", objP1.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = objP1.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotIndexableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = objP1.IndexGet(Int(2))
+	
+	require.Equal(t, "<nil>-NotIndexableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = objP1.IndexGet(Int(5))
+	
+	require.Equal(t, "<nil>-NotIndexableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = objP1.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-error: nil object pointer", fmt.Sprintf("%v-%v", tmpr, err))
+
+	// Map
+	map1 := Map{"k1": String("v1"), "k2": String("v2")}
+	
+	require.Equal(t, "133", fmt.Sprintf("%v", map1.TypeCode()))
+	
+	require.Equal(t, "map", fmt.Sprintf("%v", map1.TypeName()))
+	
+	require.Equal(t, "{\"k1\": \"v1\", \"k2\": \"v2\"}", fmt.Sprintf("%v", map1.String()))
+	
+	require.False(t, map1.HasMemeber())
+	
+	tmpr, err = map1.CallMethod("value")
+	
+	require.Equal(t, "undefined-InvalidIndexError: value", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "charlang.Map", fmt.Sprintf("%T", map1.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", map1.GetMember("a")))
+	
+	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", map1.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "charlang.Map", fmt.Sprintf("%T", map1.Copy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", map1.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", map1.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", map1.CanCall()))
+	
+	tmpr, err = map1.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", map1.CanIterate()))
+	
+	require.Equal(t, "*charlang.MapIterator", fmt.Sprintf("%T", map1.Iterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", map1.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = map1.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = map1.IndexGet(ToStringObject("k1"))
+	
+	require.Equal(t, "v1-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = map1.IndexGet(Int(2))
+	
+	require.Equal(t, "undefined-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = map1.IndexGet(Int(5))
+	
+	require.Equal(t, "undefined-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = map1.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'map' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
+
+	
+}
+
 func TestObjects2(t *testing.T) {
 	var tmpr Object
 	var err error
