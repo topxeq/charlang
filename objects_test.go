@@ -10,6 +10,7 @@ import (
 
 	. "github.com/topxeq/charlang"
 	"github.com/topxeq/charlang/token"
+	tk "github.com/topxeq/tkc"
 )
 
 func TestObjects3(t *testing.T) {
@@ -133,7 +134,7 @@ func TestObjects3(t *testing.T) {
 	
 	require.Equal(t, "map", fmt.Sprintf("%v", map1.TypeName()))
 	
-	require.Equal(t, "{\"k1\": \"v1\", \"k2\": \"v2\"}", fmt.Sprintf("%v", map1.String()))
+	require.Equal(t, "{\"k1\":\"v1\",\"k2\":\"v2\"}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", map1.String()))), "-sort"))
 	
 	require.False(t, map1.HasMemeber())
 	
@@ -182,6 +183,65 @@ func TestObjects3(t *testing.T) {
 	require.Equal(t, "undefined-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
 	
 	tmpr, err = map1.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'map' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
+
+	// *SyncMap
+	smap1 := &SyncMap{Value: Map{"k1": String("v1")}}
+	
+	require.Equal(t, "153", fmt.Sprintf("%v", smap1.TypeCode()))
+	
+	require.Equal(t, "syncMap", fmt.Sprintf("%v", smap1.TypeName()))
+	
+	require.Equal(t, "{\"k1\": \"v1\"}", fmt.Sprintf("%v", smap1.String()))
+	
+	require.True(t, smap1.HasMemeber())
+	
+	tmpr, err = smap1.CallMethod("value")
+	
+	require.Equal(t, "{\"k1\": \"v1\"}-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "*charlang.SyncMap", fmt.Sprintf("%T", smap1.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", smap1.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", smap1.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "*charlang.SyncMap", fmt.Sprintf("%T", smap1.Copy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", smap1.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", smap1.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", smap1.CanCall()))
+	
+	tmpr, err = smap1.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", smap1.CanIterate()))
+	
+	require.Equal(t, "*charlang.SyncIterator", fmt.Sprintf("%T", smap1.Iterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", smap1.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = smap1.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = smap1.IndexGet(ToStringObject("k1"))
+	
+	require.Equal(t, "v1-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = smap1.IndexGet(Int(2))
+	
+	require.Equal(t, "undefined-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = smap1.IndexGet(Int(5))
+	
+	require.Equal(t, "undefined-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = smap1.BinaryOp(token.Add, Int(3))
 
 	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'map' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
 
