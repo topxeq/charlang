@@ -245,6 +245,11 @@ func TestObjects3(t *testing.T) {
 
 	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'map' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
 
+	smap1.Lock()
+	
+	smap1.Unlock()
+	
+	require.Equal(t, "{\"1\":1,\"k1\":\"v1\"}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", smap1.String()))), "-sort"))
 	
 }
 
