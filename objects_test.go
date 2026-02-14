@@ -1,21 +1,542 @@
-package charlang_test
+package charlang
 
 import (
 //	"errors"
+	"bytes"
 	"fmt"
 	"math"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
-	. "github.com/topxeq/charlang"
+//	. "github.com/topxeq/charlang"
 	"github.com/topxeq/charlang/token"
 	tk "github.com/topxeq/tkc"
 )
 
+func TestObjects4(t *testing.T) {
+	var tmpr Object
+	var err error
+//	var ok bool
+
+	// *Any
+	obj3 := &Any{Value: "Abc"}
+	
+	require.Equal(t, "999", fmt.Sprintf("%v", obj3.TypeCode()))
+	
+	require.Equal(t, "any", fmt.Sprintf("%v", obj3.TypeName()))
+	
+	require.Equal(t, "(any:string)Abc", fmt.Sprintf("%v", obj3.String()))
+	
+	require.True(t, obj3.HasMemeber())
+	
+	tmpr, err = obj3.CallMethod("value")
+	
+	require.Equal(t, "(any:string)Abc-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "*charlang.Any", fmt.Sprintf("%T", obj3.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj3.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj3.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj3.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj3.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj3.CanCall()))
+	
+	tmpr, err = obj3.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj3.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj3.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj3.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj3.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: any", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj3.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-InvalidOperatorError: ", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj3.String()))), "-sort"))
+	
+	require.Equal(t, "(any:string)Abc", fmt.Sprintf("%v", obj3.Copy()))
+	
+	err = obj3.SetValue(String("abc"))
+
+	require.Equal(t, "(any:string)abc-<nil>", fmt.Sprintf("%v-%v", obj3, err))
+
+	tmpr, err = obj3.CallName("Format", Call{Args: []Object{String("abc")}})
+
+	require.Equal(t, "error: [pos: ]method(Format) not found for type: *charlang.Any(string)-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+
+	// *Database
+	obj1 := &Database{Value: nil}
+	
+	require.Equal(t, "309", fmt.Sprintf("%v", obj1.TypeCode()))
+	
+	require.Equal(t, "database", fmt.Sprintf("%v", obj1.TypeName()))
+	
+	require.Equal(t, "(database)<nil>", fmt.Sprintf("%v", obj1.String()))
+	
+	require.True(t, obj1.HasMemeber())
+	
+	tmpr, err = obj1.CallMethod("value")
+	
+	require.Equal(t, "(database)<nil>-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "*charlang.Database", fmt.Sprintf("%T", obj1.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj1.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj1.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj1.Equal(Int(1))))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", obj1.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj1.CanCall()))
+	
+	tmpr, err = obj1.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj1.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj1.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj1.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj1.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: database", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj1.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-InvalidOperatorError: ", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj1.String()))), "-sort"))
+	
+	// *StatusResult
+	obj2 := &StatusResult{Status: "success", Value: ""}
+	
+	require.Equal(t, "303", fmt.Sprintf("%v", obj2.TypeCode()))
+	
+	require.Equal(t, "statusResult", fmt.Sprintf("%v", obj2.TypeName()))
+	
+	require.Equal(t, "{\"Status\": \"success\", \"Value\": \"\"}", fmt.Sprintf("%v", obj2.String()))
+	
+	require.True(t, obj2.HasMemeber())
+	
+	tmpr, err = obj2.CallMethod("value")
+	
+	require.Equal(t, "{\"Status\": \"success\", \"Value\": \"\"}-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "*charlang.StatusResult", fmt.Sprintf("%T", obj2.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj2.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj2.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj2.Equal(Int(1))))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", obj2.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj2.CanCall()))
+	
+	tmpr, err = obj2.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj2.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj2.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj2.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj2.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: statusResult", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj2.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-InvalidOperatorError: ", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{\"Status\":\"success\",\"Value\":\"\"}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj2.String()))), "-sort"))
+	
+	tmpr, err = GenStatusResult(String(`{"Status": "fail", "Value": "quick reason"}`))
+
+	require.Equal(t, "{\"Status\": \"fail\", \"Value\": \"quick reason\"}-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+
+	// *StringBuilder
+	obj4 := &StringBuilder{Value: new(strings.Builder)}
+	
+	require.Equal(t, "307", fmt.Sprintf("%v", obj4.TypeCode()))
+	
+	require.Equal(t, "stringBuilder", fmt.Sprintf("%v", obj4.TypeName()))
+	
+	require.Equal(t, "(stringBuilder)", fmt.Sprintf("%v", obj4.String()))
+	
+	require.True(t, obj4.HasMemeber())
+	
+	tmpr, err = obj4.CallMethod("value")
+	
+	require.Equal(t, "-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "charlang.String", fmt.Sprintf("%T", obj4.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj4.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj4.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj4.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj4.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj4.CanCall()))
+	
+	tmpr, err = obj4.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj4.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj4.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj4.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj4.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: method(value1) not found for type: stringBuilder", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj4.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-InvalidOperatorError: ", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj4.String()))), "-sort"))
+	
+	tmpr, err = obj4.CallName("writeStr", Call{Args: []Object{String("abc")}})
+
+	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "(stringBuilder)abc", fmt.Sprintf("%v", obj4.Copy()))
+	
+	// *BytesBuffer
+	obj5 := &BytesBuffer{Value: new(bytes.Buffer)}
+	
+	require.Equal(t, "308", fmt.Sprintf("%v", obj5.TypeCode()))
+	
+	require.Equal(t, "bytesBuffer", fmt.Sprintf("%v", obj5.TypeName()))
+	
+	require.Equal(t, "{[] 0 0}", fmt.Sprintf("%v", obj5.String()))
+	
+	require.True(t, obj5.HasMemeber())
+	
+	tmpr, err = obj5.CallMethod("value")
+	
+	require.Equal(t, "{[] 0 0}-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "charlang.Bytes", fmt.Sprintf("%T", obj5.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj5.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj5.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj5.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj5.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj5.CanCall()))
+	
+	tmpr, err = obj5.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj5.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj5.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj5.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj5.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: method(value1) not found for type: bytesBuffer", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj5.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-InvalidOperatorError: ", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj5.String()))), "-sort"))
+	
+//	tmpr, err = obj5.CallName("writeStr", Call{Args: []Object{String("abc")}})
+
+//	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{[] 0 0}", fmt.Sprintf("%v", obj5.Copy()))
+	
+	// *ObjectRef
+	var container1 Object = String("abc")
+	
+	obj6 := &ObjectRef{Value: &container1}
+	
+	require.Equal(t, "152", fmt.Sprintf("%v", obj6.TypeCode()))
+	
+	require.Equal(t, "objectRef", fmt.Sprintf("%v", obj6.TypeName()))
+	
+	require.Equal(t, "<objectRef:abc>", fmt.Sprintf("%v", obj6.String()))
+	
+	require.True(t, obj6.HasMemeber())
+	
+	tmpr, err = obj6.CallMethod("value")
+	
+	require.Equal(t, "<objectRef:abc>-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "*charlang.ObjectRef", fmt.Sprintf("%T", obj6.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj6.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj6.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj6.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj6.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj6.CanCall()))
+	
+	tmpr, err = obj6.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj6.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj6.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj6.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj6.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotIndexableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj6.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "abc3-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj6.String()))), "-sort"))
+	
+//	tmpr, err = obj6.CallName("writeStr", Call{Args: []Object{String("abc")}})
+
+//	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "<objectRef:abc>", fmt.Sprintf("%v", obj6.Copy()))
+	
+	// *MutableString
+	obj7 := &MutableString{Value: "abc"}
+	
+	require.Equal(t, "106", fmt.Sprintf("%v", obj7.TypeCode()))
+	
+	require.Equal(t, "mutableString", fmt.Sprintf("%v", obj7.TypeName()))
+	
+	require.Equal(t, "abc", fmt.Sprintf("%v", obj7.String()))
+	
+	require.True(t, obj7.HasMemeber())
+	
+	tmpr, err = obj7.CallMethod("value")
+	
+	require.Equal(t, "abc-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "*charlang.MutableString", fmt.Sprintf("%T", obj7.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj7.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj7.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj7.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj7.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj7.CanCall()))
+	
+	tmpr, err = obj7.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", obj7.CanIterate()))
+	
+	require.Equal(t, "*charlang.MutableStringIterator", fmt.Sprintf("%T", obj7.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj7.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj7.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: method(value1) not found for type: mutableString", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj7.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "abc3-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj7.String()))), "-sort"))
+	
+	tmpr, err = obj7.CallName("writeStr", Call{Args: []Object{String("abc")}})
+
+	require.Equal(t, "<nil>-error: unknown method: writeStr", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "abc", fmt.Sprintf("%v", obj7.Copy()))
+	
+	bb1, err := obj7.MarshalJSON()
+
+	require.Equal(t, "[]uint8-<nil>", fmt.Sprintf("%T-%v", bb1, err))
+
+	err = obj7.SetValue(String("123"))
+
+	require.Equal(t, "123-<nil>", fmt.Sprintf("%v-%v", obj7, err))
+
+	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", obj7.Len(), err))
+
+	// *Seq
+	obj8 := &Seq{Value: tk.NewSeq()}
+	
+	require.Equal(t, "315", fmt.Sprintf("%v", obj8.TypeCode()))
+	
+	require.Equal(t, "seq", fmt.Sprintf("%v", obj8.TypeName()))
+	
+	require.Equal(t, "0", fmt.Sprintf("%v", obj8.String()))
+	
+	require.True(t, obj8.HasMemeber())
+	
+	tmpr, err = obj8.CallMethod("value")
+	
+	require.Equal(t, "1-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "2", fmt.Sprintf("%v", obj8.GetValue()))
+	
+	require.Equal(t, "2", fmt.Sprintf("%v", obj8.GetCurrentValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj8.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj8.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj8.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj8.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj8.CanCall()))
+	
+	tmpr, err = obj8.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj8.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj8.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj8.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj8.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: method(value1) not found for type: seq", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj8.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'seq' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "2", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj8.String()))), "-sort"))
+	
+//	tmpr, err = obj8.CallName("writeStr", Call{Args: []Object{String("abc")}})
+//
+//	require.Equal(t, "<nil>-error: unknown method: writeStr", fmt.Sprintf("%v-%v", tmpr, err))
+
+//	require.Equal(t, "abc", fmt.Sprintf("%v", obj8.Copy()))
+	
+//	bb1, err = obj8.MarshalJSON()
+//
+//	require.Equal(t, "[]uint8-<nil>", fmt.Sprintf("%T-%v", bb1, err))
+
+	err = obj8.SetValue(String("123"))
+
+	require.Equal(t, "123-<nil>", fmt.Sprintf("%v-%v", obj8, err))
+
+//	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", obj8.Len(), err))
+
+	// *Mutex
+	obj9 := NewMutex() // &Mutex{Value: tk.NewSeq()}
+	
+	require.Equal(t, "317", fmt.Sprintf("%v", obj9.TypeCode()))
+	
+	require.Equal(t, "mutex", fmt.Sprintf("%v", obj9.TypeName()))
+	
+	require.Equal(t, "string", fmt.Sprintf("%T", obj9.String()))
+	
+	require.True(t, obj9.HasMemeber())
+	
+	tmpr, err = obj9.CallMethod("value")
+	
+	require.Equal(t, "charlang.String-<nil>", fmt.Sprintf("%T-%v", tmpr, err))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj9.GetValue()))
+	
+//	require.Equal(t, "2", fmt.Sprintf("%v", obj9.GetCurrentValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj9.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj9.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj9.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj9.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj9.CanCall()))
+	
+	tmpr, err = obj9.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj9.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj9.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj9.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj9.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: method(value1) not found for type: mutex", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj9.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'mutex' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj9.String()))), "-sort"))
+	
+//	tmpr, err = obj9.CallName("writeStr", Call{Args: []Object{String("abc")}})
+//
+//	require.Equal(t, "<nil>-error: unknown method: writeStr", fmt.Sprintf("%v-%v", tmpr, err))
+
+//	require.Equal(t, "abc", fmt.Sprintf("%v", obj9.Copy()))
+	
+//	bb1, err = obj9.MarshalJSON()
+//
+//	require.Equal(t, "[]uint8-<nil>", fmt.Sprintf("%T-%v", bb1, err))
+
+//	err = obj9.SetValue(String("123"))
+
+//	require.Equal(t, "123-<nil>", fmt.Sprintf("%v-%v", obj9, err))
+
+//	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", obj9.Len(), err))
+
+	
+}
+
 func TestObjects3(t *testing.T) {
 	var tmpr Object
 	var err error
+	var ok bool
 	
 	// Array
 	ary1 := Array{Int(1), Int(2), Int(3)}
@@ -250,6 +771,280 @@ func TestObjects3(t *testing.T) {
 	smap1.Unlock()
 	
 	require.Equal(t, "{\"1\":1,\"k1\":\"v1\"}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", smap1.String()))), "-sort"))
+	
+	// *Error
+	err1 := NewCommonError("failed to proceed")
+	
+	require.Equal(t, "155", fmt.Sprintf("%v", err1.TypeCode()))
+	
+	require.Equal(t, "error", fmt.Sprintf("%v", err1.TypeName()))
+	
+	require.Equal(t, "error: failed to proceed", fmt.Sprintf("%v", err1.String()))
+	
+	require.True(t, err1.HasMemeber())
+	
+	tmpr, err = err1.CallMethod("value")
+	
+	require.Equal(t, "error: failed to proceed-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "*charlang.Error", fmt.Sprintf("%T", err1.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", err1.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", err1.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "*charlang.Error", fmt.Sprintf("%T", err1.Copy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", err1.Equal(Int(1))))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", err1.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", err1.CanCall()))
+	
+	tmpr, err = err1.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", err1.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", err1.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", err1.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = err1.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: error", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = err1.IndexGet(ToStringObject("k1"))
+	
+	require.Equal(t, "undefined-error: not indexable: error", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = err1.IndexGet(Int(2))
+	
+	require.Equal(t, "undefined-error: not indexable: error", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = err1.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-InvalidOperatorError: ", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", err1.String()))), "-sort"))
+	
+	// *RuntimeError
+	rerr1 := &(RuntimeError{Err: NewCommonError("failed to proceed")})
+	
+	require.Equal(t, "157", fmt.Sprintf("%v", rerr1.TypeCode()))
+	
+	require.Equal(t, "error", fmt.Sprintf("%v", rerr1.TypeName()))
+	
+	require.Equal(t, "error: failed to proceed", fmt.Sprintf("%v", rerr1.String()))
+	
+	require.True(t, rerr1.HasMemeber())
+	
+	tmpr, err = rerr1.CallMethod("value")
+	
+	require.Equal(t, "error: failed to proceed-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "*charlang.RuntimeError", fmt.Sprintf("%T", rerr1.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", rerr1.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", rerr1.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "*charlang.RuntimeError", fmt.Sprintf("%T", rerr1.Copy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", rerr1.Equal(Int(1))))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", rerr1.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", rerr1.CanCall()))
+	
+	tmpr, err = rerr1.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", rerr1.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", rerr1.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", rerr1.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = rerr1.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: error", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = rerr1.IndexGet(ToStringObject("k1"))
+	
+	require.Equal(t, "undefined-error: not indexable: error", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = rerr1.IndexGet(Int(2))
+	
+	require.Equal(t, "undefined-error: not indexable: error", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = rerr1.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-InvalidOperatorError: ", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", rerr1.String()))), "-sort"))
+	
+	require.Equal(t, "error: abc-InvalidOperatorError: ", fmt.Sprintf("%v-%v", rerr1.NewError("abc"), err))
+
+	// *Time
+	time1 := &(Time{Value: time.Now()})
+	
+	require.Equal(t, "311", fmt.Sprintf("%v", time1.TypeCode()))
+	
+	require.Equal(t, "time", fmt.Sprintf("%v", time1.TypeName()))
+	
+	require.Equal(t, "string", fmt.Sprintf("%T", time1.String()))
+	
+	require.True(t, time1.HasMemeber())
+	
+	tmpr, err = time1.CallMethod("value")
+	
+	require.Equal(t, "*charlang.Time-<nil>", fmt.Sprintf("%T-%v", tmpr, err))
+	
+	require.Equal(t, "*charlang.Time", fmt.Sprintf("%T", time1.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", time1.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", time1.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "*charlang.Time", fmt.Sprintf("%T", time1.Copy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", time1.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", time1.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", time1.CanCall()))
+	
+	tmpr, err = time1.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", time1.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", time1.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", time1.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = time1.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: method(value1) not found for type: time", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = time1.IndexGet(ToStringObject("k1"))
+	
+	require.Equal(t, "undefined-error: method(k1) not found for type: time", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = time1.IndexGet(Int(2))
+	
+	require.Equal(t, "undefined-TypeError: index type expected string, found int", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = time1.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "*charlang.Time-<nil>", fmt.Sprintf("%T-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%T", time1.String()))), "-sort"))
+	
+	tmpr, err = time1.CallName("Format", Call{Args: []Object{String("abc")}})
+
+	require.Equal(t, "abc-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+
+	bb1, err := time1.MarshalBinary()
+
+	require.Equal(t, "[]uint8-<nil>", fmt.Sprintf("%T-%v", bb1, err))
+	
+	err = time1.UnmarshalBinary(bb1)
+
+	require.Equal(t, "[]uint8-<nil>", fmt.Sprintf("%T-%v", bb1, err))
+	
+	bb1, err = time1.MarshalJSON()
+
+	require.Equal(t, "[]uint8-<nil>", fmt.Sprintf("%T-%v", bb1, err))
+
+	err = time1.UnmarshalJSON(bb1)
+
+	require.Equal(t, "[]uint8-<nil>", fmt.Sprintf("%T-%v", bb1, err))
+	
+	require.Equal(t, "*charlang.Time-<nil>", fmt.Sprintf("%T-%v", timeAdd(time1, 10), err))
+
+	require.Equal(t, "charlang.Int-<nil>", fmt.Sprintf("%T-%v", timeSub(time1, time1), err))
+
+	require.Equal(t, "*charlang.Time-<nil>", fmt.Sprintf("%T-%v", timeAddDate(time1, 1, 2, 3), err))
+
+	require.Equal(t, "false-<nil>", fmt.Sprintf("%v-%v", timeAfter(time1, time1), err))
+
+	require.Equal(t, "false-<nil>", fmt.Sprintf("%v-%v", timeBefore(time1, time1), err))
+
+	require.Equal(t, "true-<nil>", fmt.Sprintf("%v-%v", timeEqual(time1, time1), err))
+
+	require.Equal(t, "abc-<nil>", fmt.Sprintf("%v-%v", timeFormat(time1, "abc"), err))
+
+	require.Equal(t, "[97 98 99 97 98 99]-<nil>", fmt.Sprintf("%v-%v", timeAppendFormat(time1, []byte("abc"), "abc"), err))
+
+	require.Equal(t, "*charlang.Time-<nil>", fmt.Sprintf("%T-%v", timeIn(time1, &Location{Value: time.Local}), err))
+
+	require.Equal(t, "*charlang.Time-<nil>", fmt.Sprintf("%T-%v", timeRound(time1, 12), err))
+
+	require.Equal(t, "*charlang.Time-<nil>", fmt.Sprintf("%T-%v", timeTruncate(time1, 12), err))
+
+	tmpr, err = newArgTypeErr("aa", "bb", "cc")
+
+	require.Equal(t, "*charlang.UndefinedType-TypeError: invalid type for argument 'aa': expected bb, found cc", fmt.Sprintf("%T-%v", tmpr, err))
+
+	tmpr, ok = ToTime(Int(11))
+
+	require.Equal(t, "*charlang.Time-true", fmt.Sprintf("%T-%v", tmpr, ok))
+
+	tmpr, ok = ToLocation(String("abc"))
+
+	require.Equal(t, "*charlang.Location-false", fmt.Sprintf("%T-%v", tmpr, ok))
+
+	// *Location
+	loc1 := &(Location{Value: time.UTC})
+	
+	require.Equal(t, "313", fmt.Sprintf("%v", loc1.TypeCode()))
+	
+	require.Equal(t, "location", fmt.Sprintf("%v", loc1.TypeName()))
+	
+	require.Equal(t, "UTC", fmt.Sprintf("%v", loc1.String()))
+	
+	require.True(t, loc1.HasMemeber())
+	
+	tmpr, err = loc1.CallMethod("value")
+	
+	require.Equal(t, "UTC-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "*charlang.Location", fmt.Sprintf("%T", loc1.GetValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", loc1.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", loc1.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", loc1.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", loc1.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", loc1.CanCall()))
+	
+	tmpr, err = loc1.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", loc1.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", loc1.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", loc1.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = loc1.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotIndexableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = loc1.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-InvalidOperatorError: ", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", loc1.String()))), "-sort"))
 	
 }
 

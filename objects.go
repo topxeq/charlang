@@ -5180,6 +5180,10 @@ func (o *Time) SetMember(idxA string, valueA Object) error {
 	return nil
 }
 
+func (o *Time) Copy() Object {
+	return &Time{Value: time.UnixMicro(o.Value.UnixMicro())}
+}
+
 // IsFalsy implements Object interface.
 func (o *Time) IsFalsy() bool {
 	return o.Value.IsZero()
@@ -5330,6 +5334,8 @@ func (o *Time) IndexSet(index, value Object) error {
 // |.Clock     | {"hour": int, "minute": int, "second": int}     |
 // |.UTC       | time                                            |
 // |.Unix      | int                                             |
+// |.UnixMilli  | int                                             |
+// |.UnixMicro  | int                                             |
 // |.UnixNano  | int                                             |
 // |.Year      | int                                             |
 // |.Month     | int                                             |
@@ -5359,7 +5365,7 @@ func (o *Time) IndexGet(index Object) (Object, error) {
 	strT := v.String()
 
 	switch strT {
-	case "Date", "Clock", "UTC", "Unix", "UnixNano", "Year", "Month", "Day",
+	case "Date", "Clock", "UTC", "Unix", "UnixMilli", "UnixMicro", "UnixNano", "Year", "Month", "Day",
 		"Hour", "Minute", "Second", "Nanosecond", "IsZero", "Local", "Location",
 		"YearDay", "Weekday", "ISOWeek", "Zone", "AddDate":
 		return o.CallName(strT, Call{})
@@ -5604,6 +5610,18 @@ var methodTableForTime = map[string]func(*Time, *Call) (Object, error){
 			return Undefined, err
 		}
 		return Int(o.Value.Unix()), nil
+	},
+	"unixMilli": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Int(o.Value.UnixMilli()), nil
+	},
+	"unixMicro": func(o *Time, c *Call) (Object, error) {
+		if err := c.CheckLen(0); err != nil {
+			return Undefined, err
+		}
+		return Int(o.Value.UnixMicro()), nil
 	},
 	"unixNano": func(o *Time, c *Call) (Object, error) {
 		if err := c.CheckLen(0); err != nil {
@@ -7912,6 +7930,40 @@ func (o *MutableString) SetMember(idxA string, valueA Object) error {
 	return nil
 }
 
+func (o *MutableString) CallName(nameA string, c Call) (Object, error) {
+	switch nameA {
+	case "value":
+		return o, nil
+	case "toStr":
+		return ToStringObject(o.Value), nil
+	case "contains":
+		args := c.GetArgs()
+
+		if len(args) < 1 {
+			return NewCommonErrorWithPos(c, "not enough parameters"), nil
+		}
+
+		return Bool(strings.Contains(o.String(), args[0].String())), nil
+	}
+	
+	args := c.GetArgs()
+
+	rs1, errT := CallObjectMethodFunc(o, nameA, args...)
+
+	//	if errT != nil || tk.IsError(rs1) {
+	//		rs3 := tk.ReflectCallMethodCompact(o.Value, nameA, ObjectsToI(args)...)
+	//		return ConvertToObject(rs3), nil
+	//	}
+
+	return rs1, errT
+
+	//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
+}
+
+func (o *MutableString) Copy() Object {
+	return &MutableString{Value: o.String(), Members: o.Members}
+}
+
 // CanIterate implements Object interface.
 func (*MutableString) CanIterate() bool { return true }
 
@@ -8125,7 +8177,9 @@ func (o *Seq) HasMemeber() bool {
 func (o *Seq) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return builtinAnyFunc(Call{Args: []Object{o}})
+		return ToIntObject(o.Value.Get()), nil
+	case "currentValue":
+		return ToIntObject(o.Value.GetCurrent()), nil
 	case "toStr":
 		return ToStringObject(o), nil
 	}
@@ -8135,6 +8189,10 @@ func (o *Seq) CallMethod(nameA string, argsA ...Object) (Object, error) {
 
 func (o *Seq) GetValue() Object {
 	return ToIntObject(o.Value.Get())
+}
+
+func (o *Seq) GetCurrentValue() Object {
+	return ToIntObject(o.Value.GetCurrent())
 }
 
 func (o *Seq) GetMember(idxA string) Object {
@@ -8271,7 +8329,7 @@ func (*Mutex) TypeName() string {
 }
 
 func (o *Mutex) String() string {
-	return fmt.Sprintf("%v", o.Value)
+	return fmt.Sprintf("(mutex)%v", o.Value)
 }
 
 // func (o *Mutex) SetValue(valueA Object) error {
@@ -8287,7 +8345,8 @@ func (o *Mutex) HasMemeber() bool {
 func (o *Mutex) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return builtinAnyFunc(Call{Args: []Object{o}})
+		
+		return String(fmt.Sprintf("%v", o.Value)), nil
 	case "toStr":
 		return ToStringObject(o), nil
 	}
