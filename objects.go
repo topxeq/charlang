@@ -7757,7 +7757,7 @@ func (o *ObjectRef) HasMemeber() bool {
 func (o *ObjectRef) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		return o, nil
+		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
 	}
@@ -7933,7 +7933,7 @@ func (o *MutableString) SetMember(idxA string, valueA Object) error {
 func (o *MutableString) CallName(nameA string, c Call) (Object, error) {
 	switch nameA {
 	case "value":
-		return o, nil
+		return String(o.Value), nil
 	case "toStr":
 		return ToStringObject(o.Value), nil
 	case "contains":
@@ -8346,7 +8346,7 @@ func (o *Mutex) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
 		
-		return String(fmt.Sprintf("%v", o.Value)), nil
+		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
 	}

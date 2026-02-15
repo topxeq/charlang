@@ -297,7 +297,7 @@ func TestObjects4(t *testing.T) {
 	
 	tmpr, err = obj6.CallMethod("value")
 	
-	require.Equal(t, "<objectRef:abc>-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	require.Equal(t, "(any:*charlang.ObjectRef)<objectRef:abc>-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
 	
 	require.Equal(t, "*charlang.ObjectRef", fmt.Sprintf("%T", obj6.GetValue()))
 	
@@ -478,7 +478,7 @@ func TestObjects4(t *testing.T) {
 	
 	tmpr, err = obj9.CallMethod("value")
 	
-	require.Equal(t, "charlang.String-<nil>", fmt.Sprintf("%T-%v", tmpr, err))
+	require.Equal(t, "*charlang.Any-<nil>", fmt.Sprintf("%T-%v", tmpr, err))
 	
 	require.Equal(t, "undefined", fmt.Sprintf("%v", obj9.GetValue()))
 	
@@ -529,6 +529,270 @@ func TestObjects4(t *testing.T) {
 //	require.Equal(t, "123-<nil>", fmt.Sprintf("%v-%v", obj9, err))
 
 //	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", obj9.Len(), err))
+
+	// *Mux
+	obj10 := NewMux()
+	
+	require.Equal(t, "319", fmt.Sprintf("%v", obj10.TypeCode()))
+	
+	require.Equal(t, "mux", fmt.Sprintf("%v", obj10.TypeName()))
+	
+	require.Equal(t, "string", fmt.Sprintf("%T", obj10.String()))
+	
+	require.True(t, obj10.HasMemeber())
+	
+	tmpr, err = obj10.CallMethod("value")
+	
+	require.Equal(t, "*charlang.Any-<nil>", fmt.Sprintf("%T-%v", tmpr, err))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj10.GetValue()))
+	
+//	require.Equal(t, "2", fmt.Sprintf("%v", obj10.GetCurrentValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj10.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj10.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj10.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj10.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj10.CanCall()))
+	
+	tmpr, err = obj10.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj10.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj10.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj10.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj10.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: method(value1) not found for type: mux", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj10.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'mux' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj10.String()))), "-sort"))
+	
+//	tmpr, err = obj10.CallName("writeStr", Call{Args: []Object{String("abc")}})
+//
+//	require.Equal(t, "<nil>-error: unknown method: writeStr", fmt.Sprintf("%v-%v", tmpr, err))
+
+//	require.Equal(t, "abc", fmt.Sprintf("%v", obj10.Copy()))
+	
+//	bb1, err = obj10.MarshalJSON()
+//
+//	require.Equal(t, "[]uint8-<nil>", fmt.Sprintf("%T-%v", bb1, err))
+
+//	err = obj10.SetValue(String("123"))
+
+//	require.Equal(t, "123-<nil>", fmt.Sprintf("%v-%v", obj10, err))
+
+//	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", obj10.Len(), err))
+
+	// *HttpReq
+	obj11, err := NewHttpReq(Call{})
+	
+	require.Equal(t, "321", fmt.Sprintf("%v", obj11.TypeCode()))
+	
+	require.Equal(t, "httpReq", fmt.Sprintf("%v", obj11.TypeName()))
+	
+	require.Equal(t, "string", fmt.Sprintf("%T", obj11.String()))
+	
+	require.True(t, obj11.HasMemeber())
+	
+	tmpr, err = obj11.CallMethod("value")
+	
+	require.Equal(t, "*charlang.Any-<nil>", fmt.Sprintf("%T-%v", tmpr, err))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj11.GetValue()))
+	
+//	require.Equal(t, "2", fmt.Sprintf("%v", obj11.GetCurrentValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj11.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj11.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj11.Equal(Int(1))))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", obj11.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj11.CanCall()))
+	
+	tmpr, err = obj11.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj11.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj11.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj11.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj11.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "error: unknown method: <nil>（*http.Request/invalid）.value1-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj11.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'httpReq' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj11.String()))), "-sort"))
+	
+//	tmpr, err = obj11.CallName("writeStr", Call{Args: []Object{String("abc")}})
+//
+//	require.Equal(t, "<nil>-error: unknown method: writeStr", fmt.Sprintf("%v-%v", tmpr, err))
+
+//	require.Equal(t, "abc", fmt.Sprintf("%v", obj11.Copy()))
+	
+//	bb1, err = obj11.MarshalJSON()
+//
+//	require.Equal(t, "[]uint8-<nil>", fmt.Sprintf("%T-%v", bb1, err))
+
+//	err = obj11.SetValue(String("123"))
+
+//	require.Equal(t, "123-<nil>", fmt.Sprintf("%v-%v", obj11, err))
+
+//	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", obj11.Len(), err))
+
+	// *HttpResp
+	obj12 := &HttpResp{}
+	
+	require.Equal(t, "323", fmt.Sprintf("%v", obj12.TypeCode()))
+	
+	require.Equal(t, "httpResp", fmt.Sprintf("%v", obj12.TypeName()))
+	
+	require.Equal(t, "string", fmt.Sprintf("%T", obj12.String()))
+	
+	require.True(t, obj12.HasMemeber())
+	
+	tmpr, err = obj12.CallMethod("value")
+	
+	require.Equal(t, "*charlang.Any-<nil>", fmt.Sprintf("%T-%v", tmpr, err))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj12.GetValue()))
+	
+//	require.Equal(t, "2", fmt.Sprintf("%v", obj12.GetCurrentValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj12.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj12.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj12.Equal(Int(1))))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", obj12.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj12.CanCall()))
+	
+	tmpr, err = obj12.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj12.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj12.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj12.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj12.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: httpResp", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj12.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'httpResp' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj12.String()))), "-sort"))
+	
+	c1, err := obj12.Write([]byte{1, 2})
+	
+	require.Equal(t, "0-unable to write", fmt.Sprintf("%v-%v", c1, err))
+	
+//	tmpr, err = obj12.CallName("writeStr", Call{Args: []Object{String("abc")}})
+//
+//	require.Equal(t, "<nil>-error: unknown method: writeStr", fmt.Sprintf("%v-%v", tmpr, err))
+
+//	require.Equal(t, "abc", fmt.Sprintf("%v", obj12.Copy()))
+	
+//	bb1, err = obj12.MarshalJSON()
+//
+//	require.Equal(t, "[]uint8-<nil>", fmt.Sprintf("%T-%v", bb1, err))
+
+//	err = obj12.SetValue(String("123"))
+
+//	require.Equal(t, "123-<nil>", fmt.Sprintf("%v-%v", obj12, err))
+
+//	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", obj12.Len(), err))
+
+	// *HttpHandler
+	obj13, err := NewHttpHandler(Call{}) // &HttpHandler{}
+	
+	require.Equal(t, "325", fmt.Sprintf("%v", obj13.TypeCode()))
+	
+	require.Equal(t, "httpHandler", fmt.Sprintf("%v", obj13.TypeName()))
+	
+	require.Equal(t, "string", fmt.Sprintf("%T", obj13.String()))
+	
+	require.True(t, obj13.HasMemeber())
+	
+	tmpr, err = obj13.CallMethod("value")
+	
+	require.Equal(t, "*charlang.Any-<nil>", fmt.Sprintf("%T-%v", tmpr, err))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj13.GetValue()))
+	
+//	require.Equal(t, "2", fmt.Sprintf("%v", obj13.GetCurrentValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj13.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj13.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj13.Equal(Int(1))))
+	
+	require.Equal(t, "true", fmt.Sprintf("%v", obj13.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj13.CanCall()))
+	
+	tmpr, err = obj13.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj13.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj13.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj13.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj13.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: method(value1) not found for type: httpHandler", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj13.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'httpHandler' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj13.String()))), "-sort"))
+	
+//	tmpr, err = obj13.CallName("writeStr", Call{Args: []Object{String("abc")}})
+//
+//	require.Equal(t, "<nil>-error: unknown method: writeStr", fmt.Sprintf("%v-%v", tmpr, err))
+
+//	require.Equal(t, "abc", fmt.Sprintf("%v", obj13.Copy()))
+	
+//	bb1, err = obj13.MarshalJSON()
+//
+//	require.Equal(t, "[]uint8-<nil>", fmt.Sprintf("%T-%v", bb1, err))
+
+//	err = obj13.SetValue(String("123"))
+
+//	require.Equal(t, "123-<nil>", fmt.Sprintf("%v-%v", obj13, err))
+
+//	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", obj13.Len(), err))
 
 	
 }
