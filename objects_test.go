@@ -16,6 +16,210 @@ import (
 	tk "github.com/topxeq/tkc"
 )
 
+func TestObjects5(t *testing.T) {
+	var tmpr Object
+	var err error
+//	var ok bool
+	var n int
+
+	// *Reader
+	obj1, err := NewReader(Call{Args: []Object{String("abc")}})
+	
+	require.Equal(t, "331", fmt.Sprintf("%v", obj1.TypeCode()))
+	
+	require.Equal(t, "reader", fmt.Sprintf("%v", obj1.TypeName()))
+	
+	require.Equal(t, "string", fmt.Sprintf("%T", obj1.String()))
+	
+	require.True(t, obj1.HasMemeber())
+	
+	tmpr, err = obj1.CallMethod("value")
+	
+	require.Equal(t, "*charlang.Any-<nil>", fmt.Sprintf("%T-%v", tmpr, err))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj1.GetValue()))
+	
+//	require.Equal(t, "2", fmt.Sprintf("%v", obj1.GetCurrentValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj1.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj1.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj1.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj1.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj1.CanCall()))
+	
+	tmpr, err = obj1.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj1.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj1.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj1.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj1.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: reader", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj1.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'reader' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj1.String()))), "-sort"))
+	
+	obj1n := obj1.(*Reader)
+	
+	obj1n.SetSize(10)
+	
+	require.Equal(t, "10", fmt.Sprintf("%v", obj1n.Size()))
+	
+	bufT := make([]byte, 2)
+	
+	n, err = obj1n.Read(bufT)
+	
+	require.Equal(t, "2-<nil>", fmt.Sprintf("%v-%v", n, err))
+	
+	err = obj1n.Close()
+	
+	require.Equal(t, "unable to close", fmt.Sprintf("%v", err))
+
+	// *Writer
+	sb1 := &StringBuilder{Value: new(strings.Builder)}
+	
+	obj2, err := NewWriter(Call{Args: []Object{sb1}})
+	
+	require.Equal(t, "333", fmt.Sprintf("%v", obj2.TypeCode()))
+	
+	require.Equal(t, "writer", fmt.Sprintf("%v", obj2.TypeName()))
+	
+	require.Equal(t, "string", fmt.Sprintf("%T", obj2.String()))
+	
+	require.True(t, obj2.HasMemeber())
+	
+	tmpr, err = obj2.CallMethod("value")
+	
+	require.Equal(t, "*charlang.Any-<nil>", fmt.Sprintf("%T-%v", tmpr, err))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj2.GetValue()))
+	
+//	require.Equal(t, "2", fmt.Sprintf("%v", obj2.GetCurrentValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj2.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj2.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj2.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj2.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj2.CanCall()))
+	
+	tmpr, err = obj2.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj2.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj2.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj2.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj2.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: writer", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj2.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'writer' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj2.String()))), "-sort"))
+	
+	obj2n := obj2.(*Writer)
+	
+	n, err = obj2n.Write([]byte("abc"))
+	
+	require.Equal(t, "3-<nil>", fmt.Sprintf("%v-%v", n, err))
+	
+	err = obj2n.Close()
+	
+	require.Equal(t, "unable to close", fmt.Sprintf("%v", err))
+	
+	// *File
+	obj3, err := NewFile(Call{Args: []Object{String("stdin")}})
+	
+	require.Equal(t, "401", fmt.Sprintf("%v", obj3.TypeCode()))
+	
+	require.Equal(t, "file", fmt.Sprintf("%v", obj3.TypeName()))
+	
+	require.Equal(t, "string", fmt.Sprintf("%T", obj3.String()))
+	
+	require.True(t, obj3.HasMemeber())
+	
+	tmpr, err = obj3.CallMethod("value")
+	
+	require.Equal(t, "*charlang.Any-<nil>", fmt.Sprintf("%T-%v", tmpr, err))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj3.GetValue()))
+	
+//	require.Equal(t, "2", fmt.Sprintf("%v", obj3.GetCurrentValue()))
+	
+	require.Equal(t, "undefined", fmt.Sprintf("%v", obj3.GetMember("a")))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj3.SetMember("a", ToStringObject("b"))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj3.Equal(Int(1))))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj3.IsFalsy()))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj3.CanCall()))
+	
+	tmpr, err = obj3.Call(ToStringObject("value1"))
+	
+	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	require.Equal(t, "false", fmt.Sprintf("%v", obj3.CanIterate()))
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj3.Iterate()))
+	
+	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj3.IndexSet(Int(1), Int(1))))
+	
+	tmpr, err = obj3.IndexGet(ToStringObject("value1"))
+	
+	require.Equal(t, "undefined-error: not indexable: file", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	tmpr, err = obj3.BinaryOp(token.Add, Int(3))
+
+	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'file' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj3.String()))), "-sort"))
+	
+	obj3n := obj3.(*File)
+	
+	n, err = obj3n.Write([]byte("abc"))
+	
+	require.Equal(t, "0-write /dev/stdin: Access is denied.", fmt.Sprintf("%v-%v", n, err))
+	
+	buf1 := make([]byte, 2)
+	
+	n, err = obj3n.Read(buf1)
+	
+	require.Equal(t, "0-EOF", fmt.Sprintf("%v-%v", n, err))
+	
+	tmpr, err = obj3n.CallName("getSize", Call{})
+	
+	require.Equal(t, "0-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	
+	err = obj3n.Close()
+	
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", err))
+	
+
+}
+
 func TestObjects4(t *testing.T) {
 	var tmpr Object
 	var err error

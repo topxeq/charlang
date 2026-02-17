@@ -9558,6 +9558,12 @@ func NewReader(c Call) (Object, error) {
 		return &Reader{Value: r1.Value}, nil
 	}
 
+	r2, ok := argsA[0].(*File)
+
+	if ok {
+		return &Reader{Value: r2.Value}, nil
+	}
+
 	b1, ok := argsA[0].(Bytes)
 
 	if ok {
@@ -9914,7 +9920,7 @@ func NewWriter(c Call) (Object, error) {
 	// // sb.WriteString(s1.Value)
 
 	// return &Writer{Value: &sb}, nil
-	return NewCommonError("unsupported type: %T", argsA[0]), nil
+	return NewCommonErrorWithPos(c, "unsupported type: %T", argsA[0]), nil
 }
 
 // File object is used for represent os.File type value
@@ -9955,7 +9961,7 @@ func (o *File) Read(p []byte) (n int, err error) {
 }
 
 // comply to io.Writer
-func (o *File) Writer(p []byte) (n int, err error) {
+func (o *File) Write(p []byte) (n int, err error) {
 	return o.Value.Write(p)
 }
 
@@ -9999,6 +10005,41 @@ var methodTableForFile = map[string]func(*File, *Call) (Object, error){
 		mapT := Map{"Path": ToStringObject(filePathT), "Abs": ToStringObject(absPathT), "Name": ToStringObject(fileNameT), "Ext": ToStringObject(filepath.Ext(fileNameT)), "Size": ToStringObject(tk.Int64ToStr(fi.Size())), "IsDir": ToStringObject(tk.BoolToStr(fi.IsDir())), "Time": ToStringObject(tk.FormatTime(fi.ModTime(), tk.TimeFormatCompact)), "Mode": ToStringObject(fmt.Sprintf("%v", fi.Mode()))}
 
 		return mapT, nil
+		// fi, errT := o.Value.Stat()
+
+		// if errT != nil {
+		// 	return NewCommonErrorWithPos(*c, "%v", errT), nil
+		// }
+
+		// fileNameT := fi.Name()
+		// filePathT := ""
+		// absPathT := ""
+
+		// mapT := Map{"Path": ToStringObject(filePathT), "Abs": ToStringObject(absPathT), "Name": ToStringObject(fileNameT), "Ext": ToStringObject(filepath.Ext(fileNameT)), "Size": ToStringObject(tk.Int64ToStr(fi.Size())), "IsDir": ToStringObject(tk.BoolToStr(fi.IsDir())), "Time": ToStringObject(tk.FormatTime(fi.ModTime(), tk.TimeFormatCompact)), "Mode": ToStringObject(fmt.Sprintf("%v", fi.Mode()))}
+
+		// return mapT, nil
+	},
+	"getSize": func(o *File, c *Call) (Object, error) {
+		filePathT := ""
+
+		filePathMemberT := o.GetMember("Path")
+		filePathT = strings.TrimSpace(filePathMemberT.String())
+
+		if IsUndefInternal(filePathMemberT) || filePathT == "" {
+			fi, errT := o.Value.Stat()
+			if errT != nil && !os.IsExist(errT) {
+				return NewCommonErrorWithPos(*c, "%v", errT), nil
+			}
+
+			return Int(fi.Size()), nil
+		}
+
+		fi, errT := os.Stat(filePathT)
+		if errT != nil && !os.IsExist(errT) {
+			return NewCommonErrorWithPos(*c, "%v", errT), nil
+		}
+
+		return Int(fi.Size()), nil
 		// fi, errT := o.Value.Stat()
 
 		// if errT != nil {
