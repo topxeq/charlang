@@ -14,7 +14,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff
 	github.com/topxeq/sqltk v0.0.0-20260124035901-98bf8683db30
-	github.com/topxeq/tkc v0.0.0-20260225062728-2458d92d9e05
+	github.com/topxeq/tkc v0.0.0
 )
 
 require (
@@ -153,6 +153,6 @@ require (
 	golang.org/x/image v0.36.0
 )
 
-//replace github.com/topxeq/tkc v0.0.0 => ../tkc
+replace github.com/topxeq/tkc v0.0.0 => ../tkc
 
 // replace github.com/topxeq/sqltk v0.0.0 => ../sqltk

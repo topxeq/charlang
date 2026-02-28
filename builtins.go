@@ -507,6 +507,10 @@ const (
 	BuiltinExtractFileInArchive
 	BuiltinExtractArchive
 	BuiltinIsFileNameUtf8InZipBytes
+	BuiltinZipPath
+	BuiltinZipPaths
+	BuiltinAddPathsToZipFile
+	BuiltinUnzipToPath
 	BuiltinGetOSName
 	BuiltinGetOSArch
 	BuiltinGetOSArgs
@@ -1269,6 +1273,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"extractFileInArchive":     BuiltinExtractFileInArchive,     // extractFileInArchive("example.zip", "subdir1/a.txt", "toDir/a.txt")
 	"extractArchive":           BuiltinExtractArchive,           // extractArchive("example.zip", "toDir", "-noFileDir", "-force")
 	"isFileNameUtf8InZipBytes": BuiltinIsFileNameUtf8InZipBytes, // return boolean value or error
+	"zipPath": BuiltinZipPath, // Compress file or directory to zip file
+	"zipPaths": BuiltinZipPaths, // Compress files and/or directories to zip file, usage: result := zipPaths([`D:\tmpx\tmp1\spSPLZ2025001610_2025-10-28 09_41_20.pdf`, `D:\tmpx\tmp1\tt1`, `D:\tmpx\wstest`], `tt4.zip`, "-implicitTop", "-overwrite", "-compressionLevel=9", "-continueOnError"), implicitTop indicates keep directory struct, compressionLevel = 0-9
+	"addPathsToZipFile": BuiltinAddPathsToZipFile,
+	"unzipToPath": BuiltinUnzipToPath, // Uncompress files or directories to path
 
 	// network/web related
 	"joinUrlPath": BuiltinJoinUrlPath, // join multiple url paths into one, equivalent to path.Join in the Go language standard library
@@ -3529,6 +3537,26 @@ var BuiltinObjects = [...]Object{
 		Name:    "isFileNameUtf8InZipBytes",
 		Value:   fnALyVsRA(tk.IsFileNameUtf8InZipBytes),
 		ValueEx: fnALyVsRAex(tk.IsFileNameUtf8InZipBytes),
+	},
+	BuiltinZipPath: &BuiltinFunction{
+		Name:    "zipPath",
+		Value:   fnASSVsRE(tk.ZipPathToFile),
+		ValueEx: fnASSVsREex(tk.ZipPathToFile),
+	},
+	BuiltinZipPaths: &BuiltinFunction{
+		Name:    "zipPaths",
+		Value:   fnALsSVsRE(tk.ZipPathsToFile),
+		ValueEx: fnALsSVsREex(tk.ZipPathsToFile),
+	},
+	BuiltinAddPathsToZipFile: &BuiltinFunction{
+		Name:    "addPathsToZipFile",
+		Value:   fnALsSVsRE(tk.AddPathsToZipFile),
+		ValueEx: fnALsSVsREex(tk.AddPathsToZipFile),
+	},
+	BuiltinUnzipToPath: &BuiltinFunction{
+		Name:    "unzipToPath",
+		Value:   fnASSVsRE(tk.UnzipToPath),
+		ValueEx: fnASSVsREex(tk.UnzipToPath),
 	},
 
 	// network/web related
@@ -7798,6 +7826,47 @@ func fnASSVsREex(fn func(string, string, ...string) error) CallableExFunc {
 		vargs := ObjectsToS(args[2:])
 
 		rs := fn(args[0].String(), args[1].String(), vargs...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.ZipPathsToFile
+func fnALsSVsRE(fn func([]string, string, ...string) error) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+		
+		nv, ok := args[0].(Array)
+		if !ok {
+			return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+		}
+
+		vargs := ObjectsToS(args[2:])
+
+		rs := fn(ObjectsToS(nv), args[1].String(), vargs...)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+func fnALsSVsREex(fn func([]string, string, ...string) error) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+		
+		nv, ok := args[0].(Array)
+		if !ok {
+			return NewCommonError("invalid parameter 1 type: (%T)%v", args[0], args[0]), nil
+		}
+
+		vargs := ObjectsToS(args[2:])
+
+		rs := fn(ObjectsToS(nv), args[1].String(), vargs...)
 
 		return ConvertToObject(rs), nil
 	}
