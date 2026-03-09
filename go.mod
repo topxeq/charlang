@@ -14,7 +14,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff
 	github.com/topxeq/sqltk v0.0.0-20260124035901-98bf8683db30
-	github.com/topxeq/tkc v0.0.0
+	github.com/topxeq/tkc v0.0.0-20260309011933-5d9a035395ca
 )
 
 require (

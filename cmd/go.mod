@@ -18,7 +18,7 @@ require (
 	github.com/ncruces/zenity v0.10.13
 	github.com/sijms/go-ora/v2 v2.7.17
 	github.com/topxeq/charlang v0.0.0
-	github.com/topxeq/tkc v0.0.0
+	github.com/topxeq/tkc v0.0.0-20260309011933-5d9a035395ca
 )
 
 require (

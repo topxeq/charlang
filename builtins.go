@@ -327,6 +327,7 @@ const (
 	BuiltinFloatToStr
 	BuiltinStrToUtf8
 	BuiltinStrUtf8ToGb
+	BuiltinBytesGbToUtf8Str
 	BuiltinIsUtf8
 	BuiltinSimpleStrToMap
 	BuiltinSimpleStrToMapReverse
@@ -376,6 +377,7 @@ const (
 	BuiltinCompareText
 	BuiltinLoadBytes
 	BuiltinLoadBytesFromFile
+	BuiltinLoadBytesFromFileLimit
 	BuiltinSaveBytes
 	BuiltinOpenFile
 	BuiltinCloseFile
@@ -542,6 +544,7 @@ const (
 	BuiltinCheckErrX
 	BuiltinCheckEmpty
 	BuiltinLoadText
+	BuiltinLoadLines
 	BuiltinSaveText
 	BuiltinAppendText
 	BuiltinJoinPath
@@ -833,6 +836,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"strToUtf8":   BuiltinStrToUtf8,
 	"strUtf8ToGb": BuiltinStrUtf8ToGb,
+	"bytesGbToUtf8Str": BuiltinBytesGbToUtf8Str,
 	"isUtf8":      BuiltinIsUtf8,
 
 	"simpleStrToMap":        BuiltinSimpleStrToMap,
@@ -1247,10 +1251,12 @@ var BuiltinsMap = map[string]BuiltinType{
 	"removePath": BuiltinRemovePath, // remove file or directory, use "-recursive" to remove with files and sub-directories
 
 	"loadText":   BuiltinLoadText,
+	"loadLines":   BuiltinLoadLines, // load limit lines from file, loadLines("fileName", 3), 0 indicates no limit
 	"saveText":   BuiltinSaveText,
 	"appendText": BuiltinAppendText,
 
 	"loadBytes":         BuiltinLoadBytesFromFile, // load bytes from file, usage: loadBytes("file.bin"), return error or Bytes([]byte), loadBytes("a.txt", 5) to read only 5 bytes, can accept a File object
+	"loadBytesFromFileLimit":         BuiltinLoadBytesFromFileLimit, // load bytes from file with limit, usage: loadBytesLimit("file.bin", 10), return error or Bytes([]byte), loadBytes("a.txt", -5) to read the last only 5 bytes
 	"loadBytesFromFile": BuiltinLoadBytesFromFile, // the same as loadBytes
 	"saveBytes":         BuiltinSaveBytes,
 
@@ -1489,7 +1495,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"leAppendFromStr":  BuiltinLeAppendFromStr,
 	"leSaveToStr":      BuiltinLeSaveToStr,
 	"leToStr":          BuiltinLeSaveToStr,
-	"leLoadFromFile":   BuiltinLeLoadFromFile,
+	"leLoadFromFile":   BuiltinLeLoadFromFile, // leLoadFromFile("filePath", lineLimit)
 	"leAppendFromFile": BuiltinLeAppendFromFile,
 	"leSaveToFile":     BuiltinLeSaveToFile,
 	"leAppendToFile":   BuiltinLeAppendToFile,
@@ -2101,6 +2107,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strUtf8ToGb",
 		Value:   fnASRS(tk.ConvertToGB18030),
 		ValueEx: fnASRSex(tk.ConvertToGB18030),
+	},
+	BuiltinBytesGbToUtf8Str: &BuiltinFunction{
+		Name:    "bytesGbToUtf8Str",
+		Value:   CallExAdapter(builtinBytesGbToUtf8StrFunc),
+		ValueEx: builtinBytesGbToUtf8StrFunc,
 	},
 	BuiltinIsUtf8: &BuiltinFunction{
 		Name:    "isUtf8",
@@ -3434,6 +3445,11 @@ var BuiltinObjects = [...]Object{
 		Value:   fnASRS(tk.LoadStringFromFile),
 		ValueEx: fnASRSex(tk.LoadStringFromFile),
 	},
+	BuiltinLoadLines: &BuiltinFunction{
+		Name:    "loadLines",
+		Value:   fnASIRSE(tk.LoadLinesFromFileLimitE),
+		ValueEx: fnASIRSEex(tk.LoadLinesFromFileLimitE),
+	},
 	BuiltinSaveText: &BuiltinFunction{
 		Name:    "saveText",
 		Value:   fnASSRS(tk.SaveStringToFile),
@@ -3454,6 +3470,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "loadBytesFromFile",
 		Value:   CallExAdapter(builtinLoadBytesFromFileFunc),
 		ValueEx: builtinLoadBytesFromFileFunc,
+	},
+	BuiltinLoadBytesFromFileLimit: &BuiltinFunction{
+		Name:    "loadBytesFromFileLimit",
+		Value:   CallExAdapter(builtinLoadBytesFromFileLimitFunc),
+		ValueEx: builtinLoadBytesFromFileLimitFunc,
 	},
 	BuiltinSaveBytes: &BuiltinFunction{
 		Name:    "saveBytes",
@@ -7183,6 +7204,41 @@ func fnASIRSex(fn func(string, int) string) CallableExFunc {
 		}
 
 		rs := fn(args[0].String(), ToIntQuick(args[1]))
+		return ToStringObject(rs), nil
+	}
+}
+
+// like tk.LoadLinesFromFileLimitE
+func fnASIRSE(fn func(string, int) (string, error)) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs, errT := fn(args[0].String(), ToIntQuick(args[1]))
+
+		if errT != nil {
+			return NewCommonError(errT.Error(), (make([]interface{}, 0))...), nil
+		}
+
+		return ToStringObject(rs), nil
+	}
+}
+
+func fnASIRSEex(fn func(string, int) (string, error)) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 2 {
+			return Undefined, ErrWrongNumArguments.NewError("not enough parameters")
+		}
+
+		rs, errT := fn(args[0].String(), ToIntQuick(args[1]))
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, errT.Error(), (make([]interface{}, 0))...), nil
+		}
+
 		return ToStringObject(rs), nil
 	}
 }
@@ -11620,6 +11676,26 @@ func builtinLoadBytesFromFileFunc(c Call) (Object, error) {
 	return Bytes(rsT.([]byte)), nil
 }
 
+func builtinLoadBytesFromFileLimitFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+	
+	limitT := ToIntQuick(args[1])
+
+	pathT := args[0].String()
+
+	rsT, errT := tk.LoadBytesFromFileLimitE(pathT, limitT)
+
+	if errT != nil {
+		return NewCommonErrorWithPos(c, "%v", errT), nil
+	}
+
+	return Bytes(rsT), nil
+}
+
 func builtinCloseFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -16041,16 +16117,33 @@ func builtinLeLoadFromFileFunc(c Call) (Object, error) {
 	if len(args) < 1 {
 		return NewCommonError("not enough parameters"), nil
 	}
+	
+	if len(args) > 1 {
+		limitT := 0
+	
+		limitT = ToIntQuick(args[1])
 
-	strT, errT := tk.LoadStringFromFileE(args[0].String())
+		strT, errT := tk.LoadLinesFromFileLimitE(args[0].String(), limitT)
 
-	if errT != nil {
-		return NewCommonErrorWithPos(c, "%v", errT), nil
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		}
+
+		vmT.LeBuf = tk.SplitLines(strT)
+
+		return Undefined, nil
+	} else {
+		strT, errT := tk.LoadStringFromFileE(args[0].String())
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "%v", errT), nil
+		}
+
+		vmT.LeBuf = tk.SplitLines(strT)
+
+		return Undefined, nil
 	}
 
-	vmT.LeBuf = tk.SplitLines(strT)
-
-	return Undefined, nil
 }
 
 func builtinLeLoadFromUrlFunc(c Call) (Object, error) {
@@ -16629,6 +16722,26 @@ func builtinStrToUtf8Func(c Call) (Object, error) {
 	encT := tk.GetSwitch(vs, "-encoding=", "")
 
 	return String(tk.ConvertStringToUTF8(args[0].String(), encT)), nil
+}
+
+func builtinBytesGbToUtf8StrFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+	
+	bytesT, ok := args[0].(Bytes)
+	
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupported parameter type: %v", args[0].TypeName()), nil
+	}
+
+	vs := ObjectsToS(args[1:])
+
+	encT := tk.GetSwitch(vs, "-encoding=", "")
+
+	return String(tk.ConvertToUTF8([]byte(bytesT), encT)), nil
 }
 
 func builtinIsUtf8Func(c Call) (Object, error) {
