@@ -4,6 +4,8 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/topxeq/charlang.svg)](https://pkg.go.dev/github.com/topxeq/charlang)
 [![Go Report Card](https://goreportcard.com/badge/github.com/topxeq/charlang)](https://goreportcard.com/report/github.com/topxeq/charlang)
 
+**[中文版](./README_CN.md)** | **[English Version](./README.md)**
+
 - [The Char Language (Charlang)](#the-char-language-charlang)
   - [1. Features](#1-features)
   - [2. More Features](#2-more-features)
@@ -176,6 +178,13 @@ return fib(35)
 [Go Reference](https://pkg.go.dev/github.com/topxeq/charlang)
 
 [Builtin Functions](https://topget.org/dc/charlang/funcs)
+
+## Additional Documentation (中英文双语)
+
+- **[QuickStart_EN.md](./QuickStart_EN.md)** - Charlang Quick Start Guide (English)
+- **[QuickStart_CN.md](./QuickStart_CN.md)** - 察语言快速入门 (Chinese)
+- **[Reference_EN.md](./Reference_EN.md)** - Charlang Complete Reference (English)
+- **[Reference_CN.md](./Reference_CN.md)** - 察语言参考 (Chinese)
 
 ## 4. Download
 
