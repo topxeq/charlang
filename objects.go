@@ -7948,6 +7948,35 @@ func (o *MutableString) CallName(nameA string, c Call) (Object, error) {
 	
 	args := c.GetArgs()
 
+	rs := o.GetMember(nameA)
+	
+	if !IsUndefInternal(rs) {
+		nv, ok := rs.(*CompiledFunction)
+
+		if !ok {
+			return NewCommonErrorWithPos(c, "invalid type: %#v", c.This), nil
+		}
+
+		if nv.Instructions == nil {
+			return NewCommonErrorWithPos(c, "code not compiled"), nil
+		}
+
+		if c.VM() == nil {
+			return NewCommonErrorWithPos(c, "no VM specified"), nil
+		}
+
+		argsT := c.GetArgs()
+
+		retT, errT := NewInvoker(c.VM(), nv).Invoke(argsT...)
+
+		if errT != nil {
+			return NewCommonErrorWithPos(c, "failed to run compiled function: %v", errT), nil
+		}
+		
+		return retT, nil
+
+	}
+
 	rs1, errT := CallObjectMethodFunc(o, nameA, args...)
 
 	//	if errT != nil || tk.IsError(rs1) {
@@ -7956,6 +7985,9 @@ func (o *MutableString) CallName(nameA string, c Call) (Object, error) {
 	//	}
 
 	return rs1, errT
+	// return nil, ErrIndexOutOfBounds
+//	return GetObjectMethodFunc(o, nameA)
+
 
 	//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 }
