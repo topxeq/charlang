@@ -276,8 +276,8 @@ func (ObjectImpl) TypeName() string {
 
 // String implements Object interface.
 func (o ObjectImpl) String() string {
-//	return fmt.Sprintf("(objectImpl)")
-	 panic(ErrNotImplemented)
+	//	return fmt.Sprintf("(objectImpl)")
+	panic(ErrNotImplemented)
 }
 
 func (o ObjectImpl) HasMemeber() bool {
@@ -964,9 +964,9 @@ func (o Uint) Call(_ ...Object) (Object, error) {
 func (Uint) CanIterate() bool { return true }
 
 // Iterate implements Object interface.
-func (o Uint) Iterate() Iterator { 
+func (o Uint) Iterate() Iterator {
 	return &UintIterator{V: o}
-//	return nil 
+	//	return nil
 }
 
 // IndexSet implements Object interface.
@@ -1652,6 +1652,7 @@ func (o Byte) Format(s fmt.State, verb rune) {
 
 // String represents string values and implements Object interface.
 type String string
+
 //type String struct {
 //	ObjectImpl
 //	Value string
@@ -1785,41 +1786,41 @@ func (o String) GetValue() Object {
 
 func (o String) GetMember(idxA string) Object {
 	return Undefined
-//	if o.Members == nil {
-//		return Undefined
-//	}
-//
-//	v1, ok := o.Members[idxA]
-//
-//	if !ok {
-//		return Undefined
-//	}
-//
-//	return v1
+	//	if o.Members == nil {
+	//		return Undefined
+	//	}
+	//
+	//	v1, ok := o.Members[idxA]
+	//
+	//	if !ok {
+	//		return Undefined
+	//	}
+	//
+	//	return v1
 }
 
 func (o String) SetMember(idxA string, valueA Object) error {
-//	if o.Members == nil {
-//		o.Members = map[string]Object{}
-//	}
-//
-//	if IsUndefInternal(valueA) {
-//		delete(o.Members, idxA)
-//		return nil
-//	}
-//
-//	o.Members[idxA] = valueA
-//
-////	tk.Pln(idxA, valueA, o.Members)
-//	return nil
-	 return fmt.Errorf("unsupported action(set member)")
+	//	if o.Members == nil {
+	//		o.Members = map[string]Object{}
+	//	}
+	//
+	//	if IsUndefInternal(valueA) {
+	//		delete(o.Members, idxA)
+	//		return nil
+	//	}
+	//
+	//	o.Members[idxA] = valueA
+	//
+	////	tk.Pln(idxA, valueA, o.Members)
+	//	return nil
+	return fmt.Errorf("unsupported action(set member)")
 }
 
 func (o String) Copy() Object {
 	if DebugModeG {
 		tk.Pl("string copy: %#v", o)
 	}
-	
+
 	return String(o.String()) // , Methods: o.Methods, Members: o.Members
 }
 
@@ -1856,8 +1857,8 @@ func (o String) IndexGet(index Object) (Object, error) {
 
 	var idx int
 	switch v := index.(type) {
-//	case UndefinedType:
-//		return nil, NewIndexTypeError("int|uint", index.TypeName())
+	//	case UndefinedType:
+	//		return nil, NewIndexTypeError("int|uint", index.TypeName())
 	case Byte:
 		idx = int(v)
 	case Int:
@@ -1981,6 +1982,18 @@ func (o String) MarshalJSON() ([]byte, error) {
 	return b1, err
 }
 
+// ToStringObject converts any Object to string representation.
+// Parameters:
+//   - argA: The Object to convert (any type)
+//
+// Returns:
+//   - A String object containing string representation of object
+//
+// Examples:
+//
+//	ToStringObject(42)  // Returns: String("42")
+//	ToStringObject("hello")  // Returns: String("hello")
+//	ToStringObject([1, 2, 3])  // Returns: String("1, 2, 3")
 func ToStringObject(argA interface{}) String {
 	switch nv := argA.(type) {
 	case String:
@@ -2026,11 +2039,32 @@ func ToStringObject(argA interface{}) String {
 	return String(fmt.Sprintf("%v", argA))
 }
 
+// FromStringObject creates a String object from string.
+// Parameters:
+//   - argA: The string to wrap (required)
+//
+// Returns:
+//   - A new String object
+//
+// Examples:
+//
+//	FromStringObject("hello") // Returns: String("hello")
+//	FromStringObject("42") // Returns: String("42")
 func FromStringObject(argA String) string {
 	return argA.String()
 }
 
 func ToIntObject(argA interface{}, defaultA ...int) Int {
+	// ToIntObject converts Object to Int with optional default.
+	// Parameters:
+	//   - argA: The Object to convert (any type)
+	//   - defaultA: Default value if conversion fails (optional)
+	// Returns:
+	//   - An Int object or error if default fails
+	// Examples:
+	//	ToIntObject(42) // Returns: Int(42)
+	//	ToIntObject("42") // Returns: Int(42)
+	//	ToIntObject("hello", 0) // Returns: Int(0)
 	defaultT := 0
 	if len(defaultA) > 0 {
 		defaultT = defaultA[0]
@@ -2100,11 +2134,11 @@ func ToIntObject(argA interface{}, defaultA ...int) Int {
 
 func ToByteObject(argA interface{}, defaultA ...byte) Byte {
 	var defaultT byte = 0
-	
+
 	if len(defaultA) > 0 {
 		defaultT = defaultA[0]
 	}
-	
+
 	switch nv := argA.(type) {
 	case Bool:
 		if nv {
@@ -2676,7 +2710,7 @@ func (o *CompiledFunction) GetMember(idxA string) Object {
 	if o == nil {
 		return NewCommonError("nil object")
 	}
-	
+
 	if o.Members == nil {
 		return Undefined
 	}
@@ -2694,7 +2728,7 @@ func (o *CompiledFunction) SetMember(idxA string, valueA Object) error {
 	if o == nil {
 		return fmt.Errorf("nil object")
 	}
-	
+
 	if o.Members == nil {
 		o.Members = map[string]Object{}
 	}
@@ -2783,12 +2817,12 @@ func (*CompiledFunction) BinaryOp(token.Token, Object) (Object, error) {
 }
 
 // IsFalsy implements Object interface.
-func (o *CompiledFunction) IsFalsy() bool { 
+func (o *CompiledFunction) IsFalsy() bool {
 	if o == nil {
 		return true
 	}
-	
-	return o.Instructions == nil 
+
+	return o.Instructions == nil
 }
 
 // Equal implements Object interface.
@@ -2917,7 +2951,7 @@ func (o *Function) String() string {
 	if o == nil {
 		return "<nil>"
 	}
-	
+
 	return fmt.Sprintf("<function:%s>", o.Name)
 }
 
@@ -2945,7 +2979,7 @@ func (o *Function) GetMember(idxA string) Object {
 	if o == nil {
 		return NewCommonError("nil object")
 	}
-	
+
 	if o.Members == nil {
 		return Undefined
 	}
@@ -2963,7 +2997,7 @@ func (o *Function) SetMember(idxA string, valueA Object) error {
 	if o == nil {
 		return fmt.Errorf("nil object")
 	}
-	
+
 	if o.Members == nil {
 		o.Members = map[string]Object{}
 	}
@@ -2998,12 +3032,12 @@ func (o *Function) Equal(right Object) bool {
 }
 
 // IsFalsy implements Object interface.
-func (o *Function) IsFalsy() bool { 
+func (o *Function) IsFalsy() bool {
 	if o == nil {
 		return true
 	}
-	
-	return o.Value == nil && o.ValueEx == nil 
+
+	return o.Value == nil && o.ValueEx == nil
 }
 
 // CanCall implements Object interface.
@@ -3014,7 +3048,7 @@ func (o *Function) Call(args ...Object) (Object, error) {
 	if o == nil {
 		return Undefined, NewCommonError("nil object")
 	}
-	
+
 	return o.Value(args...)
 }
 
@@ -3086,7 +3120,7 @@ func (o *BuiltinFunction) String() string {
 	if o == nil {
 		return "<nil>"
 	}
-	
+
 	return fmt.Sprintf("<builtinFunction:%s>", o.Name)
 }
 
@@ -3114,7 +3148,7 @@ func (o *BuiltinFunction) GetMember(idxA string) Object {
 	if o == nil {
 		return NewCommonError("nil object")
 	}
-	
+
 	if o.Members == nil {
 		return Undefined
 	}
@@ -3132,7 +3166,7 @@ func (o *BuiltinFunction) SetMember(idxA string, valueA Object) error {
 	if o == nil {
 		return fmt.Errorf("nil object")
 	}
-	
+
 	if o.Members == nil {
 		o.Members = map[string]Object{}
 	}
@@ -3153,7 +3187,7 @@ func (o *BuiltinFunction) Copy() Object {
 	if o == nil {
 		return NewCommonError("nil object")
 	}
-	
+
 	return &BuiltinFunction{
 		Name:    o.Name,
 		Value:   o.Value,
@@ -3171,12 +3205,12 @@ func (o *BuiltinFunction) Equal(right Object) bool {
 }
 
 // IsFalsy implements Object interface.
-func (o *BuiltinFunction) IsFalsy() bool { 
+func (o *BuiltinFunction) IsFalsy() bool {
 	if o == nil {
 		return true
 	}
-	
-	return o.Value == nil && o.ValueEx == nil 
+
+	return o.Value == nil && o.ValueEx == nil
 }
 
 // CanCall implements Object interface.
@@ -3187,7 +3221,7 @@ func (o *BuiltinFunction) Call(args ...Object) (Object, error) {
 	if o == nil {
 		return Undefined, NewCommonError("nil object")
 	}
-	
+
 	// tk.Pl("*BuiltinFunction Call: %v", args)
 	return o.Value(args...)
 }
@@ -3207,13 +3241,11 @@ func (o *BuiltinFunction) Iterate() Iterator {
 	return nil
 }
 
-
 func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 	// tk.Pl("*BuiltinFunction IndexGet: %v", index)
 	if o == nil {
 		return Undefined, NewCommonError("nil object")
 	}
-	
 
 	nv, ok := index.(String)
 	if !ok {
@@ -3463,7 +3495,6 @@ func (*BuiltinFunction) IndexSet(index, value Object) error {
 func (*BuiltinFunction) BinaryOp(token.Token, Object) (Object, error) {
 	return nil, ErrInvalidOperator
 }
-
 
 // Array represents array of objects and implements Object interface.
 type Array []Object
@@ -3797,7 +3828,7 @@ func (o Array) IndexSet(index, value Object) error {
 		}
 		return ErrIndexOutOfBounds
 	}
-	
+
 	return NewIndexTypeError("int|uint", index.TypeName())
 }
 
@@ -4018,19 +4049,19 @@ func (o *ObjectPtr) BinaryOp(tok token.Token, right Object) (Object, error) {
 	if o == nil {
 		return nil, errors.New("nil object")
 	}
-	
+
 	if o.Value == nil {
 		return nil, errors.New("nil pointer")
 	}
-	
+
 	objT := *(o.Value)
-	
+
 	if objT == nil {
 		return nil, NewCommonError("nil object pointer")
 	}
-	
-//	tk.Pl("ObjectPtr BinaryOp: %T", objT)
-	
+
+	//	tk.Pl("ObjectPtr BinaryOp: %T", objT)
+
 	return (objT).BinaryOp(tok, right)
 }
 
@@ -4047,17 +4078,17 @@ func (o *ObjectPtr) Call(args ...Object) (Object, error) {
 	if o.Value == nil {
 		return nil, NewCommonError("nil pointer")
 	}
-	
+
 	objT := *o.Value
-	
+
 	if objT == nil {
 		return nil, NewCommonError("nil object")
 	}
-	
+
 	if !objT.CanCall() {
 		return nil, NewCommonError("not callable")
 	}
-	
+
 	return (objT).Call(args...)
 }
 
@@ -7945,11 +7976,11 @@ func (o *MutableString) CallName(nameA string, c Call) (Object, error) {
 
 		return Bool(strings.Contains(o.String(), args[0].String())), nil
 	}
-	
+
 	args := c.GetArgs()
 
 	rs := o.GetMember(nameA)
-	
+
 	if !IsUndefInternal(rs) {
 		nv, ok := rs.(*CompiledFunction)
 
@@ -7972,7 +8003,7 @@ func (o *MutableString) CallName(nameA string, c Call) (Object, error) {
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to run compiled function: %v", errT), nil
 		}
-		
+
 		return retT, nil
 
 	}
@@ -7986,8 +8017,7 @@ func (o *MutableString) CallName(nameA string, c Call) (Object, error) {
 
 	return rs1, errT
 	// return nil, ErrIndexOutOfBounds
-//	return GetObjectMethodFunc(o, nameA)
-
+	//	return GetObjectMethodFunc(o, nameA)
 
 	//	return Undefined, NewCommonErrorWithPos(c, "method not found: %v", nameA)
 }
@@ -8377,7 +8407,7 @@ func (o *Mutex) HasMemeber() bool {
 func (o *Mutex) CallMethod(nameA string, argsA ...Object) (Object, error) {
 	switch nameA {
 	case "value":
-		
+
 		return builtinAnyFunc(Call{Args: []Object{o}})
 	case "toStr":
 		return ToStringObject(o), nil
@@ -12275,7 +12305,7 @@ func (o *Image) CallName(nameA string, c Call) (Object, error) {
 		return ToStringObject(o), nil
 	case "width":
 		rs := o.Value.Bounds().Max.X - o.Value.Bounds().Min.X
-		
+
 		if rs < 0 {
 			rs = -rs
 		}
@@ -12283,7 +12313,7 @@ func (o *Image) CallName(nameA string, c Call) (Object, error) {
 		return Int(rs), nil
 	case "height":
 		rs := o.Value.Bounds().Max.Y - o.Value.Bounds().Min.Y
-		
+
 		if rs < 0 {
 			rs = -rs
 		}
