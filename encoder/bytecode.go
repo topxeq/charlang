@@ -76,7 +76,7 @@ func (bc *Bytecode) fixObjects(modules *charlang.ModuleMap) error {
 				continue
 			}
 
-			bmod := modules.Get(string(name.Value))
+			bmod := modules.Get(string(name))
 			if bmod == nil {
 				return fmt.Errorf("module '%s' not found", name)
 			}
