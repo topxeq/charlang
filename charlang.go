@@ -1,3 +1,72 @@
+// Package charlang provides a scripting language interpreter with Go integration.
+// Charlang is a dynamically-typed scripting language designed for embedding in Go applications.
+//
+// # Overview
+//
+// Charlang provides:
+//   - A complete scripting language with familiar syntax
+//   - Seamless Go value integration via type conversion functions
+//   - A virtual machine (VM) for executing compiled bytecode
+//   - Extensible built-in functions and modules
+//   - Support for closures, generators, and object-oriented patterns
+//
+// # Core Components
+//
+// The main components of Charlang are:
+//
+//   - Compiler: Transforms source code into bytecode (compiler.go)
+//   - VM: Executes compiled bytecode (vm.go)
+//   - Objects: Represents all runtime values (objects.go)
+//   - Builtins: Provides built-in functions (builtins.go)
+//   - Parser: Parses source code into AST (parser/)
+//
+// # Basic Usage
+//
+// Simple script execution:
+//
+//	script := `print("Hello, World!")`
+//	result, err := charlang.Execute(script, nil)
+//
+// With variables:
+//
+//	script := `x + y`
+//	vars := map[string]interface{}{"x": 10, "y": 20}
+//	result, err := charlang.Execute(script, vars)
+//
+// # Type Conversion
+//
+// Charlang provides bidirectional type conversion between Go and Charlang:
+//
+//	// Go to Charlang
+//	obj, err := charlang.ToObject(goValue)
+//
+//	// Charlang to Go
+//	goValue := charlang.ToInterface(obj)
+//
+// # Object Types
+//
+// Charlang supports multiple object types including:
+//   - Primitive types: Int, Uint, Float, String, Bool, Char, Bytes
+//   - Container types: Array, Map, SyncMap
+//   - Function types: Function, CompiledFunction, BuiltinFunction
+//   - Special types: Undefined, Error, RuntimeError
+//   - External types: Time, Database, WebSocket, Excel, Image, etc.
+//
+// # Thread Safety
+//
+// The VM and most object types are not thread-safe by default.
+// Use SyncMap for concurrent map access and Mutex for synchronization.
+//
+// # Extending Charlang
+//
+// You can extend Charlang with custom functions:
+//
+//	customFunc := &charlang.Function{
+//	    Name: "myFunc",
+//	    Value: func(args ...charlang.Object) (charlang.Object, error) {
+//	        return charlang.Int(42), nil
+//	    },
+//	}
 package charlang
 
 //go:generate go run ./cmd/mkcallable -output zfuncs.go charlang.go
@@ -452,6 +521,9 @@ func ToGoInt(o Object) (v int, ok bool) {
 	return
 }
 
+// ToGoIntWithDefault converts an Object to Go int value with a default fallback.
+// It returns the default value if the conversion fails.
+// Supported types: Bool, Byte, Char, Int, Uint, Float, String, MutableString.
 func ToGoIntWithDefault(o Object, defaultA int) int {
 	switch o := o.(type) {
 	case Bool:
