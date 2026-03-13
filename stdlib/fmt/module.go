@@ -265,11 +265,28 @@ func toScanArgs(offset int, c charlang.Call) ([]interface{}, error) {
 	return vargs, nil
 }
 
+// stringWrapper wraps a String to implement fmt.Stringer without being a string type.
+// This ensures fmt.Sprint adds spaces between all operands correctly.
+type stringWrapper struct {
+	s string
+}
+
+func (s stringWrapper) String() string {
+	return s.s
+}
+
 func toPrintArgs(offset int, c charlang.Call) []interface{} {
 	size := c.Len()
 	vargs := make([]interface{}, 0, size-offset)
 	for i := offset; i < size; i++ {
-		vargs = append(vargs, c.Get(i))
+		obj := c.Get(i)
+		// Wrap String objects to prevent Go's fmt from treating them as strings
+		// (which would skip space insertion in fmt.Sprint)
+		if _, ok := obj.(charlang.String); ok {
+			vargs = append(vargs, stringWrapper{obj.String()})
+		} else {
+			vargs = append(vargs, obj)
+		}
 	}
 	return vargs
 }
