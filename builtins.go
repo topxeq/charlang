@@ -1,3 +1,66 @@
+// Package builtins provides the built-in functions for the Charlang language.
+//
+// # Overview
+//
+// This file contains all built-in functions that are available in Charlang scripts.
+// Built-in functions are pre-defined functions that provide core language functionality
+// and access to Go's standard library and external packages.
+//
+// # Function Categories
+//
+// Built-in functions are organized into the following categories:
+//
+// **Core Functions:**
+//   - print, printf, println - Output functions
+//   - len, type, typeof - Inspection functions
+//   - int, float, string, bool, char - Type conversion functions
+//   - append, copy, delete - Collection manipulation
+//
+// **String Functions:**
+//   - str, format, sprintf - String formatting
+//   - split, join, replace, trim - String manipulation
+//   - regex, matches, find - Regular expressions
+//
+// **Collection Functions:**
+//   - map, filter, reduce - Functional operations
+//   - sort, reverse, shuffle - Collection ordering
+//   - keys, values, items - Map operations
+//
+// **I/O Functions:**
+//   - open, close, read, write - File operations
+//   - read_file, write_file - Convenience file functions
+//   - http_get, http_post - HTTP requests
+//
+// **System Functions:**
+//   - time, sleep, timer - Time operations
+//   - exec, shell - Process execution
+//   - env, args - Environment access
+//
+// **Data Processing:**
+//   - json, yaml, xml, csv - Data format handling
+//   - base64, hex, url_encode - Encoding functions
+//   - hash, md5, sha256 - Cryptographic functions
+//
+// **External Services:**
+//   - database, query - Database operations
+//   - mail, ftp, s3 - External service integrations
+//   - excel, word, pdf - Document processing
+//
+// # Usage
+//
+// Built-in functions are automatically available in Charlang scripts:
+//
+//	print("Hello, World!")
+//	result := len([1, 2, 3])  // result = 3
+//	items := split("a,b,c", ",")  // items = ["a", "b", "c"]
+//
+// # Extending Builtins
+//
+// To add a new built-in function:
+//  1. Add a constant to BuiltinType
+//  2. Add an entry to BuiltinsMap
+//  3. Add the function object to BuiltinObjects array
+//  4. Implement the function logic
 package charlang
 
 import (
@@ -66,15 +129,18 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
+// PrintWriter is the default writer for printf and println builtins.
+// It defaults to os.Stdout but can be redirected for testing or logging.
 var (
-	// PrintWriter is the default writer for printf and println builtins.
 	PrintWriter io.Writer = os.Stdout
 )
 
-// BuiltinType represents a builtin type
+// BuiltinType represents a unique identifier for each built-in function.
+// These constants are used as indices into BuiltinObjects array and keys in BuiltinsMap.
 type BuiltinType int
 
-// Builtins
+// Builtin constants define all available built-in functions.
+// Each constant corresponds to a built-in function implementation in BuiltinObjects.
 const (
 	BuiltinAppend BuiltinType = iota
 
@@ -675,7 +741,14 @@ const (
 	BuiltinCap
 )
 
-// BuiltinsMap is list of builtin types, exported for REPL.
+// BuiltinsMap maps built-in function names to their BuiltinType identifiers.
+// This allows the compiler and VM to resolve function names to their implementations.
+// The map is exported for use by REPL and other tooling.
+//
+// Example:
+//
+//	builtinType := BuiltinsMap["print"]  // Returns BuiltinPrint
+//	builtinType := BuiltinsMap["len"]    // Returns BuiltinLen
 var BuiltinsMap = map[string]BuiltinType{
 	// funcs start
 
@@ -1607,7 +1680,14 @@ var BuiltinsMap = map[string]BuiltinType{
 
 }
 
-// BuiltinObjects is list of builtins, exported for REPL.
+// BuiltinObjects contains the implementation objects for all built-in functions.
+// Each BuiltinType constant is used as an index into this array.
+// The array is indexed by BuiltinType value and contains BuiltinFunction objects.
+//
+// Example:
+//
+//	fn := BuiltinObjects[BuiltinPrint]  // Returns the print function object
+//	result, err := fn.Call(arg1, arg2)
 var BuiltinObjects = [...]Object{
 	// funcs detail start
 
