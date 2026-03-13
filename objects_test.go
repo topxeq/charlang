@@ -337,32 +337,32 @@ func TestObjects5(t *testing.T) {
 	require.Equal(t, "undefined", fmt.Sprintf("%v", obj6.GetMember("a")))
 	
 	require.Equal(t, "unsupported action(set member)", fmt.Sprintf("%v", obj6.SetMember("a", ToStringObject("b"))))
-	
+
 	require.Equal(t, "false", fmt.Sprintf("%v", obj6.Equal(Int(1))))
-	
-	require.Equal(t, "false", fmt.Sprintf("%v", obj6.IsFalsy()))
-	
+
+	require.Equal(t, "true", fmt.Sprintf("%v", obj6.IsFalsy()))
+
 	require.Equal(t, "false", fmt.Sprintf("%v", obj6.CanCall()))
-	
+
 	tmpr, err = obj6.Call(ToStringObject("value1"))
-	
+
 	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
-	
-	require.Equal(t, "false", fmt.Sprintf("%v", obj6.CanIterate()))
-	
-	require.Equal(t, "<nil>", fmt.Sprintf("%T", obj6.Iterate()))
-	
-	require.Equal(t, "NotIndexAssignableError: ", fmt.Sprintf("%v", obj6.IndexSet(Int(1), Int(1))))
-	
+
+	require.Equal(t, "true", fmt.Sprintf("%v", obj6.CanIterate()))
+
+	require.Equal(t, "*charlang.OrderedMapIterator", fmt.Sprintf("%T", obj6.Iterate()))
+
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj6.IndexSet(Int(1), Int(1))))
+
 	tmpr, err = obj6.IndexGet(ToStringObject("value1"))
-	
-	require.Equal(t, "undefined-error: not compiled", fmt.Sprintf("%v-%v", tmpr, err))
+
+	require.Equal(t, "undefined-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
 	
 	tmpr, err = obj6.BinaryOp(token.Add, Int(3))
 
 	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'orderedMap' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
 
-	require.Equal(t, "{}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj6.String()))), "-sort"))
+	require.Equal(t, "{\"1\":1}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj6.String()))), "-sort"))
 	
 
 }
