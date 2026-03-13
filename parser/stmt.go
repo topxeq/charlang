@@ -1,3 +1,36 @@
+// Package parser implements a parser for Charlang source code.
+// This file defines the statement AST node types.
+//
+// # Statement Types
+//
+// Statements in Charlang can be categorized as:
+//
+// Declarations:
+//   - DeclStmt: Declaration statement (var)
+//   - GenDecl: Generic declaration
+//
+// Assignments:
+//   - AssignStmt: Assignment (x = y)
+//   - IncDecStmt: Increment/decrement (x++, x--)
+//
+// Control Flow:
+//   - IfStmt: If-else statement
+//   - ForStmt: C-style for loop
+//   - ForInStmt: For-in iteration
+//   - ReturnStmt: Function return
+//   - BranchStmt: Break/continue
+//
+// Exception Handling:
+//   - TryStmt: Try block
+//   - CatchStmt: Catch clause
+//   - FinallyStmt: Finally clause
+//   - ThrowStmt: Throw exception
+//
+// Other:
+//   - BlockStmt: Block of statements
+//   - ExprStmt: Expression as statement
+//   - EmptyStmt: Empty statement
+//   - BadStmt: Placeholder for errors
 package parser
 
 import (
@@ -6,13 +39,17 @@ import (
 	"github.com/topxeq/charlang/token"
 )
 
-// Stmt represents a statement in the AST.
+// Stmt represents a statement node in the AST.
+// All statement types must implement this interface.
+// The stmtNode() method ensures type safety - only statement
+// nodes can be assigned to Stmt.
 type Stmt interface {
 	Node
 	stmtNode()
 }
 
-// IsStatement returns true if given value is implements interface{ stmtNode() }.
+// IsStatement returns true if the given value implements the Stmt interface.
+// This is a utility function for type checking.
 func IsStatement(v interface{}) bool {
 	_, ok := v.(interface {
 		stmtNode()
@@ -21,11 +58,19 @@ func IsStatement(v interface{}) bool {
 }
 
 // AssignStmt represents an assignment statement.
+// Assignments can be simple (=) or compound (+=, -=, etc.).
+// Multiple assignments are supported (a, b = b, a).
+//
+// Example:
+//
+//	x = 10
+//	a, b = b, a
+//	count += 1
 type AssignStmt struct {
-	LHS      []Expr
-	RHS      []Expr
-	Token    token.Token
-	TokenPos Pos
+	LHS      []Expr        // Left-hand side expressions
+	RHS      []Expr        // Right-hand side expressions
+	Token    token.Token   // Assignment operator (Assign, AddAssign, etc.)
+	TokenPos Pos           // Position of the operator
 }
 
 func (s *AssignStmt) stmtNode() {}
@@ -52,10 +97,11 @@ func (s *AssignStmt) String() string {
 		" " + strings.Join(rhs, ", ")
 }
 
-// BadStmt represents a bad statement.
+// BadStmt represents a malformed statement that could not be parsed.
+// It serves as a placeholder for error recovery.
 type BadStmt struct {
-	From Pos
-	To   Pos
+	From Pos // Start position of the bad statement
+	To   Pos // End position of the bad statement
 }
 
 func (s *BadStmt) stmtNode() {}
@@ -74,11 +120,19 @@ func (s *BadStmt) String() string {
 	return "<bad statement>"
 }
 
-// BlockStmt represents a block statement.
+// BlockStmt represents a block of statements enclosed in braces.
+// Blocks create a new scope for local variables.
+//
+// Example:
+//
+//	{
+//	    x := 1
+//	    y := 2
+//	}
 type BlockStmt struct {
-	Stmts  []Stmt
-	LBrace Pos
-	RBrace Pos
+	Stmts  []Stmt // Statements in the block
+	LBrace Pos    // Position of opening '{'
+	RBrace Pos    // Position of closing '}'
 }
 
 func (s *BlockStmt) stmtNode() {}
@@ -101,11 +155,19 @@ func (s *BlockStmt) String() string {
 	return "{" + strings.Join(list, "; ") + "}"
 }
 
-// BranchStmt represents a branch statement.
+// BranchStmt represents a branch statement (break or continue).
+// Break exits the innermost loop, continue skips to the next iteration.
+// Labels can be used for breaking out of nested loops.
+//
+// Example:
+//
+//	break
+//	continue
+//	break outerLoop
 type BranchStmt struct {
-	Token    token.Token
-	TokenPos Pos
-	Label    *Ident
+	Token    token.Token // Break or Continue
+	TokenPos Pos         // Position of the keyword
+	Label    *Ident      // Optional label (nil if none)
 }
 
 func (s *BranchStmt) stmtNode() {}
@@ -132,10 +194,11 @@ func (s *BranchStmt) String() string {
 	return s.Token.String() + label
 }
 
-// EmptyStmt represents an empty statement.
+// EmptyStmt represents an empty statement (just a semicolon).
+// Empty statements can be explicit (;) or implicit (inserted by scanner).
 type EmptyStmt struct {
-	Semicolon Pos
-	Implicit  bool
+	Semicolon Pos  // Position of the semicolon
+	Implicit  bool // Whether the semicolon was implicitly inserted
 }
 
 func (s *EmptyStmt) stmtNode() {}
@@ -157,9 +220,15 @@ func (s *EmptyStmt) String() string {
 	return ";"
 }
 
-// ExprStmt represents an expression statement.
+// ExprStmt represents an expression used as a statement.
+// Function calls, assignments, and other expressions can be statements.
+//
+// Example:
+//
+//	print("hello")
+//	x + y      // evaluated but result discarded
 type ExprStmt struct {
-	Expr Expr
+	Expr Expr // The expression
 }
 
 func (s *ExprStmt) stmtNode() {}
@@ -178,13 +247,20 @@ func (s *ExprStmt) String() string {
 	return s.Expr.String()
 }
 
-// ForInStmt represents a for-in statement.
+// ForInStmt represents a for-in iteration statement.
+// For-in iterates over elements of an array or keys/values of a map.
+//
+// Example:
+//
+//	for k, v in arr { ... }    // array: k is index, v is element
+//	for k, v in map { ... }    // map: k is key, v is value
+//	for k in arr { ... }       // iterate with only key/index
 type ForInStmt struct {
-	ForPos   Pos
-	Key      *Ident
-	Value    *Ident
-	Iterable Expr
-	Body     *BlockStmt
+	ForPos   Pos       // Position of 'for' keyword
+	Key      *Ident    // Key or index variable
+	Value    *Ident    // Value variable (nil if not specified)
+	Iterable Expr      // Expression to iterate over
+	Body     *BlockStmt // Loop body
 }
 
 func (s *ForInStmt) stmtNode() {}
@@ -208,13 +284,20 @@ func (s *ForInStmt) String() string {
 		" " + s.Body.String()
 }
 
-// ForStmt represents a for statement.
+// ForStmt represents a C-style for loop statement.
+// All three components (init, cond, post) are optional.
+//
+// Example:
+//
+//	for i := 0; i < 10; i++ { ... }
+//	for ; i < 10; { ... }      // equivalent to while loop
+//	for { ... }                // infinite loop
 type ForStmt struct {
-	ForPos Pos
-	Init   Stmt
-	Cond   Expr
-	Post   Stmt
-	Body   *BlockStmt
+	ForPos Pos        // Position of 'for' keyword
+	Init   Stmt       // Initialization statement (may be nil)
+	Cond   Expr       // Condition expression (may be nil)
+	Post   Stmt       // Post iteration statement (may be nil)
+	Body   *BlockStmt // Loop body
 }
 
 func (s *ForStmt) stmtNode() {}
@@ -247,13 +330,20 @@ func (s *ForStmt) String() string {
 	return "for " + cond + s.Body.String()
 }
 
-// IfStmt represents an if statement.
+// IfStmt represents an if-else statement.
+// An optional initialization statement can precede the condition.
+//
+// Example:
+//
+//	if x > 0 { ... }
+//	if x > 0 { ... } else { ... }
+//	if n := len(arr); n > 0 { ... }    // with init statement
 type IfStmt struct {
-	IfPos Pos
-	Init  Stmt
-	Cond  Expr
-	Body  *BlockStmt
-	Else  Stmt // else branch; or nil
+	IfPos Pos        // Position of 'if' keyword
+	Init  Stmt       // Optional initialization statement
+	Cond  Expr       // Condition expression
+	Body  *BlockStmt // If body
+	Else  Stmt       // Else branch (BlockStmt or another IfStmt, may be nil)
 }
 
 func (s *IfStmt) stmtNode() {}
@@ -283,11 +373,17 @@ func (s *IfStmt) String() string {
 		s.Body.String() + elseStmt
 }
 
-// IncDecStmt represents increment or decrement statement.
+// IncDecStmt represents an increment or decrement statement.
+// These are shorthand forms for assignment.
+//
+// Example:
+//
+//	i++
+//	counter--
 type IncDecStmt struct {
-	Expr     Expr
-	Token    token.Token
-	TokenPos Pos
+	Expr     Expr        // Expression to increment/decrement
+	Token    token.Token // Inc (++) or Dec (--)
+	TokenPos Pos         // Position of the operator
 }
 
 func (s *IncDecStmt) stmtNode() {}
@@ -306,10 +402,17 @@ func (s *IncDecStmt) String() string {
 	return s.Expr.String() + s.Token.String()
 }
 
-// ReturnStmt represents a return statement.
+// ReturnStmt represents a return statement in a function.
+// Return can optionally include a value to return.
+//
+// Example:
+//
+//	return
+//	return x
+//	return x + y
 type ReturnStmt struct {
-	ReturnPos Pos
-	Result    Expr
+	ReturnPos Pos  // Position of 'return' keyword
+	Result    Expr // Return value expression (may be nil)
 }
 
 func (s *ReturnStmt) stmtNode() {}
@@ -334,12 +437,20 @@ func (s *ReturnStmt) String() string {
 	return "return"
 }
 
-// TryStmt represents an try statement.
+// TryStmt represents a try-catch-finally statement for exception handling.
+// Catch and finally clauses are optional but at least one must be present.
+//
+// Example:
+//
+//	try { ... }
+//	try { ... } catch e { ... }
+//	try { ... } finally { ... }
+//	try { ... } catch e { ... } finally { ... }
 type TryStmt struct {
-	TryPos  Pos
-	Body    *BlockStmt
-	Catch   *CatchStmt   // catch branch; or nil
-	Finally *FinallyStmt // finally branch; or nil
+	TryPos  Pos         // Position of 'try' keyword
+	Body    *BlockStmt  // Try block
+	Catch   *CatchStmt  // Catch clause (may be nil)
+	Finally *FinallyStmt // Finally clause (may be nil)
 }
 
 func (s *TryStmt) stmtNode() {}
@@ -371,11 +482,17 @@ func (s *TryStmt) String() string {
 	return "try " + s.Body.String() + " " + catchStmt + " " + finallyStmt
 }
 
-// CatchStmt represents an catch statement.
+// CatchStmt represents a catch clause for exception handling.
+// The caught exception can be bound to an optional identifier.
+//
+// Example:
+//
+//	catch { ... }       // catch without binding
+//	catch e { ... }     // catch with binding
 type CatchStmt struct {
-	CatchPos Pos
-	Ident    *Ident // can be nil if ident is missing
-	Body     *BlockStmt
+	CatchPos Pos        // Position of 'catch' keyword
+	Ident    *Ident     // Variable to bind the exception (may be nil)
+	Body     *BlockStmt // Catch block
 }
 
 func (s *CatchStmt) stmtNode() {}
@@ -398,10 +515,15 @@ func (s *CatchStmt) String() string {
 	return "catch " + ident + " " + s.Body.String()
 }
 
-// FinallyStmt represents an finally statement.
+// FinallyStmt represents a finally clause for cleanup code.
+// Finally blocks are always executed, regardless of exceptions.
+//
+// Example:
+//
+//	finally { ... }
 type FinallyStmt struct {
-	FinallyPos Pos
-	Body       *BlockStmt
+	FinallyPos Pos        // Position of 'finally' keyword
+	Body       *BlockStmt // Finally block
 }
 
 func (s *FinallyStmt) stmtNode() {}
@@ -420,10 +542,17 @@ func (s *FinallyStmt) String() string {
 	return "finally " + s.Body.String()
 }
 
-// ThrowStmt represents an throw statement.
+// ThrowStmt represents a throw statement for raising exceptions.
+// Throw can re-throw a caught exception or throw a new error.
+//
+// Example:
+//
+//	throw "error message"
+//	throw error("something went wrong")
+//	throw                   // re-throw current exception
 type ThrowStmt struct {
-	ThrowPos Pos
-	Expr     Expr
+	ThrowPos Pos  // Position of 'throw' keyword
+	Expr     Expr // Expression to throw (may be nil for re-throw)
 }
 
 func (s *ThrowStmt) stmtNode() {}

@@ -1,3 +1,15 @@
+// Package parser implements a parser for Charlang source code.
+// This file defines the declaration AST node types.
+//
+// # Declaration Types
+//
+// Declarations in Charlang include:
+//   - Spec: Specification for a single variable or parameter
+//   - ValueSpec: Variable declaration with optional initial value
+//   - ParamSpec: Parameter declaration with optional variadic flag
+//   - GenDecl: Generic declaration (var)
+//   - DeclStmt: Declaration used as a statement
+//   - BadDecl: Placeholder for declaration errors
 package parser
 
 import (
@@ -11,24 +23,36 @@ import (
 // Declarations
 
 type (
-	// Spec node represents a single (non-parenthesized) variable declaration.
-	// The Spec type stands for any of *ParamSpec or *ValueSpec.
+	// Spec represents a single variable or parameter specification.
+	// The Spec type is the interface for *ParamSpec or *ValueSpec.
 	Spec interface {
 		Node
 		specNode()
 	}
 
-	// A ValueSpec node represents a variable declaration
+	// ValueSpec represents a variable declaration with optional initial values.
+	// Used within GenDecl for var statements.
+	//
+	// Example:
+	//
+	//	var x = 1
+	//	var x, y = 1, 2
 	ValueSpec struct {
-		Idents []*Ident    // TODO: slice is reserved for tuple assignment
-		Values []Expr      // initial values; or nil
-		Data   interface{} // iota
+		Idents []*Ident    // Variable names
+		Values []Expr      // Initial values; or nil
+		Data   interface{} // Additional data (e.g., iota)
 	}
 
-	// A ParamSpec node represents a parameter declaration
+	// ParamSpec represents a function parameter declaration.
+	// Parameters can be regular or variadic (...).
+	//
+	// Example:
+	//
+	//	x          // regular parameter
+	//	...args    // variadic parameter
 	ParamSpec struct {
-		Ident    *Ident
-		Variadic bool
+		Ident    *Ident // Parameter name
+		Variadic bool   // True if variadic (...)
 	}
 )
 
@@ -76,38 +100,47 @@ func (*ParamSpec) specNode() {}
 // specNode() ensures that only spec nodes can be assigned to a Spec.
 func (*ValueSpec) specNode() {}
 
-// Decl wraps methods for all declaration nodes.
+// Decl represents a declaration node in the AST.
+// All declaration types must implement this interface.
 type Decl interface {
 	Node
 	declNode()
 }
 
-// A DeclStmt node represents a declaration in a statement list.
+// DeclStmt represents a declaration used as a statement.
+// This wraps a GenDecl (var statement) in statement contexts.
+//
+// Example:
+//
+//	var x = 1    // this is a DeclStmt
 type DeclStmt struct {
 	Decl // *GenDecl with VAR token
 }
 
 func (*DeclStmt) stmtNode() {}
 
-// A BadDecl node is a placeholder for declarations containing
-// syntax errors for which no correct declaration nodes can be
-// created.
+// BadDecl represents a malformed declaration that could not be parsed.
+// It serves as a placeholder for error recovery.
 type BadDecl struct {
-	From, To Pos // position range of bad declaration
+	From, To Pos // Position range of the bad declaration
 }
 
-// A GenDecl node (generic declaration node) represents a variable declaration.
-// A valid Lparen position (Lparen.Line > 0) indicates a parenthesized declaration.
+// GenDecl represents a generic declaration (var statement).
+// Declarations can be parenthesized or single-line.
 //
-// Relationship between Tok value and Specs element type:
+// Example:
 //
-//	token.Var     *ValueSpec
+//	var x = 1              // single declaration
+//	var (                  // parenthesized declarations
+//	    a = 1
+//	    b = 2
+//	)
 type GenDecl struct {
-	TokPos Pos         // position of Tok
-	Tok    token.Token // Var
-	Lparen Pos         // position of '(', if any
-	Specs  []Spec
-	Rparen Pos // position of ')', if any
+	TokPos Pos         // Position of the declaration keyword
+	Tok    token.Token // Token (Var)
+	Lparen Pos         // Position of '(', if parenthesized
+	Specs  []Spec      // Variable specifications
+	Rparen Pos         // Position of ')', if parenthesized
 }
 
 // Pos returns the position of first character belonging to the node.

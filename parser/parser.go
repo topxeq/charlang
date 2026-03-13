@@ -1,3 +1,64 @@
+// Package parser implements a parser for Charlang source code.
+//
+// # Overview
+//
+// The parser transforms Charlang source text into an Abstract Syntax Tree (AST).
+// It uses a recursive descent parsing strategy with lookahead token buffering.
+// The implementation is based on Go's parser design patterns.
+//
+// # Architecture
+//
+// The parser consists of several components:
+//   - Parser: Main parsing engine that coordinates token consumption and AST construction
+//   - Scanner: Lexical analyzer that tokenizes source text
+//   - AST Nodes: Type definitions for all AST constructs (expressions, statements, declarations)
+//   - Position Tracking: Source position management for error reporting
+//
+// # Parsing Process
+//
+// The parsing process follows these steps:
+//  1. Scanner tokenizes the source text into a stream of tokens
+//  2. Parser consumes tokens and builds AST nodes
+//  3. Expressions are parsed using operator precedence climbing
+//  4. Statements are parsed based on leading keywords
+//  5. The final AST is returned as a File node
+//
+// # Usage
+//
+// Basic parsing:
+//
+//	file := charlang.NewSourceFile("example.ch", source)
+//	p := parser.NewParser(file, source, nil)
+//	ast, err := p.ParseFile()
+//
+// With comment parsing:
+//
+//	p := parser.NewParserWithMode(file, source, nil, parser.ParseComments)
+//	ast, err := p.ParseFile()
+//
+// # Error Handling
+//
+// The parser collects errors and continues parsing when possible.
+// Errors are returned as ErrorList which can be sorted by position.
+// On fatal errors, the parser uses panic/recover with a bailout mechanism.
+//
+// # AST Node Types
+//
+// Expression nodes (implement Expr interface):
+//   - Ident, ArrayLit, MapLit, StringLit, IntLit, FloatLit, BoolLit, CharLit
+//   - BinaryExpr, UnaryExpr, CondExpr (ternary)
+//   - CallExpr, IndexExpr, SliceExpr, SelectorExpr
+//   - FuncLit, ImportExpr, ParenExpr
+//
+// Statement nodes (implement Stmt interface):
+//   - AssignStmt, BlockStmt, IfStmt, ForStmt, ForInStmt
+//   - ReturnStmt, BranchStmt (break/continue), EmptyStmt
+//   - TryStmt, CatchStmt, FinallyStmt, ThrowStmt
+//   - ExprStmt, IncDecStmt, DeclStmt
+//
+// Declaration nodes (implement Decl interface):
+//   - GenDecl (var declarations)
+//   - BadDecl (error placeholder)
 package parser
 
 import (
@@ -11,15 +72,22 @@ import (
 )
 
 // Mode value is a set of flags for parser.
+// The only flag currently available is ParseComments.
 type Mode int
 
 const (
-	// ParseComments parses comments and add them to AST
+	// ParseComments parses comments and adds them to the AST.
+	// Without this flag, comments are skipped during parsing.
 	ParseComments Mode = 1 << iota
 )
 
+// bailout is used for panic-based error recovery.
+// When a fatal parsing error occurs, the parser panics with bailout{}
+// and the defer in ParseFile recovers and returns the accumulated errors.
 type bailout struct{}
 
+// stmtStart contains tokens that can start a statement.
+// Used for synchronization during error recovery.
 var stmtStart = map[token.Token]bool{
 	token.Param:    true,
 	token.Global:   true,
@@ -34,7 +102,12 @@ var stmtStart = map[token.Token]bool{
 	token.Throw:    true,
 }
 
-// Error represents a parser error.
+// Error represents a single parser error with position information.
+// It implements the error interface for standard error handling.
+//
+// Fields:
+//   - Pos: Source position where the error occurred
+//   - Msg: Human-readable error message
 type Error struct {
 	Pos SourceFilePos
 	Msg string
@@ -47,7 +120,22 @@ func (e Error) Error() string {
 	return fmt.Sprintf("Parse Error: %s", e.Msg)
 }
 
-// ErrorList is a collection of parser errors.
+// ErrorList is a collection of parser errors that implements sort.Interface.
+// It allows multiple errors to be collected during parsing and sorted by position.
+//
+// ErrorList supports the following operations:
+//   - Add: Append a new error with position and message
+//   - Sort: Sort errors by filename, line, and column
+//   - Err: Convert to error interface (returns nil if empty)
+//
+// Example:
+//
+//	var errors ErrorList
+//	errors.Add(pos, "expected ';'")
+//	errors.Sort()
+//	if err := errors.Err(); err != nil {
+//	    return err
+//	}
 type ErrorList []*Error
 
 // Add adds a new parser error to the collection.
@@ -95,7 +183,8 @@ func (p ErrorList) Error() string {
 	return fmt.Sprintf("%s (and %d more errors)", p[0], len(p)-1)
 }
 
-// Err returns an error.
+// Err returns an error value from the error list.
+// Returns nil if the list is empty, otherwise returns the list itself.
 func (p ErrorList) Err() error {
 	if len(p) == 0 {
 		return nil
@@ -103,8 +192,31 @@ func (p ErrorList) Err() error {
 	return p
 }
 
-// Parser parses the Tengo source files. It's based on Go's parser
-// implementation.
+// Parser is the main parsing engine that transforms source text into an AST.
+// It uses a recursive descent parsing strategy with a single-token lookahead.
+//
+// The parser maintains the following state:
+//   - Current token position and literal
+//   - Expression nesting level (for semicolon insertion)
+//   - Error collection for reporting
+//   - Comment collection (when ParseComments mode is enabled)
+//
+// Thread Safety:
+// Parser instances are not thread-safe. Create a new Parser for each parse operation.
+//
+// Fields:
+//   - file: Source file being parsed
+//   - errors: Collected parsing errors
+//   - scanner: Lexical scanner for tokenization
+//   - pos: Current token position
+//   - token: Current token type
+//   - tokenLit: Current token literal string
+//   - exprLevel: Expression nesting depth (< 0 means in control clause)
+//   - syncPos: Last synchronization position for error recovery
+//   - syncCount: Number of advance calls without progress
+//   - trace: Whether to output trace information
+//   - mode: Parser mode flags
+//   - comments: Collected comment groups
 type Parser struct {
 	file      *SourceFile
 	errors    ErrorList
@@ -122,12 +234,29 @@ type Parser struct {
 	comments  []*CommentGroup
 }
 
-// NewParser creates a Parser.
+// NewParser creates a new Parser with default settings (no comment parsing).
+//
+// Parameters:
+//   - file: Source file metadata (created via SourceFileSet.AddFile)
+//   - src: Source code bytes to parse
+//   - trace: Optional writer for parsing trace output (nil disables tracing)
+//
+// Returns a Parser ready to parse with ParseFile().
 func NewParser(file *SourceFile, src []byte, trace io.Writer) *Parser {
 	return NewParserWithMode(file, src, trace, 0)
 }
 
-// NewParserWithMode creates a Parser with parser mode flags.
+// NewParserWithMode creates a new Parser with specified mode flags.
+//
+// Parameters:
+//   - file: Source file metadata
+//   - src: Source code bytes to parse
+//   - trace: Optional writer for parsing trace output
+//   - mode: Parser mode flags (e.g., ParseComments)
+//
+// Example:
+//
+//	p := NewParserWithMode(file, src, nil, ParseComments)
 func NewParserWithMode(
 	file *SourceFile,
 	src []byte,
@@ -152,7 +281,19 @@ func NewParserWithMode(
 	return p
 }
 
-// ParseFile parses the source and returns an AST file unit.
+// ParseFile parses the source and returns an AST File node.
+//
+// This is the main entry point for parsing. It:
+//  1. Parses the statement list
+//  2. Expects EOF at the end
+//  3. Returns the AST or collected errors
+//
+// Returns:
+//   - file: Parsed AST, or nil on error
+//   - err: First error encountered, or nil on success
+//
+// If multiple errors occurred, the returned error contains the first error
+// with a count of remaining errors. All errors are sorted by position.
 func (p *Parser) ParseFile() (file *File, err error) {
 	defer func() {
 		if e := recover(); e != nil {

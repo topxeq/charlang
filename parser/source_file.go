@@ -1,3 +1,23 @@
+// Package parser implements a parser for Charlang source code.
+// This file defines source file and position tracking types.
+//
+// # Position Tracking
+//
+// The parser tracks positions using two types:
+//   - Pos: Compact integer position within a file set
+//   - SourceFilePos: Human-readable position with filename, line, column
+//
+// # File Sets
+//
+// SourceFileSet manages a collection of source files with unique position
+// ranges. This allows positions from multiple files to be compared and sorted.
+//
+// # Usage
+//
+//	fset := NewFileSet()
+//	file := fset.AddFile("example.ch", -1, len(source))
+//	// After parsing, convert positions:
+//	pos := fset.Position(somePos)  // returns SourceFilePos
 package parser
 
 import (
@@ -5,12 +25,13 @@ import (
 	"sort"
 )
 
-// SourceFilePos represents a position information in the file.
+// SourceFilePos represents a human-readable position in a source file.
+// It includes filename, offset, line, and column information for error messages.
 type SourceFilePos struct {
-	Filename string // filename, if any
-	Offset   int    // offset, starting at 0
-	Line     int    // line number, starting at 1
-	Column   int    // column number, starting at 1 (byte count)
+	Filename string // Filename, if any
+	Offset   int    // Byte offset, starting at 0
+	Line     int    // Line number, starting at 1
+	Column   int    // Column number, starting at 1 (byte count)
 }
 
 // IsValid returns true if the position is valid.
@@ -43,21 +64,35 @@ func (p SourceFilePos) String() string {
 	return s
 }
 
-// SourceFileSet represents a set of source files.
+// SourceFileSet represents a set of source files with position management.
+// It assigns unique position ranges to each file, allowing positions
+// from different files to be distinguished.
+//
+// Position values are integers that encode both the file and offset.
+// The Base field determines the starting position for the next added file.
 type SourceFileSet struct {
-	Base     int           // base offset for the next file
-	Files    []*SourceFile // list of files in the order added to the set
-	LastFile *SourceFile   // cache of last file looked up
+	Base     int           // Base offset for the next file
+	Files    []*SourceFile // List of files in order added
+	LastFile *SourceFile   // Cache of last file looked up
 }
 
-// NewFileSet creates a new file set.
+// NewFileSet creates a new empty file set.
+// The initial base is 1, as 0 represents NoPos (invalid position).
 func NewFileSet() *SourceFileSet {
 	return &SourceFileSet{
 		Base: 1, // 0 == NoPos
 	}
 }
 
-// AddFile adds a new file in the file set.
+// AddFile adds a new file to the file set and returns it.
+//
+// Parameters:
+//   - filename: Name of the file (for error messages)
+//   - base: Base position (-1 to auto-assign)
+//   - size: Size of the file in bytes
+//
+// Returns the SourceFile for position lookups.
+// Panics if base is invalid or size is negative.
 func (s *SourceFileSet) AddFile(filename string, base, size int) *SourceFile {
 	if base < 0 {
 		base = s.Base
@@ -84,8 +119,8 @@ func (s *SourceFileSet) AddFile(filename string, base, size int) *SourceFile {
 	return f
 }
 
-// File returns the file that contains the position p. If no such file is
-// found (for instance for p == NoPos), the result is nil.
+// File returns the file that contains the given position.
+// Returns nil if no matching file is found (e.g., for NoPos).
 func (s *SourceFileSet) File(p Pos) (f *SourceFile) {
 	if p != NoPos {
 		f = s.file(p)
@@ -93,7 +128,8 @@ func (s *SourceFileSet) File(p Pos) (f *SourceFile) {
 	return
 }
 
-// Position converts a SourcePos p in the fileset into a SourceFilePos value.
+// Position converts a Pos value to a human-readable SourceFilePos.
+// Returns a zero SourceFilePos for NoPos.
 func (s *SourceFileSet) Position(p Pos) (pos SourceFilePos) {
 	if p != NoPos {
 		if f := s.file(p); f != nil {
@@ -127,13 +163,14 @@ func searchFiles(a []*SourceFile, x int) int {
 	return sort.Search(len(a), func(i int) bool { return a[i].Base > x }) - 1
 }
 
-// SourceFile represents a source file.
+// SourceFile represents a single source file with position tracking.
+// It maintains a mapping between byte offsets and line numbers.
 type SourceFile struct {
 	// SourceFile set for the file
 	set *SourceFileSet
 	// SourceFile name as provided to AddFile
 	Name string
-	// SourcePos value range for this file is [base...base+size]
+	// Pos value range for this file is [base...base+size]
 	Base int
 	// SourceFile size as provided to AddFile
 	Size int

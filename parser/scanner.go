@@ -1,3 +1,43 @@
+// Package parser implements a parser for Charlang source code.
+// This file implements the Scanner (lexical analyzer) that tokenizes source text.
+//
+// # Scanner Overview
+//
+// The Scanner transforms source text into a stream of tokens. It handles:
+//   - Identifier and keyword recognition
+//   - Numeric literal parsing (int, uint, float)
+//   - String and character literal parsing
+//   - Operator and delimiter recognition
+//   - Automatic semicolon insertion
+//   - Comment handling (optional)
+//
+// # Token Types
+//
+// The scanner produces tokens from the token package:
+//   - Literals: Ident, Int, Uint, Float, String, Char
+//   - Keywords: func, var, if, for, return, break, continue, etc.
+//   - Operators: +, -, *, /, %, &, |, ^, &&, ||, etc.
+//   - Delimiters: (, ), [, ], {, }, ,, ;, .
+//   - Special: EOF, Semicolon (inserted)
+//
+// # Semicolon Insertion
+//
+// The scanner automatically inserts semicolons after:
+//   - Identifiers
+//   - Literals (Int, Float, String, Char)
+//   - Closing delimiters: ), ], }
+//   - Return, Break, Continue tokens
+//
+// # Usage
+//
+//	scanner := NewScanner(file, src, errorHandler, 0)
+//	for {
+//	    tok, lit, pos := scanner.Scan()
+//	    if tok == token.EOF {
+//	        break
+//	    }
+//	    // process token
+//	}
 package parser
 
 import (
@@ -8,23 +48,40 @@ import (
 	"github.com/topxeq/charlang/token"
 )
 
-// byte order mark
+// bom is the Unicode byte order mark (U+FEFF).
+// It is recognized and skipped at the beginning of source files.
 const bom = 0xFEFF
 
-// ScanMode represents a scanner mode.
+// ScanMode represents a set of flags controlling scanner behavior.
 type ScanMode int
 
-// List of scanner modes.
+// Scanner mode flags.
 const (
+	// ScanComments enables parsing of comments.
+	// Without this flag, comments are skipped silently.
 	ScanComments ScanMode = 1 << iota
+
+	// DontInsertSemis disables automatic semicolon insertion.
+	// Used for parsing partial code snippets.
 	DontInsertSemis
 )
 
-// ScannerErrorHandler is an error handler for the scanner.
+// ScannerErrorHandler is the error handler function type for the scanner.
+// When a scanning error occurs (e.g., invalid character, unterminated string),
+// this function is called with the position and error message.
 type ScannerErrorHandler func(pos SourceFilePos, msg string)
 
-// Scanner reads the Charlang source text. It's based on Go's scanner
-// implementation.
+// Scanner implements a lexical scanner for Charlang source code.
+// It reads source text and produces a stream of tokens.
+//
+// The scanner maintains:
+//   - Current character and position
+//   - Line tracking for position reporting
+//   - Semicolon insertion state
+//   - Error count and optional error handler
+//
+// Thread Safety:
+// Scanner instances are not thread-safe. Create a new Scanner for each use.
 type Scanner struct {
 	file         *SourceFile         // source file handle
 	src          []byte              // source
@@ -38,7 +95,17 @@ type Scanner struct {
 	mode         ScanMode
 }
 
-// NewScanner creates a Scanner.
+// NewScanner creates a new Scanner for the given source.
+//
+// Parameters:
+//   - file: Source file metadata (size must match len(src))
+//   - src: Source code bytes to scan
+//   - errorHandler: Optional callback for error reporting (may be nil)
+//   - mode: Scanner mode flags (e.g., ScanComments)
+//
+// The scanner skips any BOM (byte order mark) at the beginning of the source.
+//
+// Panics if file.Size != len(src).
 func NewScanner(
 	file *SourceFile,
 	src []byte,
@@ -66,12 +133,20 @@ func NewScanner(
 	return s
 }
 
-// ErrorCount returns the number of errors.
+// ErrorCount returns the total number of scanning errors encountered.
 func (s *Scanner) ErrorCount() int {
 	return s.errorCount
 }
 
-// Scan returns a token, token literal and its position.
+// Scan reads and returns the next token from the source.
+//
+// Returns:
+//   - tok: The token type (e.g., token.Ident, token.Int, token.Add)
+//   - literal: The literal string value (for identifiers, numbers, strings)
+//   - pos: The source position of the token
+//
+// The scanner automatically inserts semicolons at line ends when appropriate.
+// Use DontInsertSemis mode to disable this behavior.
 func (s *Scanner) Scan() (
 	tok token.Token,
 	literal string,

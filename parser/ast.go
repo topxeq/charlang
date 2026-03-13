@@ -1,3 +1,21 @@
+// Package parser implements a parser for Charlang source code.
+// This file defines the AST (Abstract Syntax Tree) node types.
+//
+// # Node Interface
+//
+// All AST nodes implement the Node interface which provides:
+//   - Pos(): Position of the first character
+//   - End(): Position after the last character
+//   - String(): String representation for debugging
+//
+// # Node Categories
+//
+// AST nodes are organized into three categories:
+//   - Expr: Expression nodes (values, operators, calls)
+//   - Stmt: Statement nodes (control flow, declarations)
+//   - Decl: Declaration nodes (var, param)
+//
+// See expr.go for expression types and stmt.go for statement types.
 package parser
 
 import (
@@ -5,10 +23,13 @@ import (
 )
 
 const (
+	// nullRep is the string representation for null/nil nodes.
 	nullRep = "<null>"
 )
 
 // Node represents a node in the AST.
+// All AST nodes must implement this interface for position tracking
+// and string representation.
 type Node interface {
 	// Pos returns the position of first character belonging to the node.
 	Pos() Pos
@@ -18,7 +39,14 @@ type Node interface {
 	String() string
 }
 
-// IdentList represents a list of identifiers.
+// IdentList represents a list of identifiers, typically used for
+// function parameters or variable declarations.
+//
+// Fields:
+//   - LParen: Position of opening parenthesis (may be NoPos)
+//   - VarArgs: Whether the last parameter is variadic (...)
+//   - List: Slice of identifier nodes
+//   - RParen: Position of closing parenthesis (may be NoPos)
 type IdentList struct {
 	LParen  Pos
 	VarArgs bool
@@ -48,7 +76,7 @@ func (n *IdentList) End() Pos {
 	return NoPos
 }
 
-// NumFields returns the number of fields.
+// NumFields returns the number of identifier fields in the list.
 func (n *IdentList) NumFields() int {
 	if n == nil {
 		return 0
@@ -71,7 +99,16 @@ func (n *IdentList) String() string {
 // ----------------------------------------------------------------------------
 // Comments
 
-// A Comment node represents a single //-style or /*-style comment.
+// Comment represents a single //-style or /*-style comment.
+// The Text field contains the comment text including the comment markers.
+//
+// For //-style comments, Text does not include the newline.
+// For /*-style comments, Text includes both the /* and */ markers.
+//
+// Example:
+//
+//	// comment    -> Text == "// comment"
+//	/* comment */ -> Text == "/* comment */"
 type Comment struct {
 	Slash Pos    // position of "/" starting the comment
 	Text  string // comment text (excluding '\n' for //-style comments)
@@ -85,8 +122,15 @@ func (c *Comment) End() Pos {
 	return Pos(int(c.Slash) + len(c.Text))
 }
 
-// A CommentGroup represents a sequence of comments
-// with no other tokens and no empty lines between.
+// CommentGroup represents a sequence of comments with no other tokens
+// and no empty lines between them. This is used to group adjacent comments
+// that logically belong together, such as documentation comments.
+//
+// A CommentGroup with multiple comments typically represents:
+//   - Multiple consecutive single-line comments:
+//     // Line 1
+//     // Line 2
+//   - A multi-line block comment
 type CommentGroup struct {
 	List []*Comment // len(List) > 0
 }
