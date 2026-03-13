@@ -168,6 +168,14 @@ type NameCallerObject interface {
 // Call struct intentionally does not provide access to normal and variadic
 // arguments directly. Using Len() and Get() methods is preferred. It is safe to
 // create Call with a nil VM as long as VM is not required by the callee.
+// Call represents a function call context passed to functions implementing ExCallerObject.
+// It provides access to the VM, 'this' context, arguments, and variadic arguments.
+//
+// Key characteristics:
+//   - Passed to functions via ValueEx() method for extended call semantics
+//   - Supports method calls with 'This' binding for object-oriented patterns
+//   - Separates regular arguments (Args) from variadic arguments (Vargs)
+//   - Provides helper methods for argument access, validation, and manipulation
 type Call struct {
 	Vm    *VM
 	This  Object
@@ -257,6 +265,20 @@ func (c *Call) GetArgs() []Object {
 // helps to implement Object interface by embedding and overriding methods in
 // custom implementations. String and TypeName must be implemented otherwise
 // calling these methods causes panic.
+// ObjectImpl provides a basic Object implementation that does nothing.
+// It can be embedded in custom types to partially implement the Object interface.
+// Types embedding ObjectImpl must override TypeName() and String() methods,
+// otherwise calling these methods will panic with ErrNotImplemented.
+//
+// Type code: N/A (base implementation, not instantiable as standalone type).
+//
+// Key characteristics:
+//   - Provides default implementations for all Object interface methods
+//   - TypeCode(), TypeName(), String() panic with ErrNotImplemented
+//   - HasMemeber() returns false, IsFalsy() returns true
+//   - CanCall() returns false, CanIterate() returns false
+//   - Equal() returns false, IndexGet/Set return appropriate errors
+//   - BinaryOp() returns ErrInvalidOperator
 type ObjectImpl struct {
 	// Members map[string]Object
 	// Methods map[string]*Function
@@ -344,6 +366,18 @@ func (ObjectImpl) BinaryOp(_ token.Token, _ Object) (Object, error) {
 
 // UndefinedType represents the type of global Undefined Object. One should use
 // the UndefinedType in type switches only.
+// UndefinedType represents the type of the global Undefined singleton.
+// It should only be used in type switches; use the Undefined variable for values.
+//
+// Type code: 0.
+//
+// Key characteristics:
+//   - Singleton pattern: only one instance exists (global Undefined variable)
+//   - Represents absence of value, similar to JavaScript's undefined
+//   - IsFalsy() returns true (undefined is falsy in boolean context)
+//   - GetMember() returns Undefined for any member access (safe navigation)
+//   - Cannot be called, indexed, or iterated
+//   - Equal() returns true only when compared with Undefined itself
 type UndefinedType struct {
 	ObjectImpl
 }
@@ -2658,6 +2692,20 @@ func (o Chars) Format(s fmt.State, verb rune) {
 }
 
 // CompiledFunction holds the constants and instructions to pass VM.
+// CompiledFunction represents a compiled Charlang function for VM execution.
+// It contains bytecode instructions, parameter info, free variables, and source mapping.
+//
+// Type code: 185.
+//
+// Key characteristics:
+//   - Produced by the Charlang compiler from source code
+//   - NumParams: count of declared parameters
+//   - NumLocals: count of local variables (including parameters)
+//   - Instructions: bytecode for the VM to execute
+//   - Variadic: true if the function accepts variadic arguments
+//   - Free: captured variables for closure support
+//   - SourceMap: instruction index to source position mapping for debugging
+//   - Cannot be called directly; use an Invoker to execute
 type CompiledFunction struct {
 	// number of parameters
 	NumParams int
@@ -2926,6 +2974,26 @@ func hashData32(hash uint32, data []byte) uint32 {
 }
 
 // Function represents a function object and implements Object interface.
+// Function represents a user-defined or dynamically created function object.
+// It encapsulates a Go function that receives Object arguments and returns an Object.
+//
+// Type code: 181.
+//
+// Key characteristics:
+//   - Implements ExCallerObject interface, supporting extended call context
+//   - Two call modes: Value (simple args) and ValueEx (full Call access)
+//   - ValueEx takes precedence if both Value and ValueEx are set
+//   - Supports member attachment via Members map
+//   - Name field identifies the function for debugging/error messages
+//
+// Usage:
+//
+//	fn := &Function{
+//	    Name: "myFunc",
+//	    Value: func(args ...Object) (Object, error) {
+//	        return &Int{Value: 42}, nil
+//	    },
+//	}
 type Function struct {
 	ObjectImpl
 	Name    string
@@ -3092,6 +3160,29 @@ func (*Function) BinaryOp(token.Token, Object) (Object, error) {
 }
 
 // BuiltinFunction represents a builtin function object and implements Object interface.
+// BuiltinFunction represents a built-in function provided by the Charlang runtime.
+// Examples include print, len, type, new, and other language primitives.
+//
+// Type code: 183.
+//
+// Key characteristics:
+//   - Implements ExCallerObject interface for extended call context
+//   - Value: simple function signature with variadic Object args
+//   - ValueEx: extended signature with full Call context access
+//   - Supports dynamic method generation for namespace functions
+//   - Methods cache stores dynamically created function objects
+//   - Remark field stores additional documentation/description
+//   - Supports member attachment via Members map
+//
+// Usage:
+//
+//	builtin := &BuiltinFunction{
+//	    Name: "print",
+//	    Value: func(args ...Object) (Object, error) {
+//	        fmt.Println(args[0].String())
+//	        return Undefined, nil
+//	    },
+//	}
 type BuiltinFunction struct {
 	ObjectImpl
 	Name    string
@@ -3948,8 +4039,17 @@ func (o Array) Len() int {
 	return len(o)
 }
 
-// ObjectPtr represents a pointer variable.
-// this class is for internal use only, for common purpose, use ObjectRef instead
+// ObjectPtr represents a pointer to an Object, enabling pass-by-reference semantics.
+// It allows modification of shared objects across different contexts.
+//
+// Type code: 151.
+//
+// Key characteristics:
+//   - Internal use only; for common purpose, use ObjectRef instead
+//   - Holds a pointer to an Object (*Object), not the Object itself
+//   - Enables pass-by-reference semantics in Charlang
+//   - "value" method dereferences and returns the pointed-to object
+//   - Supports member attachment via Members map
 type ObjectPtr struct {
 	ObjectImpl
 	Value *Object
@@ -4404,7 +4504,17 @@ func (o Map) Len() int {
 	return len(o)
 }
 
-// SyncMap represents map of objects and implements Object interface.
+// SyncMap represents a thread-safe map with read-write locking.
+// It wraps a Map with sync.RWMutex for concurrent access safety.
+//
+// Type code: 153.
+//
+// Key characteristics:
+//   - Thread-safe map implementation using sync.RWMutex
+//   - Provides RLock/RLock/Unlock methods for explicit locking
+//   - Implements IndexDeleter and LengthGetter interfaces
+//   - All operations are protected by the internal mutex
+//   - Supports member attachment via Members map
 type SyncMap struct {
 	mu    sync.RWMutex
 	Value Map
@@ -4603,6 +4713,17 @@ func (*SyncMap) Call(...Object) (Object, error) {
 }
 
 // Error represents Error Object and implements error and Object interfaces.
+// Error represents a Charlang error object with name, message, and optional cause.
+// It provides structured error handling with member support for additional context.
+//
+// Type code: 155.
+//
+// Key characteristics:
+//   - Implements Go's error interface for seamless integration
+//   - Supports error chaining via Cause field (Unwrap method)
+//   - Supports member attachment via Members map
+//   - Name field identifies the error type (e.g., "TypeError", "ValueError")
+//   - Message field contains the human-readable error description
 type Error struct {
 	Name    string
 	Message string
@@ -4825,6 +4946,17 @@ func (*Error) CanIterate() bool { return false }
 func (*Error) Iterate() Iterator { return nil }
 
 // RuntimeError represents a runtime error that wraps Error and includes trace information.
+// RuntimeError represents a Charlang runtime error with stack trace information.
+// It wraps an Error with source position tracking for debugging.
+//
+// Type code: 157.
+//
+// Key characteristics:
+//   - Wraps an Error with source file set and position trace
+//   - Provides stack trace for debugging via Trace field
+//   - fileSet enables resolution of positions to file:line:column
+//   - Supports member attachment via Members map
+//   - TypeName() returns "error" (same as Error for type checking)
 type RuntimeError struct {
 	Err     *Error
 	fileSet *parser.SourceFileSet
@@ -5127,6 +5259,18 @@ func (st StackTrace) Format(s fmt.State, verb rune) {
 }
 
 // Time represents time values and implements Object interface.
+// Time represents a time value wrapping Go's time.Time.
+// It supports arithmetic operations with duration (int) and comparison with other times.
+//
+// Type code: 311.
+//
+// Key characteristics:
+//   - Wraps Go's time.Time for full-featured datetime operations
+//   - Supports binary operations: addition/subtraction with duration (Int)
+//   - Supports comparison operations with other Time objects
+//   - Provides formatting, parsing, and timezone conversion methods
+//   - Can be created from Unix timestamp (Int) or RFC3339 string (String)
+//   - Implements NameCallerObject interface for efficient method dispatch
 type Time struct {
 	Value time.Time
 
@@ -5859,7 +6003,16 @@ func ToLocation(o Object) (ret *Location, ok bool) {
 	return
 }
 
-// Location represents location values and implements Object interface.
+// Location represents a timezone location for time operations.
+// It wraps Go's time.Location and is used with Time objects for timezone conversions.
+//
+// Type code: 313.
+//
+// Key characteristics:
+//   - Wraps Go's time.Location for timezone handling
+//   - Loaded by IANA timezone identifiers (e.g., "UTC", "America/New_York")
+//   - Used with Time objects for timezone-aware operations
+//   - Supports member attachment via Members map
 type Location struct {
 	ObjectImpl
 	Value *time.Location
@@ -5954,6 +6107,18 @@ func loadLocationFunc(name string) (Object, error) {
 	return &Location{Value: l}, nil
 }
 
+// Database wraps sql.DB for database operations.
+// It provides connectivity to SQL databases (MySQL, PostgreSQL, SQLite, etc.).
+//
+// Type code: 309.
+//
+// Key characteristics:
+//   - Wraps Go's sql.DB for database connectivity
+//   - Supports multiple database types via DBType field
+//   - DBConnectString stores the connection string
+//   - Provides methods for query, exec, and transaction operations
+//   - Methods cache stores dynamically generated function objects
+//   - Supports member attachment via Members map
 type Database struct {
 	ObjectImpl
 	Value           *sql.DB
@@ -6388,6 +6553,19 @@ func (o *Database) BinaryOp(tok token.Token, right Object) (Object, error) {
 	return nil, ErrInvalidOperator
 }
 
+// StatusResult represents an operation result with status and value.
+// It provides a standardized result format for operations that may succeed or fail.
+//
+// Type code: 303.
+//
+// Key characteristics:
+//   - Standardized result format: Status ("success", "fail", ""), Value, Objects
+//   - Status indicates operation outcome
+//   - Value stores the result message or primary return value
+//   - Objects stores additional structured data (optional)
+//   - Pre-defined constants: StatusResultSuccess, StatusResultFail, StatusResultInvalid
+//   - Methods cache stores dynamically generated function objects
+//   - Supports member attachment via Members map
 type StatusResult struct {
 	ObjectImpl
 	Status  string
@@ -6726,6 +6904,17 @@ func (o *StatusResult) IndexSet(key, value Object) error {
 
 // Any represents container object and implements the Object interfaces.
 // Any is used to hold some data which is not an Object in Charlang, such as structured data from Golang function call
+// Any wraps any Go value as a Charlang Object for interoperability.
+// It stores the original value, type name, and type code for type preservation.
+//
+// Type code: 999.
+//
+// Key characteristics:
+//   - Wraps arbitrary Go values (interface{}) as Charlang objects
+//   - Preserves original type information via OriginalType and OriginalCode
+//   - Provides transparent access to wrapped value via "value" method
+//   - Supports member attachment via Members map
+//   - Used for FFI (Foreign Function Interface) and Go value bridging
 type Any struct {
 	ObjectImpl
 	Value        interface{}
@@ -7065,6 +7254,17 @@ func NewAny(vA interface{}, argsA ...string) *Any {
 	}
 }
 
+// StringBuilder wraps Go's strings.Builder for efficient string concatenation.
+// It provides a mutable buffer for building strings without allocations.
+//
+// Type code: 307.
+//
+// Key characteristics:
+//   - Wraps Go's strings.Builder for efficient string building
+//   - Supports WriteString, Write, and Reset operations via methods
+//   - Grows dynamically without reallocation (amortized O(1) append)
+//   - String() returns the accumulated string content
+//   - Supports member attachment via Members map
 type StringBuilder struct {
 	ObjectImpl
 	Value *strings.Builder
@@ -7568,6 +7768,17 @@ func (o *StringBuilder) Copy() Object {
 	return &rsT
 }
 
+// BytesBuffer wraps Go's bytes.Buffer for efficient byte manipulation.
+// It provides a mutable buffer for reading and writing byte data.
+//
+// Type code: 308.
+//
+// Key characteristics:
+//   - Wraps Go's bytes.Buffer for efficient byte operations
+//   - Supports Write, Read, Reset, and Bytes operations via methods
+//   - Grows dynamically without reallocation (amortized O(1) append)
+//   - String() returns the buffer content as a string
+//   - Supports member attachment via Members map
 type BytesBuffer struct {
 	ObjectImpl
 	Value *bytes.Buffer
@@ -7751,6 +7962,17 @@ func NewBytesBuffer(c Call) (Object, error) {
 
 // ObjectRef represents a reference variable.
 // always refer to an Object(i.e. *Object)
+// ObjectRef represents a reference variable that points to another Object.
+// It wraps a pointer to an Object (*Object) allowing indirect access and modification.
+//
+// Type code: 152.
+//
+// Key characteristics:
+//   - Wraps a pointer to Object (*Object) for reference semantics
+//   - Delegates operations (BinaryOp, CanCall, Call) to the referenced object
+//   - Copier interface returns self (references are not deep-copied)
+//   - "value" method dereferences and returns the pointed-to object
+//   - Supports member attachment via Members map
 type ObjectRef struct {
 	ObjectImpl
 	Value *Object
@@ -7870,6 +8092,17 @@ func (o *ObjectRef) Call(args ...Object) (Object, error) {
 }
 
 // MutableString represents string values and implements Object interface, compare to String, it supports setValue method.
+// MutableString represents a mutable string that can be modified in place.
+// Unlike String (immutable), MutableString allows character-level modification.
+//
+// Type code: 106.
+//
+// Key characteristics:
+//   - Mutable counterpart to the immutable String type
+//   - Supports index-based read and write of characters
+//   - Implements LengthGetter and ValueSetter interfaces
+//   - String() returns the current string value
+//   - Supports member attachment via Members map
 type MutableString struct {
 	ObjectImpl
 	Value string
@@ -8202,6 +8435,17 @@ func ToMutableStringObject(argA interface{}) *MutableString {
 }
 
 // Seq object is used for generate unique sequence number(integer)
+// Seq wraps tk.Seq for sequence/generator operations.
+// It provides lazy evaluation of infinite or finite sequences.
+//
+// Type code: 315.
+//
+// Key characteristics:
+//   - Wraps tk.Seq for sequence generation and manipulation
+//   - Supports lazy evaluation of sequence elements
+//   - Provides methods for filtering, mapping, and reducing
+//   - Implements ValueSetter interface
+//   - Supports member attachment via Members map
 type Seq struct {
 	ObjectImpl
 	Value *(tk.Seq)
@@ -8369,6 +8613,16 @@ func NewSeq(argsA ...Object) *Seq {
 
 // Mutex object is used for thread-safe actions
 // note that the members set/get operations are not thread-safe
+// Mutex wraps sync.RWMutex for thread-safe mutual exclusion.
+// It provides Lock, Unlock, RLock, RUnlock operations for concurrency control.
+//
+// Type code: 317.
+//
+// Key characteristics:
+//   - Wraps Go's sync.RWMutex for reader-writer locking
+//   - Supports exclusive (Lock/Unlock) and shared (RLock/RUnlock) access
+//   - Essential for protecting shared resources in concurrent code
+//   - Supports member attachment via Members map
 type Mutex struct {
 	ObjectImpl
 	Value *(sync.RWMutex)
@@ -8583,6 +8837,16 @@ func NewMutex(argsA ...Object) *Mutex {
 }
 
 // Mux object is used for http handlers
+// Mux wraps http.ServeMux for HTTP request routing.
+// It provides pattern-based routing for HTTP server handlers.
+//
+// Type code: 319.
+//
+// Key characteristics:
+//   - Wraps Go's http.ServeMux for HTTP routing
+//   - Supports Handle and HandleFunc methods for route registration
+//   - Used with HttpHandler and HttpServer for HTTP services
+//   - Supports member attachment via Members map
 type Mux struct {
 	ObjectImpl
 	Value *http.ServeMux
@@ -8733,6 +8997,17 @@ func NewMux(argsA ...Object) *Mux {
 }
 
 // HttpReq object is used to represent the http request
+// HttpReq wraps http.Request for HTTP request handling.
+// It provides access to request method, URL, headers, body, and parameters.
+//
+// Type code: 321.
+//
+// Key characteristics:
+//   - Wraps Go's http.Request for HTTP request data access
+//   - Provides methods for accessing query params, form data, headers
+//   - Supports body reading via io.Reader interface
+//   - Used in HTTP handler functions with HttpResp
+//   - Supports member attachment via Members map
 type HttpReq struct {
 	ObjectImpl
 	Value *http.Request
@@ -8914,6 +9189,17 @@ func (o *HttpReq) BinaryOp(tok token.Token, right Object) (Object, error) {
 }
 
 // HttpResp object is used to represent the http response
+// HttpResp wraps http.ResponseWriter for HTTP response handling.
+// It provides methods for writing response data, headers, and status codes.
+//
+// Type code: 323.
+//
+// Key characteristics:
+//   - Wraps Go's http.ResponseWriter for HTTP response writing
+//   - Implements io.Writer interface for direct writing
+//   - Provides methods for setting headers, status codes, and cookies
+//   - Used in HTTP handler functions with HttpReq
+//   - Supports member attachment via Members map
 type HttpResp struct {
 	ObjectImpl
 	Value http.ResponseWriter
@@ -9072,6 +9358,16 @@ func (o *HttpResp) BinaryOp(tok token.Token, right Object) (Object, error) {
 }
 
 // HttpHandler object is used to represent the http response
+// HttpHandler wraps an HTTP handler function for use with Mux routing.
+// It encapsulates a function that handles HTTP requests.
+//
+// Type code: 325.
+//
+// Key characteristics:
+//   - Wraps http.HandlerFunc for HTTP request handling
+//   - Used with Mux.Handle() for route registration
+//   - Function signature: func(http.ResponseWriter, *http.Request)
+//   - Supports member attachment via Members map
 type HttpHandler struct {
 	// ObjectImpl
 	Value func(http.ResponseWriter, *http.Request)
@@ -9337,6 +9633,17 @@ func NewHttpHandler(c Call) (Object, error) {
 }
 
 // Reader object is used for represent io.Reader type value
+// Reader wraps io.Reader for reading data from various sources.
+// It implements io.ReadCloser interface for stream-based reading.
+//
+// Type code: 331.
+//
+// Key characteristics:
+//   - Wraps any io.Reader (files, network connections, buffers, etc.)
+//   - Implements io.ReadCloser interface
+//   - SizeM field optionally stores expected content size
+//   - CloseDele provides optional close callback delegate
+//   - Supports member attachment via Members map
 type Reader struct {
 	ObjectImpl
 	Value     io.Reader
@@ -9674,6 +9981,16 @@ func NewReader(c Call) (Object, error) {
 }
 
 // Writer object is used for represent io.Writer type value
+// Writer wraps io.Writer for writing data to various destinations.
+// It implements io.WriteCloser interface for stream-based writing.
+//
+// Type code: 333.
+//
+// Key characteristics:
+//   - Wraps any io.Writer (files, network connections, buffers, etc.)
+//   - Implements io.WriteCloser interface
+//   - Provides unified interface for writing to different targets
+//   - Supports member attachment via Members map
 type Writer struct {
 	ObjectImpl
 	Value io.Writer
@@ -9986,6 +10303,16 @@ func NewWriter(c Call) (Object, error) {
 }
 
 // File object is used for represent os.File type value
+// File wraps os.File for file system operations.
+// It provides read, write, seek, and close operations on files.
+//
+// Type code: 401.
+//
+// Key characteristics:
+//   - Wraps Go's os.File for file I/O operations
+//   - Supports reading, writing, seeking, and closing
+//   - Can be used as Reader (via Read method) or Writer (via Write method)
+//   - Supports member attachment via Members map
 type File struct {
 	ObjectImpl
 	Value *os.File
@@ -10294,6 +10621,17 @@ func NewFile(c Call) (Object, error) {
 }
 
 // CharCode object is used for represent thent io.Reader type value
+// CharCode represents compiled Charlang bytecode ready for execution.
+// It stores source code, compiled bytecode, compiler options, and error state.
+//
+// Type code: 191.
+//
+// Key characteristics:
+//   - Holds compiled Bytecode for VM execution
+//   - Source stores the original source code string
+//   - CompilerOptions control compilation behavior
+//   - LastError stores the most recent compilation error
+//   - Supports member attachment via Members map
 type CharCode struct {
 	ObjectImpl
 	Source string
@@ -10546,6 +10884,16 @@ func NewCharCode(srcA string, optsA ...*CompilerOptions) *CharCode {
 }
 
 // Gel object is like modules based on CharCode object
+// Gel wraps CharCode for compiled code execution with VM.
+// It provides a convenient interface for running compiled scripts.
+//
+// Type code: 193.
+//
+// Key characteristics:
+//   - Wraps CharCode for script execution
+//   - Provides Run methods for executing compiled code
+//   - Can be created from source code string
+//   - Supports member attachment via Members map
 type Gel struct {
 	ObjectImpl
 	// Source string
@@ -10784,6 +11132,16 @@ func NewGel(argsA ...Object) (Object, error) {
 }
 
 // OrderedMap represents map of objects but has order(in the order of push-in) and implements Object interface.
+// OrderedMap wraps tk.OrderedMap for ordered key-value storage.
+// Unlike Map, OrderedMap preserves insertion order during iteration.
+//
+// Type code: 195.
+//
+// Key characteristics:
+//   - Wraps tk.OrderedMap for order-preserving map operations
+//   - Maintains insertion order during iteration
+//   - Implements IndexDeleter, Copier, and LengthGetter interfaces
+//   - Keys are strings; values are Objects
 type OrderedMap struct {
 	ObjectImpl
 	Value *tk.OrderedMap
@@ -11376,6 +11734,17 @@ func NewOrderedMap(argsA ...Object) (Object, error) {
 }
 
 // BigInt represents large signed integer values and implements Object interface.
+// BigInt wraps big.Int for arbitrary-precision integer arithmetic.
+// It supports integers of unlimited size, beyond Int's 64-bit limit.
+//
+// Type code: 201.
+//
+// Key characteristics:
+//   - Wraps Go's math/big.Int for arbitrary-precision integers
+//   - Supports all arithmetic operations without overflow
+//   - Supports comparison with other BigInt values
+//   - String() returns decimal representation
+//   - Supports member attachment via Members map
 type BigInt struct {
 	// ObjectImpl
 
@@ -11901,6 +12270,17 @@ func NewBigInt(c Call) (Object, error) {
 }
 
 // BigFloat represents large signed float values and implements Object interface.
+// BigFloat wraps big.Float for arbitrary-precision floating-point arithmetic.
+// It supports floating-point numbers with configurable precision.
+//
+// Type code: 203.
+//
+// Key characteristics:
+//   - Wraps Go's math/big.Float for arbitrary-precision floats
+//   - Supports configurable precision and rounding modes
+//   - Supports comparison with other BigFloat values
+//   - String() returns decimal representation
+//   - Supports member attachment via Members map
 type BigFloat struct {
 	// ObjectImpl
 
@@ -12269,6 +12649,17 @@ func NewBigFloat(c Call) (Object, error) {
 }
 
 // Image represents an image and implements Object interface.
+// Image wraps image.Image for image processing operations.
+// It provides access to pixel data, dimensions, and format information.
+//
+// Type code: 501.
+//
+// Key characteristics:
+//   - Wraps Go's image.Image for image data handling
+//   - Supports various image formats (PNG, JPEG, GIF, etc.)
+//   - Provides methods for accessing pixel data and dimensions
+//   - Can be created from file, bytes, or decoded data
+//   - Supports member attachment via Members map
 type Image struct {
 	// ObjectImpl
 
@@ -12447,6 +12838,17 @@ func NewImage(c Call) (Object, error) {
 }
 
 // Delegate represents an function caller and implements Object interface.
+// Delegate wraps a callback delegate for deferred execution.
+// It combines a CharCode with a delegate function for event handling patterns.
+//
+// Type code: 601.
+//
+// Key characteristics:
+//   - Combines CharCode with tk.QuickVarDelegate for callbacks
+//   - Used for deferred execution patterns (event handlers, async callbacks)
+//   - Code field stores the associated compiled code
+//   - Value field stores the actual delegate function
+//   - Supports member attachment via Members map
 type Delegate struct {
 	// ObjectImpl
 	Code  *CharCode
@@ -12727,6 +13129,17 @@ func NewExternalDelegate(funcA func(...interface{}) interface{}) Object {
 }
 
 // Excel represents an Excel(or compatible) file and implements Object interface.
+// Excel wraps excelize.File for Excel spreadsheet operations.
+// It provides reading, writing, and manipulation of .xlsx files.
+//
+// Type code: 1003.
+//
+// Key characteristics:
+//   - Wraps excelize.File for Excel file operations
+//   - Supports reading, writing, and modifying .xlsx files
+//   - Provides methods for cell access, formulas, charts, and styling
+//   - Can create new workbooks or open existing ones
+//   - Supports member attachment via Members map
 type Excel struct {
 	// ObjectImpl
 	Value *excelize.File
@@ -12919,6 +13332,17 @@ func NewExcel(c Call) (Object, error) {
 }
 
 // Stack represents a generic stack object and implements Object interface.
+// Stack wraps tk.SimpleStack for LIFO (Last-In-First-Out) data structure.
+// It provides push, pop, and peek operations for stack-based algorithms.
+//
+// Type code: 321.
+//
+// Key characteristics:
+//   - Wraps tk.SimpleStack for LIFO operations
+//   - Implements LengthGetter interface for size queries
+//   - Supports Push, Pop, Peek, and Clear operations
+//   - Generic container for Object values
+//   - Supports member attachment via Members map
 type Stack struct {
 	ObjectImpl
 	Value *tk.SimpleStack
@@ -13131,6 +13555,17 @@ func NewStack(c Call) (Object, error) {
 }
 
 // Queue represents a generic FIFO queue object and implements Object interface.
+// Queue wraps tk.AnyQueue for FIFO (First-In-First-Out) data structure.
+// It provides enqueue, dequeue, and peek operations for queue-based algorithms.
+//
+// Type code: 323.
+//
+// Key characteristics:
+//   - Wraps tk.AnyQueue for FIFO operations
+//   - Implements LengthGetter interface for size queries
+//   - Supports Enqueue, Dequeue, Peek, and Clear operations
+//   - Generic container for Object values
+//   - Supports member attachment via Members map
 type Queue struct {
 	ObjectImpl
 	Value *tk.AnyQueue
@@ -13407,6 +13842,17 @@ func NewQueue(c Call) (Object, error) {
 }
 
 // JsVm represents an JavaScript Virtual Machine could run script once or more
+// JsVm wraps goja.Runtime for JavaScript execution within Charlang.
+// It provides a JavaScript VM for running JS code alongside Charlang.
+//
+// Type code: 711.
+//
+// Key characteristics:
+//   - Wraps goja.Runtime for JavaScript execution
+//   - Supports running JavaScript code from Charlang
+//   - Can exchange data between Charlang and JavaScript contexts
+//   - Provides methods for setting/getting JS variables and calling functions
+//   - Supports member attachment via Members map
 type JsVm struct {
 	// ObjectImpl
 
@@ -13894,6 +14340,17 @@ func NewJsVm(c Call) (Object, error) {
 //}
 
 // EvalMachine represents an Charlang Virtual Machine could run script once or more
+// EvalMachine wraps Eval for expression evaluation with variable context.
+// It provides a calculator-like evaluation engine with variable storage.
+//
+// Type code: 888.
+//
+// Key characteristics:
+//   - Wraps Eval for mathematical and logical expression evaluation
+//   - Supports variable assignment and retrieval
+//   - Provides functions for parsing and evaluating expressions
+//   - Can be used for dynamic formula evaluation
+//   - Supports member attachment via Members map
 type EvalMachine struct {
 	// ObjectImpl
 
@@ -14098,6 +14555,16 @@ func NewEvalMachine(c Call) (Object, error) {
 }
 
 // MapArray represents an SimpleFlexObject which is an array with some items have keys
+// MapArray wraps tk.SimpleFlexObject for hybrid map-array storage.
+// It combines the features of both map and array for flexible data access.
+//
+// Type code: 136.
+//
+// Key characteristics:
+//   - Wraps tk.SimpleFlexObject for hybrid map/array operations
+//   - Supports both indexed (array-like) and keyed (map-like) access
+//   - Provides flexible data structure for dynamic content
+//   - Useful for JSON-like data with mixed access patterns
 type MapArray struct {
 	// ObjectImpl
 
@@ -14283,6 +14750,16 @@ func NewMapArray(c Call) (Object, error) {
 }
 
 // WebSocket object is used to represent the WebSocket connection
+// WebSocket wraps websocket.Conn for WebSocket communication.
+// It provides real-time bidirectional communication over TCP.
+//
+// Type code: 701.
+//
+// Key characteristics:
+//   - Wraps gorilla/websocket.Conn for WebSocket protocol
+//   - Supports both client (dial) and server (upgrade) modes
+//   - Provides methods for sending/receiving text and binary messages
+//   - Enables real-time bidirectional communication
 type WebSocket struct {
 	ObjectImpl
 	Value *websocket.Conn
