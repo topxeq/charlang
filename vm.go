@@ -1,5 +1,45 @@
 package charlang
 
+// Virtual Machine (VM) Architecture
+//
+// The VM is a stack-based bytecode interpreter that executes compiled Charlang scripts.
+// It uses a frame-based call stack to support function calls and closures.
+//
+// # Core Components
+//
+//   - VM: The main virtual machine struct that holds execution state
+//   - frame: Represents a function call frame with local variables and instruction pointer
+//   - vmPool: Pool of VM instances for efficient reuse
+//   - Invoker: Helper for invoking callable objects with VM context
+//
+// # Execution Model
+//
+// The VM executes bytecode instructions sequentially, maintaining:
+//   - A value stack for operands and intermediate results
+//   - A frame stack for function calls (call stack)
+//   - An instruction pointer (IP) for the current instruction
+//   - A stack pointer (SP) for the top of the value stack
+//
+// # Function Calls
+//
+// When a function is called:
+//  1. A new frame is pushed onto the frame stack
+//  2. Arguments are copied to local variables
+//  3. IP is set to the function's first instruction
+//  4. Base pointer is set for local variable access
+//
+// # Error Handling
+//
+// The VM supports try-catch-finally through errHandler structures:
+//   - catch: IP offset for catch block
+//   - finally: IP offset for finally block
+//   - returnTo: IP to return to after handling
+//
+// # Thread Safety
+//
+// The VM is not thread-safe. Use sync.Mutex for concurrent access.
+// VM instances can be pooled via vmPool for efficient reuse.
+
 import (
 	"errors"
 	"fmt"
@@ -19,6 +59,20 @@ const (
 )
 
 // VM executes the instructions in Bytecode.
+// It is a stack-based virtual machine with frame-based function calls.
+//
+// Key fields:
+//   - abort: Atomic flag to signal execution abort
+//   - sp: Stack pointer - points to next free slot in value stack
+//   - ip: Instruction pointer - current instruction offset in curInsts
+//   - curInsts: Current instruction slice being executed
+//   - constants: Constant pool from bytecode (literals, functions)
+//   - stack: Value stack for operands and intermediate results
+//   - frames: Call frame stack for function calls
+//   - curFrame: Current active frame
+//   - bytecode: The bytecode being executed
+//   - globals: Global variables accessible to all functions
+//   - pool: VM pool for instance reuse
 type VM struct {
 	abort        int64
 	sp           int
@@ -1563,6 +1617,14 @@ func (vm *VM) GetSrcPos() parser.Pos {
 	return vm.curFrame.fn.SourcePos(vm.ip)
 }
 
+// errHandler represents a try-catch-finally error handler.
+// It stores the execution state needed to handle exceptions.
+//
+// Fields:
+//   - sp: Stack pointer to restore when handling the error
+//   - catch: IP offset for catch block (0 if no catch)
+//   - finally: IP offset for finally block (0 if no finally)
+//   - returnTo: IP to return to after finally block
 type errHandler struct {
 	sp       int
 	catch    int
@@ -1570,6 +1632,8 @@ type errHandler struct {
 	returnTo int
 }
 
+// errHandlers manages a stack of error handlers for try-catch-finally blocks.
+// It supports nested error handling with proper error propagation.
 type errHandlers struct {
 	handlers []errHandler
 	err      *RuntimeError
@@ -1624,6 +1688,15 @@ func (t *errHandlers) hasReturnTo() int {
 	return 0
 }
 
+// frame represents a function call frame on the call stack.
+// Each frame stores the execution context for a function invocation.
+//
+// Fields:
+//   - fn: The compiled function being executed
+//   - freeVars: Captured variables for closure support
+//   - ip: Instruction pointer within this function's instructions
+//   - basePointer: Base index in the value stack for local variables
+//   - errHandlers: Stack of error handlers for try-catch-finally
 type frame struct {
 	fn          *CompiledFunction
 	freeVars    []*ObjectPtr
@@ -1762,6 +1835,19 @@ func (inv *Invoker) invokeObject(callee Object, args ...Object) (Object, error) 
 	return callee.Call(args...)
 }
 
+// vmPool manages a pool of VM instances for efficient reuse.
+// Using a pool is approximately 3x faster than creating new VMs.
+//
+// Fields:
+//   - mu: Mutex for thread-safe pool operations
+//   - root: The parent VM that owns this pool
+//   - vms: Set of active child VM instances
+//
+// Usage:
+//
+//	vm := pool.acquire(cf, true)  // Get VM from pool
+//	// ... use vm ...
+//	pool.release(vm)              // Return VM to pool
 type vmPool struct {
 	mu   sync.Mutex
 	root *VM
