@@ -1,0 +1,86 @@
+// Charlang 斐波那契性能测试
+
+pl("=== Charlang 斐波那契性能测试 ===")
+pl("")
+
+// 迭代方式
+fibIter := func(n) {
+    if n <= 1 {
+        return n
+    }
+    a := 0
+    b := 1
+    for i := 2; i <= n; i++ {
+        temp := a + b
+        a = b
+        b = temp
+    }
+    return b
+}
+
+// 递归方式 (使用var声明后赋值的方式支持递归)
+var fibRec
+fibRec = func(n) {
+    if n <= 1 {
+        return n
+    }
+    return fibRec(n-1) + fibRec(n-2)
+}
+
+pl("=== 迭代方式 ===")
+
+t1 := now().unixMilli()
+r := fibIter(35)
+t2 := now().unixMilli()
+printf("fib(35)  迭代: %4d ms, result: %d\n", t2-t1, r)
+
+t1 = now().unixMilli()
+r = fibIter(40)
+t2 = now().unixMilli()
+printf("fib(40)  迭代: %4d ms, result: %d\n", t2-t1, r)
+
+t1 = now().unixMilli()
+r = fibIter(50)
+t2 = now().unixMilli()
+printf("fib(50)  迭代: %4d ms, result: %d\n", t2-t1, r)
+
+t1 = now().unixMilli()
+r = fibIter(100)
+t2 = now().unixMilli()
+printf("fib(100) 迭代: %4d ms, result: %d\n", t2-t1, r)
+
+t1 = now().unixMilli()
+r = fibIter(1000)
+t2 = now().unixMilli()
+printf("fib(1000)迭代: %4d ms, result: %d\n", t2-t1, r)
+
+t1 = now().unixMilli()
+r = fibIter(10000)
+t2 = now().unixMilli()
+printf("fib(10000)迭代:%4d ms, result: %d\n", t2-t1, r)
+
+t1 = now().unixMilli()
+r = fibIter(100000)
+t2 = now().unixMilli()
+printf("fib(100000)迭代:%4d ms\n", t2-t1)
+
+pl("")
+pl("=== 递归方式 ===")
+
+t1 = now().unixMilli()
+r = fibRec(35)
+t2 = now().unixMilli()
+printf("fib(35)  递归: %4d ms, result: %d\n", t2-t1, r)
+
+t1 = now().unixMilli()
+r = fibRec(40)
+t2 = now().unixMilli()
+printf("fib(40)  递归: %4d ms, result: %d\n", t2-t1, r)
+
+t1 = now().unixMilli()
+r = fibRec(45)
+t2 = now().unixMilli()
+printf("fib(45)  递归: %4d ms, result: %d\n", t2-t1, r)
+
+pl("")
+pl("测试完成")
