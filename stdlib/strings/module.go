@@ -617,7 +617,7 @@ func replaceFunc(c charlang.Call) (charlang.Object, error) {
 		}
 		n = v
 	}
-	return charlang.String(strings.Replace(s, old, news, n)), nil
+		return charlang.String(strings.Replace(s, old, news, n)), nil
 }
 
 func titleFunc(s string) charlang.Object {

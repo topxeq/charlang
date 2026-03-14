@@ -340,7 +340,7 @@ func TestObjects5(t *testing.T) {
 
 	require.Equal(t, "false", fmt.Sprintf("%v", obj6.Equal(Int(1))))
 
-	require.Equal(t, "true", fmt.Sprintf("%v", obj6.IsFalsy()))
+	require.Equal(t, "true", fmt.Sprintf("%v", obj6.IsFalsy())) // empty OrderedMap is falsy
 
 	require.Equal(t, "false", fmt.Sprintf("%v", obj6.CanCall()))
 
@@ -348,21 +348,21 @@ func TestObjects5(t *testing.T) {
 
 	require.Equal(t, "<nil>-NotCallableError: ", fmt.Sprintf("%v-%v", tmpr, err))
 
-	require.Equal(t, "true", fmt.Sprintf("%v", obj6.CanIterate()))
+	require.Equal(t, "true", fmt.Sprintf("%v", obj6.CanIterate())) // OrderedMap can iterate
 
-	require.Equal(t, "*charlang.OrderedMapIterator", fmt.Sprintf("%T", obj6.Iterate()))
+	require.Equal(t, "*charlang.OrderedMapIterator", fmt.Sprintf("%T", obj6.Iterate())) // OrderedMap returns iterator
 
-	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj6.IndexSet(Int(1), Int(1))))
+	require.Equal(t, "<nil>", fmt.Sprintf("%v", obj6.IndexSet(Int(1), Int(1)))) // OrderedMap supports IndexSet
 
 	tmpr, err = obj6.IndexGet(ToStringObject("value1"))
 
-	require.Equal(t, "undefined-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	require.Equal(t, "undefined-<nil>", fmt.Sprintf("%v-%v", tmpr, err)) // key not found returns undefined
 	
 	tmpr, err = obj6.BinaryOp(token.Add, Int(3))
 
 	require.Equal(t, "<nil>-TypeError: unsupported operand types for '+': 'orderedMap' and 'int'", fmt.Sprintf("%v-%v", tmpr, err))
 
-	require.Equal(t, "{\"1\":1}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj6.String()))), "-sort"))
+	require.Equal(t, "{\"1\":1}", tk.ToJSONX(tk.FromJSONX((fmt.Sprintf("%v", obj6.String()))), "-sort")) // map now contains the value we set
 	
 
 }
@@ -2703,4 +2703,355 @@ func TestObjectIndexSet(t *testing.T) {
 	err = v.IndexSet(String("a"), Int(2))
 	require.Nil(t, err)
 	require.Equal(t, Int(2), v.(*SyncMap).Value["a"])
+}
+
+// TestIntBinaryOp tests Int BinaryOp operations
+func TestIntBinaryOp(t *testing.T) {
+	tests := []struct {
+		name     string
+		left     Int
+		op       token.Token
+		right    Object
+		expected Object
+		wantErr  bool
+	}{
+		{"add", Int(5), token.Add, Int(3), Int(8), false},
+		{"subtract", Int(5), token.Sub, Int(3), Int(2), false},
+		{"multiply", Int(5), token.Mul, Int(3), Int(15), false},
+		{"divide", Int(6), token.Quo, Int(2), Int(3), false},
+		{"mod", Int(7), token.Rem, Int(3), Int(1), false},
+		{"bitand", Int(5), token.And, Int(3), Int(1), false},
+		{"bitor", Int(5), token.Or, Int(3), Int(7), false},
+		{"xor", Int(5), token.Xor, Int(3), Int(6), false},
+		{"andnot", Int(5), token.AndNot, Int(3), Int(4), false},
+		{"shift left", Int(1), token.Shl, Int(2), Int(4), false},
+		{"shift right", Int(4), token.Shr, Int(2), Int(1), false},
+		{"less", Int(3), token.Less, Int(5), True, false},
+		{"less equal", Int(5), token.LessEq, Int(5), True, false},
+		{"greater", Int(5), token.Greater, Int(3), True, false},
+		{"greater equal", Int(5), token.GreaterEq, Int(3), True, false},
+		{"divide by zero", Int(5), token.Quo, Int(0), nil, true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := tc.left.BinaryOp(tc.op, tc.right)
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tc.expected, result)
+			}
+		})
+	}
+
+	// Test Int Equal method
+	require.True(t, Int(5).Equal(Int(5)))
+	require.False(t, Int(5).Equal(Int(3)))
+}
+
+// TestUintBinaryOp tests Uint BinaryOp operations
+func TestUintBinaryOp(t *testing.T) {
+	tests := []struct {
+		name     string
+		left     Uint
+		op       token.Token
+		right    Object
+		expected Object
+		wantErr  bool
+	}{
+		{"add", Uint(5), token.Add, Uint(3), Uint(8), false},
+		{"subtract", Uint(5), token.Sub, Uint(3), Uint(2), false},
+		{"multiply", Uint(5), token.Mul, Uint(3), Uint(15), false},
+		{"divide", Uint(6), token.Quo, Uint(2), Uint(3), false},
+		{"mod", Uint(7), token.Rem, Uint(3), Uint(1), false},
+		{"less", Uint(3), token.Less, Uint(5), True, false},
+		{"greater", Uint(5), token.Greater, Uint(3), True, false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := tc.left.BinaryOp(tc.op, tc.right)
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tc.expected, result)
+			}
+		})
+	}
+
+	// Test Uint Equal method
+	require.True(t, Uint(5).Equal(Uint(5)))
+	require.False(t, Uint(5).Equal(Uint(3)))
+}
+
+// TestFloatBinaryOp tests Float BinaryOp operations
+func TestFloatBinaryOp(t *testing.T) {
+	tests := []struct {
+		name     string
+		left     Float
+		op       token.Token
+		right    Object
+		expected Object
+		wantErr  bool
+	}{
+		{"add", Float(5.0), token.Add, Float(3.0), Float(8.0), false},
+		{"subtract", Float(5.0), token.Sub, Float(3.0), Float(2.0), false},
+		{"multiply", Float(5.0), token.Mul, Float(3.0), Float(15.0), false},
+		{"divide", Float(6.0), token.Quo, Float(2.0), Float(3.0), false},
+		{"less", Float(3.0), token.Less, Float(5.0), True, false},
+		{"greater", Float(5.0), token.Greater, Float(3.0), True, false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := tc.left.BinaryOp(tc.op, tc.right)
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tc.expected, result)
+			}
+		})
+	}
+
+	// Test Float Equal method
+	require.True(t, Float(5.0).Equal(Float(5.0)))
+	require.False(t, Float(5.0).Equal(Float(3.0)))
+}
+
+// TestBoolBinaryOp tests Bool operations
+func TestBoolBinaryOp(t *testing.T) {
+	require.True(t, True.IsFalsy() == false)
+	require.True(t, False.IsFalsy() == true)
+	require.True(t, True.Equal(True))
+	require.False(t, True.Equal(False))
+	require.Equal(t, "true", True.String())
+	require.Equal(t, "false", False.String())
+}
+
+// TestCharBinaryOp tests Char BinaryOp operations
+func TestCharBinaryOp(t *testing.T) {
+	tests := []struct {
+		name     string
+		left     Char
+		op       token.Token
+		right    Object
+		expected Object
+		wantErr  bool
+	}{
+		{"add", Char(5), token.Add, Char(3), Char(8), false},
+		{"subtract", Char(5), token.Sub, Char(3), Char(2), false},
+		{"less", Char('a'), token.Less, Char('b'), True, false},
+		{"greater", Char('b'), token.Greater, Char('a'), True, false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := tc.left.BinaryOp(tc.op, tc.right)
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tc.expected, result)
+			}
+		})
+	}
+
+	// Test Char Equal method
+	require.True(t, Char('a').Equal(Char('a')))
+	require.False(t, Char('a').Equal(Char('b')))
+}
+
+// TestStringBinaryOp tests String BinaryOp operations
+func TestStringBinaryOp(t *testing.T) {
+	tests := []struct {
+		name     string
+		left     String
+		op       token.Token
+		right    Object
+		expected Object
+		wantErr  bool
+	}{
+		{"add strings", String("hello"), token.Add, String(" world"), String("hello world"), false},
+		{"add int", String("count: "), token.Add, Int(5), String("count: 5"), false},
+		{"add char", String("char: "), token.Add, Char('A'), String("char: A"), false},
+		{"less", String("abc"), token.Less, String("def"), True, false},
+		{"greater", String("def"), token.Greater, String("abc"), True, false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := tc.left.BinaryOp(tc.op, tc.right)
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tc.expected, result)
+			}
+		})
+	}
+
+	// Test String Equal method (not BinaryOp)
+	require.True(t, String("abc").Equal(String("abc")))
+	require.False(t, String("abc").Equal(String("def")))
+}
+
+// TestBytesBinaryOp tests Bytes BinaryOp operations
+func TestBytesBinaryOp(t *testing.T) {
+	b := Bytes{1, 2, 3}
+
+	// Test IndexGet
+	result, err := b.IndexGet(Int(0))
+	require.NoError(t, err)
+	require.Equal(t, Int(1), result)
+
+	// Test IndexSet
+	err = b.IndexSet(Int(0), Int(10))
+	require.NoError(t, err)
+	require.Equal(t, byte(10), b[0]) // Bytes is []byte, so element is byte
+
+	// Test len
+	require.Equal(t, 3, len(b))
+}
+
+// TestArrayOperations tests Array operations
+func TestArrayOperations(t *testing.T) {
+	arr := Array{Int(1), Int(2), Int(3)}
+
+	// Test IndexGet
+	result, err := arr.IndexGet(Int(0))
+	require.NoError(t, err)
+	require.Equal(t, Int(1), result)
+
+	// Test IndexGet out of bounds
+	_, err = arr.IndexGet(Int(10))
+	require.Error(t, err)
+
+	// Test IndexSet
+	err = arr.IndexSet(Int(0), Int(10))
+	require.NoError(t, err)
+	require.Equal(t, Int(10), arr[0])
+
+	// Test Copy
+	copied := arr.Copy().(Array)
+	require.Equal(t, arr, copied)
+	copied[0] = Int(100)
+	require.NotEqual(t, arr, copied) // Verify it's a deep copy
+
+	// Test IsFalsy
+	require.False(t, arr.IsFalsy())
+	require.True(t, Array{}.IsFalsy())
+}
+
+// TestMapOperations tests Map operations
+func TestMapOperations(t *testing.T) {
+	m := Map{"a": Int(1), "b": Int(2)}
+
+	// Test IndexGet
+	result, err := m.IndexGet(String("a"))
+	require.NoError(t, err)
+	require.Equal(t, Int(1), result)
+
+	// Test IndexGet missing key
+	result, err = m.IndexGet(String("missing"))
+	require.NoError(t, err)
+	require.Equal(t, Undefined, result)
+
+	// Test IndexSet
+	err = m.IndexSet(String("c"), Int(3))
+	require.NoError(t, err)
+	require.Equal(t, Int(3), m["c"])
+
+	// Test IsFalsy
+	require.False(t, m.IsFalsy())
+	require.True(t, Map{}.IsFalsy())
+}
+
+// TestSyncMapOperations tests SyncMap operations
+func TestSyncMapOperations(t *testing.T) {
+	sm := &SyncMap{Value: Map{"a": Int(1), "b": Int(2)}}
+
+	// Test IndexGet
+	result, err := sm.IndexGet(String("a"))
+	require.NoError(t, err)
+	require.Equal(t, Int(1), result)
+
+	// Test IndexSet
+	err = sm.IndexSet(String("c"), Int(3))
+	require.NoError(t, err)
+	require.Equal(t, Int(3), sm.Value["c"])
+
+	// Test IsFalsy
+	require.False(t, sm.IsFalsy())
+	require.True(t, (&SyncMap{Value: Map{}}).IsFalsy())
+
+	// Test Copy
+	copied := sm.Copy().(*SyncMap)
+	require.Equal(t, sm.Value, copied.Value)
+}
+
+// TestCharsOperations tests Chars operations
+func TestCharsOperations(t *testing.T) {
+	// Chars is a []rune type
+	c := Chars("hello世界")
+
+	// Test IndexGet
+	result, err := c.IndexGet(Int(0))
+	require.NoError(t, err)
+	require.Equal(t, Char('h'), result)
+
+	// Test IndexGet with unicode
+	result, err = c.IndexGet(Int(5))
+	require.NoError(t, err)
+	require.Equal(t, Char('世'), result)
+
+	// Test len
+	require.Equal(t, 7, len(c)) // "hello世界" has 7 runes
+
+	// Test String
+	require.Equal(t, "hello世界", c.String())
+}
+
+// TestBytesBufferOperations tests BytesBuffer operations
+func TestBytesBufferOperations(t *testing.T) {
+	// Create BytesBuffer
+	buf := &BytesBuffer{Value: new(bytes.Buffer)}
+
+	// Test initial state - not falsy if Value is not nil
+	require.False(t, buf.IsFalsy())
+
+	// Test writing
+	_, err := buf.Value.WriteString("hello")
+	require.NoError(t, err)
+
+	// Test string representation (BytesBuffer.String() returns a different format)
+	// Just verify it doesn't error
+	s := buf.String()
+	require.NotEmpty(t, s)
+
+	// Test nil buffer is falsy
+	nilBuf := &BytesBuffer{Value: nil}
+	require.True(t, nilBuf.IsFalsy())
+}
+
+// TestStringBuilderOperations tests StringBuilder operations
+func TestStringBuilderOperations(t *testing.T) {
+	// Create StringBuilder
+	sb := &StringBuilder{Value: new(strings.Builder)}
+
+	// Test initial state - not falsy if Value is not nil
+	require.False(t, sb.IsFalsy())
+
+	// Test writing
+	_, err := sb.Value.WriteString("hello")
+	require.NoError(t, err)
+
+	// Test string representation (includes type prefix)
+	require.Contains(t, sb.String(), "hello")
+
+	// Test nil builder is falsy
+	nilSb := &StringBuilder{Value: nil}
+	require.True(t, nilSb.IsFalsy())
 }
