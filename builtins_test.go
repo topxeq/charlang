@@ -6,7 +6,9 @@ import (
 	"math"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -2505,4 +2507,607 @@ func TestCharOperations(t *testing.T) {
 		expectRun(t, `return int('A')`, nil, Int(65))
 	})
 }
+
+// TestBase64Builtins tests base64 encoding/decoding builtins
+func TestBase64Builtins(t *testing.T) {
+	t.Run("base64Encode", func(t *testing.T) {
+		expectRun(t, `return base64Encode("hello")`, nil, String("aGVsbG8="))
+	})
+
+	t.Run("base64Decode", func(t *testing.T) {
+		expectRun(t, `return string(base64Decode("aGVsbG8="))`, nil, String("hello"))
+	})
+
+	t.Run("base64EncodeByRawUrl", func(t *testing.T) {
+		expectRun(t, `return base64EncodeByRawUrl("hello")`, nil, String("aGVsbG8"))
+	})
+
+	t.Run("base64DecodeByRawUrl", func(t *testing.T) {
+		expectRun(t, `return string(base64DecodeByRawUrl("aGVsbG8"))`, nil, String("hello"))
+	})
+}
+
+// TestJSONBuiltins tests JSON encoding/decoding builtins
+func TestJSONBuiltins(t *testing.T) {
+	t.Run("toJSON", func(t *testing.T) {
+		expectRun(t, `return toJSON({"a": 1})`, nil, String(`{"a":1}`))
+	})
+
+	t.Run("fromJSON", func(t *testing.T) {
+		// JSON numbers are parsed as floats
+		expectRun(t, `j := fromJSON("{\"a\":1}"); return int(j.a)`, nil, Int(1))
+	})
+}
+
+// TestXMLBuiltins tests XML encoding/decoding builtins
+func TestXMLBuiltins(t *testing.T) {
+	t.Run("fromXml", func(t *testing.T) {
+		result, err := RunCharCode(`return fromXml("<root><item>test</item></root>")`, nil, nil)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+	})
+}
+
+// TestEncodingBuiltins tests encoding-related builtins
+func TestEncodingBuiltins(t *testing.T) {
+	t.Run("simpleEncode", func(t *testing.T) {
+		// simpleEncode returns encoded string
+		expectRun(t, `return len(simpleEncode("hello", "key")) > 0`, nil, True)
+	})
+
+	t.Run("encodeSimpleMap", func(t *testing.T) {
+		expectRun(t, `return contains(encodeSimpleMap({"a": "1", "b": "2"}), "a=1")`, nil, True)
+	})
+}
+
+// TestCryptoBuiltins tests cryptography-related builtins
+func TestCryptoBuiltins(t *testing.T) {
+	t.Run("md5", func(t *testing.T) {
+		expectRun(t, `return md5("hello")`, nil, String("5d41402abc4b2a76b9719d911017c592"))
+	})
+}
+
+// TestContainsBuiltin tests contains builtin
+func TestContainsBuiltin(t *testing.T) {
+	t.Run("contains string", func(t *testing.T) {
+		expectRun(t, `return contains("hello", "ell")`, nil, True)
+	})
+
+	t.Run("contains array", func(t *testing.T) {
+		expectRun(t, `return contains([1, 2, 3], 2)`, nil, True)
+	})
+
+	t.Run("contains not found", func(t *testing.T) {
+		expectRun(t, `return contains("hello", "xyz")`, nil, False)
+	})
+}
+
+// TestRepeatBuiltin tests repeat builtin
+func TestRepeatBuiltin(t *testing.T) {
+	t.Run("repeat string", func(t *testing.T) {
+		expectRun(t, `return repeat("ab", 3)`, nil, String("ababab"))
+	})
+
+	t.Run("repeat array", func(t *testing.T) {
+		expectRun(t, `a := [1, 2]; b := repeat(a, 2); return len(b)`, nil, Int(4))
+	})
+}
+
+// TestAppendBuiltins tests append builtins
+func TestAppendBuiltins(t *testing.T) {
+	t.Run("append single", func(t *testing.T) {
+		// append returns a new array
+		expectRun(t, `a := [1, 2]; b := append(a, 3); return len(b)`, nil, Int(3))
+	})
+
+	t.Run("appendList", func(t *testing.T) {
+		// appendList returns a new array
+		expectRun(t, `a := [1, 2]; b := [3, 4]; c := appendList(a, b); return len(c)`, nil, Int(4))
+	})
+}
+
+// TestRemoveBuiltins tests remove builtins
+func TestRemoveBuiltins(t *testing.T) {
+	t.Run("removeItem", func(t *testing.T) {
+		expectRun(t, `a := [1, 2, 3, 4]; return removeItem(a, 2)`, nil, Array{Int(1), Int(2), Int(4)})
+	})
+
+	t.Run("removeItems", func(t *testing.T) {
+		expectRun(t, `a := [1, 2, 3, 4, 5]; return removeItems(a, 1, 2)`, nil, Array{Int(1), Int(4), Int(5)})
+	})
+}
+
+// TestGetArrayItemBuiltin tests getArrayItem builtin
+func TestGetArrayItemBuiltin(t *testing.T) {
+	t.Run("getArrayItem", func(t *testing.T) {
+		expectRun(t, `return getArrayItem([10, 20, 30], 1)`, nil, Int(20))
+	})
+}
+
+// TestGetSetMapItemBuiltins tests getMapItem and setMapItem builtins
+func TestGetSetMapItemBuiltins(t *testing.T) {
+	t.Run("getMapItem", func(t *testing.T) {
+		expectRun(t, `return getMapItem({"a": 1, "b": 2}, "b")`, nil, Int(2))
+	})
+
+	t.Run("setMapItem", func(t *testing.T) {
+		expectRun(t, `m := {"a": 1}; setMapItem(m, "b", 2); return m.b`, nil, Int(2))
+	})
+}
+
+// TestBoolFunc tests bool builtin function
+func TestBoolFunc(t *testing.T) {
+	t.Run("bool from int", func(t *testing.T) {
+		expectRun(t, `return bool(1)`, nil, True)
+	})
+
+	t.Run("bool from string", func(t *testing.T) {
+		expectRun(t, `return bool("true")`, nil, True)
+	})
+
+	t.Run("bool false", func(t *testing.T) {
+		expectRun(t, `return bool(0)`, nil, False)
+	})
+}
+
+// TestMutableStringOps tests mutable string operations
+func TestMutableStringOps(t *testing.T) {
+	t.Run("create mutableString", func(t *testing.T) {
+		expectRun(t, `ms := mutableString("hello"); return string(ms)`, nil, String("hello"))
+	})
+}
+
+// TestCharsFunc tests chars builtin
+func TestCharsFunc(t *testing.T) {
+	t.Run("chars from string", func(t *testing.T) {
+		expectRun(t, `c := chars("hello"); return len(c)`, nil, Int(5))
+	})
+}
+
+// TestByteFunc tests byte builtin
+func TestByteFunc(t *testing.T) {
+	t.Run("byte from int", func(t *testing.T) {
+		expectRun(t, `return int(byte(65))`, nil, Int(65))
+	})
+
+	t.Run("byte overflow", func(t *testing.T) {
+		expectRun(t, `return byte(256)`, nil, Byte(0))
+	})
+}
+
+// TestAdapterFunctions tests adapter functions
+func TestAdapterFunctions(t *testing.T) {
+	t.Run("fnATVsRSex", func(t *testing.T) {
+		// Test time adapter function
+		adapter := fnATVsRSex(func(t time.Time, s ...string) string {
+			return t.Format("2006-01-02")
+		})
+		require.NotNil(t, adapter)
+	})
+
+	t.Run("fnATFRT", func(t *testing.T) {
+		adapter := fnATFRT(func(t time.Time, f float64) time.Time {
+			return t.Add(time.Duration(f) * time.Second)
+		})
+		require.NotNil(t, adapter)
+	})
+
+	t.Run("fnATFRTex", func(t *testing.T) {
+		adapter := fnATFRTex(func(t time.Time, f float64) time.Time {
+			return t.Add(time.Duration(f) * time.Second)
+		})
+		require.NotNil(t, adapter)
+	})
+
+	t.Run("fnAARS", func(t *testing.T) {
+		adapter := fnAARS(func(a interface{}) string {
+			return fmt.Sprintf("%v", a)
+		})
+		require.NotNil(t, adapter)
+	})
+
+	t.Run("fnAARSex", func(t *testing.T) {
+		adapter := fnAARSex(func(a interface{}) string {
+			return fmt.Sprintf("%v", a)
+		})
+		require.NotNil(t, adapter)
+	})
+
+	t.Run("fnASRS", func(t *testing.T) {
+		adapter := fnASRS(func(s string) string {
+			return strings.ToUpper(s)
+		})
+		require.NotNil(t, adapter)
+	})
+
+	t.Run("fnASRSex", func(t *testing.T) {
+		adapter := fnASRSex(func(s string) string {
+			return strings.ToUpper(s)
+		})
+		require.NotNil(t, adapter)
+	})
+
+	t.Run("fnASRI", func(t *testing.T) {
+		adapter := fnASRI(func(s string) int {
+			return len(s)
+		})
+		require.NotNil(t, adapter)
+	})
+
+	t.Run("fnASRA", func(t *testing.T) {
+		adapter := fnASRA(func(s string) interface{} {
+			return strings.Split(s, ",")
+		})
+		require.NotNil(t, adapter)
+	})
+
+	t.Run("fnAFRF", func(t *testing.T) {
+		adapter := fnAFRF(func(f float64) float64 {
+			return f * 2
+		})
+		require.NotNil(t, adapter)
+	})
+
+	t.Run("fnAFRFex", func(t *testing.T) {
+		adapter := fnAFRFex(func(f float64) float64 {
+			return f * 2
+		})
+		require.NotNil(t, adapter)
+	})
+}
+
+// TestTypeCheckBuiltins tests type checking builtins
+func TestTypeCheckBuiltins(t *testing.T) {
+	t.Run("isInt", func(t *testing.T) {
+		expectRun(t, `return isInt(42)`, nil, True)
+	})
+
+	t.Run("isUint", func(t *testing.T) {
+		expectRun(t, `return isUint(uint(42))`, nil, True)
+	})
+
+	t.Run("isFloat", func(t *testing.T) {
+		expectRun(t, `return isFloat(3.14)`, nil, True)
+	})
+
+	t.Run("isChar", func(t *testing.T) {
+		expectRun(t, `return isChar('a')`, nil, True)
+	})
+
+	t.Run("isByte", func(t *testing.T) {
+		expectRun(t, `return isByte(byte(65))`, nil, True)
+	})
+
+	t.Run("isBool", func(t *testing.T) {
+		expectRun(t, `return isBool(true)`, nil, True)
+	})
+
+	t.Run("isString", func(t *testing.T) {
+		expectRun(t, `return isString("hello")`, nil, True)
+	})
+
+	t.Run("isBytes", func(t *testing.T) {
+		expectRun(t, `return isBytes(bytes("hello"))`, nil, True)
+	})
+
+	t.Run("isChars", func(t *testing.T) {
+		expectRun(t, `return isChars(chars("hello"))`, nil, True)
+	})
+
+	t.Run("isMap", func(t *testing.T) {
+		expectRun(t, `return isMap({})`, nil, True)
+	})
+
+	t.Run("isArray", func(t *testing.T) {
+		expectRun(t, `return isArray([])`, nil, True)
+	})
+
+	t.Run("isUndefined", func(t *testing.T) {
+		expectRun(t, `return isUndefined(undefined)`, nil, True)
+	})
+
+	t.Run("isFunction", func(t *testing.T) {
+		expectRun(t, `return isFunction(func() { return 1 })`, nil, True)
+	})
+
+	t.Run("isCallable", func(t *testing.T) {
+		expectRun(t, `return isCallable(func() { return 1 })`, nil, True)
+	})
+
+	t.Run("isIterable", func(t *testing.T) {
+		expectRun(t, `return isIterable([1, 2, 3])`, nil, True)
+	})
+}
+
+// TestCapBuiltin tests cap builtin
+func TestCapBuiltin(t *testing.T) {
+	t.Run("cap of bytes", func(t *testing.T) {
+		expectRun(t, `b := bytesWithCap(10); return cap(b)`, nil, Int(10))
+	})
+}
+
+// TestBytesWithSizeAndCap tests bytesWithSize and bytesWithCap
+func TestBytesWithSizeAndCap(t *testing.T) {
+	t.Run("bytesWithSize", func(t *testing.T) {
+		expectRun(t, `b := bytesWithSize(5); return len(b)`, nil, Int(5))
+	})
+
+	t.Run("bytesWithCap", func(t *testing.T) {
+		expectRun(t, `b := bytesWithCap(10); return cap(b)`, nil, Int(10))
+	})
+}
+
+// TestTestByTextFunc tests testByText builtin
+func TestTestByTextFunc(t *testing.T) {
+	t.Run("testByText pass", func(t *testing.T) {
+		expectRun(t, `return testByText("hello", "hello")`, nil, Undefined)
+	})
+}
+
+// TestGetSwitchBuiltin tests getSwitch builtin
+func TestGetSwitchBuiltin(t *testing.T) {
+	t.Run("getSwitch found", func(t *testing.T) {
+		expectRun(t, `args := ["-name=John", "-age=30"]; return getSwitch(args, "-name=")`, nil, String("John"))
+	})
+
+	t.Run("getSwitch not found", func(t *testing.T) {
+		expectRun(t, `args := ["-name=John"]; return getSwitch(args, "-age=", "default")`, nil, String("default"))
+	})
+}
+
+// TestIfSwitchExistsBuiltin tests ifSwitchExists builtin
+func TestIfSwitchExistsBuiltin(t *testing.T) {
+	t.Run("ifSwitchExists true", func(t *testing.T) {
+		expectRun(t, `args := ["-verbose"]; return ifSwitchExists(args, "-verbose")`, nil, True)
+	})
+
+	t.Run("ifSwitchExists false", func(t *testing.T) {
+		expectRun(t, `args := ["-quiet"]; return ifSwitchExists(args, "-verbose")`, nil, False)
+	})
+}
+
+// TestIsErrXBuiltin tests isErrX builtin
+func TestIsErrXBuiltin(t *testing.T) {
+	t.Run("isErrX on error", func(t *testing.T) {
+		expectRun(t, `return isErrX(error("test"))`, nil, True)
+	})
+
+	t.Run("isErrX on non-error", func(t *testing.T) {
+		expectRun(t, `return isErrX("not an error")`, nil, False)
+	})
+}
+
+// TestIsNilBuiltin tests isNil builtin
+func TestIsNilBuiltin(t *testing.T) {
+	t.Run("isNil on undefined", func(t *testing.T) {
+		expectRun(t, `return isNil(undefined)`, nil, True)
+	})
+
+	t.Run("isNil on value", func(t *testing.T) {
+		expectRun(t, `return isNil(42)`, nil, False)
+	})
+}
+
+// TestPassFunc tests pass builtin
+func TestPassFunc(t *testing.T) {
+	t.Run("pass returns undefined", func(t *testing.T) {
+		expectRun(t, `return pass()`, nil, Undefined)
+	})
+}
+
+// TestPlFunc tests pl (println) builtin
+func TestPlFunc(t *testing.T) {
+	t.Run("pl returns undefined", func(t *testing.T) {
+		expectRun(t, `return pl("test")`, nil, Undefined)
+	})
+}
+
+// TestTypeCodeBuiltin tests typeCode builtin
+func TestTypeCodeBuiltin(t *testing.T) {
+	t.Run("typeCode returns int", func(t *testing.T) {
+		expectRun(t, `return typeCode(42) > 0`, nil, True)
+	})
+}
+
+// TestGetParamBuiltin tests getParam builtin
+func TestGetParamBuiltin(t *testing.T) {
+	t.Run("getParam with default", func(t *testing.T) {
+		expectRun(t, `args := ["a", "b", "c"]; return getParam(args, 1, "default")`, nil, String("b"))
+	})
+
+	t.Run("getParam out of bounds", func(t *testing.T) {
+		expectRun(t, `args := ["a"]; return getParam(args, 5, "default")`, nil, String("default"))
+	})
+}
+
+// TestPrintfBuiltinsMore tests printf/sprintf builtins
+func TestPrintfBuiltinsMore(t *testing.T) {
+	t.Run("sprintf basic", func(t *testing.T) {
+		expectRun(t, `return sprintf("%d + %d = %d", 1, 2, 3)`, nil, String("1 + 2 = 3"))
+	})
+
+	t.Run("sprintf string", func(t *testing.T) {
+		expectRun(t, `return sprintf("Hello, %s!", "World")`, nil, String("Hello, World!"))
+	})
+
+	t.Run("printf returns undefined", func(t *testing.T) {
+		expectRun(t, `return printf("test")`, nil, Undefined)
+	})
+
+	t.Run("println returns undefined", func(t *testing.T) {
+		expectRun(t, `return println("test")`, nil, Undefined)
+	})
+}
+
+// TestCallExAdapter tests CallExAdapter
+func TestCallExAdapter(t *testing.T) {
+	t.Run("CallExAdapter", func(t *testing.T) {
+		fn := func(c Call) (Object, error) {
+			return Int(len(c.GetArgs())), nil
+		}
+		adapter := CallExAdapter(fn)
+		require.NotNil(t, adapter)
+		result, err := adapter(Int(1), Int(2))
+		require.NoError(t, err)
+		require.Equal(t, Int(2), result)
+	})
+}
+
+// TestOneResultCallAdapter tests OneResultCallAdapter
+func TestOneResultCallAdapter(t *testing.T) {
+	t.Run("OneResultCallAdapter", func(t *testing.T) {
+		fn := func(args ...Object) (Object, error) {
+			return Int(42), nil
+		}
+		adapter := OneResultCallAdapter(fn)
+		require.NotNil(t, adapter)
+		result := adapter()
+		require.Equal(t, Int(42), result)
+	})
+}
+
+// TestOneResultCallExAdapter tests OneResultCallExAdapter
+func TestOneResultCallExAdapter(t *testing.T) {
+	t.Run("OneResultCallExAdapter", func(t *testing.T) {
+		fn := func(c Call) (Object, error) {
+			return Int(len(c.GetArgs())), nil
+		}
+		adapter := OneResultCallExAdapter(fn)
+		require.NotNil(t, adapter)
+		result := adapter(Int(1), Int(2), Int(3))
+		require.Equal(t, Int(3), result)
+	})
+}
+
+// TestToArgsHelpers tests toArgs helper functions
+func TestToArgsHelpers(t *testing.T) {
+	t.Run("toArgsS", func(t *testing.T) {
+		args := Array{String("a"), String("b")}
+		result := toArgsS(0, Call{Args: args})
+		require.Equal(t, []string{"a", "b"}, result)
+	})
+
+	t.Run("toArgsN", func(t *testing.T) {
+		args := Array{Int(1), Int(2)}
+		result := toArgsN(0, Call{Args: args})
+		require.Equal(t, []int{1, 2}, result)
+	})
+}
+
+// TestResetBuiltin tests reset builtin
+func TestResetBuiltin(t *testing.T) {
+	t.Run("reset returns empty array", func(t *testing.T) {
+		expectRun(t, `return len(reset([1, 2, 3]))`, nil, Int(0))
+	})
+}
+
+// TestDeleteBuiltinMore tests delete builtin
+func TestDeleteBuiltinMore(t *testing.T) {
+	t.Run("delete map key", func(t *testing.T) {
+		expectRun(t, `m := {"a": 1, "b": 2}; delete(m, "a"); return len(m)`, nil, Int(1))
+	})
+}
+
+// TestLenBuiltin tests len builtin
+func TestLenBuiltin(t *testing.T) {
+	t.Run("len string", func(t *testing.T) {
+		expectRun(t, `return len("hello")`, nil, Int(5))
+	})
+
+	t.Run("len array", func(t *testing.T) {
+		expectRun(t, `return len([1, 2, 3])`, nil, Int(3))
+	})
+
+	t.Run("len map", func(t *testing.T) {
+		expectRun(t, `return len({"a": 1, "b": 2})`, nil, Int(2))
+	})
+}
+
+// TestStringFunc tests string builtin
+func TestStringFunc(t *testing.T) {
+	t.Run("string from int", func(t *testing.T) {
+		expectRun(t, `return string(42)`, nil, String("42"))
+	})
+
+	t.Run("string from float", func(t *testing.T) {
+		expectRun(t, `return string(3.14)`, nil, String("3.14"))
+	})
+
+	t.Run("string from bool", func(t *testing.T) {
+		expectRun(t, `return string(true)`, nil, String("true"))
+	})
+}
+
+// TestCharFuncMore tests char builtin
+func TestCharFuncMore(t *testing.T) {
+	t.Run("char from int", func(t *testing.T) {
+		expectRun(t, `return int(char(65))`, nil, Int(65))
+	})
+
+	t.Run("char from string", func(t *testing.T) {
+		expectRun(t, `return char("A")`, nil, Char('A'))
+	})
+}
+
+// TestFloatFunc tests float builtin
+func TestFloatFunc(t *testing.T) {
+	t.Run("float from int", func(t *testing.T) {
+		expectRun(t, `return float(42)`, nil, Float(42.0))
+	})
+
+	t.Run("float from string", func(t *testing.T) {
+		expectRun(t, `return float("3.14")`, nil, Float(3.14))
+	})
+}
+
+// TestCharsFuncMore tests chars builtin more
+func TestCharsFuncMore(t *testing.T) {
+	t.Run("chars unicode", func(t *testing.T) {
+		expectRun(t, `c := chars("你好"); return len(c)`, nil, Int(2))
+	})
+}
+
+// TestMakeArray tests make array builtin
+func TestMakeArray(t *testing.T) {
+	t.Run("make array with size", func(t *testing.T) {
+		expectRun(t, `a := make("array", 3); return len(a)`, nil, Int(3))
+	})
+}
+
+// TestMakeMap tests make map builtin
+func TestMakeMap(t *testing.T) {
+	t.Run("make map", func(t *testing.T) {
+		expectRun(t, `m := make("map"); return typeName(m)`, nil, String("map"))
+	})
+}
+
+// TestIsErrorBuiltinMore tests isError builtin
+func TestIsErrorBuiltinMore(t *testing.T) {
+	t.Run("isError on error", func(t *testing.T) {
+		expectRun(t, `return isError(error("test"))`, nil, True)
+	})
+
+	t.Run("isError on string", func(t *testing.T) {
+		expectRun(t, `return isError("error")`, nil, False)
+	})
+}
+
+// TestBuiltinDelete tests builtin delete function
+func TestBuiltinDelete(t *testing.T) {
+	t.Run("delete existing key", func(t *testing.T) {
+		expectRun(t, `m := {"a": 1, "b": 2}; delete(m, "a"); return m.b`, nil, Int(2))
+	})
+}
+
+// TestBytesFuncMore tests bytes builtin
+func TestBytesFuncMore(t *testing.T) {
+	t.Run("bytes from string", func(t *testing.T) {
+		expectRun(t, `b := bytes("hello"); return len(b)`, nil, Int(5))
+	})
+
+	t.Run("bytes from ints", func(t *testing.T) {
+		expectRun(t, `b := bytes(72, 101, 108, 108, 111); return len(b)`, nil, Int(5))
+	})
+}
+
 
