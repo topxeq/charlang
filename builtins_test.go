@@ -4693,6 +4693,84 @@ func TestCallMethodEx(t *testing.T) {
 	})
 }
 
+// TestIsErrXMore tests isErrX with more cases for better coverage
+func TestIsErrXMore(t *testing.T) {
+	t.Run("isErrX on TXERROR string", func(t *testing.T) {
+		expectRun(t, `return isErrX("TXERROR: something went wrong")`, nil, True)
+	})
+
+	t.Run("isErrX on normal string", func(t *testing.T) {
+		expectRun(t, `return isErrX("normal string")`, nil, False)
+	})
+
+	t.Run("isErrX on int", func(t *testing.T) {
+		expectRun(t, `return isErrX(42)`, nil, False)
+	})
+
+	t.Run("isErrX on array", func(t *testing.T) {
+		expectRun(t, `return isErrX([1, 2, 3])`, nil, False)
+	})
+
+	t.Run("isErrX on map", func(t *testing.T) {
+		expectRun(t, `return isErrX({"key": "value"})`, nil, False)
+	})
+}
+
+// TestIsNilOrErrMore tests isNilOrErr builtin with more cases
+func TestIsNilOrErrMore(t *testing.T) {
+	t.Run("isNilOrErr on undefined", func(t *testing.T) {
+		expectRun(t, `return isNilOrErr(undefined)`, nil, True)
+	})
+
+	t.Run("isNilOrErr on error", func(t *testing.T) {
+		expectRun(t, `return isNilOrErr(error("test"))`, nil, True)
+	})
+
+	t.Run("isNilOrErr on normal value", func(t *testing.T) {
+		expectRun(t, `return isNilOrErr(42)`, nil, False)
+	})
+
+	t.Run("isNilOrErr on TXERROR string", func(t *testing.T) {
+		expectRun(t, `return isNilOrErr("TXERROR: failed")`, nil, True)
+	})
+
+	t.Run("isNilOrErr on empty string", func(t *testing.T) {
+		expectRun(t, `return isNilOrErr("")`, nil, False)
+	})
+}
+
+// TestTimeMore tests time() builtin with more cases
+func TestTimeMore(t *testing.T) {
+	t.Run("time returns time object", func(t *testing.T) {
+		expectRun(t, `t := time(); return typeName(t)`, nil, String("time"))
+	})
+
+	t.Run("time unix timestamp", func(t *testing.T) {
+		expectRun(t, `t := time(1704067200); return typeName(t)`, nil, String("time"))
+	})
+}
+
+// TestToTimeMore tests toTime builtin with more cases
+func TestToTimeMore(t *testing.T) {
+	t.Run("toTime from int timestamp", func(t *testing.T) {
+		expectRun(t, `t := toTime(1704067200); return typeName(t)`, nil, String("time"))
+	})
+}
+
+// TestBase64EncodeByRawUrlMore tests base64EncodeByRawUrl builtin
+func TestBase64EncodeByRawUrlMore(t *testing.T) {
+	t.Run("base64EncodeByRawUrl encodes string", func(t *testing.T) {
+		expectRun(t, `return base64EncodeByRawUrl("hello")`, nil, String("aGVsbG8"))
+	})
+}
+
+// TestGetClipText tests getClipText builtin existence
+func TestGetClipText(t *testing.T) {
+	t.Run("getClipText exists", func(t *testing.T) {
+		expectRun(t, `return typeName(getClipText)`, nil, String("builtinFunction"))
+	})
+}
+
 
 
 
