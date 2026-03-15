@@ -4771,6 +4771,223 @@ func TestGetClipText(t *testing.T) {
 	})
 }
 
+// TestReadAllStrFunctional tests readAllStr with actual reading
+func TestReadAllStrFunctional(t *testing.T) {
+	t.Run("readAllStr from reader created from string", func(t *testing.T) {
+		expectRun(t, `r := reader("hello world"); return readAllStr(r)`, nil, String("hello world"))
+	})
+
+	t.Run("readAllStr from reader created from bytes", func(t *testing.T) {
+		expectRun(t, `r := reader(bytes("test data")); return readAllStr(r)`, nil, String("test data"))
+	})
+
+	t.Run("readAllStr empty string", func(t *testing.T) {
+		expectRun(t, `r := reader(""); return readAllStr(r)`, nil, String(""))
+	})
+}
+
+// TestReadAllBytesFunctional tests readAllBytes with actual reading
+func TestReadAllBytesFunctional(t *testing.T) {
+	t.Run("readAllBytes from reader", func(t *testing.T) {
+		expectRun(t, `r := reader("hello"); b := readAllBytes(r); return string(b)`, nil, String("hello"))
+	})
+
+	t.Run("readAllBytes empty", func(t *testing.T) {
+		expectRun(t, `r := reader(""); b := readAllBytes(r); return len(b)`, nil, Int(0))
+	})
+}
+
+// TestReadBytesFunctional tests readBytes with count
+func TestReadBytesFunctional(t *testing.T) {
+	t.Run("readBytes partial read", func(t *testing.T) {
+		expectRun(t, `r := reader("hello world"); b := readBytes(r, 5); return string(b)`, nil, String("hello"))
+	})
+
+	t.Run("readBytes exact size", func(t *testing.T) {
+		expectRun(t, `r := reader("test"); b := readBytes(r, 4); return string(b)`, nil, String("test"))
+	})
+
+	t.Run("readBytes more than available", func(t *testing.T) {
+		expectRun(t, `r := reader("hi"); b := readBytes(r, 10); return string(b)`, nil, String("hi"))
+	})
+}
+
+// TestWriteStrFunctional tests writeStr builtin
+func TestWriteStrFunctional(t *testing.T) {
+	t.Run("writeStr to stringBuilder", func(t *testing.T) {
+		expectRun(t, `sb := stringBuilder(); w := writer(sb); writeStr(w, "hello"); return sb.String()`, nil, String("hello"))
+	})
+
+	t.Run("writeStr multiple writes", func(t *testing.T) {
+		expectRun(t, `sb := stringBuilder(); w := writer(sb); writeStr(w, "hello"); writeStr(w, " "); writeStr(w, "world"); return sb.String()`, nil, String("hello world"))
+	})
+}
+
+// TestWriteBytesFunctional tests writeBytes builtin
+func TestWriteBytesFunctional(t *testing.T) {
+	t.Run("writeBytes to stringBuilder", func(t *testing.T) {
+		expectRun(t, `sb := stringBuilder(); w := writer(sb); writeBytes(w, bytes("test")); return sb.String()`, nil, String("test"))
+	})
+
+	t.Run("writeBytes multiple", func(t *testing.T) {
+		expectRun(t, `sb := stringBuilder(); w := writer(sb); writeBytes(w, bytes("a")); writeBytes(w, bytes("b")); return sb.String()`, nil, String("ab"))
+	})
+}
+
+// TestStringBuilderFunctional tests stringBuilder operations
+func TestStringBuilderFunctional(t *testing.T) {
+	t.Run("stringBuilder write", func(t *testing.T) {
+		expectRun(t, `sb := stringBuilder(); sb.WriteString("test"); return sb.String()`, nil, String("test"))
+	})
+
+	t.Run("stringBuilder length", func(t *testing.T) {
+		expectRun(t, `sb := stringBuilder(); sb.WriteString("hello"); return sb.Len()`, nil, Int(5))
+	})
+
+	t.Run("stringBuilder reset", func(t *testing.T) {
+		expectRun(t, `sb := stringBuilder(); sb.WriteString("hello"); sb.Reset(); return sb.Len()`, nil, Int(0))
+	})
+}
+
+// TestCloseReader tests closing a reader
+func TestCloseReader(t *testing.T) {
+	t.Run("close reader", func(t *testing.T) {
+		expectRun(t, `r := reader("test"); close(r); return "ok"`, nil, String("ok"))
+	})
+}
+
+// TestWriterOperations tests writer operations
+func TestWriterOperations(t *testing.T) {
+	t.Run("writer typeName", func(t *testing.T) {
+		expectRun(t, `sb := stringBuilder(); w := writer(sb); return typeName(w)`, nil, String("writer"))
+	})
+
+	t.Run("writer write returns count", func(t *testing.T) {
+		expectRun(t, `sb := stringBuilder(); w := writer(sb); n := writeStr(w, "hello"); return n`, nil, Int(5))
+	})
+}
+
+// TestFileBuiltin tests file builtin existence
+func TestFileBuiltin(t *testing.T) {
+	t.Run("file exists", func(t *testing.T) {
+		expectRun(t, `return typeName(file)`, nil, String("builtinFunction"))
+	})
+}
+
+// TestOpenFileBasic tests openFile with a temp file
+func TestOpenFileBasic(t *testing.T) {
+	t.Run("openFile creates and reads file", func(t *testing.T) {
+		// Create a temp file
+		tmpFile := os.TempDir() + "/charlang_test_" + time.Now().Format("20060102150405") + ".txt"
+		tmpFile = strings.ReplaceAll(tmpFile, "\\", "/")
+		os.WriteFile(tmpFile, []byte("test content"), 0644)
+		defer os.Remove(tmpFile)
+
+		expectRun(t, `f := openFile("`+tmpFile+`", "r"); b := loadBytesFromFile(f); closeFile(f); return string(b)`, nil, String("test content"))
+	})
+}
+
+// TestLoadBytesFromFile tests loading bytes from file
+func TestLoadBytesFromFile(t *testing.T) {
+	t.Run("loadBytesFromFile reads file", func(t *testing.T) {
+		tmpFile := os.TempDir() + "/charlang_test_load.txt"
+		tmpFile = strings.ReplaceAll(tmpFile, "\\", "/")
+		os.WriteFile(tmpFile, []byte("file content"), 0644)
+		defer os.Remove(tmpFile)
+
+		expectRun(t, `b := loadBytesFromFile("`+tmpFile+`"); return string(b)`, nil, String("file content"))
+	})
+}
+
+// TestArchiveFilesToZip tests archiveFilesToZip
+func TestArchiveFilesToZip(t *testing.T) {
+	t.Run("archiveFilesToZip exists", func(t *testing.T) {
+		expectRun(t, `return typeName(archiveFilesToZip)`, nil, String("builtinFunction"))
+	})
+}
+
+// TestAnyMoreCases tests any builtin with more cases
+func TestAnyMoreCases(t *testing.T) {
+	t.Run("any with bool", func(t *testing.T) {
+		expectRun(t, `a := any(true); return typeName(a)`, nil, String("any"))
+	})
+
+	t.Run("any with array", func(t *testing.T) {
+		expectRun(t, `a := any([1, 2, 3]); return typeName(a)`, nil, String("any"))
+	})
+
+	t.Run("any with map", func(t *testing.T) {
+		expectRun(t, `a := any({"key": "value"}); return typeName(a)`, nil, String("any"))
+	})
+}
+
+// TestBase64EncodeByRawUrlCases tests base64EncodeByRawUrl with more cases
+func TestBase64EncodeByRawUrlCases(t *testing.T) {
+	t.Run("base64EncodeByRawUrl empty string", func(t *testing.T) {
+		expectRun(t, `return base64EncodeByRawUrl("")`, nil, String(""))
+	})
+
+	t.Run("base64EncodeByRawUrl special chars", func(t *testing.T) {
+		expectRun(t, `return base64EncodeByRawUrl("a+b/c")`, nil, String("YStiL2M"))
+	})
+}
+
+// TestBase64DecodeByRawUrlCases tests base64DecodeByRawUrl builtin
+func TestBase64DecodeByRawUrlCases(t *testing.T) {
+	t.Run("base64DecodeByRawUrl decodes string", func(t *testing.T) {
+		expectRun(t, `return string(base64DecodeByRawUrl("aGVsbG8"))`, nil, String("hello"))
+	})
+
+	t.Run("base64DecodeByRawUrl empty", func(t *testing.T) {
+		expectRun(t, `return string(base64DecodeByRawUrl(""))`, nil, String(""))
+	})
+}
+
+// TestToBoolWithDefaultCases tests toBoolWithDefault builtin
+func TestToBoolWithDefaultCases(t *testing.T) {
+	t.Run("toBoolWithDefault true string", func(t *testing.T) {
+		expectRun(t, `return toBoolWithDefault("true", false)`, nil, True)
+	})
+
+	t.Run("toBoolWithDefault false string", func(t *testing.T) {
+		expectRun(t, `return toBoolWithDefault("false", true)`, nil, False)
+	})
+
+	t.Run("toBoolWithDefault default value", func(t *testing.T) {
+		expectRun(t, `return toBoolWithDefault("invalid", true)`, nil, True)
+	})
+}
+
+// TestTypeOfAnyCases tests typeOfAny with more cases
+func TestTypeOfAnyCases(t *testing.T) {
+	t.Run("typeOfAny with int", func(t *testing.T) {
+		expectRun(t, `return typeOfAny(any(42))`, nil, String("int"))
+	})
+}
+
+// TestIsNilOrEmptyCases tests isNilOrEmpty with more cases
+func TestIsNilOrEmptyCases(t *testing.T) {
+	t.Run("isNilOrEmpty on undefined", func(t *testing.T) {
+		expectRun(t, `return isNilOrEmpty(undefined)`, nil, True)
+	})
+
+	t.Run("isNilOrEmpty on empty string", func(t *testing.T) {
+		expectRun(t, `return isNilOrEmpty("")`, nil, True)
+	})
+
+	t.Run("isNilOrEmpty on non-empty string", func(t *testing.T) {
+		expectRun(t, `return isNilOrEmpty("hello")`, nil, False)
+	})
+
+	t.Run("isNilOrEmpty on non-empty array", func(t *testing.T) {
+		expectRun(t, `return isNilOrEmpty([1, 2])`, nil, False)
+	})
+
+	t.Run("isNilOrEmpty on non-empty map", func(t *testing.T) {
+		expectRun(t, `return isNilOrEmpty({"a": 1})`, nil, False)
+	})
+}
+
 
 
 
