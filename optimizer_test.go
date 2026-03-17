@@ -1,6 +1,7 @@
 package charlang_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -752,4 +753,12 @@ func expectEvalError(t *testing.T, script, errStr string) {
 	require.True(t, opts.OptimizeExpr)
 	opts.OptimizerMaxCycle = 1<<8 - 1
 	expectCompileErrorWithOpts(t, script, opts, errStr)
+}
+
+func TestOptimizerErrorUnwrap(t *testing.T) {
+	// Test OptimizerError.Unwrap method
+	err := &OptimizerError{
+		Err: errors.New("test error"),
+	}
+	require.Equal(t, "test error", err.Unwrap().Error())
 }

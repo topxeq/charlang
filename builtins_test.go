@@ -886,6 +886,70 @@ func TestSortBuiltins(t *testing.T) {
 		expectRun(t, `a := [1, 2, 3]; sortReverse(a); return a`, nil, Array{Int(3), Int(2), Int(1)})
 		expectRun(t, `a := ["a", "b", "c"]; sortReverse(a); return a`, nil, Array{String("c"), String("b"), String("a")})
 	})
+
+	// Test sort with String
+	t.Run("sort string", func(t *testing.T) {
+		expectRun(t, `s := "cba"; return sort(s)`, nil, String("abc"))
+		expectRun(t, `s := "edcba"; return sort(s)`, nil, String("abcde"))
+		expectRun(t, `s := ""; return sort(s)`, nil, String(""))
+	})
+
+	// Test sort with Bytes
+	t.Run("sort bytes", func(t *testing.T) {
+		expectRun(t, `b := bytes([3, 1, 2]); return sort(b)`, nil, Bytes{1, 2, 3})
+		expectRun(t, `b := bytes([101, 100, 102]); return sort(b)`, nil, Bytes{100, 101, 102})
+		expectRun(t, `b := bytes([]); return sort(b)`, nil, Bytes{})
+	})
+
+	// Test sortReverse with String
+	t.Run("sortReverse string", func(t *testing.T) {
+		expectRun(t, `s := "abc"; return sortReverse(s)`, nil, String("cba"))
+		expectRun(t, `s := "abcde"; return sortReverse(s)`, nil, String("edcba"))
+		expectRun(t, `s := ""; return sortReverse(s)`, nil, String(""))
+	})
+
+	// Test sortReverse with Bytes
+	t.Run("sortReverse bytes", func(t *testing.T) {
+		expectRun(t, `b := bytes([1, 2, 3]); return sortReverse(b)`, nil, Bytes{3, 2, 1})
+		expectRun(t, `b := bytes([100, 101, 102]); return sortReverse(b)`, nil, Bytes{102, 101, 100})
+		expectRun(t, `b := bytes([]); return sortReverse(b)`, nil, Bytes{})
+	})
+
+	// Test sort with Map - returns OrderedMap sorted by keys
+	t.Run("sort map", func(t *testing.T) {
+		expectRun(t, `m := {"z": 1, "a": 2}; s := sort(m); return s["a"]`, nil, Int(2))
+		expectRun(t, `m := {"b": 2, "a": 1}; s := sort(m); return typeName(s)`, nil, String("orderedMap"))
+	})
+
+	// Test sort with OrderedMap
+	t.Run("sort orderedMap", func(t *testing.T) {
+		expectRun(t, `om := toOrderedMap({"z": 1, "a": 2}); s := sort(om); return s["a"]`, nil, Int(2))
+		expectRun(t, `om := toOrderedMap({"b": 2, "a": 1}); s := sort(om); return typeName(s)`, nil, String("orderedMap"))
+	})
+
+	// Test sort with MutableString - just verify it doesn't error and returns mutableString type
+	t.Run("sort mutableString", func(t *testing.T) {
+		expectRun(t, `ms := mutableString("cba"); s := sort(ms); return typeName(s)`, nil, String("mutableString"))
+		expectRun(t, `ms := mutableString(""); s := sort(ms); return typeName(s)`, nil, String("mutableString"))
+	})
+
+	// Test sortReverse with Map
+	t.Run("sortReverse map", func(t *testing.T) {
+		expectRun(t, `m := {"a": 1, "z": 2}; s := sortReverse(m); return s["z"]`, nil, Int(2))
+		expectRun(t, `m := {"a": 1, "b": 2}; s := sortReverse(m); return typeName(s)`, nil, String("orderedMap"))
+	})
+
+	// Test sortReverse with OrderedMap
+	t.Run("sortReverse orderedMap", func(t *testing.T) {
+		expectRun(t, `om := toOrderedMap({"a": 1, "z": 2}); s := sortReverse(om); return s["z"]`, nil, Int(2))
+		expectRun(t, `om := toOrderedMap({"a": 1, "b": 2}); s := sortReverse(om); return typeName(s)`, nil, String("orderedMap"))
+	})
+
+	// Test sortReverse with MutableString - just verify it doesn't error and returns mutableString type
+	t.Run("sortReverse mutableString", func(t *testing.T) {
+		expectRun(t, `ms := mutableString("abc"); s := sortReverse(ms); return typeName(s)`, nil, String("mutableString"))
+		expectRun(t, `ms := mutableString(""); s := sortReverse(ms); return typeName(s)`, nil, String("mutableString"))
+	})
 }
 
 // TestErrorBuiltin tests error builtin
@@ -2545,6 +2609,48 @@ func TestXMLBuiltins(t *testing.T) {
 		result, err := RunCharCode(`return fromXml("<root><item>test</item></root>")`, nil, nil)
 		require.NoError(t, err)
 		require.NotNil(t, result)
+	})
+
+	// Test fromXml with nested elements
+	t.Run("fromXml nested", func(t *testing.T) {
+		result, err := RunCharCode(`return fromXml("<root><a><b>value</b></a></root>")`, nil, nil)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+	})
+
+	// Test fromXml with attributes
+	t.Run("fromXml with attributes", func(t *testing.T) {
+		result, err := RunCharCode(`return fromXml("<root id='1'><item>test</item></root>")`, nil, nil)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+	})
+}
+
+// TestFromJSONBuiltins tests fromJSON builtin with different types
+func TestFromJSONBuiltins(t *testing.T) {
+	// Test fromJSON with String
+	t.Run("fromJSON string", func(t *testing.T) {
+		expectRun(t, `j := fromJSON("{\"a\":1}"); return int(j.a)`, nil, Int(1))
+	})
+
+	// Test fromJSON with Bytes
+	t.Run("fromJSON bytes", func(t *testing.T) {
+		expectRun(t, `b := bytes([123, 34, 97, 34, 58, 49, 125]); j := fromJSON(b); return typeName(j)`, nil, String("map"))
+	})
+
+	// Test fromJSON with Chars
+	t.Run("fromJSON chars", func(t *testing.T) {
+		expectRun(t, `c := chars("{\"b\":2}"); j := fromJSON(c); return int(j.b)`, nil, Int(2))
+	})
+
+	// Test fromJSON with invalid JSON
+	t.Run("fromJSON invalid", func(t *testing.T) {
+		expectRun(t, `return typeName(fromJSON("invalid"))`, nil, String("error"))
+	})
+
+	// Test fromJSON with array
+	t.Run("fromJSON array", func(t *testing.T) {
+		expectRun(t, `j := fromJSON("[1,2,3]"); return len(j)`, nil, Int(3))
 	})
 }
 
@@ -4714,6 +4820,36 @@ func TestIsErrXMore(t *testing.T) {
 	t.Run("isErrX on map", func(t *testing.T) {
 		expectRun(t, `return isErrX({"key": "value"})`, nil, False)
 	})
+
+	// Test isErrX on MutableString with TXERROR prefix
+	t.Run("isErrX on mutableString TXERROR", func(t *testing.T) {
+		expectRun(t, `ms := mutableString("TXERROR: test"); return isErrX(ms)`, nil, True)
+	})
+
+	// Test isErrX on MutableString without TXERROR prefix
+	t.Run("isErrX on mutableString normal", func(t *testing.T) {
+		expectRun(t, `ms := mutableString("normal"); return isErrX(ms)`, nil, False)
+	})
+
+	// Test isErrX on Any with error
+	t.Run("isErrX on any error", func(t *testing.T) {
+		expectRun(t, `anyVal := any(error("test error")); return isErrX(anyVal)`, nil, True)
+	})
+
+	// Test isErrX on Any with TXERROR string
+	t.Run("isErrX on any TXERROR string", func(t *testing.T) {
+		expectRun(t, `anyVal := any("TXERROR: from any"); return isErrX(anyVal)`, nil, True)
+	})
+
+	// Test isErrX on Any with normal string
+	t.Run("isErrX on any normal string", func(t *testing.T) {
+		expectRun(t, `anyVal := any("normal string"); return isErrX(anyVal)`, nil, False)
+	})
+
+	// Test isErrX on Any with non-string value
+	t.Run("isErrX on any int", func(t *testing.T) {
+		expectRun(t, `anyVal := any(42); return isErrX(anyVal)`, nil, False)
+	})
 }
 
 // TestIsNilOrErrMore tests isNilOrErr builtin with more cases
@@ -4737,6 +4873,26 @@ func TestIsNilOrErrMore(t *testing.T) {
 	t.Run("isNilOrErr on empty string", func(t *testing.T) {
 		expectRun(t, `return isNilOrErr("")`, nil, False)
 	})
+
+	// Test isNilOrErr on MutableString with TXERROR prefix
+	t.Run("isNilOrErr on mutableString TXERROR", func(t *testing.T) {
+		expectRun(t, `ms := mutableString("TXERROR: test"); return isNilOrErr(ms)`, nil, True)
+	})
+
+	// Test isNilOrErr on MutableString without TXERROR prefix
+	t.Run("isNilOrErr on mutableString normal", func(t *testing.T) {
+		expectRun(t, `ms := mutableString("normal"); return isNilOrErr(ms)`, nil, False)
+	})
+
+	// Test isNilOrErr on array
+	t.Run("isNilOrErr on array", func(t *testing.T) {
+		expectRun(t, `return isNilOrErr([1, 2, 3])`, nil, False)
+	})
+
+	// Test isNilOrErr on map
+	t.Run("isNilOrErr on map", func(t *testing.T) {
+		expectRun(t, `return isNilOrErr({"key": "value"})`, nil, False)
+	})
 }
 
 // TestTimeMore tests time() builtin with more cases
@@ -4747,6 +4903,11 @@ func TestTimeMore(t *testing.T) {
 
 	t.Run("time unix timestamp", func(t *testing.T) {
 		expectRun(t, `t := time(1704067200); return typeName(t)`, nil, String("time"))
+	})
+
+	// Test time with time object (copy)
+	t.Run("time from time object", func(t *testing.T) {
+		expectRun(t, `t1 := time(1704067200); t2 := time(t1); return typeName(t2)`, nil, String("time"))
 	})
 }
 
@@ -4929,6 +5090,21 @@ func TestBase64EncodeByRawUrlCases(t *testing.T) {
 
 	t.Run("base64EncodeByRawUrl special chars", func(t *testing.T) {
 		expectRun(t, `return base64EncodeByRawUrl("a+b/c")`, nil, String("YStiL2M"))
+	})
+
+	// Test base64EncodeByRawUrl with Bytes
+	t.Run("base64EncodeByRawUrl bytes", func(t *testing.T) {
+		expectRun(t, `b := bytes([104, 101, 108, 108, 111]); return base64EncodeByRawUrl(b)`, nil, String("aGVsbG8"))
+	})
+
+	// Test base64EncodeByRawUrl with empty bytes
+	t.Run("base64EncodeByRawUrl empty bytes", func(t *testing.T) {
+		expectRun(t, `b := bytes([]); return base64EncodeByRawUrl(b)`, nil, String(""))
+	})
+
+	// Test base64EncodeByRawUrl with int (default case)
+	t.Run("base64EncodeByRawUrl int", func(t *testing.T) {
+		expectRun(t, `return base64EncodeByRawUrl(12345)`, nil, String("MTIzNDU"))
 	})
 }
 

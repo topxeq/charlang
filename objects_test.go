@@ -201,7 +201,8 @@ func TestObjects5(t *testing.T) {
 	
 	n, err = obj3n.Write([]byte("abc"))
 	
-	require.Equal(t, "0-write /dev/stdin: Access is denied.", fmt.Sprintf("%v-%v", n, err))
+	// Linux returns "bad file descriptor", Windows returns "Access is denied."
+	require.True(t, n == 0 && err != nil && (strings.Contains(err.Error(), "denied") || strings.Contains(err.Error(), "bad file descriptor")))
 	
 	buf1 := make([]byte, 2)
 	

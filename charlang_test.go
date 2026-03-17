@@ -1,6 +1,7 @@
 package charlang_test
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"reflect"
@@ -712,4 +713,48 @@ func TestToInterfaceWithRegistry(t *testing.T) {
 			require.Equal(t, tc.expected, result)
 		})
 	}
+}
+
+// Additional tests for edge cases in charlang.go conversion functions
+
+func TestToGoByteSliceEdgeCases(t *testing.T) {
+	// Test BytesBuffer
+	bb := &BytesBuffer{Value: bytes.NewBuffer([]byte("buffer-content"))}
+	result, ok := ToGoByteSlice(bb)
+	require.True(t, ok)
+	require.Equal(t, []byte("buffer-content"), result)
+
+	// Test Array with byte elements
+	arrWithBytes := Array{Byte(65), Byte(66), Byte(67)}
+	result, ok = ToGoByteSlice(arrWithBytes)
+	require.True(t, ok)
+	require.Equal(t, []byte{65, 66, 67}, result)
+
+	// Test Any type with data that can be converted to bytes
+	anyWithData := &Any{Value: []byte("any-data")}
+	result, ok = ToGoByteSlice(anyWithData)
+	require.True(t, ok)
+	require.Equal(t, []byte("any-data"), result)
+}
+
+// Test ToGo* functions with MutableString
+func TestToGoIntWithMutableString(t *testing.T) {
+	ms := &MutableString{Value: "12345"}
+	result, ok := ToGoInt(ms)
+	require.True(t, ok)
+	require.Equal(t, 12345, result)
+
+	// Test invalid string
+	msInvalid := &MutableString{Value: "not-a-number"}
+	result, ok = ToGoInt(msInvalid)
+	require.False(t, ok)
+	require.Equal(t, 0, result)
+}
+
+// Note: ToGoInt64, ToGoUint64, ToGoFloat64 do not support MutableString, only ToGoInt does
+
+func TestToStringObject(t *testing.T) {
+	// Test that ToStringObject works with various inputs
+	s := ToStringObject("test")
+	require.Equal(t, String("test"), s)
 }
