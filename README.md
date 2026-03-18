@@ -231,7 +231,46 @@ Or download the package from [Charlang Official Site](https://topget.org/charlan
 
 ## 5. Installation
 
+### 5.1 Quick Install with Scripts
+
+**Linux/macOS:**
+
+```bash
+# Using curl
+curl -fsSL https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.sh | bash
+
+# Or using wget
+wget -qO- https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.sh | bash
+```
+
+**Windows (PowerShell):**
+
+```powershell
+# Download and run installer
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.ps1" -OutFile "install.ps1"
+.\install.ps1
+
+# Or one-liner
+iex (iwr "https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.ps1")
+```
+
+### 5.2 Manual Installation
+
 Download the latest Charlang executable file or compressed package above or from the [official website](https://topget.org/charlang), and then put it in a directory, preferably within the system path(such as C:\Windows in Windows or /usr/bin). If you download a compressed package, decompress it first. Then it is ready to use, run it in any terminal or console application(Window CMD, PowerShell, Terminal or bash);
+
+### 5.3 Updating Charlang
+
+Once installed, you can easily update to the latest version using the built-in self-update feature:
+
+```bash
+char -updateSelf
+```
+
+This will automatically:
+1. Check for the latest version
+2. Download the appropriate binary for your OS/architecture
+3. Backup your current executable
+4. Replace with the new version
 
 ## 6. Quick Start
 
@@ -2377,6 +2416,29 @@ basePath: C:\Users\Administrator\char
 localPath: d:\scripts
 cloudPath: https://script.example.com/scripts/
 ```
+
+#### Check Version and Update
+
+**Show version information:**
+
+```shell
+char -version
+```
+
+Output:
+```
+Charlang by TopXeQ V2.1.4
+Commit: d298bd9
+Built: 2026-03-18T01:40:22Z
+```
+
+**Self-update to latest version:**
+
+```shell
+char -updateSelf
+```
+
+This will automatically check for updates, download the latest version, and install it.
 
 #### Compile a Script to One Executable
 
