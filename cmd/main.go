@@ -1009,6 +1009,12 @@ func runArgs(argsT ...string) interface{} {
 
 	if tk.IfSwitchExistsWhole(argsT, "-version") {
 		tk.Pl("Charlang by TopXeQ V%v", charlang.VersionG)
+		if charlang.CommitG != "unknown" {
+			tk.Pl("Commit: %v", charlang.CommitG)
+		}
+		if charlang.BuildDateG != "unknown" {
+			tk.Pl("Built: %v", charlang.BuildDateG)
+		}
 		return nil // "github.com/topxeq/charlang"
 	}
 
@@ -1030,6 +1036,141 @@ func runArgs(argsT ...string) interface{} {
 		tk.Pl("cloudPath: %v", charlang.GetCfgString("cloud.cfg"))
 
 		return nil
+	}
+
+	if tk.IfSwitchExistsWhole(argsT, "-updateSelf") {
+		remoteVersionT := tk.GetWeb(`http://topget.org/pub/charVersion.txt`)
+
+		if tk.IsErrX(remoteVersionT) {
+			tk.Pl("failed to get latest version")
+			return
+		}
+
+		latestVersionT := strings.TrimSpace(remoteVersionT.(string))
+
+		if latestVersionT <= charlang.VersionG {
+			tk.Pl("Current version(%v) is up-to-date", charlang.VersionG)
+			return
+		}
+
+		tk.Pl("Current version: %v, latest version: %v", charlang.VersionG, latestVersionT)
+
+		exePathT := tk.GetExecutablePath()
+
+		if tk.IsErrX(exePathT) {
+			tk.Pl("failed to get executable path")
+			return
+		}
+
+		urlT := ""
+		urlwT := ""
+
+		if tk.GetOSName() == "windows" {
+			urlT = `https://topget.org/pub/char.exe.gz`
+			urlwT = `https://topget.org/pub/charw.exe.gz`
+		} else if tk.GetOSName() == "linux" {
+			urlT = `https://topget.org/pub/char.gz`
+		} else if tk.GetOSName() == "android" {
+			urlT = `https://topget.org/pub/charArm8.gz`
+		} else {
+			tk.Pl("unsupported OS")
+			return
+		}
+
+		urlT = strings.TrimSpace(urlT)
+
+		if urlT == "" {
+			tk.Pl("invalid URL")
+			return
+		}
+
+		tk.Pl("Downloading the latest package...")
+
+		bytesT, errT := tk.DownloadBytesWithProgress(urlT, func(i interface{}) interface{} {
+			fmt.Printf("\rprogress: %#v                ", i)
+			return ""
+		})
+
+		tk.Pln()
+
+		if errT != nil {
+			tk.Pl("failed to download Charlang's main program file: %v", errT)
+			return
+		}
+
+		tk.RemoveFile(exePathT + ".bac")
+
+		rs := tk.RenameFile(exePathT, exePathT+".bac")
+
+		if tk.IsErrX(rs) {
+			tk.Pl("failed to rename old executable file: %v", rs)
+			return
+		}
+
+		rsT := tk.Uncompress(bytesT)
+
+		if tk.IsErrX(rsT) {
+			tk.Pl("failed to uncompress new executable file: %v", rsT)
+			return
+		}
+
+		bytesT = rsT.([]byte)
+
+		rs2 := tk.SaveBytesToFile(bytesT, exePathT)
+
+		if tk.IsErrX(rs2) {
+			tk.Pl("failed to save new executable file: %v", rs2)
+			return
+		}
+
+		tk.Pl("Updated.")
+
+		if urlwT != "" {
+			tk.Pl("Downloading the latest GUI package...")
+
+			bytesT, errT := tk.DownloadBytesWithProgress(urlwT, func(i interface{}) interface{} {
+				fmt.Printf("\rprogress: %#v                ", i)
+				return ""
+			})
+
+			tk.Pln()
+
+			if errT != nil {
+				tk.Pl("failed to download Charlang's main program file(GUI version): %v", errT)
+				return
+			}
+
+			exewPathT := strings.TrimSuffix(exePathT, ".exe") + "w.exe"
+
+			tk.RemoveFile(exewPathT + ".bac")
+
+			rs := tk.RenameFile(exewPathT, exewPathT+".bac")
+
+			if tk.IsErrX(rs) {
+				tk.Pl("failed to rename old executable file(GUI version): %v", rs)
+				return
+			}
+
+			rsT := tk.Uncompress(bytesT)
+
+			if tk.IsErrX(rsT) {
+				tk.Pl("failed to uncompress new executable file(GUI version): %v", rsT)
+				return
+			}
+
+			bytesT = rsT.([]byte)
+
+			rs2 := tk.SaveBytesToFile(bytesT, exewPathT)
+
+			if tk.IsErrX(rs2) {
+				tk.Pl("failed to save new executable file(GUI version): %v", rs2)
+				return
+			}
+
+			tk.Pl("GUI package updated.")
+		}
+
+		return
 	}
 
 	getWebUrlT := strings.TrimSpace(tk.GetSwitchWithDefaultValue(argsT, "-getWeb=", ""))

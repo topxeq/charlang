@@ -29,7 +29,14 @@ import (
 )
 
 // global vars
-var VersionG = "2.1.3"
+// VersionG is the version of Charlang, set at build time via ldflags
+var VersionG = "dev"
+
+// CommitG is the git commit hash, set at build time via ldflags
+var CommitG = "unknown"
+
+// BuildDateG is the build date, set at build time via ldflags
+var BuildDateG = "unknown"
 
 var CodeTextG = ""
 

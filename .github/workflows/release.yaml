@@ -1,0 +1,143 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: false
+        type: string
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+            goos: linux
+            goarch: amd64
+          - os: windows
+            arch: amd64
+            goos: windows
+            goarch: amd64
+          - os: darwin
+            arch: amd64
+            goos: darwin
+            goarch: amd64
+          - os: darwin
+            arch: arm64
+            goos: darwin
+            goarch: arm64
+          - os: android
+            arch: arm64
+            goos: android
+            goarch: arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.21'
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION=${{ github.event.inputs.version }}
+          elif [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION="v$(date +%Y%m%d%H%M%S)"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION_WITHOUT_V=${VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Get commit and build date
+        id: get_metadata
+        run: |
+          echo "COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+
+      - name: Build Charlang
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          VERSION: ${{ steps.get_version.outputs.VERSION_WITHOUT_V }}
+          COMMIT: ${{ steps.get_metadata.outputs.COMMIT }}
+          BUILD_DATE: ${{ steps.get_metadata.outputs.BUILD_DATE }}
+        run: |
+          LDFLAGS="-X github.com/topxeq/charlang.VersionG=${VERSION} -X github.com/topxeq/charlang.CommitG=${COMMIT} -X github.com/topxeq/charlang.BuildDateG=${BUILD_DATE}"
+
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            go build -ldflags "$LDFLAGS" -o dist/char-${{ matrix.os }}-${{ matrix.arch }}.exe ./cmd
+            gzip -f dist/char-${{ matrix.os }}-${{ matrix.arch }}.exe
+
+            # Build GUI version (noGui tag)
+            go build -ldflags "$LDFLAGS" -tags=noGui -o dist/charw-${{ matrix.os }}-${{ matrix.arch }}.exe ./cmd
+            gzip -f dist/charw-${{ matrix.os }}-${{ matrix.arch }}.exe
+          else
+            go build -ldflags "$LDFLAGS" -o dist/char-${{ matrix.os }}-${{ matrix.arch }} ./cmd
+            gzip -f dist/char-${{ matrix.os }}-${{ matrix.arch }}
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.os }}-${{ matrix.arch }}
+          path: dist/*
+          retention-days: 30
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION=${{ github.event.inputs.version }}
+          elif [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION="v$(date +%Y%m%d%H%M%S)"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: binaries-*
+          path: dist
+          merge-multiple: true
+
+      - name: List files
+        run: ls -la dist/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          name: Release ${{ steps.get_version.outputs.VERSION }}
+          generate_release_notes: true
+          files: dist/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
