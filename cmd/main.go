@@ -1007,6 +1007,16 @@ func runLine(strA string) interface{} {
 func runArgs(argsT ...string) interface{} {
 //	argsT := argsA
 
+	// Check for "update" subcommand
+	if len(argsT) >= 2 && argsT[1] == "update" {
+		// Create new args with -updateSelf
+		newArgs := make([]string, 0, len(argsT))
+		newArgs = append(newArgs, argsT[0])
+		newArgs = append(newArgs, "-updateSelf")
+		newArgs = append(newArgs, argsT[2:]...)
+		return runArgs(newArgs...)
+	}
+
 	if tk.IfSwitchExistsWhole(argsT, "-version") {
 		tk.Pl("Charlang by TopXeQ V%v", charlang.VersionG)
 		if charlang.CommitG != "unknown" {
@@ -2002,6 +2012,17 @@ func main() {
 
 	argsT := os.Args
 
+	// Check for "char update" subcommand
+	if len(argsT) >= 2 && argsT[1] == "update" {
+		// Create new args with -updateSelf
+		newArgs := make([]string, 0, len(argsT))
+		newArgs = append(newArgs, argsT[0])
+		newArgs = append(newArgs, "-updateSelf")
+		newArgs = append(newArgs, argsT[2:]...)
+		runArgs(newArgs...)
+		return
+	}
+
 	if tk.IfSwitchExistsWhole(argsT, "-help") {
 		textT := tk.GetWeb(`http://topget.org/dc/t/charlang/intro.md`)
 
@@ -2016,138 +2037,6 @@ func main() {
 		return
 	}
 
-	if tk.IfSwitchExistsWhole(argsT, "-updateChar") {
-
-		exePathT := tk.GetExecutablePath()
-
-		if tk.IsErrX(exePathT) {
-			tk.Pl("failed to get executable path")
-			return
-		}
-
-		urlT := ""
-		urlwT := ""
-		osNameT := tk.GetOSName()
-		archT := ""
-
-		switch runtime.GOARCH {
-		case "amd64":
-			archT = "amd64"
-		case "arm64":
-			archT = "arm64"
-		default:
-			archT = "amd64"
-		}
-
-		if osNameT == "windows" {
-			urlT = `https://github.com/topxeq/charlang/releases/latest/download/char-` + osNameT + `-` + archT + `.exe.gz`
-			urlwT = `https://github.com/topxeq/charlang/releases/latest/download/charw-` + osNameT + `-` + archT + `.exe.gz`
-		} else if osNameT == "linux" {
-			urlT = `https://github.com/topxeq/charlang/releases/latest/download/char-` + osNameT + `-` + archT + `.gz`
-		} else if osNameT == "darwin" {
-			urlT = `https://github.com/topxeq/charlang/releases/latest/download/char-` + osNameT + `-` + archT + `.gz`
-		} else if osNameT == "android" {
-			urlT = `https://github.com/topxeq/charlang/releases/latest/download/char-` + osNameT + `-` + archT + `.gz`
-		} else {
-			tk.Pl("unsupported OS")
-			return
-		}
-
-		urlT = strings.TrimSpace(urlT)
-
-		if urlT == "" {
-			tk.Pl("invalid URL")
-			return
-		}
-
-		tk.Pl("Downloading the latest package...")
-
-		bytesT, errT := tk.DownloadBytesWithProgress(urlT, func(i interface{}) interface{} {
-			fmt.Printf("\rprogress: %#v                ", i)
-			return ""
-		})
-
-		tk.Pln()
-
-		if errT != nil {
-			tk.Pl("failed to download Charlang's main program file: %v", errT)
-			return
-		}
-
-		tk.RemoveFile(exePathT + ".bac")
-
-		rs := tk.RenameFile(exePathT, exePathT+".bac")
-
-		if tk.IsErrX(rs) {
-			tk.Pl("failed to rename old executable file: %v", rs)
-			return
-		}
-
-		rsT := tk.Uncompress(bytesT)
-
-		if tk.IsErrX(rsT) {
-			tk.Pl("failed to uncompress new executable file: %v", rsT)
-			return
-		}
-
-		bytesT = rsT.([]byte)
-
-		rs2 := tk.SaveBytesToFile(bytesT, exePathT)
-
-		if tk.IsErrX(rs2) {
-			tk.Pl("failed to save new executable file: %v", rs2)
-			return
-		}
-
-		tk.Pl("Updated.")
-
-		if urlwT != "" {
-			tk.Pl("Downloading the latest GUI package...")
-
-			bytesT, errT := tk.DownloadBytesWithProgress(urlwT, func(i interface{}) interface{} {
-				fmt.Printf("\rprogress: %#v                ", i)
-				return ""
-			})
-
-			tk.Pln()
-
-			if errT != nil {
-				tk.Pl("failed to download Charlang's main program file(GUI version): %v", errT)
-				return
-			}
-
-			exewPathT := strings.TrimSuffix(exePathT, ".exe") + "w.exe"
-
-			tk.RemoveFile(exewPathT + ".bac")
-
-			rs := tk.RenameFile(exewPathT, exewPathT+".bac")
-
-			if tk.IsErrX(rs) {
-				tk.Pl("failed to rename old executable file(GUI version): %v", rs)
-				return
-			}
-
-			rsT := tk.Uncompress(bytesT)
-
-			if tk.IsErrX(rsT) {
-				tk.Pl("failed to uncompress new executable file(GUI version): %v", rsT)
-				return
-			}
-
-			bytesT = rsT.([]byte)
-
-			rs2 := tk.SaveBytesToFile(bytesT, exewPathT)
-
-			if tk.IsErrX(rs2) {
-				tk.Pl("failed to save new executable file(GUI version): %v", rs2)
-				return
-			}
-
-			tk.Pl("GUI package updated.")
-		}
-
-		return
-	}
 
 	if tk.IfSwitchExistsWhole(argsT, "-service") {
 		tk.Pl("%v V%v is running in service(server) mode. Running the application with argument \"-service\" will cause it running in service mode.\n", serviceNameG, charlang.VersionG)
