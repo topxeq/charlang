@@ -1,5 +1,5 @@
-//go:build noGui || linux
-// +build noGui linux
+//go:build noGui || linux || darwin || android
+// +build noGui linux darwin android
 
 package main
 

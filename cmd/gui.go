@@ -1,5 +1,5 @@
-//go:build !noGui && !linux
-// +build !noGui,!linux
+//go:build !noGui && windows
+// +build !noGui,windows
 
 package main
 
