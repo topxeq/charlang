@@ -1039,30 +1039,6 @@ func runArgs(argsT ...string) interface{} {
 	}
 
 	if tk.IfSwitchExistsWhole(argsT, "-updateSelf") {
-		remoteVersionT := tk.GetWeb(`https://api.github.com/repos/topxeq/charlang/releases/latest`)
-
-		latestVersionT := "latest"
-		useLatestMode := false
-
-		if tk.IsErrX(remoteVersionT) {
-			tk.Pl("GitHub API access failed, using direct download mode")
-			useLatestMode = true
-		} else {
-			// Parse GitHub API JSON response to get tag_name
-			jsonStr := tk.ToStr(remoteVersionT)
-			tagMatch := regexp.MustCompile(`"tag_name"\s*:\s*"([^"]+)"`).FindStringSubmatch(jsonStr)
-			if len(tagMatch) < 2 {
-				tk.Pl("Failed to parse version info, using direct download mode")
-				useLatestMode = true
-			} else {
-				latestVersionT = strings.TrimPrefix(tagMatch[1], "v")
-				if latestVersionT <= charlang.VersionG {
-					tk.Pl("Current version(%v) is up-to-date", charlang.VersionG)
-					return nil
-				}
-				tk.Pl("Current version: %v, latest version: %v", charlang.VersionG, latestVersionT)
-			}
-		}
 
 		exePathT := tk.GetExecutablePath()
 
@@ -2041,30 +2017,6 @@ func main() {
 	}
 
 	if tk.IfSwitchExistsWhole(argsT, "-updateChar") {
-		remoteVersionT := tk.GetWeb(`https://api.github.com/repos/topxeq/charlang/releases/latest`)
-
-		latestVersionT := "latest"
-		useLatestMode := false
-
-		if tk.IsErrX(remoteVersionT) {
-			tk.Pl("GitHub API access failed, using direct download mode")
-			useLatestMode = true
-		} else {
-			// Parse GitHub API JSON response to get tag_name
-			jsonStr := tk.ToStr(remoteVersionT)
-			tagMatch := regexp.MustCompile(`"tag_name"\s*:\s*"([^"]+)"`).FindStringSubmatch(jsonStr)
-			if len(tagMatch) < 2 {
-				tk.Pl("Failed to parse version info, using direct download mode")
-				useLatestMode = true
-			} else {
-				latestVersionT = strings.TrimPrefix(tagMatch[1], "v")
-				if latestVersionT <= charlang.VersionG {
-					tk.Pl("Current version(%v) is up-to-date", charlang.VersionG)
-					return
-				}
-				tk.Pl("Current version: %v, latest version: %v", charlang.VersionG, latestVersionT)
-			}
-		}
 
 		exePathT := tk.GetExecutablePath()
 

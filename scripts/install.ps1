@@ -50,67 +50,15 @@ function Detect-OS {
     return @{ OS = $os; Arch = $arch }
 }
 
-function Get-LatestVersion {
-    Write-Warning "Checking for latest version..."
-
-    try {
-        $githubApiUrl = "https://api.github.com/repos/topxeq/charlang/releases/latest"
-        $releaseInfo = Invoke-WebRequest -Uri $githubApiUrl -UseBasicParsing | ConvertFrom-Json
-        $latestVersion = $releaseInfo.tag_name.TrimStart('v')
-
-        if ([string]::IsNullOrEmpty($latestVersion)) {
-            Write-Warning "Failed to get version from GitHub API, using fallback"
-            return "latest"
-        }
-
-        Write-Success "Latest version: $latestVersion"
-        return $latestVersion
-    } catch {
-        Write-Warning "GitHub API access failed: $_"
-        Write-Warning "Using direct download mode"
-        return "latest"
-    }
-}
-
-function Check-Existing {
-    param([string]$LatestVersion)
-
-    # If using "latest" mode, skip version check
-    if ($LatestVersion -eq "latest") {
-        return
-    }
-
-    try {
-        $charPath = Get-Command "char" -ErrorAction SilentlyContinue
-        if ($charPath) {
-            $currentVersionOutput = & char -version 2>&1 | Select-Object -First 1
-            $currentVersion = if ($currentVersionOutput -match 'V([0-9.]+)') { $matches[1] } else { "" }
-
-            if (-not [string]::IsNullOrEmpty($currentVersion)) {
-                Write-Warning "Found existing installation: $currentVersion"
-
-                if ($currentVersion -eq $LatestVersion) {
-                    Write-Success "Already up to date!"
-                    exit 0
-                } else {
-                    Write-Warning "Will upgrade to $LatestVersion"
-                }
-            }
-        }
-    } catch {
-        # No existing installation found
-    }
-}
-
 function Download-And-Install {
     param(
         [string]$OS,
-        [string]$Arch,
-        [string]$LatestVersion
+        [string]$Arch
     )
 
     $binaryUrl = "https://github.com/topxeq/charlang/releases/latest/download/char-$OS-$Arch.exe.gz"
     $binaryUrlGui = "https://github.com/topxeq/charlang/releases/latest/download/charw-$OS-$Arch.exe.gz"
+    $LatestVersion = "latest"
 
     Write-Warning "Downloading Charlang $LatestVersion..."
 
@@ -161,7 +109,7 @@ function Download-And-Install {
             $inputStreamGui.Close()
         }
 
-        Write-Success "Successfully installed Charlang $LatestVersion to $InstallPath"
+        Write-Success "Successfully installed Charlang to $InstallPath"
 
         # Add to PATH if needed
         $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -194,9 +142,7 @@ function main {
     Write-Host ""
 
     $osInfo = Detect-OS
-    $latestVersion = Get-LatestVersion
-    Check-Existing -LatestVersion $latestVersion
-    Download-And-Install -OS $osInfo.OS -Arch $osInfo.Arch -LatestVersion $latestVersion
+    Download-And-Install -OS $osInfo.OS -Arch $osInfo.Arch
 
     Write-Host ""
     Write-Host "====================================" -ForegroundColor Cyan
