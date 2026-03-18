@@ -253,17 +253,19 @@ wget -qO- https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.ps1" -OutFile "install.ps1"
 ```
 
-运行安装程序:
+运行安装程序（如需绕过执行策略）:
 
 ```powershell
-.\install.ps1
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force; .\install.ps1
 ```
 
 或单行命令:
 
 ```powershell
-iex (iwr "https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.ps1")
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force; iex (iwr "https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.ps1")
 ```
+
+**注意:** 如果看到"在此系统上禁止运行脚本"的错误，上面的命令会临时绕过当前会话的执行策略。
 
 ### 5.2 手动安装
 

@@ -255,17 +255,19 @@ Download installer:
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.ps1" -OutFile "install.ps1"
 ```
 
-Run installer:
+Run installer (bypass execution policy if needed):
 
 ```powershell
-.\install.ps1
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force; .\install.ps1
 ```
 
 Or one-liner:
 
 ```powershell
-iex (iwr "https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.ps1")
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force; iex (iwr "https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.ps1")
 ```
+
+**Note:** If you see an error about "running scripts is disabled on this system", the commands above will temporarily bypass the execution policy for this session only.
 
 ### 5.2 Manual Installation
 
