@@ -13,7 +13,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 REPO="topxeq/charlang"
-VERSION_FILE_URL="https://topget.org/pub/charVersion.txt"
+GITHUB_API_URL="https://api.github.com/repos/$REPO/releases/latest"
 BINARY_NAME="char"
 INSTALL_DIR="/usr/local/bin"
 
@@ -56,9 +56,9 @@ get_latest_version() {
     echo -e "${YELLOW}Checking for latest version...${NC}"
 
     if command -v curl &> /dev/null; then
-        LATEST_VERSION=$(curl -sL "$VERSION_FILE_URL" 2>/dev/null | tr -d '[:space:]')
+        LATEST_VERSION=$(curl -sL "$GITHUB_API_URL" 2>/dev/null | grep -oP '"tag_name":\s*"\K[v0-9.]+' | tr -d 'v"')
     elif command -v wget &> /dev/null; then
-        LATEST_VERSION=$(wget -qO- "$VERSION_FILE_URL" 2>/dev/null | tr -d '[:space:]')
+        LATEST_VERSION=$(wget -qO- "$GITHUB_API_URL" 2>/dev/null | grep -oP '"tag_name":\s*"\K[v0-9.]+' | tr -d 'v"')
     else
         echo -e "${RED}Either curl or wget is required${NC}"
         exit 1
@@ -74,13 +74,7 @@ get_latest_version() {
 
 # Download and install
 download_and_install() {
-    local binary_url=""
-
-    if [ "$OS" = "linux" ]; then
-        binary_url="https://topget.org/pub/char.gz"
-    elif [ "$OS" = "darwin" ]; then
-        binary_url="https://github.com/$REPO/releases/latest/download/char-$OS-$ARCH.gz"
-    fi
+    local binary_url="https://github.com/$REPO/releases/latest/download/char-$OS-$ARCH.gz"
 
     echo -e "${YELLOW}Downloading Charlang $LATEST_VERSION...${NC}"
 

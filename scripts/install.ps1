@@ -54,8 +54,9 @@ function Get-LatestVersion {
     Write-Warning "Checking for latest version..."
 
     try {
-        $versionFileUrl = "https://topget.org/pub/charVersion.txt"
-        $latestVersion = (Invoke-WebRequest -Uri $versionFileUrl -UseBasicParsing).Content.Trim()
+        $githubApiUrl = "https://api.github.com/repos/topxeq/charlang/releases/latest"
+        $releaseInfo = Invoke-WebRequest -Uri $githubApiUrl -UseBasicParsing | ConvertFrom-Json
+        $latestVersion = $releaseInfo.tag_name.TrimStart('v')
 
         if ([string]::IsNullOrEmpty($latestVersion)) {
             Write-Error "Failed to get latest version"
@@ -102,8 +103,8 @@ function Download-And-Install {
         [string]$LatestVersion
     )
 
-    $binaryUrl = "https://topget.org/pub/char.exe.gz"
-    $binaryUrlGui = "https://topget.org/pub/charw.exe.gz"
+    $binaryUrl = "https://github.com/topxeq/charlang/releases/latest/download/char-$OS-$Arch.exe.gz"
+    $binaryUrlGui = "https://github.com/topxeq/charlang/releases/latest/download/charw-$OS-$Arch.exe.gz"
 
     Write-Warning "Downloading Charlang $LatestVersion..."
 

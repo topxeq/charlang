@@ -1039,14 +1039,21 @@ func runArgs(argsT ...string) interface{} {
 	}
 
 	if tk.IfSwitchExistsWhole(argsT, "-updateSelf") {
-		remoteVersionT := tk.GetWeb(`http://topget.org/pub/charVersion.txt`)
+		remoteVersionT := tk.GetWeb(`https://api.github.com/repos/topxeq/charlang/releases/latest`)
 
 		if tk.IsErrX(remoteVersionT) {
 			tk.Pl("failed to get latest version")
 			return nil
 		}
 
-		latestVersionT := strings.TrimSpace(remoteVersionT.(string))
+		// Parse GitHub API JSON response to get tag_name
+		jsonStr := tk.ToStr(remoteVersionT)
+		tagMatch := regexp.MustCompile(`"tag_name"\s*:\s*"([^"]+)"`).FindStringSubmatch(jsonStr)
+		if len(tagMatch) < 2 {
+			tk.Pl("failed to parse version info")
+			return nil
+		}
+		latestVersionT := strings.TrimPrefix(tagMatch[1], "v")
 
 		if latestVersionT <= charlang.VersionG {
 			tk.Pl("Current version(%v) is up-to-date", charlang.VersionG)
@@ -1064,14 +1071,27 @@ func runArgs(argsT ...string) interface{} {
 
 		urlT := ""
 		urlwT := ""
+		osNameT := tk.GetOSName()
+		archT := ""
 
-		if tk.GetOSName() == "windows" {
-			urlT = `https://topget.org/pub/char.exe.gz`
-			urlwT = `https://topget.org/pub/charw.exe.gz`
-		} else if tk.GetOSName() == "linux" {
-			urlT = `https://topget.org/pub/char.gz`
-		} else if tk.GetOSName() == "android" {
-			urlT = `https://topget.org/pub/charArm8.gz`
+		switch runtime.GOARCH {
+		case "amd64":
+			archT = "amd64"
+		case "arm64":
+			archT = "arm64"
+		default:
+			archT = "amd64"
+		}
+
+		if osNameT == "windows" {
+			urlT = `https://github.com/topxeq/charlang/releases/latest/download/char-` + osNameT + `-` + archT + `.exe.gz`
+			urlwT = `https://github.com/topxeq/charlang/releases/latest/download/charw-` + osNameT + `-` + archT + `.exe.gz`
+		} else if osNameT == "linux" {
+			urlT = `https://github.com/topxeq/charlang/releases/latest/download/char-` + osNameT + `-` + archT + `.gz`
+		} else if osNameT == "darwin" {
+			urlT = `https://github.com/topxeq/charlang/releases/latest/download/char-` + osNameT + `-` + archT + `.gz`
+		} else if osNameT == "android" {
+			urlT = `https://github.com/topxeq/charlang/releases/latest/download/char-` + osNameT + `-` + archT + `.gz`
 		} else {
 			tk.Pl("unsupported OS")
 			return nil
@@ -2019,14 +2039,21 @@ func main() {
 	}
 
 	if tk.IfSwitchExistsWhole(argsT, "-updateChar") {
-		remoteVersionT := tk.GetWeb(`http://topget.org/pub/charVersion.txt`)
+		remoteVersionT := tk.GetWeb(`https://api.github.com/repos/topxeq/charlang/releases/latest`)
 
 		if tk.IsErrX(remoteVersionT) {
 			tk.Pl("failed to get latest version")
 			return
 		}
 
-		latestVersionT := strings.TrimSpace(remoteVersionT.(string))
+		// Parse GitHub API JSON response to get tag_name
+		jsonStr := tk.ToStr(remoteVersionT)
+		tagMatch := regexp.MustCompile(`"tag_name"\s*:\s*"([^"]+)"`).FindStringSubmatch(jsonStr)
+		if len(tagMatch) < 2 {
+			tk.Pl("failed to parse version info")
+			return
+		}
+		latestVersionT := strings.TrimPrefix(tagMatch[1], "v")
 
 		if latestVersionT <= charlang.VersionG {
 			tk.Pl("Current version(%v) is up-to-date", charlang.VersionG)
@@ -2044,14 +2071,27 @@ func main() {
 
 		urlT := ""
 		urlwT := ""
+		osNameT := tk.GetOSName()
+		archT := ""
 
-		if tk.GetOSName() == "windows" {
-			urlT = `https://topget.org/pub/char.exe.gz`
-			urlwT = `https://topget.org/pub/charw.exe.gz`
-		} else if tk.GetOSName() == "linux" {
-			urlT = `https://topget.org/pub/char.gz`
-		} else if tk.GetOSName() == "android" {
-			urlT = `https://topget.org/pub/charArm8.gz`
+		switch runtime.GOARCH {
+		case "amd64":
+			archT = "amd64"
+		case "arm64":
+			archT = "arm64"
+		default:
+			archT = "amd64"
+		}
+
+		if osNameT == "windows" {
+			urlT = `https://github.com/topxeq/charlang/releases/latest/download/char-` + osNameT + `-` + archT + `.exe.gz`
+			urlwT = `https://github.com/topxeq/charlang/releases/latest/download/charw-` + osNameT + `-` + archT + `.exe.gz`
+		} else if osNameT == "linux" {
+			urlT = `https://github.com/topxeq/charlang/releases/latest/download/char-` + osNameT + `-` + archT + `.gz`
+		} else if osNameT == "darwin" {
+			urlT = `https://github.com/topxeq/charlang/releases/latest/download/char-` + osNameT + `-` + archT + `.gz`
+		} else if osNameT == "android" {
+			urlT = `https://github.com/topxeq/charlang/releases/latest/download/char-` + osNameT + `-` + archT + `.gz`
 		} else {
 			tk.Pl("unsupported OS")
 			return
