@@ -59,20 +59,26 @@ function Get-LatestVersion {
         $latestVersion = $releaseInfo.tag_name.TrimStart('v')
 
         if ([string]::IsNullOrEmpty($latestVersion)) {
-            Write-Error "Failed to get latest version"
-            exit 1
+            Write-Warning "Failed to get version from GitHub API, using fallback"
+            return "latest"
         }
 
         Write-Success "Latest version: $latestVersion"
         return $latestVersion
     } catch {
-        Write-Error "Failed to get latest version: $_"
-        exit 1
+        Write-Warning "GitHub API access failed: $_"
+        Write-Warning "Using direct download mode"
+        return "latest"
     }
 }
 
 function Check-Existing {
     param([string]$LatestVersion)
+
+    # If using "latest" mode, skip version check
+    if ($LatestVersion -eq "latest") {
+        return
+    }
 
     try {
         $charPath = Get-Command "char" -ErrorAction SilentlyContinue

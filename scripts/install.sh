@@ -65,11 +65,11 @@ get_latest_version() {
     fi
 
     if [ -z "$LATEST_VERSION" ]; then
-        echo -e "${RED}Failed to get latest version${NC}"
-        exit 1
+        echo -e "${YELLOW}GitHub API access failed, using direct download mode${NC}"
+        LATEST_VERSION="latest"
+    else
+        echo -e "${GREEN}Latest version: $LATEST_VERSION${NC}"
     fi
-
-    echo -e "${GREEN}Latest version: $LATEST_VERSION${NC}"
 }
 
 # Download and install
@@ -109,6 +109,11 @@ download_and_install() {
 
 # Check if already installed
 check_existing() {
+    # If using "latest" mode, skip version check
+    if [ "$LATEST_VERSION" = "latest" ]; then
+        return
+    fi
+
     if command -v $BINARY_NAME &> /dev/null; then
         local current_version=$($BINARY_NAME -version 2>&1 | head -n1 | grep -oP 'V\K[0-9.]+' || echo "")
         if [ -n "$current_version" ]; then
