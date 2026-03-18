@@ -77,18 +77,21 @@ jobs:
           COMMIT: ${{ steps.get_metadata.outputs.COMMIT }}
           BUILD_DATE: ${{ steps.get_metadata.outputs.BUILD_DATE }}
         run: |
+          mkdir -p dist
           LDFLAGS="-X github.com/topxeq/charlang.VersionG=${VERSION} -X github.com/topxeq/charlang.CommitG=${COMMIT} -X github.com/topxeq/charlang.BuildDateG=${BUILD_DATE}"
 
+          cd cmd
+
           if [ "${{ matrix.goos }}" = "windows" ]; then
-            go build -ldflags "$LDFLAGS" -o dist/char-${{ matrix.os }}-${{ matrix.arch }}.exe ./cmd
-            gzip -f dist/char-${{ matrix.os }}-${{ matrix.arch }}.exe
+            go build -ldflags "$LDFLAGS" -o ../dist/char-${{ matrix.os }}-${{ matrix.arch }}.exe ./
+            gzip -f ../dist/char-${{ matrix.os }}-${{ matrix.arch }}.exe
 
             # Build GUI version (noGui tag)
-            go build -ldflags "$LDFLAGS" -tags=noGui -o dist/charw-${{ matrix.os }}-${{ matrix.arch }}.exe ./cmd
-            gzip -f dist/charw-${{ matrix.os }}-${{ matrix.arch }}.exe
+            go build -ldflags "$LDFLAGS" -tags=noGui -o ../dist/charw-${{ matrix.os }}-${{ matrix.arch }}.exe ./
+            gzip -f ../dist/charw-${{ matrix.os }}-${{ matrix.arch }}.exe
           else
-            go build -ldflags "$LDFLAGS" -o dist/char-${{ matrix.os }}-${{ matrix.arch }} ./cmd
-            gzip -f dist/char-${{ matrix.os }}-${{ matrix.arch }}
+            go build -ldflags "$LDFLAGS" -o ../dist/char-${{ matrix.os }}-${{ matrix.arch }} ./
+            gzip -f ../dist/char-${{ matrix.os }}-${{ matrix.arch }}
           fi
 
       - name: Upload artifacts
