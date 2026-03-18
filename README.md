@@ -235,22 +235,30 @@ Or download the package from [Charlang Official Site](https://topget.org/charlan
 
 **Linux/macOS:**
 
-```bash
-# Using curl
-curl -fsSL https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.sh | bash
+Using curl:
 
-# Or using wget
+```bash
+curl -fsSL https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.sh | bash
+```
+
+Or using wget:
+
+```bash
 wget -qO- https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.sh | bash
 ```
 
 **Windows (PowerShell):**
 
+Download and run installer:
+
 ```powershell
-# Download and run installer
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.ps1" -OutFile "install.ps1"
 .\install.ps1
+```
 
-# Or one-liner
+Or one-liner:
+
+```powershell
 iex (iwr "https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.ps1")
 ```
 
