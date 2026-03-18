@@ -4163,6 +4163,18 @@ func TestStrTrimFunc(t *testing.T) {
 	t.Run("strTrim with cutset", func(t *testing.T) {
 		expectRun(t, `return strTrim("xxhelloxx", "x")`, nil, String("hello"))
 	})
+
+	t.Run("strTrim with not enough params", func(t *testing.T) {
+		result, err := builtinStrTrimFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+
+	t.Run("strTrim with invalid type", func(t *testing.T) {
+		result, err := builtinStrTrimFunc(Call{Args: Array{Int(42)}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
 }
 
 // TestSscanf tests builtinSscanfFunc
@@ -5161,6 +5173,294 @@ func TestIsNilOrEmptyCases(t *testing.T) {
 
 	t.Run("isNilOrEmpty on non-empty map", func(t *testing.T) {
 		expectRun(t, `return isNilOrEmpty({"a": 1})`, nil, False)
+	})
+}
+
+// TestExcelOpen tests builtinExcelOpenFunc error paths
+func TestExcelOpen(t *testing.T) {
+	t.Run("excelOpen with not enough params", func(t *testing.T) {
+		result, err := builtinExcelOpenFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelOpenFromBytes tests builtinExcelOpenFromBytesFunc error paths
+func TestExcelOpenFromBytes(t *testing.T) {
+	t.Run("excelOpenFromBytes with not enough params", func(t *testing.T) {
+		result, err := builtinExcelOpenFromBytesFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelOpenFile tests builtinExcelOpenFileFunc error paths
+func TestExcelOpenFile(t *testing.T) {
+	t.Run("excelOpenFile with not enough params", func(t *testing.T) {
+		result, err := builtinExcelOpenFileFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelSaveAs tests builtinExcelSaveAsFunc error paths
+func TestExcelSaveAs(t *testing.T) {
+	t.Run("excelSaveAs with not enough params", func(t *testing.T) {
+		result, err := builtinExcelSaveAsFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelWriteTo tests builtinExcelWriteToFunc error paths
+func TestExcelWriteTo(t *testing.T) {
+	t.Run("excelWriteTo with not enough params", func(t *testing.T) {
+		result, err := builtinExcelWriteToFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelWriteToBytes tests builtinExcelWriteToBytesFunc error paths
+func TestExcelWriteToBytes(t *testing.T) {
+	t.Run("excelWriteToBytes with not enough params", func(t *testing.T) {
+		result, err := builtinExcelWriteToBytesFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelClose tests builtinExcelCloseFunc error paths
+func TestExcelClose(t *testing.T) {
+	t.Run("excelClose with not enough params", func(t *testing.T) {
+		result, err := builtinExcelCloseFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelReadSheet tests builtinExcelReadSheetFunc error paths
+func TestExcelReadSheet(t *testing.T) {
+	t.Run("excelReadSheet with not enough params", func(t *testing.T) {
+		result, err := builtinExcelReadSheetFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelReadAll tests builtinExcelReadAllFunc error paths
+func TestExcelReadAll(t *testing.T) {
+	t.Run("excelReadAll with not enough params", func(t *testing.T) {
+		result, err := builtinExcelReadAllFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelGetSheetName tests builtinExcelGetSheetNameFunc error paths
+func TestExcelGetSheetName(t *testing.T) {
+	t.Run("excelGetSheetName with not enough params", func(t *testing.T) {
+		result, err := builtinExcelGetSheetNameFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelGetSheetCount tests builtinExcelGetSheetCountFunc error paths
+func TestExcelGetSheetCount(t *testing.T) {
+	t.Run("excelGetSheetCount with not enough params", func(t *testing.T) {
+		result, err := builtinExcelGetSheetCountFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelGetSheetList tests builtinExcelGetSheetListFunc error paths
+func TestExcelGetSheetList(t *testing.T) {
+	t.Run("excelGetSheetList with not enough params", func(t *testing.T) {
+		result, err := builtinExcelGetSheetListFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelReadCell tests builtinExcelReadCellFunc error paths
+func TestExcelReadCell(t *testing.T) {
+	t.Run("excelReadCell with not enough params", func(t *testing.T) {
+		result, err := builtinExcelReadCellFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelReadCellImages tests builtinExcelReadCellImagesFunc error paths
+func TestExcelReadCellImages(t *testing.T) {
+	t.Run("excelReadCellImages with not enough params", func(t *testing.T) {
+		result, err := builtinExcelReadCellImagesFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelWriteSheet tests builtinExcelWriteSheetFunc error paths
+func TestExcelWriteSheet(t *testing.T) {
+	t.Run("excelWriteSheet with not enough params", func(t *testing.T) {
+		result, err := builtinExcelWriteSheetFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelWriteCell tests builtinExcelWriteCellFunc error paths
+func TestExcelWriteCell(t *testing.T) {
+	t.Run("excelWriteCell with not enough params", func(t *testing.T) {
+		result, err := builtinExcelWriteCellFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelGetColumnIndexByName tests builtinExcelGetColumnIndexByNameFunc error paths
+func TestExcelGetColumnIndexByName(t *testing.T) {
+	t.Run("excelGetColumnIndexByName with not enough params", func(t *testing.T) {
+		result, err := builtinExcelGetColumnIndexByNameFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelGetColumnNameByIndex tests builtinExcelGetColumnNameByIndexFunc error paths
+func TestExcelGetColumnNameByIndex(t *testing.T) {
+	t.Run("excelGetColumnNameByIndex with not enough params", func(t *testing.T) {
+		result, err := builtinExcelGetColumnNameByIndexFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelNewSheet tests builtinExcelNewSheetFunc error paths
+func TestExcelNewSheet(t *testing.T) {
+	t.Run("excelNewSheet with not enough params", func(t *testing.T) {
+		result, err := builtinExcelNewSheetFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelRemoveSheet tests builtinExcelRemoveSheetFunc error paths
+func TestExcelRemoveSheet(t *testing.T) {
+	t.Run("excelRemoveSheet with not enough params", func(t *testing.T) {
+		result, err := builtinExcelRemoveSheetFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestFtpCreateDir tests builtinFtpCreateDirFunc error paths
+func TestFtpCreateDir(t *testing.T) {
+	t.Run("ftpCreateDir with not enough params", func(t *testing.T) {
+		result, err := builtinFtpCreateDirFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpList tests builtinFtpListFunc error paths
+func TestFtpList(t *testing.T) {
+	t.Run("ftpList with not enough params", func(t *testing.T) {
+		result, err := builtinFtpListFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpSize tests builtinFtpSizeFunc error paths
+func TestFtpSize(t *testing.T) {
+	t.Run("ftpSize with not enough params", func(t *testing.T) {
+		result, err := builtinFtpSizeFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpUpload tests builtinFtpUploadFunc error paths
+func TestFtpUpload(t *testing.T) {
+	t.Run("ftpUpload with not enough params", func(t *testing.T) {
+		result, err := builtinFtpUploadFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpDownloadBytes tests builtinFtpDownloadBytesFunc error paths
+func TestFtpDownloadBytes(t *testing.T) {
+	t.Run("ftpDownloadBytes with not enough params", func(t *testing.T) {
+		result, err := builtinFtpDownloadBytesFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpDownloadFile tests builtinFtpDownloadFileFunc error paths
+func TestFtpDownloadFile(t *testing.T) {
+	t.Run("ftpDownloadFile with not enough params", func(t *testing.T) {
+		result, err := builtinFtpDownloadFileFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpGetReader tests builtinFtpGetReaderFunc error paths
+func TestFtpGetReader(t *testing.T) {
+	t.Run("ftpGetReader with not enough params", func(t *testing.T) {
+		result, err := builtinFtpGetReaderFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpRemoveFile tests builtinFtpRemoveFileFunc error paths
+func TestFtpRemoveFile(t *testing.T) {
+	t.Run("ftpRemoveFile with not enough params", func(t *testing.T) {
+		result, err := builtinFtpRemoveFileFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpUploadFromReader tests builtinFtpUploadFromReaderFunc error paths
+func TestFtpUploadFromReader(t *testing.T) {
+	t.Run("ftpUploadFromReader with not enough params", func(t *testing.T) {
+		result, err := builtinFtpUploadFromReaderFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestLoadBytesFromFileLimit tests builtinLoadBytesFromFileLimitFunc error paths
+func TestLoadBytesFromFileLimit(t *testing.T) {
+	t.Run("loadBytesFromFileLimit with not enough params", func(t *testing.T) {
+		result, err := builtinLoadBytesFromFileLimitFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestReadCsv tests builtinReadCsvFunc error paths
+func TestReadCsv(t *testing.T) {
+	t.Run("readCsv with not enough params", func(t *testing.T) {
+		result, err := builtinReadCsvFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestWriteCsv tests builtinWriteCsvFunc error paths
+func TestWriteCsv(t *testing.T) {
+	t.Run("writeCsv with not enough params", func(t *testing.T) {
+		result, err := builtinWriteCsvFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
 	})
 }
 
