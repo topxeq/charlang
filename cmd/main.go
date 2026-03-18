@@ -1043,14 +1043,14 @@ func runArgs(argsT ...string) interface{} {
 
 		if tk.IsErrX(remoteVersionT) {
 			tk.Pl("failed to get latest version")
-			return
+			return nil
 		}
 
 		latestVersionT := strings.TrimSpace(remoteVersionT.(string))
 
 		if latestVersionT <= charlang.VersionG {
 			tk.Pl("Current version(%v) is up-to-date", charlang.VersionG)
-			return
+			return nil
 		}
 
 		tk.Pl("Current version: %v, latest version: %v", charlang.VersionG, latestVersionT)
@@ -1059,7 +1059,7 @@ func runArgs(argsT ...string) interface{} {
 
 		if tk.IsErrX(exePathT) {
 			tk.Pl("failed to get executable path")
-			return
+			return nil
 		}
 
 		urlT := ""
@@ -1074,14 +1074,14 @@ func runArgs(argsT ...string) interface{} {
 			urlT = `https://topget.org/pub/charArm8.gz`
 		} else {
 			tk.Pl("unsupported OS")
-			return
+			return nil
 		}
 
 		urlT = strings.TrimSpace(urlT)
 
 		if urlT == "" {
 			tk.Pl("invalid URL")
-			return
+			return nil
 		}
 
 		tk.Pl("Downloading the latest package...")
@@ -1095,7 +1095,7 @@ func runArgs(argsT ...string) interface{} {
 
 		if errT != nil {
 			tk.Pl("failed to download Charlang's main program file: %v", errT)
-			return
+			return nil
 		}
 
 		tk.RemoveFile(exePathT + ".bac")
@@ -1104,14 +1104,14 @@ func runArgs(argsT ...string) interface{} {
 
 		if tk.IsErrX(rs) {
 			tk.Pl("failed to rename old executable file: %v", rs)
-			return
+			return nil
 		}
 
 		rsT := tk.Uncompress(bytesT)
 
 		if tk.IsErrX(rsT) {
 			tk.Pl("failed to uncompress new executable file: %v", rsT)
-			return
+			return nil
 		}
 
 		bytesT = rsT.([]byte)
@@ -1120,7 +1120,7 @@ func runArgs(argsT ...string) interface{} {
 
 		if tk.IsErrX(rs2) {
 			tk.Pl("failed to save new executable file: %v", rs2)
-			return
+			return nil
 		}
 
 		tk.Pl("Updated.")
@@ -1137,7 +1137,7 @@ func runArgs(argsT ...string) interface{} {
 
 			if errT != nil {
 				tk.Pl("failed to download Charlang's main program file(GUI version): %v", errT)
-				return
+				return nil
 			}
 
 			exewPathT := strings.TrimSuffix(exePathT, ".exe") + "w.exe"
@@ -1148,14 +1148,14 @@ func runArgs(argsT ...string) interface{} {
 
 			if tk.IsErrX(rs) {
 				tk.Pl("failed to rename old executable file(GUI version): %v", rs)
-				return
+				return nil
 			}
 
 			rsT := tk.Uncompress(bytesT)
 
 			if tk.IsErrX(rsT) {
 				tk.Pl("failed to uncompress new executable file(GUI version): %v", rsT)
-				return
+				return nil
 			}
 
 			bytesT = rsT.([]byte)
@@ -1164,13 +1164,13 @@ func runArgs(argsT ...string) interface{} {
 
 			if tk.IsErrX(rs2) {
 				tk.Pl("failed to save new executable file(GUI version): %v", rs2)
-				return
+				return nil
 			}
 
 			tk.Pl("GUI package updated.")
 		}
 
-		return
+		return nil
 	}
 
 	getWebUrlT := strings.TrimSpace(tk.GetSwitchWithDefaultValue(argsT, "-getWeb=", ""))
