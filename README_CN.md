@@ -247,10 +247,15 @@ wget -qO- https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install
 
 **Windows (PowerShell):**
 
-下载并运行安装程序:
+下载安装程序:
 
 ```powershell
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.ps1" -OutFile "install.ps1"
+```
+
+运行安装程序:
+
+```powershell
 .\install.ps1
 ```
 

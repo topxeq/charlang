@@ -249,10 +249,15 @@ wget -qO- https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install
 
 **Windows (PowerShell):**
 
-Download and run installer:
+Download installer:
 
 ```powershell
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/topxeq/charlang/main/scripts/install.ps1" -OutFile "install.ps1"
+```
+
+Run installer:
+
+```powershell
 .\install.ps1
 ```
 
