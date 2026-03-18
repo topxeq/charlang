@@ -13,6 +13,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 REPO="topxeq/charlang"
+GITHUB_API_URL="https://api.github.com/repos/$REPO/releases/latest"
 BINARY_NAME="char"
 INSTALL_DIR="/usr/local/bin"
 
@@ -50,10 +51,30 @@ detect_os() {
     echo -e "${GREEN}Detected: $OS-$ARCH${NC}"
 }
 
+# Get latest version
+get_latest_version() {
+    echo -e "${YELLOW}Checking for latest version...${NC}"
+
+    if command -v curl &> /dev/null; then
+        LATEST_VERSION=$(curl -sL "$GITHUB_API_URL" 2>/dev/null | grep -oP '"tag_name":\s*"\K[v0-9.]+' | tr -d 'v"')
+    elif command -v wget &> /dev/null; then
+        LATEST_VERSION=$(wget -qO- "$GITHUB_API_URL" 2>/dev/null | grep -oP '"tag_name":\s*"\K[v0-9.]+' | tr -d 'v"')
+    else
+        echo -e "${RED}Either curl or wget is required${NC}"
+        exit 1
+    fi
+
+    if [ -z "$LATEST_VERSION" ]; then
+        echo -e "${RED}Failed to get version from GitHub API${NC}"
+        exit 1
+    fi
+
+    echo -e "${GREEN}Latest version: $LATEST_VERSION${NC}"
+}
+
 # Download and install
 download_and_install() {
     local binary_url="https://github.com/$REPO/releases/latest/download/char-$OS-$ARCH.gz"
-    local LATEST_VERSION="latest"
 
     echo -e "${YELLOW}Downloading Charlang $LATEST_VERSION...${NC}"
 
@@ -86,7 +107,24 @@ download_and_install() {
         sudo mv "$temp_dir/$BINARY_NAME" "$INSTALL_DIR/"
     fi
 
-    echo -e "${GREEN}Successfully installed Charlang to $INSTALL_DIR/$BINARY_NAME${NC}"
+    echo -e "${GREEN}Successfully installed Charlang $LATEST_VERSION to $INSTALL_DIR/$BINARY_NAME${NC}"
+}
+
+# Check if already installed
+check_existing() {
+    if command -v $BINARY_NAME &> /dev/null; then
+        local current_version=$($BINARY_NAME -version 2>&1 | head -n1 | grep -oP 'V\K[0-9.]+' || echo "")
+        if [ -n "$current_version" ]; then
+            echo -e "${YELLOW}Found existing installation: $current_version${NC}"
+
+            if [ "$current_version" = "$LATEST_VERSION" ]; then
+                echo -e "${GREEN}Already up to date!${NC}"
+                exit 0
+            else
+                echo -e "${YELLOW}Will upgrade to $LATEST_VERSION${NC}"
+            fi
+        fi
+    fi
 }
 
 # Print usage
@@ -131,6 +169,8 @@ main() {
     echo ""
 
     detect_os
+    get_latest_version
+    check_existing
     download_and_install
 
     echo ""

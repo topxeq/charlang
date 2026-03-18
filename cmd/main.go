@@ -1049,6 +1049,28 @@ func runArgs(argsT ...string) interface{} {
 	}
 
 	if tk.IfSwitchExistsWhole(argsT, "-updateSelf") {
+		tk.Pl("Checking for latest version...")
+		remoteVersionT := tk.GetWeb(`https://api.github.com/repos/topxeq/charlang/releases/latest`)
+
+		if tk.IsErrX(remoteVersionT) {
+			tk.Pl("Failed to check version: %v", remoteVersionT)
+			return nil
+		}
+
+		// Parse GitHub API JSON response to get tag_name
+		jsonStr := tk.ToStr(remoteVersionT)
+		tagMatch := regexp.MustCompile(`"tag_name"\s*:\s*"([^"]+)"`).FindStringSubmatch(jsonStr)
+		if len(tagMatch) < 2 {
+			tk.Pl("Failed to parse version info")
+			return nil
+		}
+
+		latestVersionT := strings.TrimPrefix(tagMatch[1], "v")
+		if latestVersionT <= charlang.VersionG {
+			tk.Pl("Current version(%v) is up-to-date", charlang.VersionG)
+			return nil
+		}
+		tk.Pl("Current version: %v, latest version: %v", charlang.VersionG, latestVersionT)
 
 		exePathT := tk.GetExecutablePath()
 
