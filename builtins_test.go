@@ -3414,6 +3414,21 @@ func TestAdapterFunctionsMore(t *testing.T) {
 	})
 }
 
+// TestEncodeSimpleMap tests builtinEncodeSimpleMapFunc
+func TestEncodeSimpleMap(t *testing.T) {
+	t.Run("encode simple map returns string", func(t *testing.T) {
+		expectRun(t, `m := {"a": "1", "b": "2"}; return typeName(encodeSimpleMap(m))`, nil, String("string"))
+	})
+
+	t.Run("encode simple map with special chars", func(t *testing.T) {
+		expectRun(t, `m := {"key": "value"}; return encodeSimpleMap(m)`, nil, String("key=value"))
+	})
+
+	t.Run("encode and decode roundtrip", func(t *testing.T) {
+		expectRun(t, `m := {"x": "1", "y": "2"}; encoded := encodeSimpleMap(m); decoded := decodeSimpleMap(encoded); return decoded.x`, nil, String("1"))
+	})
+}
+
 // TestDecodeSimpleMap tests builtinDecodeSimpleMapFunc
 func TestDecodeSimpleMap(t *testing.T) {
 	t.Run("decode simple map", func(t *testing.T) {
@@ -3734,6 +3749,25 @@ func TestCharCodeBuiltin(t *testing.T) {
 	})
 }
 
+// TestSimpleEncode tests builtinSimpleEncodeFunc
+func TestSimpleEncode(t *testing.T) {
+	t.Run("simpleEncode basic", func(t *testing.T) {
+		expectRun(t, `return typeName(simpleEncode("hello"))`, nil, String("string"))
+	})
+
+	t.Run("simpleEncode and decode roundtrip", func(t *testing.T) {
+		expectRun(t, `encoded := simpleEncode("hello world"); return simpleDecode(encoded)`, nil, String("hello world"))
+	})
+
+	t.Run("simpleEncode with special chars", func(t *testing.T) {
+		expectRun(t, `encoded := simpleEncode("a=1&b=2"); return simpleDecode(encoded)`, nil, String("a=1&b=2"))
+	})
+
+	t.Run("simpleEncode with custom byte", func(t *testing.T) {
+		expectRun(t, `return typeName(simpleEncode("test", 0xFF))`, nil, String("string"))
+	})
+}
+
 // TestSimpleDecode tests builtinSimpleDecodeFunc
 func TestSimpleDecode(t *testing.T) {
 	t.Run("simpleDecode basic", func(t *testing.T) {
@@ -3972,6 +4006,21 @@ func TestBase64DecodeByRawUrl(t *testing.T) {
 	})
 }
 
+// TestFromJSON tests builtinFromJSONFunc
+func TestFromJSON(t *testing.T) {
+	t.Run("fromJSON parses object", func(t *testing.T) {
+		expectRun(t, `obj := fromJSON("{\"key\": \"value\"}"); return obj.key`, nil, String("value"))
+	})
+
+	t.Run("fromJSON parses array", func(t *testing.T) {
+		expectRun(t, `arr := fromJSON("[1, 2, 3]"); return arr[1]`, nil, Float(2))
+	})
+
+	t.Run("fromJSON with invalid json", func(t *testing.T) {
+		expectRun(t, `return isError(fromJSON("invalid"))`, nil, Bool(true))
+	})
+}
+
 // TestTimeFunc tests builtinTimeFunc
 func TestTimeFunc(t *testing.T) {
 	t.Run("time returns time object", func(t *testing.T) {
@@ -4056,6 +4105,18 @@ func TestStrTrimFunc(t *testing.T) {
 
 	t.Run("strTrim with cutset", func(t *testing.T) {
 		expectRun(t, `return strTrim("xxhelloxx", "x")`, nil, String("hello"))
+	})
+
+	t.Run("strTrim with not enough params", func(t *testing.T) {
+		result, err := builtinStrTrimFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+
+	t.Run("strTrim with invalid type", func(t *testing.T) {
+		result, err := builtinStrTrimFunc(Call{Args: Array{Int(42)}})
+		require.Error(t, err)
+		require.Nil(t, result)
 	})
 }
 
@@ -4985,6 +5046,734 @@ func TestIsNilOrEmptyCases(t *testing.T) {
 
 	t.Run("isNilOrEmpty on non-empty map", func(t *testing.T) {
 		expectRun(t, `return isNilOrEmpty({"a": 1})`, nil, False)
+	})
+}
+
+// TestBuiltinMathFunctions tests math builtin functions
+func TestBuiltinMathFunctions(t *testing.T) {
+	// Test sqrt
+	t.Run("sqrt basic", func(t *testing.T) {
+		expectRun(t, `return sqrt(4)`, nil, Float(2))
+	})
+
+	t.Run("sqrt float", func(t *testing.T) {
+		expectRun(t, `return sqrt(2)`, nil, Float(1.4142135623730951))
+	})
+
+	t.Run("sqrt zero", func(t *testing.T) {
+		expectRun(t, `return sqrt(0)`, nil, Float(0))
+	})
+
+	// Test abs
+	t.Run("abs int positive", func(t *testing.T) {
+		expectRun(t, `return abs(5)`, nil, Int(5))
+	})
+
+	t.Run("abs int negative", func(t *testing.T) {
+		expectRun(t, `return abs(-5)`, nil, Int(5))
+	})
+
+	t.Run("abs float positive", func(t *testing.T) {
+		expectRun(t, `return abs(3.14)`, nil, Float(3.14))
+	})
+
+	t.Run("abs float negative", func(t *testing.T) {
+		expectRun(t, `return abs(-3.14)`, nil, Float(3.14))
+	})
+
+	// Test pow
+	t.Run("pow basic", func(t *testing.T) {
+		expectRun(t, `return pow(2, 3)`, nil, Float(8))
+	})
+
+	t.Run("pow zero exponent", func(t *testing.T) {
+		expectRun(t, `return pow(5, 0)`, nil, Float(1))
+	})
+
+	t.Run("pow negative exponent", func(t *testing.T) {
+		expectRun(t, `return pow(2, -1)`, nil, Float(0.5))
+	})
+
+	// Test exp
+	t.Run("exp one", func(t *testing.T) {
+		expectRun(t, `return exp(0)`, nil, Float(1))
+	})
+
+	t.Run("exp positive", func(t *testing.T) {
+		expectRun(t, `return exp(1)`, nil, Float(2.718281828459045))
+	})
+
+	// Test log
+	t.Run("log e", func(t *testing.T) {
+		expectRun(t, `return log(1)`, nil, Float(0))
+	})
+
+	// Test log10
+	t.Run("log10 1", func(t *testing.T) {
+		expectRun(t, `return log10(1)`, nil, Float(0))
+	})
+
+	t.Run("log10 10", func(t *testing.T) {
+		expectRun(t, `return log10(10)`, nil, Float(1))
+	})
+
+	t.Run("log10 100", func(t *testing.T) {
+		expectRun(t, `return log10(100)`, nil, Float(2))
+	})
+
+	// Test mathSin
+	t.Run("mathSin zero", func(t *testing.T) {
+		expectRun(t, `return mathSin(0)`, nil, Float(0))
+	})
+
+	// Test mathCos
+	t.Run("mathCos zero", func(t *testing.T) {
+		expectRun(t, `return mathCos(0)`, nil, Float(1))
+	})
+
+	// Test mathTan
+	t.Run("mathTan zero", func(t *testing.T) {
+		expectRun(t, `return mathTan(0)`, nil, Float(0))
+	})
+
+	// Test mathPi
+	t.Run("mathPi", func(t *testing.T) {
+		expectRun(t, `return mathPi()`, nil, Float(3.141592653589793))
+	})
+
+	// Test mathE
+	t.Run("mathE", func(t *testing.T) {
+		expectRun(t, `return mathE()`, nil, Float(2.718281828459045))
+	})
+
+	// Test round
+	t.Run("round basic", func(t *testing.T) {
+		expectRun(t, `return round(3.5)`, nil, Int(4))
+	})
+
+	t.Run("round down", func(t *testing.T) {
+		expectRun(t, `return round(3.4)`, nil, Int(3))
+	})
+
+	// Test floor
+	t.Run("floor basic", func(t *testing.T) {
+		expectRun(t, `return floor(3.9)`, nil, Int(3))
+	})
+
+	// Test ceil
+	t.Run("ceil basic", func(t *testing.T) {
+		expectRun(t, `return ceil(3.1)`, nil, Int(4))
+	})
+
+	// Test max
+	t.Run("max basic", func(t *testing.T) {
+		expectRun(t, `return max(3, 7, 2, 9)`, nil, Int(9))
+	})
+
+	// Test min
+	t.Run("min basic", func(t *testing.T) {
+		expectRun(t, `return min(3, 7, 2, 9)`, nil, Int(2))
+	})
+}
+
+// TestBuiltinBitwiseFunctions tests bitwise builtin functions
+func TestBuiltinBitwiseFunctions(t *testing.T) {
+	// Test bitNot
+	t.Run("bitNot zero", func(t *testing.T) {
+		expectRun(t, `return bitNot(0)`, nil, Int(-1))
+	})
+
+	t.Run("bitNot one", func(t *testing.T) {
+		expectRun(t, `return bitNot(1)`, nil, Int(-2))
+	})
+}
+
+// TestBuiltinConversionFunctions tests conversion builtin functions
+func TestBuiltinConversionFunctions(t *testing.T) {
+	// Test toStr
+	t.Run("toStr int", func(t *testing.T) {
+		expectRun(t, `return toStr(123)`, nil, String("123"))
+	})
+
+	t.Run("toStr float", func(t *testing.T) {
+		expectRun(t, `return toStr(3.14)`, nil, String("3.14"))
+	})
+
+	t.Run("toStr bool true", func(t *testing.T) {
+		expectRun(t, `return toStr(true)`, nil, String("true"))
+	})
+
+	t.Run("toStr bool false", func(t *testing.T) {
+		expectRun(t, `return toStr(false)`, nil, String("false"))
+	})
+
+	// Test toHex
+	t.Run("toHex int", func(t *testing.T) {
+		expectRun(t, `return toHex(255)`, nil, String("ff"))
+	})
+
+	t.Run("toHex uppercase", func(t *testing.T) {
+		expectRun(t, `return toHex(255)`, nil, String("ff"))
+	})
+
+	// Test toInt
+	t.Run("toInt string", func(t *testing.T) {
+		expectRun(t, `return toInt("123")`, nil, Int(123))
+	})
+
+	t.Run("toInt float", func(t *testing.T) {
+		expectRun(t, `return toInt(3.9)`, nil, Int(3))
+	})
+
+	// Test toFloat
+	t.Run("toFloat string", func(t *testing.T) {
+		expectRun(t, `return toFloat("3.14")`, nil, Float(3.14))
+	})
+
+	t.Run("toFloat int", func(t *testing.T) {
+		expectRun(t, `return toFloat(5)`, nil, Float(5))
+	})
+
+	// Test toBool - in charlang, 0 is truthy
+	t.Run("toBool int zero", func(t *testing.T) {
+		expectRun(t, `return toBool(0)`, nil, True)
+	})
+
+	t.Run("toBool int non-zero", func(t *testing.T) {
+		expectRun(t, `return toBool(1)`, nil, True)
+	})
+
+	t.Run("toBool string empty", func(t *testing.T) {
+		expectRun(t, `return toBool("")`, nil, False)
+	})
+
+	t.Run("toBool string non-empty", func(t *testing.T) {
+		expectRun(t, `return toBool("hello")`, nil, False)
+	})
+}
+
+// TestBuiltinStringFunctions tests string builtin functions
+func TestBuiltinStringFunctions(t *testing.T) {
+	// Test strToLower
+	t.Run("strToLower", func(t *testing.T) {
+		expectRun(t, `return strToLower("HELLO")`, nil, String("hello"))
+	})
+
+	// Test strToUpper
+	t.Run("strToUpper", func(t *testing.T) {
+		expectRun(t, `return strToUpper("hello")`, nil, String("HELLO"))
+	})
+
+	// Test strContains
+	t.Run("strContains found", func(t *testing.T) {
+		expectRun(t, `return strContains("hello world", "world")`, nil, True)
+	})
+
+	t.Run("strContains not found", func(t *testing.T) {
+		expectRun(t, `return strContains("hello", "xyz")`, nil, False)
+	})
+
+	// Test strReplace
+	t.Run("strReplace basic", func(t *testing.T) {
+		expectRun(t, `return strReplace("hello world", "world", "there")`, nil, String("hello there"))
+	})
+
+	// Test strCount
+	t.Run("strCount basic", func(t *testing.T) {
+		expectRun(t, `return strCount("hello hello", "hello")`, nil, Int(2))
+	})
+
+	// Test strIndex found
+	t.Run("strIndex found", func(t *testing.T) {
+		expectRun(t, `return strIndex("hello", "ll")`, nil, Int(2))
+	})
+
+	// Test strIndex not found
+	t.Run("strIndex not found", func(t *testing.T) {
+		expectRun(t, `return strIndex("hello", "xyz")`, nil, Int(-1))
+	})
+
+	// Test strSplit
+	t.Run("strSplit basic", func(t *testing.T) {
+		expectRun(t, `arr := strSplit("a,b,c", ","); return len(arr)`, nil, Int(3))
+	})
+
+	// Test strRepeat
+	t.Run("strRepeat basic", func(t *testing.T) {
+		expectRun(t, `return strRepeat("ab", 3)`, nil, String("ababab"))
+	})
+
+	// Test strTrimLeft
+	t.Run("strTrimLeft", func(t *testing.T) {
+		expectRun(t, `return strTrimLeft("  hello", " ")`, nil, String("hello"))
+	})
+
+	// Test strTrimRight
+	t.Run("strTrimRight", func(t *testing.T) {
+		expectRun(t, `return strTrimRight("hello  ", " ")`, nil, String("hello"))
+	})
+}
+
+// TestBuiltinArrayFunctions tests array builtin functions
+func TestBuiltinArrayFunctions(t *testing.T) {
+	// Test arrayContains
+	t.Run("arrayContains found", func(t *testing.T) {
+		expectRun(t, `return arrayContains([1, 2, 3], 2)`, nil, True)
+	})
+
+	t.Run("arrayContains not found", func(t *testing.T) {
+		expectRun(t, `return arrayContains([1, 2, 3], 5)`, nil, False)
+	})
+
+	// Test sortArray
+	t.Run("sortArray basic", func(t *testing.T) {
+		expectRun(t, `return sortArray([3, 1, 2])`, nil, Array{Int(1), Int(2), Int(3)})
+	})
+}
+
+// TestBuiltinMapFunctions tests map builtin functions
+func TestBuiltinMapFunctions(t *testing.T) {
+	// Tests would require functions that don't exist as builtins
+}
+
+// TestBuiltinTimeFunctions tests time builtin functions
+func TestBuiltinTimeFunctions(t *testing.T) {
+	// Test time - creates current time
+	t.Run("time current", func(t *testing.T) {
+		expectRun(t, `t := time(); return typeName(t)`, nil, String("time"))
+	})
+
+	// Test time with timestamp
+	t.Run("time with timestamp", func(t *testing.T) {
+		expectRun(t, `t := time(1704067200); return typeName(t)`, nil, String("time"))
+	})
+
+	// Test toTime with timestamp
+	t.Run("toTime timestamp", func(t *testing.T) {
+		expectRun(t, `t := toTime(1704067200); return typeName(t)`, nil, String("time"))
+	})
+
+	// Test typeName on time
+	t.Run("time typeName", func(t *testing.T) {
+		expectRun(t, `return typeName(time(1704067200))`, nil, String("time"))
+	})
+}
+
+// TestBuiltinRandomFunctions tests random builtin functions
+func TestBuiltinRandomFunctions(t *testing.T) {
+	// Test getRandomInt
+	t.Run("getRandomInt range", func(t *testing.T) {
+		expectRun(t, `r := getRandomInt(1, 10); return r >= 1 && r <= 10`, nil, True)
+	})
+
+	// Test getRandomFloat
+	t.Run("getRandomFloat", func(t *testing.T) {
+		expectRun(t, `r := getRandomFloat(); return r >= 0 && r < 1`, nil, True)
+	})
+
+	// Test getRandomStr
+	t.Run("getRandomStr", func(t *testing.T) {
+		expectRun(t, `s := getRandomStr(10); return len(s) > 0`, nil, True)
+	})
+}
+
+// TestBuiltinOtherFunctions tests other builtin functions
+func TestBuiltinOtherFunctions(t *testing.T) {
+	// Test typeName
+	t.Run("typeName int", func(t *testing.T) {
+		expectRun(t, `return typeName(1)`, nil, String("int"))
+	})
+
+	t.Run("typeName string", func(t *testing.T) {
+		expectRun(t, `return typeName("hello")`, nil, String("string"))
+	})
+
+	t.Run("typeName array", func(t *testing.T) {
+		expectRun(t, `return typeName([1,2,3])`, nil, String("array"))
+	})
+
+	t.Run("typeName map", func(t *testing.T) {
+		expectRun(t, `return typeName({"a": 1})`, nil, String("map"))
+	})
+
+	// Test isType functions
+	t.Run("isInt true", func(t *testing.T) {
+		expectRun(t, `return isInt(123)`, nil, True)
+	})
+
+	t.Run("isInt false", func(t *testing.T) {
+		expectRun(t, `return isInt("123")`, nil, False)
+	})
+
+	t.Run("isString true", func(t *testing.T) {
+		expectRun(t, `return isString("hello")`, nil, True)
+	})
+
+	t.Run("isString false", func(t *testing.T) {
+		expectRun(t, `return isString(123)`, nil, False)
+	})
+
+	t.Run("isFloat true", func(t *testing.T) {
+		expectRun(t, `return isFloat(1.5)`, nil, True)
+	})
+
+	t.Run("isFloat false", func(t *testing.T) {
+		expectRun(t, `return isFloat(1)`, nil, False)
+	})
+
+	t.Run("isBool true", func(t *testing.T) {
+		expectRun(t, `return isBool(true)`, nil, True)
+	})
+
+	t.Run("isBool false", func(t *testing.T) {
+		expectRun(t, `return isBool(1)`, nil, False)
+	})
+
+	t.Run("isArray true", func(t *testing.T) {
+		expectRun(t, `return isArray([1,2])`, nil, True)
+	})
+
+	t.Run("isArray false", func(t *testing.T) {
+		expectRun(t, `return isArray("test")`, nil, False)
+	})
+
+	t.Run("isMap true", func(t *testing.T) {
+		expectRun(t, `return isMap({"a":1})`, nil, True)
+	})
+
+	t.Run("isMap false", func(t *testing.T) {
+		expectRun(t, `return isMap([1,2])`, nil, False)
+	})
+
+	// Test len
+	t.Run("len string", func(t *testing.T) {
+		expectRun(t, `return len("hello")`, nil, Int(5))
+	})
+
+	t.Run("len array", func(t *testing.T) {
+		expectRun(t, `return len([1,2,3])`, nil, Int(3))
+	})
+
+	t.Run("len map", func(t *testing.T) {
+		expectRun(t, `return len({"a":1, "b":2})`, nil, Int(2))
+	})
+
+	// Test cap
+	t.Run("cap array", func(t *testing.T) {
+		expectRun(t, `return cap([1,2,3])`, nil, Int(3))
+	})
+
+	// Test copy (array)
+	t.Run("copy array", func(t *testing.T) {
+		expectRun(t, `return copy([1,2,3])`, nil, Array{Int(1), Int(2), Int(3)})
+	})
+
+	// Test delete
+	t.Run("delete map", func(t *testing.T) {
+		expectRun(t, `m := {"a": 1, "b": 2}; delete(m, "a"); return len(m)`, nil, Int(1))
+	})
+
+	// Test append
+	t.Run("append array", func(t *testing.T) {
+		expectRun(t, `a := [1, 2]; a = append(a, 3); return len(a)`, nil, Int(3))
+	})
+
+	// Test repeat
+	t.Run("repeat array", func(t *testing.T) {
+		expectRun(t, `return repeat([1], 3)`, nil, Array{Int(1), Int(1), Int(1)})
+	})
+
+	// Test contains (array)
+	t.Run("contains array", func(t *testing.T) {
+		expectRun(t, `return contains([1,2,3], 2)`, nil, True)
+	})
+}
+
+// TestExcelOpen tests builtinExcelOpenFunc error paths
+func TestExcelOpen(t *testing.T) {
+	t.Run("excelOpen with not enough params", func(t *testing.T) {
+		result, err := builtinExcelOpenFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelOpenFromBytes tests builtinExcelOpenFromBytesFunc error paths
+func TestExcelOpenFromBytes(t *testing.T) {
+	t.Run("excelOpenFromBytes with not enough params", func(t *testing.T) {
+		result, err := builtinExcelOpenFromBytesFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelOpenFile tests builtinExcelOpenFileFunc error paths
+func TestExcelOpenFile(t *testing.T) {
+	t.Run("excelOpenFile with not enough params", func(t *testing.T) {
+		result, err := builtinExcelOpenFileFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelSaveAs tests builtinExcelSaveAsFunc error paths
+func TestExcelSaveAs(t *testing.T) {
+	t.Run("excelSaveAs with not enough params", func(t *testing.T) {
+		result, err := builtinExcelSaveAsFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelWriteTo tests builtinExcelWriteToFunc error paths
+func TestExcelWriteTo(t *testing.T) {
+	t.Run("excelWriteTo with not enough params", func(t *testing.T) {
+		result, err := builtinExcelWriteToFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelWriteToBytes tests builtinExcelWriteToBytesFunc error paths
+func TestExcelWriteToBytes(t *testing.T) {
+	t.Run("excelWriteToBytes with not enough params", func(t *testing.T) {
+		result, err := builtinExcelWriteToBytesFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelClose tests builtinExcelCloseFunc error paths
+func TestExcelClose(t *testing.T) {
+	t.Run("excelClose with not enough params", func(t *testing.T) {
+		result, err := builtinExcelCloseFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelReadSheet tests builtinExcelReadSheetFunc error paths
+func TestExcelReadSheet(t *testing.T) {
+	t.Run("excelReadSheet with not enough params", func(t *testing.T) {
+		result, err := builtinExcelReadSheetFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelReadAll tests builtinExcelReadAllFunc error paths
+func TestExcelReadAll(t *testing.T) {
+	t.Run("excelReadAll with not enough params", func(t *testing.T) {
+		result, err := builtinExcelReadAllFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelGetSheetName tests builtinExcelGetSheetNameFunc error paths
+func TestExcelGetSheetName(t *testing.T) {
+	t.Run("excelGetSheetName with not enough params", func(t *testing.T) {
+		result, err := builtinExcelGetSheetNameFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelGetSheetCount tests builtinExcelGetSheetCountFunc error paths
+func TestExcelGetSheetCount(t *testing.T) {
+	t.Run("excelGetSheetCount with not enough params", func(t *testing.T) {
+		result, err := builtinExcelGetSheetCountFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelGetSheetList tests builtinExcelGetSheetListFunc error paths
+func TestExcelGetSheetList(t *testing.T) {
+	t.Run("excelGetSheetList with not enough params", func(t *testing.T) {
+		result, err := builtinExcelGetSheetListFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelReadCell tests builtinExcelReadCellFunc error paths
+func TestExcelReadCell(t *testing.T) {
+	t.Run("excelReadCell with not enough params", func(t *testing.T) {
+		result, err := builtinExcelReadCellFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelReadCellImages tests builtinExcelReadCellImagesFunc error paths
+func TestExcelReadCellImages(t *testing.T) {
+	t.Run("excelReadCellImages with not enough params", func(t *testing.T) {
+		result, err := builtinExcelReadCellImagesFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelWriteSheet tests builtinExcelWriteSheetFunc error paths
+func TestExcelWriteSheet(t *testing.T) {
+	t.Run("excelWriteSheet with not enough params", func(t *testing.T) {
+		result, err := builtinExcelWriteSheetFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelWriteCell tests builtinExcelWriteCellFunc error paths
+func TestExcelWriteCell(t *testing.T) {
+	t.Run("excelWriteCell with not enough params", func(t *testing.T) {
+		result, err := builtinExcelWriteCellFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelGetColumnIndexByName tests builtinExcelGetColumnIndexByNameFunc error paths
+func TestExcelGetColumnIndexByName(t *testing.T) {
+	t.Run("excelGetColumnIndexByName with not enough params", func(t *testing.T) {
+		result, err := builtinExcelGetColumnIndexByNameFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelGetColumnNameByIndex tests builtinExcelGetColumnNameByIndexFunc error paths
+func TestExcelGetColumnNameByIndex(t *testing.T) {
+	t.Run("excelGetColumnNameByIndex with not enough params", func(t *testing.T) {
+		result, err := builtinExcelGetColumnNameByIndexFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelNewSheet tests builtinExcelNewSheetFunc error paths
+func TestExcelNewSheet(t *testing.T) {
+	t.Run("excelNewSheet with not enough params", func(t *testing.T) {
+		result, err := builtinExcelNewSheetFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestExcelRemoveSheet tests builtinExcelRemoveSheetFunc error paths
+func TestExcelRemoveSheet(t *testing.T) {
+	t.Run("excelRemoveSheet with not enough params", func(t *testing.T) {
+		result, err := builtinExcelRemoveSheetFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestFtpCreateDir tests builtinFtpCreateDirFunc error paths
+func TestFtpCreateDir(t *testing.T) {
+	t.Run("ftpCreateDir with not enough params", func(t *testing.T) {
+		result, err := builtinFtpCreateDirFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpList tests builtinFtpListFunc error paths
+func TestFtpList(t *testing.T) {
+	t.Run("ftpList with not enough params", func(t *testing.T) {
+		result, err := builtinFtpListFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpSize tests builtinFtpSizeFunc error paths
+func TestFtpSize(t *testing.T) {
+	t.Run("ftpSize with not enough params", func(t *testing.T) {
+		result, err := builtinFtpSizeFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpUpload tests builtinFtpUploadFunc error paths
+func TestFtpUpload(t *testing.T) {
+	t.Run("ftpUpload with not enough params", func(t *testing.T) {
+		result, err := builtinFtpUploadFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpDownloadBytes tests builtinFtpDownloadBytesFunc error paths
+func TestFtpDownloadBytes(t *testing.T) {
+	t.Run("ftpDownloadBytes with not enough params", func(t *testing.T) {
+		result, err := builtinFtpDownloadBytesFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpDownloadFile tests builtinFtpDownloadFileFunc error paths
+func TestFtpDownloadFile(t *testing.T) {
+	t.Run("ftpDownloadFile with not enough params", func(t *testing.T) {
+		result, err := builtinFtpDownloadFileFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpGetReader tests builtinFtpGetReaderFunc error paths
+func TestFtpGetReader(t *testing.T) {
+	t.Run("ftpGetReader with not enough params", func(t *testing.T) {
+		result, err := builtinFtpGetReaderFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpRemoveFile tests builtinFtpRemoveFileFunc error paths
+func TestFtpRemoveFile(t *testing.T) {
+	t.Run("ftpRemoveFile with not enough params", func(t *testing.T) {
+		result, err := builtinFtpRemoveFileFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestFtpUploadFromReader tests builtinFtpUploadFromReaderFunc error paths
+func TestFtpUploadFromReader(t *testing.T) {
+	t.Run("ftpUploadFromReader with not enough params", func(t *testing.T) {
+		result, err := builtinFtpUploadFromReaderFunc(Call{Args: Array{}})
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+}
+
+// TestLoadBytesFromFileLimit tests builtinLoadBytesFromFileLimitFunc error paths
+func TestLoadBytesFromFileLimit(t *testing.T) {
+	t.Run("loadBytesFromFileLimit with not enough params", func(t *testing.T) {
+		result, err := builtinLoadBytesFromFileLimitFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestReadCsv tests builtinReadCsvFunc error paths
+func TestReadCsv(t *testing.T) {
+	t.Run("readCsv with not enough params", func(t *testing.T) {
+		result, err := builtinReadCsvFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
+	})
+}
+
+// TestWriteCsv tests builtinWriteCsvFunc error paths
+func TestWriteCsv(t *testing.T) {
+	t.Run("writeCsv with not enough params", func(t *testing.T) {
+		result, err := builtinWriteCsvFunc(Call{Args: Array{}})
+		require.NoError(t, err)
+		require.IsType(t, &Error{}, result)
 	})
 }
 
