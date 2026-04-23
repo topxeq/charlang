@@ -1,66 +1,3 @@
-// Package builtins provides the built-in functions for the Charlang language.
-//
-// # Overview
-//
-// This file contains all built-in functions that are available in Charlang scripts.
-// Built-in functions are pre-defined functions that provide core language functionality
-// and access to Go's standard library and external packages.
-//
-// # Function Categories
-//
-// Built-in functions are organized into the following categories:
-//
-// **Core Functions:**
-//   - print, printf, println - Output functions
-//   - len, type, typeof - Inspection functions
-//   - int, float, string, bool, char - Type conversion functions
-//   - append, copy, delete - Collection manipulation
-//
-// **String Functions:**
-//   - str, format, sprintf - String formatting
-//   - split, join, replace, trim - String manipulation
-//   - regex, matches, find - Regular expressions
-//
-// **Collection Functions:**
-//   - map, filter, reduce - Functional operations
-//   - sort, reverse, shuffle - Collection ordering
-//   - keys, values, items - Map operations
-//
-// **I/O Functions:**
-//   - open, close, read, write - File operations
-//   - read_file, write_file - Convenience file functions
-//   - http_get, http_post - HTTP requests
-//
-// **System Functions:**
-//   - time, sleep, timer - Time operations
-//   - exec, shell - Process execution
-//   - env, args - Environment access
-//
-// **Data Processing:**
-//   - json, yaml, xml, csv - Data format handling
-//   - base64, hex, url_encode - Encoding functions
-//   - hash, md5, sha256 - Cryptographic functions
-//
-// **External Services:**
-//   - database, query - Database operations
-//   - mail, ftp, s3 - External service integrations
-//   - excel, word, pdf - Document processing
-//
-// # Usage
-//
-// Built-in functions are automatically available in Charlang scripts:
-//
-//	print("Hello, World!")
-//	result := len([1, 2, 3])  // result = 3
-//	items := split("a,b,c", ",")  // items = ["a", "b", "c"]
-//
-// # Extending Builtins
-//
-// To add a new built-in function:
-//  1. Add a constant to BuiltinType
-//  2. Add an entry to BuiltinsMap
-//  3. Add the function object to BuiltinObjects array
-//  4. Implement the function logic
 package charlang
 
 import (
@@ -129,18 +66,15 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
-// PrintWriter is the default writer for printf and println builtins.
-// It defaults to os.Stdout but can be redirected for testing or logging.
 var (
+	// PrintWriter is the default writer for printf and println builtins.
 	PrintWriter io.Writer = os.Stdout
 )
 
-// BuiltinType represents a unique identifier for each built-in function.
-// These constants are used as indices into BuiltinObjects array and keys in BuiltinsMap.
+// BuiltinType represents a builtin type
 type BuiltinType int
 
-// Builtin constants define all available built-in functions.
-// Each constant corresponds to a built-in function implementation in BuiltinObjects.
+// Builtins
 const (
 	BuiltinAppend BuiltinType = iota
 
@@ -741,14 +675,7 @@ const (
 	BuiltinCap
 )
 
-// BuiltinsMap maps built-in function names to their BuiltinType identifiers.
-// This allows the compiler and VM to resolve function names to their implementations.
-// The map is exported for use by REPL and other tooling.
-//
-// Example:
-//
-//	builtinType := BuiltinsMap["print"]  // Returns BuiltinPrint
-//	builtinType := BuiltinsMap["len"]    // Returns BuiltinLen
+// BuiltinsMap is list of builtin types, exported for REPL.
 var BuiltinsMap = map[string]BuiltinType{
 	// funcs start
 
@@ -1680,14 +1607,7 @@ var BuiltinsMap = map[string]BuiltinType{
 
 }
 
-// BuiltinObjects contains the implementation objects for all built-in functions.
-// Each BuiltinType constant is used as an index into this array.
-// The array is indexed by BuiltinType value and contains BuiltinFunction objects.
-//
-// Example:
-//
-//	fn := BuiltinObjects[BuiltinPrint]  // Returns the print function object
-//	result, err := fn.Call(arg1, arg2)
+// BuiltinObjects is list of builtins, exported for REPL.
 var BuiltinObjects = [...]Object{
 	// funcs detail start
 
@@ -4792,11 +4712,6 @@ var BuiltinObjects = [...]Object{
 
 }
 
-// builtinMakeArrayFunc creates an array with specified length n and fills it with arg.
-// If n <= 0, returns arg as is.
-// If arg is already an Array, returns a slice of min(n, len(arg)) elements.
-// Otherwise, creates a new Array of length n where first element is arg and rest are Undefined.
-// This function is for internal use to help with array destructuring.
 func builtinMakeArrayFunc(n int, arg Object) (Object, error) {
 	if n <= 0 {
 		return arg, nil
@@ -4825,11 +4740,6 @@ func builtinMakeArrayFunc(n int, arg Object) (Object, error) {
 	return ret, nil
 }
 
-// builtinAppendFunc appends one or more elements to the target collection.
-// Supports Array, Bytes, Chars, and Undefined (creates new Array).
-// For Array: appends all arguments (c.Args and c.Vargs)
-// For Bytes/Chars: appends numeric types (int/uint/char) as bytes/chars
-// For Undefined: creates new Array and appends all arguments
 func builtinAppendFunc(c Call) (Object, error) {
 	target, ok := c.shift()
 	if !ok {
@@ -4903,10 +4813,6 @@ func builtinAppendFunc(c Call) (Object, error) {
 	}
 }
 
-// builtinRemoveItemsFunc removes items from array between start and end indices (inclusive).
-// Parameters: array, start index, end index
-// Returns a new array with items in the range [start, end] removed
-// start and end must be valid indices within the array bounds
 func builtinRemoveItemsFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -4952,10 +4858,6 @@ func builtinRemoveItemsFunc(c Call) (Object, error) {
 	return Undefined, NewCommonErrorWithPos(c, "unsupported type: (%T)%v", target, target)
 }
 
-// builtinRemoveItemFunc removes a single item from array at specified index.
-// Parameters: array, index
-// Returns a new array with the item at index removed
-// Index must be a valid position within array bounds
 func builtinRemoveItemFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -4990,11 +4892,6 @@ func builtinRemoveItemFunc(c Call) (Object, error) {
 	return Undefined, NewCommonErrorWithPos(c, "unsupported type: (%T)%v", target, target)
 }
 
-// builtinAppendListFunc appends all elements from source array/bytes/chars to target.
-// Parameters: target, source
-// Target can be Array, Bytes, Chars, or Undefined
-// Source should be of same type as target (Array for Array, etc.)
-// Returns modified target with source elements appended
 func builtinAppendListFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -5053,10 +4950,6 @@ func builtinAppendListFunc(c Call) (Object, error) {
 	}
 }
 
-// builtinResetFunc resets a collection to a new size/capacity.
-// Parameters: collection, [size], [capacity]
-// Supports Array, Bytes, Chars, Map, and String (empties it)
-// Returns the reset collection
 func builtinResetFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -5120,9 +5013,6 @@ func builtinResetFunc(c Call) (Object, error) {
 	}
 }
 
-// builtinDeleteFunc deletes a key-value pair from a map.
-// Parameters: map (must implement IndexDeleter), key
-// Returns error if arg is not a map/syncMap/IndexDeleter
 func builtinDeleteFunc(arg Object, key string) (err error) {
 	if v, ok := arg.(IndexDeleter); ok {
 		err = v.IndexDelete(ToStringObject(key))
@@ -5136,10 +5026,6 @@ func builtinDeleteFunc(arg Object, key string) (err error) {
 	return
 }
 
-// builtinGetArrayItemFunc gets an item from a collection at specified index.
-// Parameters: collection, index, [default]
-// Returns item at index, or default value if index is out of bounds
-// Supports any collection implementing LengthGetter interface
 func builtinGetArrayItemFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -5172,10 +5058,6 @@ func builtinGetArrayItemFunc(c Call) (Object, error) {
 	return args[0].IndexGet(Int(idxT))
 }
 
-// builtinGetMapItemFunc gets a value from a map by key.
-// Parameters: map, key, [default]
-// Returns value for key, or default value if key doesn't exist
-// Returns default if key lookup returns error or undefined
 func builtinGetMapItemFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -5210,10 +5092,6 @@ func builtinGetMapItemFunc(c Call) (Object, error) {
 	return valueT, nil
 }
 
-// builtinSetMapItemFunc sets a key-value pair in a map.
-// Parameters: map, key, value
-// Returns Undefined, nil on success
-// Returns error if first argument is not a Map
 func builtinSetMapItemFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -5234,9 +5112,6 @@ func builtinSetMapItemFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinCopyFunc creates a copy of the object if it implements Copier interface.
-// Otherwise returns the object as is.
-// Returns a new copy of the object or the original if not copiable
 func builtinCopyFunc(arg Object) Object {
 	if v, ok := arg.(Copier); ok {
 		return v.Copy()
@@ -5244,10 +5119,6 @@ func builtinCopyFunc(arg Object) Object {
 	return arg
 }
 
-// builtinRepeatFunc repeats the given object count times.
-// Parameters: object (array|string|bytes), count (non-negative integer)
-// Returns repeated object, or error if count is negative or type not supported
-// Supports Array, String, MutableString, and Bytes types
 func builtinRepeatFunc(arg Object, count int) (ret Object, err error) {
 	if count < 0 {
 		return nil, NewArgumentTypeError(
@@ -5280,13 +5151,6 @@ func builtinRepeatFunc(arg Object, count int) (ret Object, err error) {
 	return
 }
 
-// builtinContainsFunc checks if arg1 is contained in arg0.
-// Parameters: collection (map|array|string|bytes), value to check
-// For Map/SyncMap: checks if key exists
-// For Array: checks if value exists (using Equal comparison)
-// For String/MutableString: checks substring containment
-// For Bytes: checks if byte sequence exists
-// Returns Bool indicating whether value is contained
 func builtinContainsFunc(arg0, arg1 Object) (Object, error) {
 	var ok bool
 	switch obj := arg0.(type) {
@@ -5665,22 +5529,12 @@ func builtinSortReverseFunc(arg Object) (Object, error) {
 // 	return
 // }
 
-// builtinErrorFunc creates an error object with the given message.
-// Parameters: message (any type, converted to string)
-// Returns an Error object with name "error" and the message
 func builtinErrorFunc(arg Object) Object {
 	return &Error{Name: "error", Message: arg.String()}
 }
 
-// builtinTypeNameFunc returns the type name of the given object.
-// Parameters: object (any type)
-// Returns the type name as a string (e.g., "int", "string", "Array", etc.)
 func builtinTypeNameFunc(arg Object) Object { return ToStringObject(arg.TypeName()) }
 
-// builtinBoolFunc creates a boolean value from the argument.
-// Parameters: [value] (optional, any type)
-// If no argument provided, returns false
-// Otherwise returns true if value is truthy (not falsy), false otherwise
 func builtinBoolFunc(c Call) (Object, error) {
 	if c.Len() < 1 {
 		return Bool(false), nil
@@ -5689,26 +5543,12 @@ func builtinBoolFunc(c Call) (Object, error) {
 	return Bool(!c.Get(0).IsFalsy()), nil
 }
 
-// builtinIntFunc creates an integer value from int64.
-// Parameters: value (int64)
-// Returns an Int object
 func builtinIntFunc(v int64) Object { return Int(v) }
 
-// builtinUintFunc creates an unsigned integer value from uint64.
-// Parameters: value (uint64)
-// Returns a Uint object
 func builtinUintFunc(v uint64) Object { return Uint(v) }
 
-// builtinFloatFunc creates a float value from float64.
-// Parameters: value (float64)
-// Returns a Float object
 func builtinFloatFunc(v float64) Object { return Float(v) }
 
-// builtinByteFunc creates a byte value from argument.
-// Parameters: [value] (optional, any numeric or string type)
-// If no argument provided, returns Byte(0)
-// Supports: Bool (1 for true, 0 for false), Byte, Char, Int, Uint, Float, String
-// Returns a Byte object, or error if type not supported
 func builtinByteFunc(c Call) (Object, error) {
 	if c.Len() < 1 {
 		return Byte(0), nil
@@ -5742,10 +5582,6 @@ func builtinByteFunc(c Call) (Object, error) {
 	}
 }
 
-// builtinCharFunc creates a char/rune value from argument.
-// Parameters: value (numeric|string|bool)
-// Returns a Char object, or Undefined if conversion fails or value is invalid
-// Returns error if type is not supported (numeric, string, bool)
 func builtinCharFunc(arg Object) (Object, error) {
 	v, ok := ToChar(arg)
 	if ok && v != utf8.RuneError {
@@ -5761,7 +5597,6 @@ func builtinCharFunc(arg Object) (Object, error) {
 	)
 }
 
-// builtinStringFunc creates a string object from the first argument.
 func builtinStringFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -5791,7 +5626,6 @@ func builtinStringFunc(c Call) (Object, error) {
 	//	return s1, nil
 }
 
-// builtinMutableStringFunc creates a mutable string and optional member map pairs.
 func builtinMutableStringFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -5823,7 +5657,6 @@ func builtinMutableStringFunc(c Call) (Object, error) {
 
 // func builtinMutableStringFunc(arg Object) Object { return ToMutableStringObject(arg.String()) }
 
-// builtinBytesFunc creates a bytes object from arguments or converts a single value to bytes.
 func builtinBytesFunc(c Call) (Object, error) {
 	size := c.Len()
 
@@ -5860,7 +5693,6 @@ func builtinBytesFunc(c Call) (Object, error) {
 	return out, nil
 }
 
-// builtinBytesWithSizeFunc creates a bytes object with the specified length.
 func builtinBytesWithSizeFunc(c Call) (Object, error) {
 	sizeT := 0
 	if c.Len() > 0 {
@@ -5870,7 +5702,6 @@ func builtinBytesWithSizeFunc(c Call) (Object, error) {
 	return Bytes(make([]byte, sizeT)), nil
 }
 
-// builtinBytesWithCapFunc creates an empty bytes object with the specified capacity.
 func builtinBytesWithCapFunc(c Call) (Object, error) {
 	capT := 0
 	if c.Len() > 0 {
@@ -5880,7 +5711,6 @@ func builtinBytesWithCapFunc(c Call) (Object, error) {
 	return Bytes(make([]byte, 0, capT)), nil
 }
 
-// builtinCharsFunc converts supported values to a chars (rune slice) object.
 func builtinCharsFunc(arg Object) (ret Object, err error) {
 	switch obj := arg.(type) {
 	case Byte:
@@ -5965,7 +5795,6 @@ func builtinCharsFunc(arg Object) (ret Object, err error) {
 	return
 }
 
-// builtinPrintfFunc prints formatted text to PrintWriter.
 func builtinPrintfFunc(c Call) (ret Object, err error) {
 	ret = Undefined
 	switch size := c.Len(); size {
@@ -5985,7 +5814,6 @@ func builtinPrintfFunc(c Call) (ret Object, err error) {
 }
 
 // char add start
-// builtinSystemCmdFunc prints arguments with a trailing newline to PrintWriter.
 func builtinSystemCmdFunc(c Call) (ret Object, err error) {
 	ret = Undefined
 	switch size := c.Len(); size {
@@ -6005,7 +5833,6 @@ func builtinSystemCmdFunc(c Call) (ret Object, err error) {
 
 // char add end
 
-// builtinPrintlnFunc prints arguments with a trailing newline to PrintWriter.
 func builtinPrintlnFunc(c Call) (ret Object, err error) {
 	ret = Undefined
 	switch size := c.Len(); size {
@@ -6023,7 +5850,6 @@ func builtinPrintlnFunc(c Call) (ret Object, err error) {
 	return
 }
 
-// builtinSprintfFunc formats and returns a string using the provided format and arguments.
 func builtinSprintfFunc(c Call) (ret Object, err error) {
 	ret = Undefined
 	switch size := c.Len(); size {
@@ -6042,12 +5868,10 @@ func builtinSprintfFunc(c Call) (ret Object, err error) {
 	return
 }
 
-// builtinGlobalsFunc returns the global variables map from the current VM.
 func builtinGlobalsFunc(c Call) (Object, error) {
 	return c.VM().GetGlobals(), nil
 }
 
-// builtinIsErrorFunc checks whether a value is an error, or whether one error matches another.
 func builtinIsErrorFunc(c Call) (ret Object, err error) {
 	ret = False
 	switch c.Len() {
@@ -6069,85 +5893,71 @@ func builtinIsErrorFunc(c Call) (ret Object, err error) {
 	return
 }
 
-// builtinIsIntFunc reports whether the given object is of Int type.
 func builtinIsIntFunc(arg Object) Object {
 	_, ok := arg.(Int)
 	return Bool(ok)
 }
 
-// builtinIsUintFunc reports whether the given object is of Uint type.
 func builtinIsUintFunc(arg Object) Object {
 	_, ok := arg.(Uint)
 	return Bool(ok)
 }
 
-// builtinIsFloatFunc reports whether the given object is of Float type.
 func builtinIsFloatFunc(arg Object) Object {
 	_, ok := arg.(Float)
 	return Bool(ok)
 }
 
-// builtinIsCharFunc reports whether the given object is of Char type.
 func builtinIsCharFunc(arg Object) Object {
 	_, ok := arg.(Char)
 	return Bool(ok)
 }
 
-// builtinIsByteFunc reports whether the given object is of Byte type.
 func builtinIsByteFunc(arg Object) Object {
 	_, ok := arg.(Byte)
 	return Bool(ok)
 }
 
-// builtinIsBoolFunc reports whether the given object is of Bool type.
 func builtinIsBoolFunc(arg Object) Object {
 	_, ok := arg.(Bool)
 	return Bool(ok)
 }
 
-// builtinIsStringFunc reports whether the given object is of String type.
 func builtinIsStringFunc(arg Object) Object {
 	_, ok := arg.(String)
 	return Bool(ok)
 }
 
-// builtinIsBytesFunc reports whether the given object is of Bytes type.
 func builtinIsBytesFunc(arg Object) Object {
 	_, ok := arg.(Bytes)
 	return Bool(ok)
 }
 
-// builtinIsCharsFunc reports whether the given object is of Chars type.
 func builtinIsCharsFunc(arg Object) Object {
 	_, ok := arg.(Chars)
 	return Bool(ok)
 }
 
-// builtinIsMapFunc reports whether the given object is of Map type.
 func builtinIsMapFunc(arg Object) Object {
 	_, ok := arg.(Map)
 	return Bool(ok)
 }
 
-// builtinIsSyncMapFunc reports whether the given object is of SyncMap type.
 func builtinIsSyncMapFunc(arg Object) Object {
 	_, ok := arg.(*SyncMap)
 	return Bool(ok)
 }
 
-// builtinIsArrayFunc reports whether the given object is of Array type.
 func builtinIsArrayFunc(arg Object) Object {
 	_, ok := arg.(Array)
 	return Bool(ok)
 }
 
-// builtinIsUndefinedFunc reports whether the given object is Undefined.
 func builtinIsUndefinedFunc(arg Object) Object {
 	_, ok := arg.(*UndefinedType)
 	return Bool(ok)
 }
 
-// builtinIsFunctionFunc reports whether the given object is any function type.
 func builtinIsFunctionFunc(arg Object) Object {
 	_, ok := arg.(*CompiledFunction)
 	if ok {
@@ -6163,13 +5973,10 @@ func builtinIsFunctionFunc(arg Object) Object {
 	return Bool(ok)
 }
 
-// builtinIsCallableFunc reports whether the object can be called.
 func builtinIsCallableFunc(arg Object) Object { return Bool(arg.CanCall()) }
 
-// builtinIsIterableFunc reports whether the object can be iterated.
 func builtinIsIterableFunc(arg Object) Object { return Bool(arg.CanIterate()) }
 
-// CallExAdapter converts a CallableExFunc into a CallableFunc.
 func CallExAdapter(fn CallableExFunc) CallableFunc {
 	// tk.Pl("CallExAdapter: %v", fn)
 	return func(args ...Object) (Object, error) {
@@ -6179,7 +5986,6 @@ func CallExAdapter(fn CallableExFunc) CallableFunc {
 }
 
 // char add start
-// OneResultCallAdapter wraps CallableFunc and returns only one Object result.
 func OneResultCallAdapter(fn CallableFunc) func(args ...Object) Object {
 	// tk.Pl("CallExAdapter: %v", fn)
 	return func(args ...Object) Object {
@@ -6194,7 +6000,6 @@ func OneResultCallAdapter(fn CallableFunc) func(args ...Object) Object {
 	}
 }
 
-// OneResultCallExAdapter wraps CallableExFunc and returns only one Object result.
 func OneResultCallExAdapter(fn CallableExFunc) func(args ...Object) Object {
 	// tk.Pl("CallExAdapter: %v", fn)
 	return func(args ...Object) Object {
@@ -6209,7 +6014,6 @@ func OneResultCallExAdapter(fn CallableExFunc) func(args ...Object) Object {
 	}
 }
 
-// toArgsA converts call arguments from offset to []interface{}.
 func toArgsA(offset int, c Call) []interface{} {
 	size := c.Len()
 	vargs := make([]interface{}, 0, size-offset)
@@ -6219,7 +6023,6 @@ func toArgsA(offset int, c Call) []interface{} {
 	return vargs
 }
 
-// toArgsS converts call arguments from offset to []string.
 func toArgsS(offset int, c Call) []string {
 	size := c.Len()
 	vargs := make([]string, 0, size-offset)
@@ -6229,7 +6032,6 @@ func toArgsS(offset int, c Call) []string {
 	return vargs
 }
 
-// toArgsN converts call arguments from offset to []int.
 func toArgsN(offset int, c Call) []int {
 	size := c.Len()
 	vargs := make([]int, 0, size-offset)
@@ -6242,7 +6044,6 @@ func toArgsN(offset int, c Call) []int {
 // func converters
 
 // like tk.Pass
-// fnAR adapts func() to CallableFunc and always returns Undefined.
 func fnAR(fn func()) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		fn()
@@ -6250,7 +6051,6 @@ func fnAR(fn func()) CallableFunc {
 	}
 }
 
-// fnARex adapts func() to CallableExFunc and always returns Undefined.
 func fnARex(fn func()) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		fn()
@@ -6259,7 +6059,6 @@ func fnARex(fn func()) CallableExFunc {
 }
 
 // like tk.GetOSName
-// fnARS adapts func() string to CallableFunc returning String.
 func fnARS(fn func() string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		rs := fn()
@@ -6267,7 +6066,6 @@ func fnARS(fn func() string) CallableFunc {
 	}
 }
 
-// fnARSex adapts func() string to CallableExFunc returning String.
 func fnARSex(fn func() string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		rs := fn()
@@ -6276,7 +6074,6 @@ func fnARSex(fn func() string) CallableExFunc {
 }
 
 // like time.Now
-// fnART adapts func() time.Time to CallableFunc returning Time.
 func fnART(fn func() time.Time) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		rs := fn()
@@ -6284,7 +6081,6 @@ func fnART(fn func() time.Time) CallableFunc {
 	}
 }
 
-// fnARTex adapts func() time.Time to CallableExFunc returning Time.
 func fnARTex(fn func() time.Time) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		rs := fn()
@@ -6293,7 +6089,6 @@ func fnARTex(fn func() time.Time) CallableExFunc {
 }
 
 // like tk.RunTasker
-// fnARE adapts func() error to CallableFunc returning converted error result.
 func fnARE(fn func() error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		rs := fn()
@@ -6302,7 +6097,6 @@ func fnARE(fn func() error) CallableFunc {
 	}
 }
 
-// fnAREex adapts func() error to CallableExFunc returning converted error result.
 func fnAREex(fn func() error) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		rs := fn()
@@ -6312,7 +6106,6 @@ func fnAREex(fn func() error) CallableExFunc {
 }
 
 // like tk.GetTimeStampMid
-// fnATRS adapts func(time.Time) string to CallableFunc.
 func fnATRS(fn func(time.Time) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -6330,7 +6123,6 @@ func fnATRS(fn func(time.Time) string) CallableFunc {
 	}
 }
 
-// fnATRSex adapts func(time.Time) string to CallableExFunc.
 func fnATRSex(fn func(time.Time) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6351,7 +6143,6 @@ func fnATRSex(fn func(time.Time) string) CallableExFunc {
 }
 
 // like tk.FormatTime
-// fnATVsRS adapts func(time.Time, ...string) string to CallableFunc.
 func fnATVsRS(fn func(time.Time, ...string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -6371,7 +6162,6 @@ func fnATVsRS(fn func(time.Time, ...string) string) CallableFunc {
 	}
 }
 
-// fnATVsRSex adapts func(time.Time, ...string) string to CallableExFunc.
 func fnATVsRSex(fn func(time.Time, ...string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6394,7 +6184,6 @@ func fnATVsRSex(fn func(time.Time, ...string) string) CallableExFunc {
 }
 
 // like tk.TimeAddSecs
-// fnATFRT adapts func(time.Time, float64) time.Time to CallableFunc.
 func fnATFRT(fn func(time.Time, float64) time.Time) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -6414,7 +6203,6 @@ func fnATFRT(fn func(time.Time, float64) time.Time) CallableFunc {
 	}
 }
 
-// fnATFRTex adapts func(time.Time, float64) time.Time to CallableExFunc.
 func fnATFRTex(fn func(time.Time, float64) time.Time) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6437,7 +6225,6 @@ func fnATFRTex(fn func(time.Time, float64) time.Time) CallableExFunc {
 }
 
 // like tk.TimeAddDate
-// fnATIIIRT adapts func(time.Time, int, int, int) time.Time to CallableFunc.
 func fnATIIIRT(fn func(time.Time, int, int, int) time.Time) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 4 {
@@ -6459,7 +6246,6 @@ func fnATIIIRT(fn func(time.Time, int, int, int) time.Time) CallableFunc {
 	}
 }
 
-// fnATIIIRTex adapts func(time.Time, int, int, int) time.Time to CallableExFunc.
 func fnATIIIRTex(fn func(time.Time, int, int, int) time.Time) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6484,7 +6270,6 @@ func fnATIIIRTex(fn func(time.Time, int, int, int) time.Time) CallableExFunc {
 }
 
 // like tk.GetErrStrX
-// fnAARS adapts func(interface{}) string to CallableFunc.
 func fnAARS(fn func(interface{}) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -6496,7 +6281,6 @@ func fnAARS(fn func(interface{}) string) CallableFunc {
 	}
 }
 
-// fnAARSex adapts func(interface{}) string to CallableExFunc.
 func fnAARSex(fn func(interface{}) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
@@ -6509,7 +6293,6 @@ func fnAARSex(fn func(interface{}) string) CallableExFunc {
 }
 
 // like io.Copy
-// fnAWtRdRI64E adapts func(io.Writer, io.Reader) (int64, error) to CallableFunc.
 func fnAWtRdRI64E(fn func(io.Writer, io.Reader) (int64, error)) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -6538,7 +6321,6 @@ func fnAWtRdRI64E(fn func(io.Writer, io.Reader) (int64, error)) CallableFunc {
 	}
 }
 
-// fnAWtRdRI64Eex adapts func(io.Writer, io.Reader) (int64, error) to CallableExFunc.
 func fnAWtRdRI64Eex(fn func(io.Writer, io.Reader) (int64, error)) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6570,7 +6352,6 @@ func fnAWtRdRI64Eex(fn func(io.Writer, io.Reader) (int64, error)) CallableExFunc
 }
 
 // like os.GetEnv
-// fnASRS adapts func(string) string to CallableFunc.
 func fnASRS(fn func(string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -6582,7 +6363,6 @@ func fnASRS(fn func(string) string) CallableFunc {
 	}
 }
 
-// fnASRSex adapts func(string) string to CallableExFunc.
 func fnASRSex(fn func(string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
@@ -6620,7 +6400,6 @@ func fnASRSex(fn func(string) string) CallableExFunc {
 //}
 
 // like tk.ProcessHtmlTemplate
-// fnASSAVaRA adapts func(string, string, interface{}, ...string) interface{} to CallableFunc.
 func fnASSAVaRA(fn func(string, string, interface{}, ...string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 3 {
@@ -6635,7 +6414,6 @@ func fnASSAVaRA(fn func(string, string, interface{}, ...string) interface{}) Cal
 	}
 }
 
-// fnASSAVaRAex adapts func(string, string, interface{}, ...string) interface{} to CallableExFunc.
 func fnASSAVaRAex(fn func(string, string, interface{}, ...string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6653,7 +6431,6 @@ func fnASSAVaRAex(fn func(string, string, interface{}, ...string) interface{}) C
 }
 
 // like tk.RuneLen
-// fnASRI adapts func(string) int to CallableFunc.
 func fnASRI(fn func(string) int) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -6665,7 +6442,6 @@ func fnASRI(fn func(string) int) CallableFunc {
 	}
 }
 
-// fnASRIex adapts func(string) int to CallableExFunc.
 func fnASRIex(fn func(string) int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6680,7 +6456,6 @@ func fnASRIex(fn func(string) int) CallableExFunc {
 }
 
 // like tk.FromBase64
-// fnASRA adapts func(string) interface{} to CallableFunc.
 func fnASRA(fn func(string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -6692,7 +6467,6 @@ func fnASRA(fn func(string) interface{}) CallableFunc {
 	}
 }
 
-// fnASRAex adapts func(string) interface{} to CallableExFunc.
 func fnASRAex(fn func(string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6707,7 +6481,6 @@ func fnASRAex(fn func(string) interface{}) CallableExFunc {
 }
 
 // like filepath.Rel
-// fnASSRSE adapts func(string, string) (string, error) to CallableFunc.
 func fnASSRSE(fn func(string, string) (string, error)) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -6724,7 +6497,6 @@ func fnASSRSE(fn func(string, string) (string, error)) CallableFunc {
 	}
 }
 
-// fnASSRSEex adapts func(string, string) (string, error) to CallableExFunc.
 func fnASSRSEex(fn func(string, string) (string, error)) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6744,7 +6516,6 @@ func fnASSRSEex(fn func(string, string) (string, error)) CallableExFunc {
 }
 
 // like tk.CreateTempDir
-// fnASSVsRSE adapts func(string, string, ...string) (string, error) to CallableFunc.
 func fnASSVsRSE(fn func(string, string, ...string) (string, error)) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -6763,7 +6534,6 @@ func fnASSVsRSE(fn func(string, string, ...string) (string, error)) CallableFunc
 	}
 }
 
-// fnASSVsRSEex adapts func(string, string, ...string) (string, error) to CallableExFunc.
 func fnASSVsRSEex(fn func(string, string, ...string) (string, error)) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6785,7 +6555,6 @@ func fnASSVsRSEex(fn func(string, string, ...string) (string, error)) CallableEx
 }
 
 // like kanjikana.ConvertKanjiToRomaji
-// fnASRSE adapts func(string) (string, error) to CallableFunc.
 func fnASRSE(fn func(string) (string, error)) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -6803,7 +6572,6 @@ func fnASRSE(fn func(string) (string, error)) CallableFunc {
 	}
 }
 
-// fnASRSEex adapts func(string) (string, error) to CallableExFunc.
 func fnASRSEex(fn func(string) (string, error)) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6824,7 +6592,6 @@ func fnASRSEex(fn func(string) (string, error)) CallableExFunc {
 }
 
 // like strings.Contains
-// fnASSRB adapts func(string, string) bool to CallableFunc.
 func fnASSRB(fn func(string, string) bool) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -6836,7 +6603,6 @@ func fnASSRB(fn func(string, string) bool) CallableFunc {
 	}
 }
 
-// fnASSRBex adapts func(string, string) bool to CallableExFunc.
 func fnASSRBex(fn func(string, string) bool) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6851,7 +6617,6 @@ func fnASSRBex(fn func(string, string) bool) CallableExFunc {
 }
 
 // like tk.SetVar
-// fnASAR adapts func(string, interface{}) to CallableFunc.
 func fnASAR(fn func(string, interface{})) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -6863,7 +6628,6 @@ func fnASAR(fn func(string, interface{})) CallableFunc {
 	}
 }
 
-// fnASARex adapts func(string, interface{}) to CallableExFunc.
 func fnASARex(fn func(string, interface{})) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6878,7 +6642,6 @@ func fnASARex(fn func(string, interface{})) CallableExFunc {
 }
 
 // like tk.DeleteVar
-// fnASR adapts func(string) to CallableFunc returning Undefined.
 func fnASR(fn func(string)) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -6890,7 +6653,6 @@ func fnASR(fn func(string)) CallableFunc {
 	}
 }
 
-// fnASRex adapts func(string) to CallableExFunc returning Undefined.
 func fnASRex(fn func(string)) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6905,7 +6667,6 @@ func fnASRex(fn func(string)) CallableExFunc {
 }
 
 // like math.Sqrt
-// fnAFRF adapts func(float64) float64 to CallableFunc.
 func fnAFRF(fn func(float64) float64) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -6918,7 +6679,6 @@ func fnAFRF(fn func(float64) float64) CallableFunc {
 	}
 }
 
-// fnAFRFex adapts func(float64) float64 to CallableExFunc.
 func fnAFRFex(fn func(float64) float64) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
@@ -6932,7 +6692,6 @@ func fnAFRFex(fn func(float64) float64) CallableExFunc {
 }
 
 // like tk.CalDistanceOfLatLonToMeters
-// fnAFFFFRF adapts func(float64, float64, float64, float64) float64 to CallableFunc.
 func fnAFFFFRF(fn func(float64, float64, float64, float64) float64) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 4 {
@@ -6945,7 +6704,6 @@ func fnAFFFFRF(fn func(float64, float64, float64, float64) float64) CallableFunc
 	}
 }
 
-// fnAFFFFRFex adapts func(float64, float64, float64, float64) float64 to CallableExFunc.
 func fnAFFFFRFex(fn func(float64, float64, float64, float64) float64) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 4 {
@@ -6959,7 +6717,6 @@ func fnAFFFFRFex(fn func(float64, float64, float64, float64) float64) CallableEx
 }
 
 // like tk.Float64ToStr
-// fnAFRS adapts func(float64) string to CallableFunc.
 func fnAFRS(fn func(float64) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -6972,7 +6729,6 @@ func fnAFRS(fn func(float64) string) CallableFunc {
 	}
 }
 
-// fnAFRSex adapts func(float64) string to CallableExFunc.
 func fnAFRSex(fn func(float64) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -6988,7 +6744,6 @@ func fnAFRSex(fn func(float64) string) CallableExFunc {
 }
 
 // like tk.HexToBytes
-// fnASRLby adapts func(string) []byte to CallableFunc.
 func fnASRLby(fn func(string) []byte) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -7001,7 +6756,6 @@ func fnASRLby(fn func(string) []byte) CallableFunc {
 	}
 }
 
-// fnASRLbyex adapts func(string) []byte to CallableExFunc.
 func fnASRLbyex(fn func(string) []byte) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
@@ -7015,7 +6769,6 @@ func fnASRLbyex(fn func(string) []byte) CallableExFunc {
 }
 
 // like tk.IfFileExists
-// fnASRB adapts func(string) bool to CallableFunc.
 func fnASRB(fn func(string) bool) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -7027,7 +6780,6 @@ func fnASRB(fn func(string) bool) CallableFunc {
 	}
 }
 
-// fnASRBex adapts func(string) bool to CallableExFunc.
 func fnASRBex(fn func(string) bool) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
@@ -7040,7 +6792,6 @@ func fnASRBex(fn func(string) bool) CallableExFunc {
 }
 
 // like tk.SetClipText
-// fnASRE adapts func(string) error to CallableFunc.
 func fnASRE(fn func(string) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -7052,7 +6803,6 @@ func fnASRE(fn func(string) error) CallableFunc {
 	}
 }
 
-// fnASREex adapts func(string) error to CallableExFunc.
 func fnASREex(fn func(string) error) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
@@ -7065,7 +6815,6 @@ func fnASREex(fn func(string) error) CallableExFunc {
 }
 
 // like tk.RegFindFirstX
-// fnASSIRS adapts func(string, string, int) string to CallableFunc.
 func fnASSIRS(fn func(string, string, int) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 3 {
@@ -7077,7 +6826,6 @@ func fnASSIRS(fn func(string, string, int) string) CallableFunc {
 	}
 }
 
-// fnASSIRSex adapts func(string, string, int) string to CallableExFunc.
 func fnASSIRSex(fn func(string, string, int) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 3 {
@@ -7090,7 +6838,6 @@ func fnASSIRSex(fn func(string, string, int) string) CallableExFunc {
 }
 
 // like tk.SplitLines
-// fnASRLs adapts func(string) []string to CallableFunc.
 func fnASRLs(fn func(string) []string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -7102,7 +6849,6 @@ func fnASRLs(fn func(string) []string) CallableFunc {
 	}
 }
 
-// fnASRLsex adapts func(string) []string to CallableExFunc.
 func fnASRLsex(fn func(string) []string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
@@ -7115,7 +6861,6 @@ func fnASRLsex(fn func(string) []string) CallableExFunc {
 }
 
 // like tk.GetOSArgs
-// fnARLs adapts func() []string to CallableFunc.
 func fnARLs(fn func() []string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		rs := fn()
@@ -7123,7 +6868,6 @@ func fnARLs(fn func() []string) CallableFunc {
 	}
 }
 
-// fnARLsex adapts func() []string to CallableExFunc.
 func fnARLsex(fn func() []string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		rs := fn()
@@ -7132,7 +6876,6 @@ func fnARLsex(fn func() []string) CallableExFunc {
 }
 
 // like tk.RegFindFirstGroupsX
-// fnASSRLs adapts func(string, string) []string to CallableFunc.
 func fnASSRLs(fn func(string, string) []string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7144,7 +6887,6 @@ func fnASSRLs(fn func(string, string) []string) CallableFunc {
 	}
 }
 
-// fnASSRLsex adapts func(string, string) []string to CallableExFunc.
 func fnASSRLsex(fn func(string, string) []string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 2 {
@@ -7157,7 +6899,6 @@ func fnASSRLsex(fn func(string, string) []string) CallableExFunc {
 }
 
 // like tk.RegFindAllX
-// fnASSIRLs adapts func(string, string, int) []string to CallableFunc.
 func fnASSIRLs(fn func(string, string, int) []string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 3 {
@@ -7169,7 +6910,6 @@ func fnASSIRLs(fn func(string, string, int) []string) CallableFunc {
 	}
 }
 
-// fnASSIRLsex adapts func(string, string, int) []string to CallableExFunc.
 func fnASSIRLsex(fn func(string, string, int) []string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 3 {
@@ -7182,7 +6922,6 @@ func fnASSIRLsex(fn func(string, string, int) []string) CallableExFunc {
 }
 
 // like tk.RegFindAllIndexX
-// fnASSRA2N adapts func(string, string) [][]int to CallableFunc.
 func fnASSRA2N(fn func(string, string) [][]int) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7194,7 +6933,6 @@ func fnASSRA2N(fn func(string, string) [][]int) CallableFunc {
 	}
 }
 
-// fnASSRA2Nex adapts func(string, string) [][]int to CallableExFunc.
 func fnASSRA2Nex(fn func(string, string) [][]int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7209,7 +6947,6 @@ func fnASSRA2Nex(fn func(string, string) [][]int) CallableExFunc {
 }
 
 // like tk.RegSplitX
-// fnASSViRLs adapts func(string, string, ...int) []string to CallableFunc.
 func fnASSViRLs(fn func(string, string, ...int) []string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7229,7 +6966,6 @@ func fnASSViRLs(fn func(string, string, ...int) []string) CallableFunc {
 	}
 }
 
-// fnASSViRLsex adapts func(string, string, ...int) []string to CallableExFunc.
 func fnASSViRLsex(fn func(string, string, ...int) []string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7251,7 +6987,6 @@ func fnASSViRLsex(fn func(string, string, ...int) []string) CallableExFunc {
 }
 
 // like tk.RegFindAllGroupsX
-// fnASSRLls adapts func(string, string) [][]string to CallableFunc.
 func fnASSRLls(fn func(string, string) [][]string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7263,7 +6998,6 @@ func fnASSRLls(fn func(string, string) [][]string) CallableFunc {
 	}
 }
 
-// fnASSRLlsex adapts func(string, string) [][]string to CallableExFunc.
 func fnASSRLlsex(fn func(string, string) [][]string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7300,7 +7034,6 @@ func fnASSRLlsex(fn func(string, string) [][]string) CallableExFunc {
 // }
 
 // like tk.SaveStringToFile
-// fnASSRS adapts func(string, string) string to CallableFunc.
 func fnASSRS(fn func(string, string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7312,7 +7045,6 @@ func fnASSRS(fn func(string, string) string) CallableFunc {
 	}
 }
 
-// fnASSRSex adapts func(string, string) string to CallableExFunc.
 func fnASSRSex(fn func(string, string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 2 {
@@ -7325,7 +7057,6 @@ func fnASSRSex(fn func(string, string) string) CallableExFunc {
 }
 
 // like tk.GetJSONNodeStrings
-// fnASSRA adapts func(string, string) interface{} to CallableFunc.
 func fnASSRA(fn func(string, string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7337,7 +7068,6 @@ func fnASSRA(fn func(string, string) interface{}) CallableFunc {
 	}
 }
 
-// fnASSRAex adapts func(string, string) interface{} to CallableExFunc.
 func fnASSRAex(fn func(string, string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7352,7 +7082,6 @@ func fnASSRAex(fn func(string, string) interface{}) CallableExFunc {
 }
 
 // like tk.AddSimpleTask
-// fnASDlRE adapts func(string, delegate) error to CallableFunc.
 func fnASDlRE(fn func(string, func(argsA ...interface{}) interface{}) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7370,7 +7099,6 @@ func fnASDlRE(fn func(string, func(argsA ...interface{}) interface{}) error) Cal
 	}
 }
 
-// fnASDlREex adapts func(string, delegate) error to CallableExFunc.
 func fnASDlREex(fn func(string, func(argsA ...interface{}) interface{}) error) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7391,7 +7119,6 @@ func fnASDlREex(fn func(string, func(argsA ...interface{}) interface{}) error) C
 }
 
 // like tk.EncryptStreamByTXDEF
-// fnARSWRE adapts func(io.Reader, string, io.Writer) error to CallableFunc.
 func fnARSWRE(fn func(io.Reader, string, io.Writer) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 3 {
@@ -7420,7 +7147,6 @@ func fnARSWRE(fn func(io.Reader, string, io.Writer) error) CallableFunc {
 	}
 }
 
-// fnARSWREex adapts func(io.Reader, string, io.Writer) error to CallableExFunc.
 func fnARSWREex(fn func(io.Reader, string, io.Writer) error) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7452,7 +7178,6 @@ func fnARSWREex(fn func(io.Reader, string, io.Writer) error) CallableExFunc {
 }
 
 // like tk.CalTextSimilarity
-// fnASSRF adapts func(string, string) float64 to CallableFunc.
 func fnASSRF(fn func(string, string) float64) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7464,7 +7189,6 @@ func fnASSRF(fn func(string, string) float64) CallableFunc {
 	}
 }
 
-// fnASSRFex adapts func(string, string) float64 to CallableExFunc.
 func fnASSRFex(fn func(string, string) float64) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7479,7 +7203,6 @@ func fnASSRFex(fn func(string, string) float64) CallableExFunc {
 }
 
 // like tk.GetTextSimilarity
-// fnASSVIRF adapts func(string, string, ...int) float64 to CallableFunc.
 func fnASSVIRF(fn func(string, string, ...int) float64) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7493,7 +7216,6 @@ func fnASSVIRF(fn func(string, string, ...int) float64) CallableFunc {
 	}
 }
 
-// fnASSVIRFex adapts func(string, string, ...int) float64 to CallableExFunc.
 func fnASSVIRFex(fn func(string, string, ...int) float64) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7510,7 +7232,6 @@ func fnASSVIRFex(fn func(string, string, ...int) float64) CallableExFunc {
 }
 
 // like strings.Repeat
-// fnASIRS adapts func(string, int) string to CallableFunc.
 func fnASIRS(fn func(string, int) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7522,7 +7243,6 @@ func fnASIRS(fn func(string, int) string) CallableFunc {
 	}
 }
 
-// fnASIRSex adapts func(string, int) string to CallableExFunc.
 func fnASIRSex(fn func(string, int) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7537,7 +7257,6 @@ func fnASIRSex(fn func(string, int) string) CallableExFunc {
 }
 
 // like tk.LoadLinesFromFileLimitE
-// fnASIRSE adapts func(string, int) (string, error) to CallableFunc.
 func fnASIRSE(fn func(string, int) (string, error)) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7554,7 +7273,6 @@ func fnASIRSE(fn func(string, int) (string, error)) CallableFunc {
 	}
 }
 
-// fnASIRSEex adapts func(string, int) (string, error) to CallableExFunc.
 func fnASIRSEex(fn func(string, int) (string, error)) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7574,7 +7292,6 @@ func fnASIRSEex(fn func(string, int) (string, error)) CallableExFunc {
 }
 
 // like tk.RegReplaceX
-// fnASSSRS adapts func(string, string, string) string to CallableFunc.
 func fnASSSRS(fn func(string, string, string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 3 {
@@ -7586,7 +7303,6 @@ func fnASSSRS(fn func(string, string, string) string) CallableFunc {
 	}
 }
 
-// fnASSSRSex adapts func(string, string, string) string to CallableExFunc.
 func fnASSSRSex(fn func(string, string, string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 3 {
@@ -7599,7 +7315,6 @@ func fnASSSRSex(fn func(string, string, string) string) CallableExFunc {
 }
 
 // like tk.FindFirstDiffPosInStrs
-// fnASSRI adapts func(string, string) int to CallableFunc.
 func fnASSRI(fn func(string, string) int) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7611,7 +7326,6 @@ func fnASSRI(fn func(string, string) int) CallableFunc {
 	}
 }
 
-// fnASSRIex adapts func(string, string) int to CallableExFunc.
 func fnASSRIex(fn func(string, string) int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 2 {
@@ -7624,7 +7338,6 @@ func fnASSRIex(fn func(string, string) int) CallableExFunc {
 }
 
 // like tk.FindSubStringAll
-// fnASSRA2I adapts func(string, string) [][]int to CallableFunc.
 func fnASSRA2I(fn func(string, string) [][]int) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7636,7 +7349,6 @@ func fnASSRA2I(fn func(string, string) [][]int) CallableFunc {
 	}
 }
 
-// fnASSRA2Iex adapts func(string, string) [][]int to CallableExFunc.
 func fnASSRA2Iex(fn func(string, string) [][]int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7651,7 +7363,6 @@ func fnASSRA2Iex(fn func(string, string) [][]int) CallableExFunc {
 }
 
 // like os.SetEnv
-// fnASSRE adapts func(string, string) error to CallableFunc.
 func fnASSRE(fn func(string, string) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7663,7 +7374,6 @@ func fnASSRE(fn func(string, string) error) CallableFunc {
 	}
 }
 
-// fnASSREex adapts func(string, string) error to CallableExFunc.
 func fnASSREex(fn func(string, string) error) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7678,7 +7388,6 @@ func fnASSREex(fn func(string, string) error) CallableExFunc {
 }
 
 // like filepath.Join
-// fnAVsRS adapts variadic string-to-string functions to CallableFunc.
 func fnAVsRS(fn func(...string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		rs := fn(ObjectsToS(args)...)
@@ -7686,7 +7395,6 @@ func fnAVsRS(fn func(...string) string) CallableFunc {
 	}
 }
 
-// fnAVsRSex adapts variadic string-to-string functions to CallableExFunc.
 func fnAVsRSex(fn func(...string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7697,7 +7405,6 @@ func fnAVsRSex(fn func(...string) string) CallableExFunc {
 }
 
 // like tk.GetSystemInfo
-// fnAVsRA adapts variadic string-to-interface functions to CallableFunc.
 func fnAVsRA(fn func(...string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		rs := fn(ObjectsToS(args)...)
@@ -7705,7 +7412,6 @@ func fnAVsRA(fn func(...string) interface{}) CallableFunc {
 	}
 }
 
-// fnAVsRAex adapts variadic string-to-interface functions to CallableExFunc.
 func fnAVsRAex(fn func(...string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7716,7 +7422,6 @@ func fnAVsRAex(fn func(...string) interface{}) CallableExFunc {
 }
 
 // like tk.StartSocksServer
-// fnAVsRE adapts variadic string-to-error functions to CallableFunc.
 func fnAVsRE(fn func(...string) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		rs := fn(ObjectsToS(args)...)
@@ -7724,7 +7429,6 @@ func fnAVsRE(fn func(...string) error) CallableFunc {
 	}
 }
 
-// fnAVsREex adapts variadic string-to-error functions to CallableExFunc.
 func fnAVsREex(fn func(...string) error) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7735,7 +7439,6 @@ func fnAVsREex(fn func(...string) error) CallableExFunc {
 }
 
 // like tk.GetSeq
-// fnARI adapts func() int to CallableFunc.
 func fnARI(fn func() int) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		rs := fn()
@@ -7743,7 +7446,6 @@ func fnARI(fn func() int) CallableFunc {
 	}
 }
 
-// fnARIex adapts func() int to CallableExFunc.
 func fnARIex(fn func() int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		rs := fn()
@@ -7752,7 +7454,6 @@ func fnARIex(fn func() int) CallableExFunc {
 }
 
 // like tk.GetChar
-// fnARA adapts func() interface{} to CallableFunc.
 func fnARA(fn func() interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		rs := fn()
@@ -7760,7 +7461,6 @@ func fnARA(fn func() interface{}) CallableFunc {
 	}
 }
 
-// fnARAex adapts func() interface{} to CallableExFunc.
 func fnARAex(fn func() interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		rs := fn()
@@ -7769,7 +7469,6 @@ func fnARAex(fn func() interface{}) CallableExFunc {
 }
 
 // like tk.SystemCmd
-// fnASVsRS adapts func(string, ...string) string to CallableFunc.
 func fnASVsRS(fn func(string, ...string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -7784,7 +7483,6 @@ func fnASVsRS(fn func(string, ...string) string) CallableFunc {
 	}
 }
 
-// fnASVsRSex adapts func(string, ...string) string to CallableExFunc.
 func fnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7803,7 +7501,6 @@ func fnASVsRSex(fn func(string, ...string) string) CallableExFunc {
 }
 
 // like tk.IntToStrX
-// fnAAVsRS adapts func(interface{}, ...string) string to CallableFunc.
 func fnAAVsRS(fn func(interface{}, ...string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -7818,7 +7515,6 @@ func fnAAVsRS(fn func(interface{}, ...string) string) CallableFunc {
 	}
 }
 
-// fnAAVsRSex adapts func(interface{}, ...string) string to CallableExFunc.
 func fnAAVsRSex(fn func(interface{}, ...string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7835,7 +7531,6 @@ func fnAAVsRSex(fn func(interface{}, ...string) string) CallableExFunc {
 }
 
 // like tk.EncryptDataByTXDEF
-// fnALyVsRLy adapts func([]byte, ...string) []byte to CallableFunc.
 func fnALyVsRLy(fn func([]byte, ...string) []byte) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -7856,7 +7551,6 @@ func fnALyVsRLy(fn func([]byte, ...string) []byte) CallableFunc {
 	}
 }
 
-// fnALyVsRLyex adapts func([]byte, ...string) []byte to CallableExFunc.
 func fnALyVsRLyex(fn func([]byte, ...string) []byte) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7879,7 +7573,6 @@ func fnALyVsRLyex(fn func([]byte, ...string) []byte) CallableExFunc {
 }
 
 // like tk.EncryptDataByTXDEE
-// fnALySRLy adapts func([]byte, string) []byte to CallableFunc.
 func fnALySRLy(fn func([]byte, string) []byte) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7898,7 +7591,6 @@ func fnALySRLy(fn func([]byte, string) []byte) CallableFunc {
 	}
 }
 
-// fnALySRLyex adapts func([]byte, string) []byte to CallableExFunc.
 func fnALySRLyex(fn func([]byte, string) []byte) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7920,7 +7612,6 @@ func fnALySRLyex(fn func([]byte, string) []byte) CallableExFunc {
 }
 
 // like tk.LoadImageFromBytes
-// fnALyVsRA adapts func([]byte, ...string) interface{} to CallableFunc.
 func fnALyVsRA(fn func([]byte, ...string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -7941,7 +7632,6 @@ func fnALyVsRA(fn func([]byte, ...string) interface{}) CallableFunc {
 	}
 }
 
-// fnALyVsRAex adapts func([]byte, ...string) interface{} to CallableExFunc.
 func fnALyVsRAex(fn func([]byte, ...string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -7964,7 +7654,6 @@ func fnALyVsRAex(fn func([]byte, ...string) interface{}) CallableExFunc {
 }
 
 // like tk.GetFileContentInArchiveBytes
-// fnALySVsRA adapts func([]byte, string, ...string) interface{} to CallableFunc.
 func fnALySVsRA(fn func([]byte, string, ...string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -7985,7 +7674,6 @@ func fnALySVsRA(fn func([]byte, string, ...string) interface{}) CallableFunc {
 	}
 }
 
-// fnALySVsRAex adapts func([]byte, string, ...string) interface{} to CallableExFunc.
 func fnALySVsRAex(fn func([]byte, string, ...string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8009,7 +7697,6 @@ func fnALySVsRAex(fn func([]byte, string, ...string) interface{}) CallableExFunc
 }
 
 // like tk.BytesStartsWith
-// fnALyARB adapts func([]byte, interface{}) bool to CallableFunc.
 func fnALyARB(fn func([]byte, interface{}) bool) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -8028,7 +7715,6 @@ func fnALyARB(fn func([]byte, interface{}) bool) CallableFunc {
 	}
 }
 
-// fnALyARBex adapts func([]byte, interface{}) bool to CallableExFunc.
 func fnALyARBex(fn func([]byte, interface{}) bool) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8049,7 +7735,6 @@ func fnALyARBex(fn func([]byte, interface{}) bool) CallableExFunc {
 }
 
 // like tk.BytesIndex
-// fnALyARI adapts func([]byte, interface{}) int to CallableFunc.
 func fnALyARI(fn func([]byte, interface{}) int) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -8068,7 +7753,6 @@ func fnALyARI(fn func([]byte, interface{}) int) CallableFunc {
 	}
 }
 
-// fnALyARIex adapts func([]byte, interface{}) int to CallableExFunc.
 func fnALyARIex(fn func([]byte, interface{}) int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8089,7 +7773,6 @@ func fnALyARIex(fn func([]byte, interface{}) int) CallableExFunc {
 }
 
 // like tk.IsDataEncryptedByTXDEF
-// fnALyRB adapts func([]byte) bool to CallableFunc.
 func fnALyRB(fn func([]byte) bool) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -8108,7 +7791,6 @@ func fnALyRB(fn func([]byte) bool) CallableFunc {
 	}
 }
 
-// fnALyRBex adapts func([]byte) bool to CallableExFunc.
 func fnALyRBex(fn func([]byte) bool) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8129,7 +7811,6 @@ func fnALyRBex(fn func([]byte) bool) CallableExFunc {
 }
 
 // like tk.ToPinyin
-// fnASVsRA adapts func(string, ...string) interface{} to CallableFunc.
 func fnASVsRA(fn func(string, ...string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -8144,7 +7825,6 @@ func fnASVsRA(fn func(string, ...string) interface{}) CallableFunc {
 	}
 }
 
-// fnASVsRAex adapts func(string, ...string) interface{} to CallableExFunc.
 func fnASVsRAex(fn func(string, ...string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8163,7 +7843,6 @@ func fnASVsRAex(fn func(string, ...string) interface{}) CallableExFunc {
 }
 
 // like tk.LoadBytesInArchive
-// fnASSVsRA adapts func(string, string, ...string) interface{} to CallableFunc.
 func fnASSVsRA(fn func(string, string, ...string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -8178,7 +7857,6 @@ func fnASSVsRA(fn func(string, string, ...string) interface{}) CallableFunc {
 	}
 }
 
-// fnASSVsRAex adapts func(string, string, ...string) interface{} to CallableExFunc.
 func fnASSVsRAex(fn func(string, string, ...string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8196,7 +7874,6 @@ func fnASSVsRAex(fn func(string, string, ...string) interface{}) CallableExFunc 
 }
 
 // like tk.ExtractFileInArchive
-// fnASSSVsRA adapts func(string, string, string, ...string) interface{} to CallableFunc.
 func fnASSSVsRA(fn func(string, string, string, ...string) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 3 {
@@ -8211,7 +7888,6 @@ func fnASSSVsRA(fn func(string, string, string, ...string) interface{}) Callable
 	}
 }
 
-// fnASSSVsRAex adapts func(string, string, string, ...string) interface{} to CallableExFunc.
 func fnASSSVsRAex(fn func(string, string, string, ...string) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8229,7 +7905,6 @@ func fnASSSVsRAex(fn func(string, string, string, ...string) interface{}) Callab
 }
 
 // like tk.RenameFile
-// fnASSVsRE adapts func(string, string, ...string) error to CallableFunc.
 func fnASSVsRE(fn func(string, string, ...string) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -8244,7 +7919,6 @@ func fnASSVsRE(fn func(string, string, ...string) error) CallableFunc {
 	}
 }
 
-// fnASSVsREex adapts func(string, string, ...string) error to CallableExFunc.
 func fnASSVsREex(fn func(string, string, ...string) error) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8262,7 +7936,6 @@ func fnASSVsREex(fn func(string, string, ...string) error) CallableExFunc {
 }
 
 // like tk.ZipPathsToFile
-// fnALsSVsRE adapts func([]string, string, ...string) error to CallableFunc.
 func fnALsSVsRE(fn func([]string, string, ...string) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -8282,7 +7955,6 @@ func fnALsSVsRE(fn func([]string, string, ...string) error) CallableFunc {
 	}
 }
 
-// fnALsSVsREex adapts func([]string, string, ...string) error to CallableExFunc.
 func fnALsSVsREex(fn func([]string, string, ...string) error) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8305,7 +7977,6 @@ func fnALsSVsREex(fn func([]string, string, ...string) error) CallableExFunc {
 }
 
 // like tk.InStrings
-// fnASVsRB adapts func(string, ...string) bool to CallableFunc.
 func fnASVsRB(fn func(string, ...string) bool) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -8318,7 +7989,6 @@ func fnASVsRB(fn func(string, ...string) bool) CallableFunc {
 	}
 }
 
-// fnASVsRBex adapts func(string, ...string) bool to CallableExFunc.
 func fnASVsRBex(fn func(string, ...string) bool) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8333,7 +8003,6 @@ func fnASVsRBex(fn func(string, ...string) bool) CallableExFunc {
 }
 
 // like tk.ValidateOtpCode
-// fnASSVsRB adapts func(string, string, ...string) bool to CallableFunc.
 func fnASSVsRB(fn func(string, string, ...string) bool) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -8346,7 +8015,6 @@ func fnASSVsRB(fn func(string, string, ...string) bool) CallableFunc {
 	}
 }
 
-// fnASSVsRBex adapts func(string, string, ...string) bool to CallableExFunc.
 func fnASSVsRBex(fn func(string, string, ...string) bool) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8361,7 +8029,6 @@ func fnASSVsRBex(fn func(string, string, ...string) bool) CallableExFunc {
 }
 
 // like tk.GenerateToken
-// fnASSSVsRS adapts func(string, string, string, ...string) string to CallableFunc.
 func fnASSSVsRS(fn func(string, string, string, ...string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 3 {
@@ -8376,7 +8043,6 @@ func fnASSSVsRS(fn func(string, string, string, ...string) string) CallableFunc 
 	}
 }
 
-// fnASSSVsRSex adapts func(string, string, string, ...string) string to CallableExFunc.
 func fnASSSVsRSex(fn func(string, string, string, ...string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8394,7 +8060,6 @@ func fnASSSVsRSex(fn func(string, string, string, ...string) string) CallableExF
 }
 
 // like tk.GetFileList
-// fnASVsRLmss adapts func(string, ...string) []map[string]string to CallableFunc.
 func fnASVsRLmss(fn func(string, ...string) []map[string]string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -8407,7 +8072,6 @@ func fnASVsRLmss(fn func(string, ...string) []map[string]string) CallableFunc {
 	}
 }
 
-// fnASVsRLmssex adapts func(string, ...string) []map[string]string to CallableExFunc.
 func fnASVsRLmssex(fn func(string, ...string) []map[string]string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8423,7 +8087,6 @@ func fnASVsRLmssex(fn func(string, ...string) []map[string]string) CallableExFun
 }
 
 // like tk.ErrStrf
-// fnASVaRS adapts func(string, ...interface{}) string to CallableFunc.
 func fnASVaRS(fn func(string, ...interface{}) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -8437,7 +8100,6 @@ func fnASVaRS(fn func(string, ...interface{}) string) CallableFunc {
 	}
 }
 
-// fnASVaRSex adapts func(string, ...interface{}) string to CallableExFunc.
 func fnASVaRSex(fn func(string, ...interface{}) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8454,7 +8116,6 @@ func fnASVaRSex(fn func(string, ...interface{}) string) CallableExFunc {
 }
 
 // like tk.IsCronExprDue
-// fnASVaRB adapts func(string, ...interface{}) bool to CallableFunc.
 func fnASVaRB(fn func(string, ...interface{}) bool) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -8468,7 +8129,6 @@ func fnASVaRB(fn func(string, ...interface{}) bool) CallableFunc {
 	}
 }
 
-// fnASVaRBex adapts func(string, ...interface{}) bool to CallableExFunc.
 func fnASVaRBex(fn func(string, ...interface{}) bool) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8485,7 +8145,6 @@ func fnASVaRBex(fn func(string, ...interface{}) bool) CallableExFunc {
 }
 
 // like fmt.Sprintln
-// fnAVaRS adapts variadic interface-to-string functions to CallableFunc.
 func fnAVaRS(fn func(...interface{}) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		vargs := ObjectsToI(args[0:])
@@ -8495,7 +8154,6 @@ func fnAVaRS(fn func(...interface{}) string) CallableFunc {
 	}
 }
 
-// fnAVaRSex adapts variadic interface-to-string functions to CallableExFunc.
 func fnAVaRSex(fn func(...interface{}) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8508,7 +8166,6 @@ func fnAVaRSex(fn func(...interface{}) string) CallableExFunc {
 }
 
 // like tk.Errf
-// fnASVaRE adapts func(string, ...interface{}) error to CallableFunc.
 func fnASVaRE(fn func(string, ...interface{}) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -8522,7 +8179,6 @@ func fnASVaRE(fn func(string, ...interface{}) error) CallableFunc {
 	}
 }
 
-// fnASVaREex adapts func(string, ...interface{}) error to CallableExFunc.
 func fnASVaREex(fn func(string, ...interface{}) error) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8539,7 +8195,6 @@ func fnASVaREex(fn func(string, ...interface{}) error) CallableExFunc {
 }
 
 // like tk.ErrStrf
-// fnAAVaRS adapts func(interface{}, ...interface{}) string to CallableFunc.
 func fnAAVaRS(fn func(interface{}, ...interface{}) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -8553,7 +8208,6 @@ func fnAAVaRS(fn func(interface{}, ...interface{}) string) CallableFunc {
 	}
 }
 
-// fnAAVaRSex adapts func(interface{}, ...interface{}) string to CallableExFunc.
 func fnAAVaRSex(fn func(interface{}, ...interface{}) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8570,7 +8224,6 @@ func fnAAVaRSex(fn func(interface{}, ...interface{}) string) CallableExFunc {
 }
 
 // like tk.Compress
-// fnAAVaRA adapts func(interface{}, ...interface{}) interface{} to CallableFunc.
 func fnAAVaRA(fn func(interface{}, ...interface{}) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -8584,7 +8237,6 @@ func fnAAVaRA(fn func(interface{}, ...interface{}) interface{}) CallableFunc {
 	}
 }
 
-// fnAAVaRAex adapts func(interface{}, ...interface{}) interface{} to CallableExFunc.
 func fnAAVaRAex(fn func(interface{}, ...interface{}) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8601,7 +8253,6 @@ func fnAAVaRAex(fn func(interface{}, ...interface{}) interface{}) CallableExFunc
 }
 
 // like tk.LoadBytesFromFile
-// fnASViRA adapts func(string, ...int) interface{} to CallableFunc.
 func fnASViRA(fn func(string, ...int) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -8614,7 +8265,6 @@ func fnASViRA(fn func(string, ...int) interface{}) CallableFunc {
 	}
 }
 
-// fnASViRAex adapts func(string, ...int) interface{} to CallableExFunc.
 func fnASViRAex(fn func(string, ...int) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
@@ -8627,7 +8277,6 @@ func fnASViRAex(fn func(string, ...int) interface{}) CallableExFunc {
 }
 
 // like tk.StrToIntWithDefaultValue
-// fnASViRI adapts func(string, ...int) int to CallableFunc.
 func fnASViRI(fn func(string, ...int) int) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -8640,7 +8289,6 @@ func fnASViRI(fn func(string, ...int) int) CallableFunc {
 	}
 }
 
-// fnASViRIex adapts func(string, ...int) int to CallableExFunc.
 func fnASViRIex(fn func(string, ...int) int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
@@ -8653,7 +8301,6 @@ func fnASViRIex(fn func(string, ...int) int) CallableExFunc {
 }
 
 // like tk.SaveBytesToFileE(func(bytesA []byte, fileA string) error)
-// fnALbySRE adapts func([]byte, string) error to CallableFunc.
 func fnALbySRE(fn func([]byte, string) error) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -8670,7 +8317,6 @@ func fnALbySRE(fn func([]byte, string) error) CallableFunc {
 	}
 }
 
-// fnALbySREex adapts func([]byte, string) error to CallableExFunc.
 func fnALbySREex(fn func([]byte, string) error) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 2 {
@@ -8688,7 +8334,6 @@ func fnALbySREex(fn func([]byte, string) error) CallableExFunc {
 }
 
 // like tk.CompareBytes(func([]byte, []byte, ...int) [][]int)
-// fnALbyLbyViRLLi adapts func([]byte, []byte, ...int) [][]int to CallableFunc.
 func fnALbyLbyViRLLi(fn func([]byte, []byte, ...int) [][]int) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -8711,7 +8356,6 @@ func fnALbyLbyViRLLi(fn func([]byte, []byte, ...int) [][]int) CallableFunc {
 	}
 }
 
-// fnALbyLbyViRLLiex adapts func([]byte, []byte, ...int) [][]int to CallableExFunc.
 func fnALbyLbyViRLLiex(fn func([]byte, []byte, ...int) [][]int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8736,7 +8380,6 @@ func fnALbyLbyViRLLiex(fn func([]byte, []byte, ...int) [][]int) CallableExFunc {
 }
 
 // like tk.CompareText(func(string, string, ...int) [][]int)
-// fnASSViRLLi adapts func(string, string, ...int) [][]int to CallableFunc.
 func fnASSViRLLi(fn func(string, string, ...int) [][]int) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -8752,7 +8395,6 @@ func fnASSViRLLi(fn func(string, string, ...int) [][]int) CallableFunc {
 	}
 }
 
-// fnASSViRLLiex adapts func(string, string, ...int) [][]int to CallableExFunc.
 func fnASSViRLLiex(fn func(string, string, ...int) [][]int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8771,7 +8413,6 @@ func fnASSViRLLiex(fn func(string, string, ...int) [][]int) CallableExFunc {
 }
 
 // like tk.GetSwitchWithDefaultIntValue
-// fnALsSViRI adapts func([]string, string, ...int) int to CallableFunc.
 func fnALsSViRI(fn func([]string, string, ...int) int) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -8788,7 +8429,6 @@ func fnALsSViRI(fn func([]string, string, ...int) int) CallableFunc {
 	}
 }
 
-// fnALsSViRIex adapts func([]string, string, ...int) int to CallableExFunc.
 func fnALsSViRIex(fn func([]string, string, ...int) int) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8807,7 +8447,6 @@ func fnALsSViRIex(fn func([]string, string, ...int) int) CallableExFunc {
 }
 
 // like tk.GetAllParameters
-// fnALsRLs adapts func([]string) []string to CallableFunc.
 func fnALsRLs(fn func([]string) []string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -8825,7 +8464,6 @@ func fnALsRLs(fn func([]string) []string) CallableFunc {
 	}
 }
 
-// fnALsRLsex adapts func([]string) []string to CallableExFunc.
 func fnALsRLsex(fn func([]string) []string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8845,7 +8483,6 @@ func fnALsRLsex(fn func([]string) []string) CallableExFunc {
 }
 
 // like tk.LimitString
-// fnASIVsRS adapts func(string, int, ...string) string to CallableFunc.
 func fnASIVsRS(fn func(string, int, ...string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -8864,7 +8501,6 @@ func fnASIVsRS(fn func(string, int, ...string) string) CallableFunc {
 	}
 }
 
-// fnASIVsRSex adapts func(string, int, ...string) string to CallableExFunc.
 func fnASIVsRSex(fn func(string, int, ...string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 2 {
@@ -8884,7 +8520,6 @@ func fnASIVsRSex(fn func(string, int, ...string) string) CallableExFunc {
 }
 
 // like tk.GetSubString
-// fnASIIVsRS adapts func(string, int, int, ...string) string to CallableFunc.
 func fnASIIVsRS(fn func(string, int, int, ...string) string) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 3 {
@@ -8909,7 +8544,6 @@ func fnASIIVsRS(fn func(string, int, int, ...string) string) CallableFunc {
 	}
 }
 
-// fnASIIVsRSex adapts func(string, int, int, ...string) string to CallableExFunc.
 func fnASIIVsRSex(fn func(string, int, int, ...string) string) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8937,7 +8571,6 @@ func fnASIIVsRSex(fn func(string, int, int, ...string) string) CallableExFunc {
 }
 
 // like sqltk.ExecDBX
-// fnADSVaRA adapts func(*sql.DB, string, ...interface{}) interface{} to CallableFunc.
 func fnADSVaRA(fn func(*sql.DB, string, ...interface{}) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -8958,7 +8591,6 @@ func fnADSVaRA(fn func(*sql.DB, string, ...interface{}) interface{}) CallableFun
 	}
 }
 
-// fnADSVaRAex adapts func(*sql.DB, string, ...interface{}) interface{} to CallableExFunc.
 func fnADSVaRAex(fn func(*sql.DB, string, ...interface{}) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -8982,7 +8614,6 @@ func fnADSVaRAex(fn func(*sql.DB, string, ...interface{}) interface{}) CallableE
 }
 
 // like sqltk.QueryDBMapX
-// fnADSSVaRA adapts func(*sql.DB, string, string, ...interface{}) interface{} to CallableFunc.
 func fnADSSVaRA(fn func(*sql.DB, string, string, ...interface{}) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 3 {
@@ -9003,7 +8634,6 @@ func fnADSSVaRA(fn func(*sql.DB, string, string, ...interface{}) interface{}) Ca
 	}
 }
 
-// fnADSSVaRAex adapts func(*sql.DB, string, string, ...interface{}) interface{} to CallableExFunc.
 func fnADSSVaRAex(fn func(*sql.DB, string, string, ...interface{}) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -9027,7 +8657,6 @@ func fnADSSVaRAex(fn func(*sql.DB, string, string, ...interface{}) interface{}) 
 }
 
 // like tk.GetWeb
-// fnASVaRA adapts func(string, ...interface{}) interface{} to CallableFunc.
 func fnASVaRA(fn func(string, ...interface{}) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -9042,7 +8671,6 @@ func fnASVaRA(fn func(string, ...interface{}) interface{}) CallableFunc {
 	}
 }
 
-// fnASVaRAex adapts func(string, ...interface{}) interface{} to CallableExFunc.
 func fnASVaRAex(fn func(string, ...interface{}) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -9060,7 +8688,6 @@ func fnASVaRAex(fn func(string, ...interface{}) interface{}) CallableExFunc {
 }
 
 // like tk.Pln
-// fnAVaR adapts variadic interface consumer functions to CallableFunc.
 func fnAVaR(fn func(...interface{})) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		vargs := ObjectsToI(args)
@@ -9069,7 +8696,6 @@ func fnAVaR(fn func(...interface{})) CallableFunc {
 	}
 }
 
-// fnAVaRex adapts variadic interface consumer functions to CallableExFunc.
 func fnAVaRex(fn func(...interface{})) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		vargs := toArgsA(0, c)
@@ -9079,7 +8705,6 @@ func fnAVaRex(fn func(...interface{})) CallableExFunc {
 }
 
 // like tk.Min
-// fnAVaRA adapts variadic interface-to-interface functions to CallableFunc.
 func fnAVaRA(fn func(...interface{}) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		vargs := ObjectsToI(args)
@@ -9088,7 +8713,6 @@ func fnAVaRA(fn func(...interface{}) interface{}) CallableFunc {
 	}
 }
 
-// fnAVaRAex adapts variadic interface-to-interface functions to CallableExFunc.
 func fnAVaRAex(fn func(...interface{}) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -9100,7 +8724,6 @@ func fnAVaRAex(fn func(...interface{}) interface{}) CallableExFunc {
 }
 
 // like tk.Ceil
-// fnAARA adapts func(interface{}) interface{} to CallableFunc.
 func fnAARA(fn func(interface{}) interface{}) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -9113,7 +8736,6 @@ func fnAARA(fn func(interface{}) interface{}) CallableFunc {
 	}
 }
 
-// fnAARAex adapts func(interface{}) interface{} to CallableExFunc.
 func fnAARAex(fn func(interface{}) interface{}) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -9129,7 +8751,6 @@ func fnAARAex(fn func(interface{}) interface{}) CallableExFunc {
 }
 
 // like fmt.Print
-// fnAVaRIE adapts variadic interface functions returning (int,error) to CallableFunc.
 func fnAVaRIE(fn func(...interface{}) (int, error)) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		vargs := ObjectsToI(args)
@@ -9143,7 +8764,6 @@ func fnAVaRIE(fn func(...interface{}) (int, error)) CallableFunc {
 	}
 }
 
-// fnAVaRIEex adapts variadic interface functions returning (int,error) to CallableExFunc.
 func fnAVaRIEex(fn func(...interface{}) (int, error)) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -9161,7 +8781,6 @@ func fnAVaRIEex(fn func(...interface{}) (int, error)) CallableExFunc {
 }
 
 // like tk.PlErrX
-// fnAAR adapts func(interface{}) to CallableFunc returning Undefined.
 func fnAAR(fn func(interface{})) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -9174,7 +8793,6 @@ func fnAAR(fn func(interface{})) CallableFunc {
 	}
 }
 
-// fnAARex adapts func(interface{}) to CallableExFunc returning Undefined.
 func fnAARex(fn func(interface{})) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
@@ -9188,7 +8806,6 @@ func fnAARex(fn func(interface{})) CallableExFunc {
 }
 
 // like tk.Pln
-// fnASVaR adapts func(string, ...interface{}) to CallableFunc.
 func fnASVaR(fn func(string, ...interface{})) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 1 {
@@ -9203,7 +8820,6 @@ func fnASVaR(fn func(string, ...interface{})) CallableFunc {
 	}
 }
 
-// fnASVaRex adapts func(string, ...interface{}) to CallableExFunc.
 func fnASVaRex(fn func(string, ...interface{})) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -9221,7 +8837,6 @@ func fnASVaRex(fn func(string, ...interface{})) CallableExFunc {
 }
 
 // like fmt.Printf
-// fnAWSVaRIE adapts func(io.Writer, string, ...interface{}) (int,error) to CallableFunc.
 func fnAWSVaRIE(fn func(io.Writer, string, ...interface{}) (int, error)) CallableFunc {
 	return func(args ...Object) (ret Object, err error) {
 		if len(args) < 2 {
@@ -9247,7 +8862,6 @@ func fnAWSVaRIE(fn func(io.Writer, string, ...interface{}) (int, error)) Callabl
 	}
 }
 
-// fnAWSVaRIEex adapts func(io.Writer, string, ...interface{}) (int,error) to CallableExFunc.
 func fnAWSVaRIEex(fn func(io.Writer, string, ...interface{}) (int, error)) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		args := c.GetArgs()
@@ -9276,7 +8890,6 @@ func fnAWSVaRIEex(fn func(io.Writer, string, ...interface{}) (int, error)) Calla
 }
 
 // like fmt.Printf
-// fnASVaRIEex adapts func(string, ...interface{}) (int,error) to CallableExFunc.
 func fnASVaRIEex(fn func(string, ...interface{}) (int, error)) CallableExFunc {
 	return func(c Call) (ret Object, err error) {
 		if c.Len() < 1 {
@@ -9290,7 +8903,6 @@ func fnASVaRIEex(fn func(string, ...interface{}) (int, error)) CallableExFunc {
 }
 
 // builtin funcs
-// builtinTestByTextFunc asserts two string values are exactly equal for tests.
 func builtinTestByTextFunc(c Call) (ret Object, err error) {
 	argsA := c.GetArgs()
 
@@ -9336,7 +8948,6 @@ func builtinTestByTextFunc(c Call) (ret Object, err error) {
 	return Undefined, nil
 }
 
-// builtinTestByStartsWithFunc asserts the first string starts with the second.
 func builtinTestByStartsWithFunc(c Call) (Object, error) {
 	argsA := c.GetArgs()
 	lenT := len(argsA)
@@ -9381,7 +8992,6 @@ func builtinTestByStartsWithFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinTestByEndsWithFunc asserts the first string ends with the second.
 func builtinTestByEndsWithFunc(c Call) (Object, error) {
 	argsA := c.GetArgs()
 	lenT := len(argsA)
@@ -9426,7 +9036,6 @@ func builtinTestByEndsWithFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinTestByContainsFunc asserts the first string contains the second.
 func builtinTestByContainsFunc(c Call) (Object, error) {
 	argsA := c.GetArgs()
 	lenT := len(argsA)
@@ -9471,7 +9080,6 @@ func builtinTestByContainsFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinTestByRegContainsFunc asserts regex pattern appears in the first string.
 func builtinTestByRegContainsFunc(c Call) (Object, error) {
 	argsA := c.GetArgs()
 	lenT := len(argsA)
@@ -9665,7 +9273,6 @@ func builtinTestByRegContainsFunc(c Call) (Object, error) {
 //	return Undefined, nil
 //}
 
-// builtinTestByRegFunc asserts the first string matches the regex pattern.
 func builtinTestByRegFunc(c Call) (Object, error) {
 	argsA := c.GetArgs()
 	lenT := len(argsA)
@@ -9710,12 +9317,10 @@ func builtinTestByRegFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinPassFunc is a no-op builtin that always returns Undefined.
 func builtinPassFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinPlFunc prints formatted output via tk.Pl using first arg as format string.
 func builtinPlFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 	if len(args) < 1 {
@@ -9733,7 +9338,6 @@ func builtinPlFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinTypeCodeFunc returns the numeric type code of the first argument.
 func builtinTypeCodeFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 	return ToIntObject(args[0].TypeCode()), nil
@@ -9744,7 +9348,6 @@ func builtinTypeCodeFunc(c Call) (Object, error) {
 // 	return ToString(args[0].TypeName()), nil
 // }
 
-// builtinGetParamFunc gets positional non-switch argument from an argument array.
 func builtinGetParamFunc(c Call) (Object, error) {
 	argsA := c.GetArgs()
 
@@ -9797,7 +9400,6 @@ func builtinGetParamFunc(c Call) (Object, error) {
 	return defaultT, nil
 }
 
-// builtinGetSwitchFunc gets switch value by prefix from an argument array.
 func builtinGetSwitchFunc(c Call) (Object, error) {
 	argsA := c.GetArgs()
 	defaultT := ToStringObject("")
@@ -9845,7 +9447,6 @@ func builtinGetSwitchFunc(c Call) (Object, error) {
 	return defaultT, nil
 }
 
-// GetSwitchFromObjects returns switch value from objects, or default when absent.
 func GetSwitchFromObjects(argsA []Object, switchA string, defaultA string) string {
 	if argsA == nil {
 		return defaultA
@@ -9873,7 +9474,6 @@ func GetSwitchFromObjects(argsA []Object, switchA string, defaultA string) strin
 	return defaultA
 }
 
-// builtinIfSwitchExistsFunc checks whether a switch exists in an argument array.
 func builtinIfSwitchExistsFunc(c Call) (Object, error) {
 	argsA := c.GetArgs()
 	if len(argsA) < 2 {
@@ -9896,7 +9496,6 @@ func builtinIfSwitchExistsFunc(c Call) (Object, error) {
 
 }
 
-// IfSwitchExistsInObjects reports whether the switch exists in object args.
 func IfSwitchExistsInObjects(argsA []Object, switchA string) bool {
 	if len(argsA) < 1 {
 		return false
@@ -9912,7 +9511,6 @@ func IfSwitchExistsInObjects(argsA []Object, switchA string) bool {
 
 }
 
-// builtinToJSONFunc converts the first argument to JSON text.
 func builtinToJSONFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -9927,7 +9525,6 @@ func builtinToJSONFunc(c Call) (Object, error) {
 	return ToStringObject(rsT), nil
 }
 
-// builtinSimpleEncodeFunc encodes text with custom simple encoding.
 func builtinSimpleEncodeFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -9955,7 +9552,6 @@ func builtinSimpleEncodeFunc(c Call) (Object, error) {
 	return ToStringObject(rsT), nil
 }
 
-// builtinSimpleDecodeFunc decodes text previously encoded by simple encoding.
 func builtinSimpleDecodeFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -9983,7 +9579,6 @@ func builtinSimpleDecodeFunc(c Call) (Object, error) {
 	return ToStringObject(rsT), nil
 }
 
-// builtinBase64EncodeFunc encodes supported input types into base64 string.
 func builtinBase64EncodeFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10020,7 +9615,6 @@ func builtinBase64EncodeFunc(c Call) (Object, error) {
 	}
 }
 
-// builtinBase64EncodeByRawUrlFunc encodes input using raw URL-safe base64.
 func builtinBase64EncodeByRawUrlFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10057,7 +9651,6 @@ func builtinBase64EncodeByRawUrlFunc(c Call) (Object, error) {
 	}
 }
 
-// builtinBase64DecodeByRawUrlFunc decodes raw URL-safe base64 to bytes.
 func builtinBase64DecodeByRawUrlFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10076,7 +9669,6 @@ func builtinBase64DecodeByRawUrlFunc(c Call) (Object, error) {
 	return Bytes(bufT), nil
 }
 
-// builtinFromJSONFunc parses JSON text into internal objects.
 func builtinFromJSONFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10111,7 +9703,6 @@ func builtinFromJSONFunc(c Call) (Object, error) {
 	return cObjT, nil
 }
 
-// builtinFromXmlFunc parses XML text into internal objects.
 func builtinFromXmlFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10146,7 +9737,6 @@ func builtinFromXmlFunc(c Call) (Object, error) {
 	return cObjT, nil
 }
 
-// builtinEncodeSimpleMapFunc encodes a map[string]string-like Map to text.
 func builtinEncodeSimpleMapFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10171,7 +9761,6 @@ func builtinEncodeSimpleMapFunc(c Call) (Object, error) {
 	return String(strT), nil
 }
 
-// builtinDecodeSimpleMapFunc decodes simple-map text into Map object.
 func builtinDecodeSimpleMapFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10192,7 +9781,6 @@ func builtinDecodeSimpleMapFunc(c Call) (Object, error) {
 	return map1T, nil
 }
 
-// builtinIsErrXFunc checks whether argument represents an error value.
 func builtinIsErrXFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10232,7 +9820,6 @@ func builtinIsErrXFunc(c Call) (Object, error) {
 	return False, nil
 }
 
-// isErrX reports whether object is an error-like value.
 func isErrX(objA Object) bool {
 	switch objA.TypeCode() {
 	case 153: // *Error
@@ -10293,12 +9880,10 @@ func isErrX(objA Object) bool {
 	return false
 }
 
-// builtinGetNowTimeStampFunc returns current timestamp string.
 func builtinGetNowTimeStampFunc(c Call) (Object, error) {
 	return String(tk.GetTimeStampMid(time.Now())), nil
 }
 
-// builtinRunTickerFunc runs a periodic ticker callback with given interval seconds.
 func builtinRunTickerFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10323,7 +9908,6 @@ func builtinRunTickerFunc(c Call) (Object, error) {
 	return ConvertToObject(rs), nil
 }
 
-// builtinTimeBeforeFunc reports whether the first time is before the second.
 func builtinTimeBeforeFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10346,7 +9930,6 @@ func builtinTimeBeforeFunc(c Call) (Object, error) {
 	return Bool(v1.Value.Before(v2.Value)), nil
 }
 
-// builtinIsNilFunc checks whether the argument is nil-like.
 func builtinIsNilFunc(c Call) (Object, error) {
 	if c.Len() < 1 {
 		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
@@ -10368,7 +9951,6 @@ func builtinIsNilFunc(c Call) (Object, error) {
 	return Bool(tk.IsNil(nv)), nil
 }
 
-// builtinIsNilOrEmptyFunc checks whether argument is nil-like or empty.
 func builtinIsNilOrEmptyFunc(c Call) (Object, error) {
 	if c.Len() < 1 {
 		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
@@ -10390,7 +9972,6 @@ func builtinIsNilOrEmptyFunc(c Call) (Object, error) {
 	return Bool(tk.IsNilOrEmpty(nv)), nil
 }
 
-// builtinIsNilOrErrFunc checks whether argument is nil-like or error-like.
 func builtinIsNilOrErrFunc(c Call) (Object, error) {
 	if c.Len() < 1 {
 		return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
@@ -10430,7 +10011,6 @@ func builtinIsNilOrErrFunc(c Call) (Object, error) {
 	return Bool(tk.IsNilOrErrX(nv1)), nil
 }
 
-// builtinSleepFunc sleeps for given duration seconds string/number.
 func builtinSleepFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10451,7 +10031,6 @@ func builtinSleepFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinLockFunc acquires a mutex lock or numbered lock.
 func builtinLockFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10481,7 +10060,6 @@ func builtinLockFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinUnlockFunc releases a mutex lock or numbered lock.
 func builtinUnlockFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10511,7 +10089,6 @@ func builtinUnlockFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinRLockFunc acquires read lock on a mutex.
 func builtinRLockFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10534,7 +10111,6 @@ func builtinRLockFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinRUnlockFunc releases read lock on a mutex.
 func builtinRUnlockFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10557,7 +10133,6 @@ func builtinRUnlockFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinTryLockFunc attempts to lock mutex without blocking.
 func builtinTryLockFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10580,7 +10155,6 @@ func builtinTryLockFunc(c Call) (Object, error) {
 	return Bool(b1), nil
 }
 
-// builtinTryRLockFunc attempts to read-lock mutex without blocking.
 func builtinTryRLockFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10603,7 +10177,6 @@ func builtinTryRLockFunc(c Call) (Object, error) {
 	return Bool(b1), nil
 }
 
-// builtinExitFunc exits process with optional status code.
 func builtinExitFunc(args ...Object) (Object, error) {
 	resultT := 0
 
@@ -10616,7 +10189,6 @@ func builtinExitFunc(args ...Object) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinTimeFunc creates Time from input or returns current time.
 func builtinTimeFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10650,7 +10222,6 @@ func builtinTimeFunc(c Call) (Object, error) {
 	}
 }
 
-// builtinToTimeFunc converts input to Time object.
 func builtinToTimeFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10684,7 +10255,6 @@ func builtinToTimeFunc(c Call) (Object, error) {
 	}
 }
 
-// builtinCallNamedFuncFunc invokes a registered named function.
 func builtinCallNamedFuncFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10705,7 +10275,6 @@ func builtinCallNamedFuncFunc(c Call) (Object, error) {
 	return ConvertToObject(rsT), nil
 }
 
-// builtinCallInternalFuncFunc invokes a function object reflectively.
 func builtinCallInternalFuncFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10718,7 +10287,6 @@ func builtinCallInternalFuncFunc(c Call) (Object, error) {
 	return ConvertToObject(rsT), nil
 }
 
-// builtinGetNamedValueFunc returns a registered named value.
 func builtinGetNamedValueFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10737,7 +10305,6 @@ func builtinGetNamedValueFunc(c Call) (Object, error) {
 	return ConvertToObject(v1), nil
 }
 
-// builtinNewExFunc creates a new reflected object from arguments.
 func builtinNewExFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10750,7 +10317,6 @@ func builtinNewExFunc(c Call) (Object, error) {
 	return ConvertToObject(rsT), nil
 }
 
-// builtinCallMethodExFunc calls a method by name on an object.
 func builtinCallMethodExFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10787,7 +10353,6 @@ func builtinCallMethodExFunc(c Call) (Object, error) {
 	return ConvertToObject(rsT), nil
 }
 
-// builtinGetValueFunc returns the underlying value of the first argument.
 func builtinGetValueFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10798,7 +10363,6 @@ func builtinGetValueFunc(c Call) (Object, error) {
 	return args[0].GetValue(), nil
 }
 
-// builtinGetMemberFunc gets a named member from an object.
 func builtinGetMemberFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10809,7 +10373,6 @@ func builtinGetMemberFunc(c Call) (Object, error) {
 	return args[0].GetMember(args[1].String()), nil
 }
 
-// builtinSetMemberFunc sets a named member on an object.
 func builtinSetMemberFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10820,7 +10383,6 @@ func builtinSetMemberFunc(c Call) (Object, error) {
 	return WrapError(args[0].SetMember(args[1].String(), args[2])), nil
 }
 
-// builtinSetValueFunc sets value for objects implementing ValueSetter.
 func builtinSetValueFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10837,7 +10399,6 @@ func builtinSetValueFunc(c Call) (Object, error) {
 	return WrapError(args0.SetValue(args[1])), nil
 }
 
-// builtinCallMethodFunc invokes an object's method with given arguments.
 func builtinCallMethodFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10848,7 +10409,6 @@ func builtinCallMethodFunc(c Call) (Object, error) {
 	return args[0].CallMethod(args[1].String(), args[2:]...)
 }
 
-// builtinRegQuoteFunc escapes a string for regex literal usage.
 func builtinRegQuoteFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10859,7 +10419,6 @@ func builtinRegQuoteFunc(c Call) (Object, error) {
 	return ToStringObject(tk.RegQuote(args[0].String())), nil
 }
 
-// builtinGetClipTextFunc returns clipboard text content.
 func builtinGetClipTextFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10870,7 +10429,6 @@ func builtinGetClipTextFunc(c Call) (Object, error) {
 	return ToStringObject(tk.GetClipText()), nil
 }
 
-// builtinAnyFunc wraps a value into Any while preserving original type metadata.
 func builtinAnyFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -10982,7 +10540,6 @@ func builtinAnyFunc(c Call) (Object, error) {
 // 	return &Any{Value: nil}, nil
 // }
 
-// builtinSetValueByRefFunc writes a value through supported reference wrappers.
 func builtinSetValueByRefFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11137,7 +10694,6 @@ func builtinSetValueByRefFunc(c Call) (Object, error) {
 	}
 }
 
-// builtinUnrefFunc dereferences supported reference wrappers to a value.
 func builtinUnrefFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11211,7 +10767,6 @@ func builtinUnrefFunc(c Call) (Object, error) {
 	}
 }
 
-// builtinDumpVarFunc dumps the first argument for debugging.
 func builtinDumpVarFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11224,7 +10779,6 @@ func builtinDumpVarFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinDebugInfoFunc returns VM bytecode and runtime debug information.
 func builtinDebugInfoFunc(c Call) (Object, error) {
 	// args := c.GetArgs()
 
@@ -11264,7 +10818,6 @@ func builtinDebugInfoFunc(c Call) (Object, error) {
 // 	}, nil
 // }
 
-// builtinToStrFunc converts the first argument to string.
 func builtinToStrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11277,7 +10830,6 @@ func builtinToStrFunc(c Call) (Object, error) {
 	return ToStringObject(rsT), nil
 }
 
-// builtinToHexFunc converts the first argument to hexadecimal text.
 func builtinToHexFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11290,7 +10842,6 @@ func builtinToHexFunc(c Call) (Object, error) {
 	return ToStringObject(rsT), nil
 }
 
-// builtinToIntFunc converts the first argument to int with optional default.
 func builtinToIntFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11309,7 +10860,6 @@ func builtinToIntFunc(c Call) (Object, error) {
 	return Int(rsT), nil
 }
 
-// builtinToBoolFunc converts the first argument to bool.
 func builtinToBoolFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11322,7 +10872,6 @@ func builtinToBoolFunc(c Call) (Object, error) {
 	return Bool(rsT), nil
 }
 
-// builtinToBoolWithDefaultFunc converts value to bool with optional default.
 func builtinToBoolWithDefaultFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11347,7 +10896,6 @@ func builtinToBoolWithDefaultFunc(c Call) (Object, error) {
 	return Bool(rsT), nil
 }
 
-// builtinToFloatFunc converts the first argument to float with optional default.
 func builtinToFloatFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11366,7 +10914,6 @@ func builtinToFloatFunc(c Call) (Object, error) {
 	return Float(rsT), nil
 }
 
-// builtinTypeOfAnyFunc returns Go type string of Any.Value.
 func builtinTypeOfAnyFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11457,7 +11004,6 @@ func builtinPltFunc(c Call) (Object, error) {
 // 	}
 // }
 
-// builtinGetEnvFunc returns environment variable value by name.
 func builtinGetEnvFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11470,7 +11016,6 @@ func builtinGetEnvFunc(c Call) (Object, error) {
 	return ToStringObject(rsT), nil
 }
 
-// builtinCheckErrXFunc exits the process if argument is error-like.
 func builtinCheckErrXFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11492,7 +11037,6 @@ func builtinCheckErrXFunc(c Call) (Object, error) {
 	return args[0], nil
 }
 
-// builtinCheckEmptyFunc exits process when value is undefined or empty string.
 func builtinCheckEmptyFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11523,7 +11067,6 @@ func builtinCheckEmptyFunc(c Call) (Object, error) {
 	return args[0], nil
 }
 
-// builtinErrToEmptyFunc converts error-like values to empty string.
 func builtinErrToEmptyFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11563,7 +11106,6 @@ func builtinErrToEmptyFunc(c Call) (Object, error) {
 	return args[0], nil
 }
 
-// builtinTrimFunc trims spaces/chars from a value converted to string.
 func builtinTrimFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11581,7 +11123,6 @@ func builtinTrimFunc(c Call) (Object, error) {
 	return ToStringObject(tk.Trim(arg0.String(), ObjectsToS(args[1:])...)), nil
 }
 
-// builtinTrimErrFunc trims string unless the input is error-like.
 func builtinTrimErrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11610,7 +11151,6 @@ func builtinTrimErrFunc(c Call) (Object, error) {
 }
 
 // won't convert undefined value to empty string
-// builtinStrTrimFunc trims a String value without undefined-to-empty conversion.
 func builtinStrTrimFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11628,7 +11168,6 @@ func builtinStrTrimFunc(c Call) (Object, error) {
 	return ToStringObject(tk.Trim(arg0.String(), ObjectsToS(args[1:])...)), nil
 }
 
-// builtinStrTrimStartFunc removes a prefix string from the start.
 func builtinStrTrimStartFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11653,7 +11192,6 @@ func builtinStrTrimStartFunc(c Call) (Object, error) {
 	return String(strings.TrimPrefix(string(s1), string(s2))), nil
 }
 
-// builtinStrTrimEndFunc removes a suffix string from the end.
 func builtinStrTrimEndFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11674,7 +11212,6 @@ func builtinStrTrimEndFunc(c Call) (Object, error) {
 	return String(strings.TrimSuffix(string(s1), string(s2))), nil
 }
 
-// builtinStrTrimLeftFunc trims cutset chars from the left side.
 func builtinStrTrimLeftFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11699,7 +11236,6 @@ func builtinStrTrimLeftFunc(c Call) (Object, error) {
 	return String(strings.TrimLeft(string(s1), string(s2))), nil
 }
 
-// builtinStrTrimRightFunc trims cutset chars from the right side.
 func builtinStrTrimRightFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11724,7 +11260,6 @@ func builtinStrTrimRightFunc(c Call) (Object, error) {
 	return String(strings.TrimRight(string(s1), string(s2))), nil
 }
 
-// builtinRemoveDirFunc removes a directory, optionally recursively.
 func builtinRemoveDirFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11765,7 +11300,6 @@ func builtinRemoveDirFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinGetFileInfoFunc returns file metadata map for path or File.
 func builtinGetFileInfoFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11815,7 +11349,6 @@ func builtinGetFileInfoFunc(c Call) (Object, error) {
 	return mapT, nil
 }
 
-// builtinRemovePathFunc removes file or directory, optionally recursively.
 func builtinRemovePathFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11852,7 +11385,6 @@ func builtinRemovePathFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinSetStdinFunc redirects process stdin to the provided File.
 func builtinSetStdinFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11871,7 +11403,6 @@ func builtinSetStdinFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinGetMultiLineInputFunc reads multiline input with optional callback/options.
 func builtinGetMultiLineInputFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11916,7 +11447,6 @@ func builtinGetMultiLineInputFunc(c Call) (Object, error) {
 	return String(rs), nil
 }
 
-// builtinSetStdoutFunc redirects process stdout to the provided File.
 func builtinSetStdoutFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11935,7 +11465,6 @@ func builtinSetStdoutFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinSetStderrFunc redirects process stderr to the provided File.
 func builtinSetStderrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11954,7 +11483,6 @@ func builtinSetStderrFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinGetPipeFunc creates an OS pipe and returns [reader, writer].
 func builtinGetPipeFunc(c Call) (Object, error) {
 
 	r, w, err := os.Pipe()
@@ -11968,7 +11496,6 @@ func builtinGetPipeFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinGetWebBytesFunc fetches URL content and returns bytes.
 func builtinGetWebBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -11997,7 +11524,6 @@ func builtinGetWebBytesFunc(c Call) (Object, error) {
 	return Bytes(nv), nil
 }
 
-// builtinGetWebRespBodyFunc fetches URL response body and returns stream/data.
 func builtinGetWebRespBodyFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12035,7 +11561,6 @@ func builtinGetWebRespBodyFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported return type"), nil
 }
 
-// builtinGetWebBytesWithHeadersFunc downloads web bytes with request headers/options.
 func builtinGetWebBytesWithHeadersFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12095,7 +11620,6 @@ func builtinGetWebBytesWithHeadersFunc(c Call) (Object, error) {
 	return rsT, nil
 }
 
-// builtinParseUrlFunc parses URL string into structured object.
 func builtinParseUrlFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12114,7 +11638,6 @@ func builtinParseUrlFunc(c Call) (Object, error) {
 	return ConvertToObject(tk.FromJSONX(tk.ToJSONX(rs))), nil
 }
 
-// builtinParseQueryFunc parses URL query string to map/object.
 func builtinParseQueryFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12145,7 +11668,6 @@ func builtinParseQueryFunc(c Call) (Object, error) {
 	return ConvertToObject(tk.FromJSONX(tk.ToJSONX(rs))), nil
 }
 
-// builtinOpenFileFunc opens a file path with options and returns File.
 func builtinOpenFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12170,7 +11692,6 @@ func builtinOpenFileFunc(c Call) (Object, error) {
 	return objT, nil
 }
 
-// builtinLoadBytesFromFileFunc reads bytes from File or file path.
 func builtinLoadBytesFromFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12221,7 +11742,6 @@ func builtinLoadBytesFromFileFunc(c Call) (Object, error) {
 	return Bytes(rsT.([]byte)), nil
 }
 
-// builtinLoadBytesFromFileLimitFunc reads up to limit bytes from file path.
 func builtinLoadBytesFromFileLimitFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12242,7 +11762,6 @@ func builtinLoadBytesFromFileLimitFunc(c Call) (Object, error) {
 	return Bytes(rsT), nil
 }
 
-// builtinCloseFileFunc closes a File object.
 func builtinCloseFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12262,7 +11781,6 @@ func builtinCloseFileFunc(c Call) (Object, error) {
 
 }
 
-// builtinArchiveFilesToZipFunc archives files into a zip file.
 func builtinArchiveFilesToZipFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12330,7 +11848,6 @@ func builtinArchiveFilesToZipFunc(c Call) (Object, error) {
 	return ConvertToObject(errT), nil
 }
 
-// builtinReadCsvFunc reads CSV from reader or file and returns rows.
 func builtinReadCsvFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12370,7 +11887,6 @@ func builtinReadCsvFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelOpenFunc opens an Excel workbook from reader/bytes/path.
 func builtinExcelOpenFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12412,7 +11928,6 @@ func builtinExcelOpenFunc(c Call) (Object, error) {
 	return &Excel{Value: f}, nil
 }
 
-// builtinExcelOpenFromBytesFunc opens an Excel workbook from bytes.
 func builtinExcelOpenFromBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12438,7 +11953,6 @@ func builtinExcelOpenFromBytesFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "failed to open excel bytes: %v", err), nil
 }
 
-// builtinExcelOpenFileFunc opens an Excel workbook from file path.
 func builtinExcelOpenFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12454,7 +11968,6 @@ func builtinExcelOpenFileFunc(c Call) (Object, error) {
 	return &Excel{Value: f}, nil
 }
 
-// builtinExcelSaveAsFunc saves an Excel workbook to a new file path.
 func builtinExcelSaveAsFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12484,7 +11997,6 @@ func builtinExcelSaveAsFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelWriteToFunc writes workbook data to response or writer.
 func builtinExcelWriteToFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12530,7 +12042,6 @@ func builtinExcelWriteToFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelWriteToBytesFunc serializes workbook to bytes.
 func builtinExcelWriteToBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12557,7 +12068,6 @@ func builtinExcelWriteToBytesFunc(c Call) (Object, error) {
 	return Bytes(bufT.Bytes()), nil
 }
 
-// builtinExcelCloseFunc closes an opened Excel workbook.
 func builtinExcelCloseFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12585,7 +12095,6 @@ func builtinExcelCloseFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelReadSheetFunc reads all rows from one worksheet.
 func builtinExcelReadSheetFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12654,7 +12163,6 @@ func builtinExcelReadSheetFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelReadAllFunc reads all sheets and rows from workbook.
 func builtinExcelReadAllFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12729,7 +12237,6 @@ func builtinExcelReadAllFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelGetSheetNameFunc gets worksheet name by index.
 func builtinExcelGetSheetNameFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12780,7 +12287,6 @@ func builtinExcelGetSheetNameFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelGetSheetCountFunc returns number of worksheets.
 func builtinExcelGetSheetCountFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12827,7 +12333,6 @@ func builtinExcelGetSheetCountFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelGetSheetListFunc returns worksheet name list.
 func builtinExcelGetSheetListFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12873,7 +12378,6 @@ func builtinExcelGetSheetListFunc(c Call) (Object, error) {
 	return ConvertToObject(listT), nil
 }
 
-// builtinExcelReadCellFunc reads a single cell value from worksheet.
 func builtinExcelReadCellFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -12938,7 +12442,6 @@ func builtinExcelReadCellFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelReadCellImagesFunc reads images anchored at a worksheet cell.
 func builtinExcelReadCellImagesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13009,7 +12512,6 @@ func builtinExcelReadCellImagesFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelWriteSheetFunc writes 2D data rows into a worksheet.
 func builtinExcelWriteSheetFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13109,7 +12611,6 @@ func builtinExcelWriteSheetFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelWriteCellFunc writes one cell value in a worksheet.
 func builtinExcelWriteCellFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13152,7 +12653,6 @@ func builtinExcelWriteCellFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelGetColumnIndexByNameFunc converts column name to numeric index.
 func builtinExcelGetColumnIndexByNameFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13169,7 +12669,6 @@ func builtinExcelGetColumnIndexByNameFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelGetColumnNameByIndexFunc converts numeric index to column name.
 func builtinExcelGetColumnNameByIndexFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13186,7 +12685,6 @@ func builtinExcelGetColumnNameByIndexFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelNewSheetFunc creates a new worksheet and returns its index.
 func builtinExcelNewSheetFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13215,7 +12713,6 @@ func builtinExcelNewSheetFunc(c Call) (Object, error) {
 
 }
 
-// builtinExcelRemoveSheetFunc deletes a worksheet by name.
 func builtinExcelRemoveSheetFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13245,7 +12742,6 @@ func builtinExcelRemoveSheetFunc(c Call) (Object, error) {
 }
 
 // writeCsv(writerA/filePathA, dataA, ...optsA)
-// builtinWriteCsvFunc writes CSV records to writer or file path.
 func builtinWriteCsvFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13328,7 +12824,6 @@ func builtinWriteCsvFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type for write csv content: %T", args[1]), nil
 }
 
-// builtinFtpCreateDirFunc creates a remote directory on FTP server.
 func builtinFtpCreateDirFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13399,7 +12894,6 @@ func builtinFtpCreateDirFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinFtpListFunc lists directory entries on FTP server.
 func builtinFtpListFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13470,7 +12964,6 @@ func builtinFtpListFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinFtpSizeFunc gets remote file size from FTP server.
 func builtinFtpSizeFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13541,7 +13034,6 @@ func builtinFtpSizeFunc(c Call) (Object, error) {
 	return Int(sizeT), nil
 }
 
-// builtinFtpUploadFunc uploads a local file to FTP server.
 func builtinFtpUploadFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13656,7 +13148,6 @@ func builtinFtpUploadFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinFtpDownloadBytesFunc downloads a remote FTP file as bytes.
 func builtinFtpDownloadBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13743,7 +13234,6 @@ func builtinFtpDownloadBytesFunc(c Call) (Object, error) {
 	return Bytes(bufT), nil
 }
 
-// builtinFtpDownloadFileFunc downloads a remote FTP file to local path.
 func builtinFtpDownloadFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13838,7 +13328,6 @@ func builtinFtpDownloadFileFunc(c Call) (Object, error) {
 	return Int(cc), nil
 }
 
-// builtinFtpGetReaderFunc returns streaming reader for remote FTP file.
 func builtinFtpGetReaderFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -13938,7 +13427,6 @@ func builtinFtpGetReaderFunc(c Call) (Object, error) {
 
 }
 
-// builtinFtpRemoveFileFunc deletes a remote file on FTP server.
 func builtinFtpRemoveFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14012,7 +13500,6 @@ func builtinFtpRemoveFileFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinFtpUploadFromReaderFunc uploads content from reader to FTP server.
 func builtinFtpUploadFromReaderFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14097,7 +13584,6 @@ func builtinFtpUploadFromReaderFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinSshUploadFunc uploads a local file to remote path over SSH.
 func builtinSshUploadFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14177,7 +13663,6 @@ func builtinSshUploadFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinSshUploadBytesFunc uploads in-memory bytes to remote path over SSH.
 func builtinSshUploadBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14257,7 +13742,6 @@ func builtinSshUploadBytesFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinSshDownloadFunc downloads remote file to local path over SSH.
 func builtinSshDownloadFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14334,7 +13818,6 @@ func builtinSshDownloadFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinSshDownloadBytesFunc downloads remote file content as bytes over SSH.
 func builtinSshDownloadBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14399,7 +13882,6 @@ func builtinSshDownloadBytesFunc(c Call) (Object, error) {
 	return Bytes(bytesT), nil
 }
 
-// builtinSshListFunc lists remote directory entries over SSH.
 func builtinSshListFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14464,7 +13946,6 @@ func builtinSshListFunc(c Call) (Object, error) {
 	return ConvertToObject(listT), nil
 }
 
-// builtinSshIfFileExistsFunc checks whether a remote path exists over SSH.
 func builtinSshIfFileExistsFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14529,7 +14010,6 @@ func builtinSshIfFileExistsFunc(c Call) (Object, error) {
 	return Bool(rsT), nil
 }
 
-// builtinSshGetFileInfoFunc gets metadata of remote path over SSH.
 func builtinSshGetFileInfoFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14594,7 +14074,6 @@ func builtinSshGetFileInfoFunc(c Call) (Object, error) {
 	return ConvertToObject(rsT), nil
 }
 
-// builtinSshRunFunc runs a remote shell command over SSH.
 func builtinSshRunFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14657,7 +14136,6 @@ func builtinSshRunFunc(c Call) (Object, error) {
 	return ToStringObject(outT), nil
 }
 
-// builtinSshRenameFunc renames or moves a remote path over SSH.
 func builtinSshRenameFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14725,7 +14203,6 @@ func builtinSshRenameFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinSshJoinPathFunc joins remote path segments using server semantics.
 func builtinSshJoinPathFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14794,7 +14271,6 @@ func builtinSshJoinPathFunc(c Call) (Object, error) {
 	return String(rs), nil
 }
 
-// builtinSshRemoveFileFunc removes a remote file over SSH.
 func builtinSshRemoveFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14857,7 +14333,6 @@ func builtinSshRemoveFileFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinSshRemoveDirFunc removes a remote directory over SSH.
 func builtinSshRemoveDirFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14920,7 +14395,6 @@ func builtinSshRemoveDirFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinSshEnsureMakeDirsFunc ensures remote directories exist over SSH.
 func builtinSshEnsureMakeDirsFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -14983,7 +14457,6 @@ func builtinSshEnsureMakeDirsFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinStringBuilderFunc creates a StringBuilder with optional initial text.
 func builtinStringBuilderFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15002,7 +14475,6 @@ func builtinStringBuilderFunc(c Call) (Object, error) {
 	return rs, nil
 }
 
-// builtinStatusResultFunc creates a StatusResult from status/value/objects.
 func builtinStatusResultFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15021,21 +14493,18 @@ func builtinStatusResultFunc(c Call) (Object, error) {
 	return &StatusResult{Status: args[0].String(), Value: args[1].String(), Objects: tk.ToJSONX(ObjectsToS(args[2:]))}, nil
 }
 
-// builtinSeqFunc creates a sequence object from arguments.
 func builtinSeqFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	return NewSeq(args...), nil
 }
 
-// builtinMutexFunc creates a mutex object from arguments.
 func builtinMutexFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	return NewMutex(args...), nil
 }
 
-// builtinCharCodeFunc compiles source text into CharCode object.
 func builtinCharCodeFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15071,7 +14540,6 @@ func builtinCharCodeFunc(c Call) (Object, error) {
 
 var BuiltinCharCodeFunc = builtinCharCodeFunc
 
-// builtinGelFunc creates a Gel object from arguments.
 func builtinGelFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15082,39 +14550,30 @@ func builtinGelFunc(c Call) (Object, error) {
 	return NewGel(args...)
 }
 
-// builtinOrderedMapFunc creates an ordered map object.
 func builtinOrderedMapFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	return NewOrderedMap(args...)
 }
 
-// builtinExcelFunc creates an Excel object.
 func builtinExcelFunc(c Call) (Object, error) {
 	return NewExcel(c)
 }
 
-// builtinBigIntFunc creates a BigInt object.
 func builtinBigIntFunc(c Call) (Object, error) {
 	return NewBigInt(c)
 }
 
-// builtinBigFloatFunc creates a BigFloat object.
-// builtinBigFloatFunc creates a BigFloat object.
 func builtinBigFloatFunc(c Call) (Object, error) {
 	return NewBigFloat(c)
 }
 
-// builtinMuxFunc creates a Mux object.
-// builtinMuxFunc creates a Mux object.
 func builtinMuxFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
 	return NewMux(args...), nil
 }
 
-// builtinWriteRespFunc writes bytes/string content to response or writer.
-// builtinWriteRespFunc writes content to HTTP response or writer.
 func builtinWriteRespFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15186,8 +14645,6 @@ func builtinWriteRespFunc(c Call) (Object, error) {
 	return Int(r), errT
 }
 
-// builtinServeFileFunc serves a file over HTTP response.
-// builtinServeFileFunc serves a file through HTTP response.
 func builtinServeFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15212,8 +14669,6 @@ func builtinServeFileFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinIsEncryptedFunc checks whether input bytes/string is TXDEF-encrypted.
-// builtinIsEncryptedFunc checks whether bytes/string is encrypted by TXDEF.
 func builtinIsEncryptedFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15239,8 +14694,6 @@ func builtinIsEncryptedFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupport object type: %T", args[0]), nil
 }
 
-// builtinGenJwtTokenFunc generates JWT token from payload and secret.
-// builtinGenJwtTokenFunc generates JWT token with payload and secret.
 func builtinGenJwtTokenFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15284,8 +14737,6 @@ func builtinGenJwtTokenFunc(c Call) (Object, error) {
 	return String(rs), nil
 }
 
-// builtinParseJwtTokenFunc parses and validates JWT token with secret.
-// builtinParseJwtTokenFunc parses and validates JWT token.
 func builtinParseJwtTokenFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15329,8 +14780,6 @@ func builtinParseJwtTokenFunc(c Call) (Object, error) {
 	return ConvertToObject(rs), nil
 }
 
-// builtinParseReqFormFunc parses HTTP request form fields.
-// builtinParseReqFormFunc parses URL-encoded form values from request.
 func builtinParseReqFormFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15352,8 +14801,6 @@ func builtinParseReqFormFunc(c Call) (Object, error) {
 	return ConvertToObject(paraMapT), nil
 }
 
-// builtinParseReqFormExFunc parses normal and multipart request forms.
-// builtinParseReqFormExFunc parses normal and multipart form values.
 func builtinParseReqFormExFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15383,8 +14830,6 @@ func builtinParseReqFormExFunc(c Call) (Object, error) {
 	return ConvertToObject(paraMapT), nil
 }
 
-// builtinParseReqMultipartFormFunc parses multipart request form only.
-// builtinParseReqMultipartFormFunc parses multipart form values only.
 func builtinParseReqMultipartFormFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15412,8 +14857,6 @@ func builtinParseReqMultipartFormFunc(c Call) (Object, error) {
 	return ConvertToObject(paraMapT), nil
 }
 
-// builtinSetRespHeaderFunc sets an HTTP response header key/value.
-// builtinSetRespHeaderFunc sets HTTP response header key/value.
 func builtinSetRespHeaderFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15453,8 +14896,6 @@ func builtinSetRespHeaderFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinGetReqHeaderFunc gets one header value from HTTP request.
-// builtinGetReqHeaderFunc gets one request header value by key.
 func builtinGetReqHeaderFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15473,8 +14914,6 @@ func builtinGetReqHeaderFunc(c Call) (Object, error) {
 	return ToStringObject(reqT.Header.Get(args[1].String())), nil
 }
 
-// builtinGetReqHeadersFunc gets all headers from HTTP request.
-// builtinGetReqHeadersFunc gets all request headers as map.
 func builtinGetReqHeadersFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15499,8 +14938,6 @@ func builtinGetReqHeadersFunc(c Call) (Object, error) {
 	return mapT, nil
 }
 
-// builtinIsHttpsFunc reports whether HTTP request uses HTTPS.
-// builtinIsHttpsFunc checks whether request uses HTTPS.
 func builtinIsHttpsFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15518,8 +14955,6 @@ func builtinIsHttpsFunc(c Call) (Object, error) {
 	return Bool(rs), nil
 }
 
-// builtinPrepareMultiPartFieldFromBytesFunc creates multipart field payload from bytes.
-// builtinPrepareMultiPartFieldFromBytesFunc builds multipart payload for one field.
 func builtinPrepareMultiPartFieldFromBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15557,8 +14992,6 @@ func builtinPrepareMultiPartFieldFromBytesFunc(c Call) (Object, error) {
 	return Array{ToStringObject(w.FormDataContentType()), Bytes(b.Bytes())}, nil
 }
 
-// builtinPrepareMultiPartFileFromBytesFunc creates multipart file payload from bytes.
-// builtinPrepareMultiPartFileFromBytesFunc builds multipart payload for one file.
 func builtinPrepareMultiPartFileFromBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15615,8 +15048,6 @@ func builtinPrepareMultiPartFileFromBytesFunc(c Call) (Object, error) {
 	return Array{ToStringObject(w.FormDataContentType()), Bytes(b.Bytes())}, nil
 }
 
-// builtinPostRequestFunc sends HTTP POST request with text/bytes body.
-// builtinPostRequestFunc sends HTTP POST request with text or bytes body.
 func builtinPostRequestFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15650,8 +15081,6 @@ func builtinPostRequestFunc(c Call) (Object, error) {
 	return ToStringObject(rs), nil
 }
 
-// builtinHttpRedirectFunc issues an HTTP redirect response.
-// builtinHttpRedirectFunc sends HTTP redirect response.
 func builtinHttpRedirectFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15684,8 +15113,6 @@ func builtinHttpRedirectFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinGetReqBodyFunc reads and returns HTTP request body bytes.
-// builtinGetReqBodyFunc reads request body and returns bytes.
 func builtinGetReqBodyFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15708,7 +15135,6 @@ func builtinGetReqBodyFunc(c Call) (Object, error) {
 	return Bytes(rsT), nil
 }
 
-// builtinNewFunc creates a new object via builtinMakeFunc.
 func builtinNewFunc(c Call) (Object, error) {
 	// args := c.GetArgs()
 
@@ -15798,7 +15224,6 @@ func builtinNewFunc(c Call) (Object, error) {
 	// return Undefined, NewCommonErrorWithPos(c, "invalid data type: %v", s1)
 }
 
-// builtinMakeFunc constructs a new object by type name and arguments.
 func builtinMakeFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -15977,7 +15402,6 @@ func builtinMakeFunc(c Call) (Object, error) {
 	return Undefined, NewCommonErrorWithPos(c, "invalid data type: %v", s1)
 }
 
-// builtinReadAllStrFunc reads all content from reader-like input as string.
 func builtinReadAllStrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -16030,7 +15454,6 @@ func builtinReadAllStrFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type for read all: %T", args[0]), nil
 }
 
-// builtinReadAllBytesFunc reads all content from reader-like input as bytes.
 func builtinReadAllBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -16083,7 +15506,6 @@ func builtinReadAllBytesFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type for read all: %T", args[0]), nil
 }
 
-// builtinReadBytesFunc reads up to N bytes from reader-like input.
 func builtinReadBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -16188,7 +15610,6 @@ func builtinReadBytesFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type for read all: %T", args[0]), nil
 }
 
-// builtinWriteStrFunc writes string content to writer-like targets.
 func builtinWriteStrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -16268,7 +15689,6 @@ func builtinWriteStrFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "%v", "invalid data"), nil
 }
 
-// builtinWriteBytesFunc writes bytes/string content to writer-like targets.
 func builtinWriteBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -16447,7 +15867,6 @@ func builtinWriteBytesFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "%v", "invalid data"), nil
 }
 
-// builtinWriteBytesAtFunc copies bytes into a Bytes buffer at index.
 func builtinWriteBytesAtFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -16505,7 +15924,6 @@ func builtinWriteBytesAtFunc(c Call) (Object, error) {
 	return Int(n), nil
 }
 
-// builtinCopyBytesFunc copies bytes from source Bytes to destination Bytes.
 func builtinCopyBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -16534,7 +15952,6 @@ func builtinCopyBytesFunc(c Call) (Object, error) {
 	return Int(n), nil
 }
 
-// builtinDatabaseFunc opens a database connection from driver and DSN.
 func builtinDatabaseFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -16566,8 +15983,6 @@ func builtinDatabaseFunc(c Call) (Object, error) {
 		}
 	} else if v1 == "sqlite3" {
 		v1 = "sqlite"
-	} else if v1 == "postgres" {
-		v1 = "pgx"
 	}
 
 	rsT := sqltk.ConnectDBX(v1, v2)
@@ -17552,7 +16967,6 @@ func builtinLeViewLineFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinLeSortFunc sorts line-editor buffer in ascending/descending order.
 func builtinLeSortFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -17587,7 +17001,6 @@ func builtinLeSortFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinLeConvertToUtf8Func converts entire line-editor buffer to UTF-8.
 func builtinLeConvertToUtf8Func(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -17612,7 +17025,6 @@ func builtinLeConvertToUtf8Func(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinStrToUtf8Func converts input string to UTF-8 using encoding option.
 func builtinStrToUtf8Func(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -17627,7 +17039,6 @@ func builtinStrToUtf8Func(c Call) (Object, error) {
 	return String(tk.ConvertStringToUTF8(args[0].String(), encT)), nil
 }
 
-// builtinBytesGbToUtf8StrFunc converts encoded bytes to UTF-8 string.
 func builtinBytesGbToUtf8StrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -17648,7 +17059,6 @@ func builtinBytesGbToUtf8StrFunc(c Call) (Object, error) {
 	return String(tk.ConvertToUTF8([]byte(bytesT), encT)), nil
 }
 
-// builtinIsUtf8Func checks whether bytes/string content is valid UTF-8.
 func builtinIsUtf8Func(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -17678,7 +17088,6 @@ func builtinIsUtf8Func(c Call) (Object, error) {
 	//	return Bool(utf8.ValidString(args[0].String())), nil
 }
 
-// builtinSimpleStrToMapFunc parses simple "k:v|k2:v2" text to map.
 func builtinSimpleStrToMapFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -17705,7 +17114,6 @@ func builtinSimpleStrToMapFunc(c Call) (Object, error) {
 	return ConvertToObject(mapT), nil
 }
 
-// builtinSimpleStrToMapReverseFunc parses simple text with key/value reversed.
 func builtinSimpleStrToMapReverseFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -17732,7 +17140,6 @@ func builtinSimpleStrToMapReverseFunc(c Call) (Object, error) {
 	return ConvertToObject(mapT), nil
 }
 
-// builtinReverseMapFunc swaps keys and values of a Map.
 func builtinReverseMapFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -17756,7 +17163,6 @@ func builtinReverseMapFunc(c Call) (Object, error) {
 	return mapT, nil
 }
 
-// builtinLeGetLineFunc returns one line from line-editor buffer by index.
 func builtinLeGetLineFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -17783,7 +17189,6 @@ func builtinLeGetLineFunc(c Call) (Object, error) {
 	return String(vmT.LeBuf[idxA]), nil
 }
 
-// builtinLeSetLineFunc replaces one line in line-editor buffer by index.
 func builtinLeSetLineFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -17812,7 +17217,6 @@ func builtinLeSetLineFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinLeSetLinesFunc replaces a range of lines in line-editor buffer.
 func builtinLeSetLinesFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -17876,7 +17280,6 @@ func builtinLeSetLinesFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinLeInsertLineFunc inserts one or more lines at index.
 func builtinLeInsertLineFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -17918,7 +17321,6 @@ func builtinLeInsertLineFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinLeAppendLineFunc appends one or more lines to line-editor buffer.
 func builtinLeAppendLineFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -17943,7 +17345,6 @@ func builtinLeAppendLineFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinLeRemoveLineFunc removes one line from line-editor buffer by index.
 func builtinLeRemoveLineFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -17977,7 +17378,6 @@ func builtinLeRemoveLineFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinLeRemoveLinesFunc removes a range of lines from line-editor buffer.
 func builtinLeRemoveLinesFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -18025,7 +17425,6 @@ func builtinLeRemoveLinesFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinLeFindLinesFunc finds lines matching regex in line-editor buffer.
 func builtinLeFindLinesFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -18062,7 +17461,6 @@ func builtinLeFindLinesFunc(c Call) (Object, error) {
 	return aryT, nil
 }
 
-// builtinLeFindFunc finds first regex match and returns its position info.
 func builtinLeFindFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -18099,7 +17497,6 @@ func builtinLeFindFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinLeFindAllFunc finds all regex matches in line-editor buffer.
 func builtinLeFindAllFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -18140,7 +17537,6 @@ func builtinLeFindAllFunc(c Call) (Object, error) {
 	return totalFindsT, nil
 }
 
-// builtinLeReplaceFunc replaces regex matches across line-editor buffer.
 func builtinLeReplaceFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -18173,7 +17569,6 @@ func builtinLeReplaceFunc(c Call) (Object, error) {
 	return aryT, nil
 }
 
-// builtinLePrintFunc prints line-editor buffer with optional metadata.
 func builtinLePrintFunc(c Call) (Object, error) {
 	vmT := c.VM()
 
@@ -18206,7 +17601,6 @@ func builtinLePrintFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinAwsSignFunc signs AWS request parameters with secret key.
 func builtinAwsSignFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -18233,7 +17627,6 @@ func builtinAwsSignFunc(c Call) (Object, error) {
 	return String(rsT), nil
 }
 
-// builtinMagicFunc loads magic script by id and returns executable Gel.
 func builtinMagicFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -18254,7 +17647,6 @@ func builtinMagicFunc(c Call) (Object, error) {
 	return &Gel{Value: NewCharCode(fcT, nil)}, nil
 }
 
-// builtinS3PutObjectFunc uploads object data to S3-compatible storage.
 func builtinS3PutObjectFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -18392,7 +17784,6 @@ func builtinS3PutObjectFunc(c Call) (Object, error) {
 	return mapT, nil
 }
 
-// builtinS3GetObjectUrlFunc generates presigned download URL for object.
 func builtinS3GetObjectUrlFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -18464,7 +17855,6 @@ func builtinS3GetObjectUrlFunc(c Call) (Object, error) {
 	return ToStringObject(presignedURL.String()), nil
 }
 
-// builtinS3GetObjectTagsFunc retrieves object tags from S3 storage.
 func builtinS3GetObjectTagsFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -18520,7 +17910,6 @@ func builtinS3GetObjectTagsFunc(c Call) (Object, error) {
 	return ConvertToObject(tagsT), nil
 }
 
-// builtinS3GetObjectStatFunc retrieves object stat metadata from S3.
 func builtinS3GetObjectStatFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -18582,7 +17971,6 @@ func builtinS3GetObjectStatFunc(c Call) (Object, error) {
 	return ConvertToObject(tk.FromJSONX(tk.ToJSONX(statT))), nil
 }
 
-// builtinS3GetObjectBytesFunc downloads object content as bytes from S3.
 func builtinS3GetObjectBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -18646,7 +18034,6 @@ func builtinS3GetObjectBytesFunc(c Call) (Object, error) {
 	return Bytes(bytesT), nil
 }
 
-// builtinS3GetObjectTextFunc downloads object content as text from S3.
 func builtinS3GetObjectTextFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -18710,7 +18097,6 @@ func builtinS3GetObjectTextFunc(c Call) (Object, error) {
 	return String(string(bytesT)), nil
 }
 
-// builtinS3GetObjectReaderFunc opens streaming reader for S3 object.
 func builtinS3GetObjectReaderFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -18768,7 +18154,6 @@ func builtinS3GetObjectReaderFunc(c Call) (Object, error) {
 	return readerT, nil
 }
 
-// builtinS3GetObjectToFileFunc downloads S3 object to local file path.
 func builtinS3GetObjectToFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -18833,7 +18218,6 @@ func builtinS3GetObjectToFileFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinS3StatObjectFunc returns S3 object stat info, optionally compact.
 func builtinS3StatObjectFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -18927,7 +18311,6 @@ func builtinS3StatObjectFunc(c Call) (Object, error) {
 	return ConvertToObject(map1T), nil
 }
 
-// builtinS3RemoveObjectFunc removes object from S3-compatible storage.
 func builtinS3RemoveObjectFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -18995,7 +18378,6 @@ func builtinS3RemoveObjectFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinS3CopyObjectFunc copies an object between S3 buckets/paths.
 func builtinS3CopyObjectFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19072,7 +18454,6 @@ func builtinS3CopyObjectFunc(c Call) (Object, error) {
 	return ToStringObject(uploadInfo.VersionID), nil
 }
 
-// builtinS3MoveObjectFunc moves object by copy-then-delete in S3 storage.
 func builtinS3MoveObjectFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19163,7 +18544,6 @@ func builtinS3MoveObjectFunc(c Call) (Object, error) {
 	return ToStringObject(uploadInfo.VersionID), nil
 }
 
-// builtinS3ListObjectsFunc lists objects in S3 bucket with filters/options.
 func builtinS3ListObjectsFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19303,7 +18683,6 @@ func builtinS3ListObjectsFunc(c Call) (Object, error) {
 	return aryT, nil
 }
 
-// builtinReplaceHtmlByMapFunc replaces template placeholders in HTML string.
 func builtinReplaceHtmlByMapFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19329,7 +18708,6 @@ func builtinReplaceHtmlByMapFunc(c Call) (Object, error) {
 	return ToStringObject(s), nil
 }
 
-// builtinDocxReplacePatternFunc replaces placeholder patterns in DOCX bytes.
 func builtinDocxReplacePatternFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19369,7 +18747,6 @@ func builtinDocxReplacePatternFunc(c Call) (Object, error) {
 	return Bytes(rs.([]byte)), nil
 }
 
-// builtinDocxGetPlaceholdersFunc extracts placeholders from DOCX bytes.
 func builtinDocxGetPlaceholdersFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19392,7 +18769,6 @@ func builtinDocxGetPlaceholdersFunc(c Call) (Object, error) {
 	return ConvertToObject(rs), nil
 }
 
-// builtinShowTableFunc renders a 2D array as formatted text table.
 func builtinShowTableFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19451,7 +18827,6 @@ func builtinShowTableFunc(c Call) (Object, error) {
 	return String(rs), nil
 }
 
-// builtinDocxToStrsFunc converts DOCX input to extracted text lines.
 func builtinDocxToStrsFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19477,7 +18852,6 @@ func builtinDocxToStrsFunc(c Call) (Object, error) {
 	return ConvertToObject(rs), nil
 }
 
-// builtinSendMailFunc sends email with recipients, body, and attachments.
 func builtinSendMailFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19627,7 +19001,6 @@ func builtinSendMailFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinGuiServerCommandFunc sends command request to GUI server endpoint.
 func builtinGuiServerCommandFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19688,7 +19061,6 @@ func builtinGuiServerCommandFunc(c Call) (Object, error) {
 	return ConvertToObject(rs), nil
 }
 
-// builtinArrayContainsFunc checks whether array/any contains target value.
 func builtinArrayContainsFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19719,7 +19091,6 @@ func builtinArrayContainsFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type: (%T)%v", args[0], args[0]), nil
 }
 
-// builtinGetRandomIntFunc returns random int, optionally within range.
 func builtinGetRandomIntFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19741,7 +19112,6 @@ func builtinGetRandomIntFunc(c Call) (Object, error) {
 	return Int(tk.GetRandomIntLessThan(int(ToIntObject(args[0])))), nil
 }
 
-// builtinGetRandomFloatFunc returns random float in [0,1).
 func builtinGetRandomFloatFunc(c Call) (Object, error) {
 	if RandomGeneratorG == nil {
 		RandomGeneratorG = tk.NewRandomGenerator()
@@ -19752,7 +19122,6 @@ func builtinGetRandomFloatFunc(c Call) (Object, error) {
 	return Float(RandomGeneratorG.Float64()), nil
 }
 
-// builtinGetRandomStrFunc generates random string with optional settings.
 func builtinGetRandomStrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19761,7 +19130,6 @@ func builtinGetRandomStrFunc(c Call) (Object, error) {
 	return String(rs), nil
 }
 
-// builtintStrUnquoteFunc unquotes a quoted string literal.
 func builtintStrUnquoteFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19778,7 +19146,6 @@ func builtintStrUnquoteFunc(c Call) (Object, error) {
 	return String(rs), nil
 }
 
-// builtinStrToTimeFunc parses time from string with optional format.
 func builtinStrToTimeFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19806,7 +19173,6 @@ func builtinStrToTimeFunc(c Call) (Object, error) {
 	return &Time{Value: rsT}, nil
 }
 
-// BuiltinDealStrFunc decodes/decrypts tagged string formats.
 func BuiltinDealStrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19884,7 +19250,6 @@ func BuiltinDealStrFunc(c Call) (Object, error) {
 	return String(strT), nil
 }
 
-// BuiltinFuzzyFindFunc performs fuzzy search on string or string list.
 func BuiltinFuzzyFindFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19943,7 +19308,6 @@ func BuiltinFuzzyFindFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "parameter type(%T) not supported", args[0]), nil
 }
 
-// builtinSscanfFunc scans formatted data from string into targets.
 func builtinSscanfFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -19960,7 +19324,6 @@ func builtinSscanfFunc(c Call) (Object, error) {
 	return ToIntObject(rsT), nil
 }
 
-// builtinBitNotFunc applies bitwise-not (or bool negation) to value.
 func builtinBitNotFunc(c Call) (Object, error) {
 	// ^x    bitwise complement    is m ^ x  with m = "all bits set to 1" for unsigned x
 	// and  m = -1 for signed x
@@ -19993,7 +19356,6 @@ func builtinBitNotFunc(c Call) (Object, error) {
 	return Undefined, NewCommonErrorWithPos(c, "unsupported type: (%T)%v", args[0], args[0])
 }
 
-// builtinToOrderedMapFunc converts Map to OrderedMap object.
 func builtinToOrderedMapFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20016,7 +19378,6 @@ func builtinToOrderedMapFunc(c Call) (Object, error) {
 	return rs, nil
 }
 
-// builtinAdjustFloatFunc normalizes float precision for Float/BigFloat.
 func builtinAdjustFloatFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20049,7 +19410,6 @@ func builtinAdjustFloatFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
 }
 
-// builtinStrSplitFunc splits string by separator with optional limit.
 func builtinStrSplitFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20070,7 +19430,6 @@ func builtinStrSplitFunc(c Call) (Object, error) {
 	return ConvertToObject(strings.SplitN(nv1, nv2, limitT)), nil
 }
 
-// builtinStrSplitNFunc splits string by separator with required limit.
 func builtinStrSplitNFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20087,7 +19446,6 @@ func builtinStrSplitNFunc(c Call) (Object, error) {
 	return ConvertToObject(strings.SplitN(nv1, nv2, limitT)), nil
 }
 
-// builtinStrJoinFunc joins array/list elements into one string.
 func builtinStrJoinFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20130,7 +19488,6 @@ func builtinStrJoinFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
 }
 
-// builtinMathSqrtFunc returns square root of numeric input.
 func builtinMathSqrtFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20158,7 +19515,6 @@ func builtinMathSqrtFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
 }
 
-// builtinMathExpFunc returns e**x for numeric input.
 func builtinMathExpFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20186,7 +19542,6 @@ func builtinMathExpFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
 }
 
-// builtinMathLogFunc returns natural logarithm for numeric input.
 func builtinMathLogFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20214,7 +19569,6 @@ func builtinMathLogFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
 }
 
-// builtinMathLog10Func returns base-10 logarithm for numeric input.
 func builtinMathLog10Func(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20225,7 +19579,6 @@ func builtinMathLog10Func(c Call) (Object, error) {
 	return Float(math.Log10(ToFloatQuick(args[0]))), nil
 }
 
-// builtinMathSinFunc returns sine of numeric input (radians).
 func builtinMathSinFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20236,7 +19589,6 @@ func builtinMathSinFunc(c Call) (Object, error) {
 	return Float(math.Sin(ToFloatQuick(args[0]))), nil
 }
 
-// builtinMathCosFunc returns cosine of numeric input (radians).
 func builtinMathCosFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20247,7 +19599,6 @@ func builtinMathCosFunc(c Call) (Object, error) {
 	return Float(math.Cos(ToFloatQuick(args[0]))), nil
 }
 
-// builtinMathTanFunc returns tangent of numeric input (radians).
 func builtinMathTanFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20258,7 +19609,6 @@ func builtinMathTanFunc(c Call) (Object, error) {
 	return Float(math.Tan(ToFloatQuick(args[0]))), nil
 }
 
-// builtinMathAtan2Func returns atan2(y, x) for two numeric inputs.
 func builtinMathAtan2Func(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20269,17 +19619,14 @@ func builtinMathAtan2Func(c Call) (Object, error) {
 	return Float(math.Atan2(ToFloatQuick(args[0]), ToFloatQuick(args[1]))), nil
 }
 
-// builtinMathPiFunc returns mathematical constant Pi.
 func builtinMathPiFunc(c Call) (Object, error) {
 	return Float(math.Pi), nil
 }
 
-// builtinMathEFunc returns mathematical constant E.
 func builtinMathEFunc(c Call) (Object, error) {
 	return Float(math.E), nil
 }
 
-// builtinMathPowFunc returns x^y for numeric inputs.
 func builtinMathPowFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20307,7 +19654,6 @@ func builtinMathPowFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
 }
 
-// builtinMathAbsFunc returns absolute value of numeric input.
 func builtinMathAbsFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20363,47 +19709,38 @@ func builtinMathAbsFunc(c Call) (Object, error) {
 	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
 }
 
-// builtinHttpHandlerFunc creates an HttpHandler object.
 func builtinHttpHandlerFunc(c Call) (Object, error) {
 	return NewHttpHandler(c)
 }
 
-// builtinHttpReqFunc creates an HttpReq object.
 func builtinHttpReqFunc(c Call) (Object, error) {
 	return NewHttpReq(c)
 }
 
-// builtinWebSocketFunc creates a WebSocket object.
 func builtinWebSocketFunc(c Call) (Object, error) {
 	return NewWebSocket(c)
 }
 
-// builtinImageFunc creates an Image object.
 func builtinImageFunc(c Call) (Object, error) {
 	return NewImage(c)
 }
 
-// builtinReaderFunc creates a Reader object.
 func builtinReaderFunc(c Call) (Object, error) {
 	return NewReader(c)
 }
 
-// builtinWriterFunc creates a Writer object.
 func builtinWriterFunc(c Call) (Object, error) {
 	return NewWriter(c)
 }
 
-// builtinFileFunc creates a File object.
 func builtinFileFunc(c Call) (Object, error) {
 	return NewFile(c)
 }
 
-// BuiltinDelegateFunc creates a Delegate object.
 func BuiltinDelegateFunc(c Call) (Object, error) {
 	return NewDelegate(c)
 }
 
-// builtinWriteRespHeaderFunc writes HTTP response status/header metadata.
 func builtinWriteRespHeaderFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20461,7 +19798,6 @@ func builtinWriteRespHeaderFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinImageToAsciiFunc converts an image to ASCII-art lines.
 func builtinImageToAsciiFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20484,7 +19820,6 @@ func builtinImageToAsciiFunc(c Call) (Object, error) {
 	return ConvertToObject(imageT.([]string)), nil
 }
 
-// builtinGetImageInfoFunc returns width and height of image.
 func builtinGetImageInfoFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20507,7 +19842,6 @@ func builtinGetImageInfoFunc(c Call) (Object, error) {
 	return rsT, nil
 }
 
-// builtinStrToRgbaFunc parses color string and returns RGBA components.
 func builtinStrToRgbaFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20529,7 +19863,6 @@ func builtinStrToRgbaFunc(c Call) (Object, error) {
 	return rsT, nil
 }
 
-// builtinEncodeImageFunc encodes image to writer in selected format.
 func builtinEncodeImageFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20591,7 +19924,6 @@ func builtinEncodeImageFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinEncodeBytesInImageFunc embeds bytes payload into image data.
 func builtinEncodeBytesInImageFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20622,7 +19954,6 @@ func builtinEncodeBytesInImageFunc(c Call) (Object, error) {
 	return Bytes(rs.([]byte)), nil
 }
 
-// builtinDecodeBytesFromImageFunc extracts embedded bytes from image.
 func builtinDecodeBytesFromImageFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20642,7 +19973,6 @@ func builtinDecodeBytesFromImageFunc(c Call) (Object, error) {
 	return Bytes(rs), nil
 }
 
-// builtinDrawImageOnImageFunc draws one image onto another image.
 func builtinDrawImageOnImageFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20685,7 +20015,6 @@ func builtinDrawImageOnImageFunc(c Call) (Object, error) {
 	return &Image{Value: dc.Image()}, nil
 }
 
-// builtinDrawTextWrappedOnImageFunc draws wrapped text onto image.
 func builtinDrawTextWrappedOnImageFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20759,7 +20088,6 @@ func builtinDrawTextWrappedOnImageFunc(c Call) (Object, error) {
 	return &Image{Value: dc.Image()}, nil
 }
 
-// builtinAddWatermarkToImageFunc applies watermark image onto base image.
 func builtinAddWatermarkToImageFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20784,7 +20112,6 @@ func builtinAddWatermarkToImageFunc(c Call) (Object, error) {
 	return &Image{Value: imgT}, nil
 }
 
-// builtinSetImageOpacityFunc adjusts opacity of an image.
 func builtinSetImageOpacityFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20804,7 +20131,6 @@ func builtinSetImageOpacityFunc(c Call) (Object, error) {
 	return &Image{Value: imgT}, nil
 }
 
-// builtinGenQrFunc generates QR code image from text.
 func builtinGenQrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20825,7 +20151,6 @@ func builtinGenQrFunc(c Call) (Object, error) {
 	return &Image{Value: qrCodeT}, nil
 }
 
-// builtinScanQrFunc scans QR code text from image.
 func builtinScanQrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20850,7 +20175,6 @@ func builtinScanQrFunc(c Call) (Object, error) {
 	return String(qrCodeT), nil
 }
 
-// builtinAesEncryptFunc encrypts bytes/string with AES (ECB/CBC modes).
 func builtinAesEncryptFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20890,7 +20214,6 @@ func builtinAesEncryptFunc(c Call) (Object, error) {
 	return String(string(rs)), nil
 }
 
-// builtinAesDecryptFunc decrypts AES-encrypted bytes/string data.
 func builtinAesDecryptFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -20930,14 +20253,12 @@ func builtinAesDecryptFunc(c Call) (Object, error) {
 	return String(string(rs)), nil
 }
 
-// SHA1 returns SHA-1 digest bytes for input data.
 func SHA1(data []byte) []byte {
 	h := sha1.New()
 	h.Write(data)
 	return h.Sum(nil)
 }
 
-// SHA1PRNG derives pseudo-random bytes from seed using SHA-1.
 func SHA1PRNG(seed []byte, size int) ([]byte, error) {
 	hashs := SHA1(SHA1(seed))
 	maxLen := len(hashs)
@@ -20950,7 +20271,6 @@ func SHA1PRNG(seed []byte, size int) ([]byte, error) {
 	return hashs[0:realLen], nil
 }
 
-// bytes2Hex converts bytes to lowercase hexadecimal string.
 func bytes2Hex(bytes []byte) string {
 	var buffer strings.Builder
 
@@ -20962,8 +20282,6 @@ func bytes2Hex(bytes []byte) string {
 
 	return buffer.String()
 }
-
-// getSHA256 returns SHA-256 hex digest of a string.
 func getSHA256(str string) (string, error) {
 	hash := sha256.New()
 	_, err := hash.Write([]byte(str))
@@ -20980,7 +20298,6 @@ type RSAEncryption struct {
 	random    io.Reader
 }
 
-// newRSAEncryption creates RSAEncryption from a base64 public key.
 func newRSAEncryption(base64PubKey string) (*RSAEncryption, error) {
 	pubKeyBytes, err := decryptBASE64(base64PubKey)
 	if err != nil {
@@ -20999,7 +20316,6 @@ func newRSAEncryption(base64PubKey string) (*RSAEncryption, error) {
 	}, nil
 }
 
-// decryptBASE64 decodes a base64 string into raw bytes.
 func decryptBASE64(input string) ([]byte, error) {
 	decoded, err := base64.StdEncoding.DecodeString(input)
 	if err != nil {
@@ -21008,7 +20324,6 @@ func decryptBASE64(input string) ([]byte, error) {
 	return decoded, nil
 }
 
-// generatePublicKey parses DER bytes into an RSA public key.
 func generatePublicKey(keyBytes []byte) (*rsa.PublicKey, error) {
 	publicKey, err := x509.ParsePKIXPublicKey(keyBytes)
 	if err != nil {
@@ -21023,7 +20338,6 @@ func generatePublicKey(keyBytes []byte) (*rsa.PublicKey, error) {
 	return rsaKey, nil
 }
 
-// Encrypt encrypts plaintext using RSA-OAEP and returns URL-escaped base64 text.
 func (r *RSAEncryption) Encrypt(plainText string) (string, error) {
 	data := []byte(plainText)
 	inputLen := len(data)
@@ -21050,7 +20364,6 @@ func (r *RSAEncryption) Encrypt(plainText string) (string, error) {
 	return url.QueryEscape(encoded), nil
 }
 
-// encryptBlock encrypts one data block with RSA-OAEP.
 func (r *RSAEncryption) encryptBlock(data []byte) ([]byte, error) {
 	return rsa.EncryptOAEP(
 		r.hash,
@@ -21061,7 +20374,6 @@ func (r *RSAEncryption) encryptBlock(data []byte) ([]byte, error) {
 	)
 }
 
-// builtinGetSha256WithKeyYYFunc computes SHA256-related keyed digest value.
 func builtinGetSha256WithKeyYYFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -21099,7 +20411,6 @@ func builtinGetSha256WithKeyYYFunc(c Call) (Object, error) {
 	return String(rs), nil
 }
 
-// builtinRsaEncryptStrYYFunc encrypts text using provided RSA public key.
 func builtinRsaEncryptStrYYFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -21124,7 +20435,6 @@ func builtinRsaEncryptStrYYFunc(c Call) (Object, error) {
 	return String(encrypted), nil
 }
 
-// builtinSaveImageToFileFunc saves Image object to file path.
 func builtinSaveImageToFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -21146,7 +20456,6 @@ func builtinSaveImageToFileFunc(c Call) (Object, error) {
 	return ConvertToObject(errT), nil
 }
 
-// builtinSaveImageToBytesFunc encodes Image object and returns bytes.
 func builtinSaveImageToBytesFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -21166,7 +20475,6 @@ func builtinSaveImageToBytesFunc(c Call) (Object, error) {
 	return ConvertToObject(rsT), nil
 }
 
-// builtinResizeImageFunc resizes image to target width/height.
 func builtinResizeImageFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -21189,7 +20497,6 @@ func builtinResizeImageFunc(c Call) (Object, error) {
 	return ConvertToObject(imageT), nil
 }
 
-// builtinPlotDataToStrFunc renders numeric series as ASCII plot string.
 func builtinPlotDataToStrFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -21309,7 +20616,6 @@ func builtinPlotDataToStrFunc(c Call) (Object, error) {
 	return ConvertToObject(rs), nil
 }
 
-// builtinPlotLoadFontFunc loads chart font from file and optional default.
 func builtinPlotLoadFontFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -21355,7 +20661,6 @@ func builtinPlotLoadFontFunc(c Call) (Object, error) {
 	return Undefined, nil
 }
 
-// builtinPlotDataToImageFunc renders numeric series into chart image/bytes.
 func builtinPlotDataToImageFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -21931,7 +21236,6 @@ func builtinPlotDataToImageFunc(c Call) (Object, error) {
 	return Bytes(bytesT), nil
 }
 
-// builtinCloseFunc closes supported resource objects safely.
 func builtinCloseFunc(c Call) (result Object, err error) {
 	defer func() {
 		r := recover()
@@ -22086,7 +21390,6 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 	return NewCommonErrorWithPos(c, "unsupported type: %v", typeNameT), nil
 }
 
-// builtinSortArrayFunc sorts array/string/bytes with optional key/order.
 func builtinSortArrayFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -22198,7 +21501,6 @@ func builtinSortArrayFunc(c Call) (Object, error) {
 	)
 }
 
-// builtinShuffleFunc shuffles array/string/bytes by swap iterations.
 func builtinShuffleFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
