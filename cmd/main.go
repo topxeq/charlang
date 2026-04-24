@@ -463,20 +463,20 @@ func runInteractiveShell() int {
 		if !scanner.Scan() {
 			break
 		}
-		
+
 		strT := scanner.Text()
-		
+
 		if strings.HasSuffix(strT, "\\") {
 			source += strT[:len(strT)-1] + "\n"
 			following = true
 			continue
 		}
-		
+
 		source += strT
 		if source == "" {
 			continue
 		}
-		
+
 		if source == "q" || source == "quit()" {
 			break
 		}
@@ -506,7 +506,7 @@ func runInteractiveShell() int {
 		// gox.RetG = gox.NotFoundG
 
 		// err := gox.QlVMG.SafeEval(source)
-		
+
 		source = tk.DealString(tk.DealString(strings.TrimSpace(source)))
 
 		lastResultT, lastBytecodeT, errT := evalT.Run(ctx, []byte(source))
@@ -768,7 +768,7 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 	if reqT == "" {
 		reqT = tk.GetFormValueWithDefaultValue(req, "charms", "")
 	}
-	
+
 	if verboseG {
 		tk.Pl("RequestURI: %v", req.RequestURI)
 	}
@@ -812,45 +812,119 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 
 	toWriteT := ""
 
-	fileNameT := reqT
+	// === Routing logic ===
+	reqPathT := reqT
+	fullPathT := filepath.Join(basePathG, reqPathT)
 
-	if !tk.EndsWith(fileNameT, ".char") {
-		fileNameT += ".char"
+	// 1. Directory → look for index.char
+	if tk.IfFileExists(fullPathT) && tk.IsDirectory(fullPathT) {
+		candidateT := filepath.Join(fullPathT, "index.char")
+		if tk.IfFileExists(candidateT) {
+			fullPathT = candidateT
+			reqPathT = filepath.Join(reqPathT, "index.char")
+		}
 	}
 
-	fullPathT := filepath.Join(basePathG, fileNameT)
-
-	if verboseG {
-		tk.Pl("[%v] file path: %#v", tk.GetNowTimeStringFormal(), fullPathT)
-	}
-
-	fcT := tk.LoadStringFromFile(fullPathT)
-	if tk.IsErrStr(fcT) {
-		res.Write([]byte(tk.ErrStrf("action failed: %v", tk.GetErrStr(fcT))))
+	// 2. Existing file
+	if tk.IfFileExists(fullPathT) && !tk.IsDirectory(fullPathT) {
+		// 2a. .char file → compile and execute
+		if tk.EndsWith(fullPathT, ".char") {
+			fcT := tk.LoadStringFromFile(fullPathT)
+			if tk.IsErrStr(fcT) {
+				res.Write([]byte(tk.ErrStrf("action failed: %v", tk.GetErrStr(fcT))))
+				return
+			}
+			toWriteT, errT = charlang.RunScriptOnHttp(fcT, nil, res, req, paraMapT["input"], nil, paraMapT,
+				map[string]interface{}{"scriptPathG": fullPathT, "runModeG": "charms", "basePathG": basePathG}, "-base="+basePathG)
+			if errT != nil {
+				res.Header().Set("Content-Type", "text/html; charset=utf-8")
+				errStrT := tk.ErrStrf("action failed: %v", errT)
+				tk.Pln(errStrT)
+				res.Write([]byte(errStrT))
+				return
+			}
+			if toWriteT == "TX_END_RESPONSE_XT" {
+				return
+			}
+			res.Header().Set("Content-Type", "text/html; charset=utf-8")
+			res.Write([]byte(toWriteT))
+			return
+		}
+		// 2b. Non-.char file → serve as static
+		http.ServeFile(res, req, fullPathT)
 		return
 	}
 
-	// paraMapT["_reqHost"] = req.Host
-	// paraMapT["_reqInfo"] = fmt.Sprintf("%#v", req)
-
-	toWriteT, errT = charlang.RunScriptOnHttp(fcT, nil, res, req, paraMapT["input"], nil, paraMapT, map[string]interface{}{"scriptPathG": fullPathT, "runModeG": "charms", "basePathG": basePathG}, "-base="+basePathG)
-
-	if errT != nil {
+	// 3. Not found → try appending .char suffix (legacy compatibility)
+	charPathT := fullPathT
+	if !tk.EndsWith(charPathT, ".char") {
+		charPathT += ".char"
+	}
+	if tk.IfFileExists(charPathT) {
+		fcT := tk.LoadStringFromFile(charPathT)
+		if tk.IsErrStr(fcT) {
+			res.Write([]byte(tk.ErrStrf("action failed: %v", tk.GetErrStr(fcT))))
+			return
+		}
+		toWriteT, errT = charlang.RunScriptOnHttp(fcT, nil, res, req, paraMapT["input"], nil, paraMapT,
+			map[string]interface{}{"scriptPathG": charPathT, "runModeG": "charms", "basePathG": basePathG}, "-base="+basePathG)
+		if errT != nil {
+			res.Header().Set("Content-Type", "text/html; charset=utf-8")
+			errStrT := tk.ErrStrf("action failed: %v", errT)
+			tk.Pln(errStrT)
+			res.Write([]byte(errStrT))
+			return
+		}
+		if toWriteT == "TX_END_RESPONSE_XT" {
+			return
+		}
 		res.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-		errStrT := tk.ErrStrf("action failed: %v", errT)
-		tk.Pln(errStrT)
-		res.Write([]byte(errStrT))
+		res.Write([]byte(toWriteT))
 		return
 	}
 
-	if toWriteT == "TX_END_RESPONSE_XT" {
-		return
-	}
+	// 4. Nothing matched
+	http.NotFound(res, req)
 
-	res.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-	res.Write([]byte(toWriteT))
+	//	fileNameT := reqT
+	//
+	//	if !tk.EndsWith(fileNameT, ".char") {
+	//		fileNameT += ".char"
+	//	}
+	//
+	//	fullPathT := filepath.Join(basePathG, fileNameT)
+	//
+	//	if verboseG {
+	//		tk.Pl("[%v] file path: %#v", tk.GetNowTimeStringFormal(), fullPathT)
+	//	}
+	//
+	//	fcT := tk.LoadStringFromFile(fullPathT)
+	//	if tk.IsErrStr(fcT) {
+	//		res.Write([]byte(tk.ErrStrf("action failed: %v", tk.GetErrStr(fcT))))
+	//		return
+	//	}
+	//
+	//	// paraMapT["_reqHost"] = req.Host
+	//	// paraMapT["_reqInfo"] = fmt.Sprintf("%#v", req)
+	//
+	//	toWriteT, errT = charlang.RunScriptOnHttp(fcT, nil, res, req, paraMapT["input"], nil, paraMapT, map[string]interface{}{"scriptPathG": fullPathT, "runModeG": "charms", "basePathG": basePathG}, "-base="+basePathG)
+	//
+	//	if errT != nil {
+	//		res.Header().Set("Content-Type", "text/html; charset=utf-8")
+	//
+	//		errStrT := tk.ErrStrf("action failed: %v", errT)
+	//		tk.Pln(errStrT)
+	//		res.Write([]byte(errStrT))
+	//		return
+	//	}
+	//
+	//	if toWriteT == "TX_END_RESPONSE_XT" {
+	//		return
+	//	}
+	//
+	//	res.Header().Set("Content-Type", "text/html; charset=utf-8")
+	//
+	//	res.Write([]byte(toWriteT))
 }
 
 func doCharmsContent(res http.ResponseWriter, req *http.Request) {
@@ -998,14 +1072,14 @@ func runLine(strA string) interface{} {
 	if errT != nil {
 		return errT
 	}
-	
+
 	argsT = append([]string{tk.GetApplicationPath()}, argsT...)
 
 	return runArgs(argsT...)
 }
 
 func runArgs(argsT ...string) interface{} {
-//	argsT := argsA
+	//	argsT := argsA
 
 	if tk.IfSwitchExistsWhole(argsT, "-version") {
 		tk.Pl("Charlang by TopXeQ V%v", charlang.VersionG)
@@ -1035,9 +1109,9 @@ func runArgs(argsT ...string) interface{} {
 	getWebUrlT := strings.TrimSpace(tk.GetSwitchWithDefaultValue(argsT, "-getWeb=", ""))
 	if getWebUrlT != "" {
 		getWebUrlT = tk.DealString(getWebUrlT)
-		
+
 		tk.Pln(tk.GetWeb(getWebUrlT, tk.StringArrayToAnyArray(argsT)...))
-		
+
 		return nil
 	}
 
@@ -1199,14 +1273,14 @@ func runArgs(argsT ...string) interface{} {
 
 	ifRemoteT := tk.IfSwitchExistsWhole(argsT, "-remote")
 	ifRemoteTextT := tk.IfSwitchExistsWhole(argsT, "-remoteText")
-	
+
 	secondScriptT := ""
 
 	if ifEditT {
 		if !ifInExeT {
 			ifExampleT = true
 			secondScriptT = scriptT
-			
+
 			if ifRemoteTextT {
 				if strings.TrimSpace(scriptT) != "" {
 					argsT = append(argsT, "-fromRemoteText="+secondScriptT)
@@ -1226,7 +1300,7 @@ func runArgs(argsT ...string) interface{} {
 	}
 
 	ifCEditT := tk.IfSwitchExistsWhole(argsT, "-cedit")
-	
+
 	if scriptT == "" && (!ifClipT) && (!ifSelectScriptT) && (!ifEditT) && (!ifCEditT) && (!ifEmbedT) && (!ifInExeT) && (!ifPipeT) {
 		autoPathT := "auto.char"
 		autoCxbPathT := "auto.cxb"
@@ -1360,7 +1434,7 @@ func runArgs(argsT ...string) interface{} {
 		if tk.IfSwitchExistsWhole(argsT, "-urlDecode") {
 			fcT = tk.UrlDecode(fcT)
 		}
-		
+
 		fcT = tk.DealString(fcT, "char")
 
 		scriptPathT = ""
@@ -1381,7 +1455,7 @@ func runArgs(argsT ...string) interface{} {
 		scriptPathT = "http://topget.org/dc/t/charlang/example/" + scriptT
 
 		fcT = tk.DownloadPageUTF8("http://topget.org/dc/t/charlang/example/"+scriptT, nil, "", 30)
-		
+
 		if ifRemoteTextT {
 			argsT = append(argsT, "-fromRemoteText="+tk.DealString(secondScriptT))
 		}
@@ -1658,53 +1732,53 @@ func runArgs(argsT ...string) interface{} {
 			ifBatchT = true
 		}
 	}
-	
+
 	fcT = tk.DealString(fcT, tk.GetSwitchWithDefaultValue(argsT, "-secureCode=", ""))
 
 	if ifBatchT {
-	 	listT := tk.SplitLinesRemoveEmpty(fcT)
+		listT := tk.SplitLinesRemoveEmpty(fcT)
 
-	 	// tk.Plv(fcT)
-	 	// tk.Plv(listT)
+		// tk.Plv(fcT)
+		// tk.Plv(listT)
 
-	 	for _, v := range listT {
-	 		// tk.Pl("Run line: %#v", v)
-	 		v = tk.Trim(v)
+		for _, v := range listT {
+			// tk.Pl("Run line: %#v", v)
+			v = tk.Trim(v)
 
-	 		if tk.StartsWith(v, "//") {
-	 			continue
-	 		}
+			if tk.StartsWith(v, "//") {
+				continue
+			}
 
-	 		rsT := runLine(v)
+			rsT := runLine(v)
 
-	 		if rsT != nil {
-	 			valueT, ok := rsT.(error)
+			if rsT != nil {
+				valueT, ok := rsT.(error)
 
-	 			if ok {
-	 				return valueT
-	 			} else {
+				if ok {
+					return valueT
+				} else {
 					_, ok := rsT.(*charlang.UndefinedType)
 
 					if !ok {
-		 				tk.Pl("%#v(%T)", rsT, rsT)
+						tk.Pl("%#v(%T)", rsT, rsT)
 					}
-	 			}
-	 		}
+				}
+			}
 
-	 	}
+		}
 
-	 	return nil
+		return nil
 	}
 
 	if ifCEditT {
 		var tmps string
-		
+
 		if fcT != "" {
 			tmps = tk.GetMultiLineInput(nil, "-title="+fmt.Sprintf("Charlang by TopXeQ V%v", charlang.VersionG), "-bottom=Press Ctrl-Q to finish, Ctrl-X to exit.", "-width=78", "-height=15", "-keep", "-text="+fcT)
 		} else {
 			tmps = tk.GetMultiLineInput(nil, "-title="+fmt.Sprintf("Charlang by TopXeQ V%v", charlang.VersionG), "-bottom=Press Ctrl-Q to finish, Ctrl-X to exit.", "-width=78", "-height=15", "-keep")
 		}
-		
+
 		if strings.HasPrefix(tmps, "TXERROR:") {
 			if tmps == "TXERROR:cancel" {
 				return nil
@@ -1714,10 +1788,10 @@ func runArgs(argsT ...string) interface{} {
 			}
 		} else {
 			fcT = tmps
-//			scriptT = tmps
-//			scriptT = "CMD"
-//			cmdT = tmps
-//			scriptPathT = ""
+			//			scriptT = tmps
+			//			scriptT = "CMD"
+			//			cmdT = tmps
+			//			scriptPathT = ""
 		}
 	}
 
