@@ -29,7 +29,7 @@ import (
 )
 
 // global vars
-var VersionG = "2.1.6"
+var VersionG = "2.1.7"
 
 var CodeTextG = ""
 
@@ -2777,6 +2777,13 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 		envT,
 		inParasT,
 	)
+
+	// cleanup: close any unclosed database connections in env
+	for _, v := range *envT {
+		if db, ok := v.(*Database); ok {
+			db.Value.Close()
+		}
+	}
 
 	if errT != nil {
 		res.Write([]byte(tk.ErrStrf("%v", errT.Error())))

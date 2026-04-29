@@ -672,6 +672,16 @@ func doServer() {
 	basePathG = tk.GetSwitch(os.Args, "-dir=", basePathG)
 	webPathG = tk.GetSwitch(os.Args, "-webDir=", basePathG)
 	certPathG = tk.GetSwitch(os.Args, "-certDir=", basePathG)
+	
+	webExtsG = map[string]bool {
+		".html": true, ".htm": true, ".css": true, ".js": true,
+		".json": true, ".xml": true,
+		".png": true, ".jpg": true, ".jpeg": true, ".gif": true, ".svg": true, ".ico": true, ".webp": true,
+		".woff": true, ".woff2": true, ".ttf": true, ".eot": true, ".otf": true,
+		".mp3": true, ".mp4": true, ".wav": true, ".webm": true,
+		".pdf": true, ".txt": true, ".md": true,
+		".map": true, ".wasm": true,
+	}
 
 	muxG = http.NewServeMux()
 
@@ -751,6 +761,8 @@ func genFailCompact(titleA, msgA string, optsA ...string) string {
 
 	return tmplT
 }
+
+var webExtsG map[string]bool  
 
 func doCharms(res http.ResponseWriter, req *http.Request) {
 	if res != nil {
@@ -851,7 +863,15 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 		// 2b. Non-.char file → serve as static
-		http.ServeFile(res, req, fullPathT)
+		extT := strings.ToLower(filepath.Ext(fullPathT))
+		
+		if webExtsG[extT] {
+			http.ServeFile(res, req, fullPathT)
+		} else {
+			res.WriteHeader(404)
+			res.Write([]byte("404 Not Found"))
+		}
+		
 		return
 	}
 

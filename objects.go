@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -9952,6 +9953,8 @@ func NewReader(c Call) (Object, error) {
 			// defer f.Close()
 
 			rs := &Reader{Value: f}
+			
+			runtime.SetFinalizer(f, func(file *os.File) { file.Close() })
 
 			// rs.CloseHandler = f
 
@@ -10289,6 +10292,8 @@ func NewWriter(c Call) (Object, error) {
 			}
 
 			rs := &Writer{Value: f}
+			
+			runtime.SetFinalizer(f, func(file *os.File) { file.Close() })
 
 			return rs, nil
 		}

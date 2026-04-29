@@ -102,6 +102,7 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
+	"runtime"
 
 	"github.com/domodwyer/mailyak"
 	"github.com/fogleman/gg"
@@ -16575,6 +16576,10 @@ func builtinDatabaseFunc(c Call) (Object, error) {
 		return NewFromError(rsT.(error)), nil
 	}
 
+	runtime.SetFinalizer(rsT.(*sql.DB), func(db *sql.DB) {
+		db.Close()
+	})
+	
 	return &Database{DBType: v1, DBConnectString: v2, Value: rsT.(*sql.DB)}, nil
 }
 
@@ -16722,6 +16727,8 @@ func BuiltinDbCloseFunc(c Call) (Object, error) {
 	}
 
 	errT := nv.Value.Close()
+	
+	runtime.SetFinalizer(nv.Value, nil)
 
 	if errT != nil {
 		return NewCommonError("failed to close DB: %v", errT), nil
@@ -18572,6 +18579,8 @@ func builtinS3GetObjectStatFunc(c Call) (Object, error) {
 	if errT != nil {
 		return NewCommonErrorWithPos(c, "failed to get object: %v", errT), nil
 	}
+	
+	defer objT.Close()
 
 	statT, errT := objT.Stat()
 
