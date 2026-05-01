@@ -311,15 +311,15 @@ func TestScript(t *testing.T) {
 	wrongArgs := func(want, got int) String {
 		return String(ErrWrongNumArguments.NewError(
 			fmt.Sprintf("want=%d got=%d", want, got),
-		).String())
+		).String() + "\n\tat (main):4:11")
 	}
 	nwrongArgs := func(want1, want2, got int) String {
 		return String(ErrWrongNumArguments.NewError(
 			fmt.Sprintf("want=%d..%d got=%d", want1, want2, got),
-		).String())
+		).String() + "\n\tat (main):4:11")
 	}
 	typeErr := func(pos, expected, got string) String {
-		return String(NewArgumentTypeError(pos, expected, got).String())
+		return String(NewArgumentTypeError(pos, expected, got).String() + "\n\tat (main):4:11")
 	}
 	testCases := []struct {
 		s string

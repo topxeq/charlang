@@ -231,7 +231,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("WrongNumberOfArgumentsError: want>=1 got=0"),
+			r: String("WrongNumberOfArgumentsError: want>=1 got=0\n\tat (main):5:4"),
 		},
 		{
 			s: `
@@ -241,7 +241,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("WrongNumberOfArgumentsError: want>=1 got=0"),
+			r: String("WrongNumberOfArgumentsError: want>=1 got=0\n\tat (main):5:4"),
 		},
 		{
 			s: `
@@ -251,7 +251,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("TypeError: \"unknown\" not implemented"),
+			r: String("TypeError: \"unknown\" not implemented\n\tat (main):5:11"),
 		},
 		{
 			s: `
@@ -261,7 +261,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("WrongNumberOfArgumentsError: want>=2 got=0"),
+			r: String("WrongNumberOfArgumentsError: want>=2 got=0\n\tat (main):5:11"),
 		},
 		{
 			s: `
@@ -271,7 +271,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("WrongNumberOfArgumentsError: want>=3 got=0"),
+			r: String("WrongNumberOfArgumentsError: want>=3 got=0\n\tat (main):5:11"),
 		},
 		{
 			s: `
@@ -281,7 +281,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("WrongNumberOfArgumentsError: want>=2 got=0"),
+			r: String("WrongNumberOfArgumentsError: want>=2 got=0\n\tat (main):5:11"),
 		},
 		{
 			s: `
@@ -291,7 +291,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("TypeError: invalid type for argument '2': expected ScanArg interface, found int"),
+			r: String("TypeError: invalid type for argument '2': expected ScanArg interface, found int\n\tat (main):5:11"),
 		},
 		{
 			s: `
@@ -301,7 +301,7 @@ func TestScript(t *testing.T) {
 			return string(err)
 		}
 			`,
-			r: String("TypeError: invalid type for argument '1': expected ScanArg interface, found int"),
+			r: String("TypeError: invalid type for argument '1': expected ScanArg interface, found int\n\tat (main):5:11"),
 		},
 	}
 	for _, tC := range testCases {

@@ -58,7 +58,7 @@ func TestVMErrorHandlers(t *testing.T) {
 	expectRun(t, `var a = 1; try { throw "an error" } catch {} finally { a = 2 }; return a`,
 		newOpts().Skip2Pass(), Int(2))
 	expectRun(t, `var a = 1; try { throw "an error" } catch err {} finally { return string(err) }; return a`,
-		newOpts().Skip2Pass(), String((&Error{Message: "an error"}).String()))
+		newOpts().Skip2Pass(), String("error: an error\n\tat (main):1:18"))
 	expectRun(t, `var a = 1; try { throw "an error" } catch err {} finally { return typeName(err) }; return a`,
 		newOpts().Skip2Pass(), String("error"))
 	expectRun(t, `var a = 1; try { a = 2 } finally { return a }; return 0`,
@@ -280,10 +280,10 @@ func TestVMCatchAll(t *testing.T) {
 	`, newOpts().Module("catchAll", catchAll),
 		Array{
 			String("6"),
-			String("WrongNumberOfArgumentsError: want=3 got=2"),
-			String("WrongNumberOfArgumentsError: want=3 got=1"),
-			String("WrongNumberOfArgumentsError: want=3 got=0"),
-			String("WrongNumberOfArgumentsError: want=3 got=4"),
+			String("WrongNumberOfArgumentsError: want=3 got=2\n\tat catchAll:4:11"),
+			String("WrongNumberOfArgumentsError: want=3 got=1\n\tat catchAll:4:11"),
+			String("WrongNumberOfArgumentsError: want=3 got=0\n\tat catchAll:4:11"),
+			String("WrongNumberOfArgumentsError: want=3 got=4\n\tat catchAll:4:11"),
 		},
 	)
 
@@ -384,8 +384,8 @@ func TestVMAssert(t *testing.T) {
 	)
 	require.Equal(t, 1, len(g))
 	require.Equal(t, Array{
-		String("error: #3 is not true"),
-		String("error: #4 is not true"),
+		String("error: #3 is not true\n\tat (main):7:4"),
+		String("error: #4 is not true\n\tat (main):7:4"),
 	}, g["errs"])
 }
 
@@ -759,7 +759,7 @@ func TestVMExamples(t *testing.T) {
 		})
 	require.Equal(t, 1, cleanupCall)
 	require.Equal(t,
-		"sum func has error: TypeError: want int, got undefined at index 0\n",
+		"sum func has error: TypeError: want int, got undefined\n\tat module:10:6 at index 0\n",
 		printWriter.String())
 
 	expectRun(t, `

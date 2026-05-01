@@ -44,7 +44,7 @@ func TestScript(t *testing.T) {
 	errnarg := func(want, got int) String {
 		return String(ErrWrongNumArguments.NewError(
 			fmt.Sprintf("want=%d got=%d", want, got),
-		).String())
+		).String() + "\n\tat (main):4:11")
 	}
 
 	expectRun(t, scriptf(""), nil, Undefined)

@@ -5000,7 +5000,14 @@ func (o *RuntimeError) errMsg() string {
 	if o.Err == nil {
 		return "<nil>"
 	}
-	return o.Err.Error()
+	msg := o.Err.Error()
+	if o.fileSet != nil && len(o.Trace) > 0 && o.Trace[0].IsValid() {
+		pos := o.fileSet.Position(o.Trace[0])
+		if pos.IsValid() {
+			msg = fmt.Sprintf("%s\n\tat %s", msg, pos.String())
+		}
+	}
+	return msg
 }
 
 // String implements Object interface.
@@ -5073,17 +5080,7 @@ func (o *RuntimeError) Copy() Object {
 
 // Error implements error interface.
 func (o *RuntimeError) Error() string {
-	if o.Err == nil {
-		return "<nil>"
-	}
-	msg := o.Err.Error()
-	if o.fileSet != nil && len(o.Trace) > 0 && o.Trace[0].IsValid() {
-		pos := o.fileSet.Position(o.Trace[0])
-		if pos.IsValid() {
-			msg = fmt.Sprintf("%s\n\tat %s", msg, pos.String())
-		}
-	}
-	return msg
+	return o.errMsg()
 }
 
 // Equal implements Object interface.
@@ -5221,7 +5218,11 @@ func (o *RuntimeError) Format(s fmt.State, verb rune) {
 	case 'v', 's':
 		switch {
 		case s.Flag('+'):
-			_, _ = io.WriteString(s, o.String())
+			if o.Err != nil {
+				_, _ = io.WriteString(s, o.Err.Error())
+			} else {
+				_, _ = io.WriteString(s, "<nil>")
+			}
 			if len(o.Trace) > 0 {
 				if v := o.StackTrace(); v != nil {
 					_, _ = io.WriteString(s, fmt.Sprintf("%+v", v))

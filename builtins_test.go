@@ -1459,7 +1459,7 @@ func TestControlFlow(t *testing.T) {
 // TestErrorHandling tests error handling
 func TestErrorHandling(t *testing.T) {
 	t.Run("throw", func(t *testing.T) {
-		expectRun(t, `try { throw "custom error" } catch e { return string(e) }`, nil, String("error: custom error"))
+		expectRun(t, `try { throw "custom error" } catch e { return string(e) }`, nil, String("error: custom error\n\tat (main):1:7"))
 	})
 }
 
@@ -2100,7 +2100,7 @@ func TestScriptExecution(t *testing.T) {
 	})
 
 	t.Run("try catch", func(t *testing.T) {
-		expectRun(t, `try { throw error("test") } catch e { return string(e) }`, nil, String("error: test"))
+		expectRun(t, `try { throw error("test") } catch e { return string(e) }`, nil, String("error: test\n\tat (main):1:7"))
 	})
 }
 
@@ -2486,7 +2486,7 @@ func TestErrorHandlingAdditional(t *testing.T) {
 	})
 
 	t.Run("throw catch", func(t *testing.T) {
-		expectRun(t, `try { throw error("test") } catch e { return string(e) }`, nil, String("error: test"))
+		expectRun(t, `try { throw error("test") } catch e { return string(e) }`, nil, String("error: test\n\tat (main):1:7"))
 	})
 }
 
