@@ -22,7 +22,7 @@ func TestBuiltinObjects(t *testing.T) {
 
 	rs, _ := quickCompileFunc(charlang.Call{Args: []charlang.Object{charlang.ToStringObject("return 1+2")}})
 
-	require.Equal(t, "error: [pos: ]VM is nil", fmt.Sprintf("%v", rs))
+	require.Equal(t, "error: VM is nil", fmt.Sprintf("%v", rs))
 
 	rs, _ = quickCompileFunc(charlang.Call{Vm: vmT, Args: []charlang.Object{charlang.ToStringObject("return 1+2")}})
 
@@ -30,19 +30,19 @@ func TestBuiltinObjects(t *testing.T) {
 
 	rs, _ = quickCompileFunc(charlang.Call{Vm: vmT, Args: []charlang.Object{}})
 
-	require.Equal(t, "error: [pos: 0]not enough parameters", fmt.Sprintf("%v", rs))
+	require.Equal(t, "error: [-] not enough parameters", fmt.Sprintf("%v", rs))
 
 	rs, _ = quickCompileFunc(charlang.Call{Vm: vmT, Args: []charlang.Object{charlang.ToStringObject("retu rn 1+2")}})
 
-	require.Equal(t, "error: [pos: 0]Parse Error: expected ';', found rn\n\tat (main):1:6", fmt.Sprintf("%v", rs))
+	require.Equal(t, "error: [-] Parse Error: expected ';', found rn\n\tat (main):1:6", fmt.Sprintf("%v", rs))
 
 	rs2, _ := quickCompileGelFunc(charlang.Call{Args: []charlang.Object{charlang.ToStringObject("return 1+2")}})
 
-	require.Equal(t, "error: [pos: ]VM is nil", fmt.Sprintf("%v", rs2))
+	require.Equal(t, "error: VM is nil", fmt.Sprintf("%v", rs2))
 
 	rs2, _ = quickCompileGelFunc(charlang.Call{Args: []charlang.Object{}})
 
-	require.Equal(t, "error: [pos: ]not enough parameters", fmt.Sprintf("%v", rs2))
+	require.Equal(t, "error: not enough parameters", fmt.Sprintf("%v", rs2))
 
 	rs2, _ = quickCompileGelFunc(charlang.Call{Vm: vmT, Args: []charlang.Object{charlang.ToStringObject("return 1+2")}})
 
@@ -74,7 +74,7 @@ func TestBuiltinObjects(t *testing.T) {
 
 	rs5, _ = builtinCloseFunc(charlang.Call{Args: []charlang.Object{charlang.Int(1)}})
 
-	require.Equal(t, "error: [pos: ]unsupported type: int", fmt.Sprintf("%v", rs5))
+	require.Equal(t, "error: unsupported type: int", fmt.Sprintf("%v", rs5))
 
 	rs6 := fnAFRF(math.Sqrt)
 

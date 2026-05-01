@@ -29,7 +29,7 @@ import (
 )
 
 // global vars
-var VersionG = "2.1.7"
+var VersionG = "2.1.8"
 
 var CodeTextG = ""
 
@@ -3521,11 +3521,11 @@ func NewCommonErrorWithPos(c Call, formatA string, argsA ...interface{}) *Error 
 	vmT := c.VM()
 
 	if vmT != nil {
-		return &Error{Name: "error", Message: fmt.Sprintf(fmt.Sprintf("[pos: %v]", c.VM().GetSrcPos())+formatA, argsA...)}
+		pos := vmT.bytecode.FileSet.Position(vmT.GetSrcPos())
+		return &Error{Name: "error", Message: fmt.Sprintf(fmt.Sprintf("[%s] ", pos.String())+formatA, argsA...)}
 	}
 
-	return &Error{Name: "error", Message: fmt.Sprintf(fmt.Sprintf("[pos: ]")+formatA, argsA...)}
-
+	return &Error{Name: "error", Message: fmt.Sprintf(""[:0] + formatA, argsA...)}
 }
 
 func NewError(nameA string, formatA string, argsA ...interface{}) *Error {

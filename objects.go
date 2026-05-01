@@ -4996,9 +4996,16 @@ func (*RuntimeError) TypeName() string {
 	return "error"
 }
 
+func (o *RuntimeError) errMsg() string {
+	if o.Err == nil {
+		return "<nil>"
+	}
+	return o.Err.Error()
+}
+
 // String implements Object interface.
 func (o *RuntimeError) String() string {
-	return o.Error()
+	return o.errMsg()
 }
 
 func (o *RuntimeError) HasMemeber() bool {
@@ -5069,7 +5076,14 @@ func (o *RuntimeError) Error() string {
 	if o.Err == nil {
 		return "<nil>"
 	}
-	return o.Err.Error()
+	msg := o.Err.Error()
+	if o.fileSet != nil && len(o.Trace) > 0 && o.Trace[0].IsValid() {
+		pos := o.fileSet.Position(o.Trace[0])
+		if pos.IsValid() {
+			msg = fmt.Sprintf("%s\n\tat %s", msg, pos.String())
+		}
+	}
+	return msg
 }
 
 // Equal implements Object interface.

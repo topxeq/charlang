@@ -427,7 +427,7 @@ func TestObjects4(t *testing.T) {
 
 	tmpr, err = obj3.CallName("Format", Call{Args: []Object{String("abc")}})
 
-	require.Equal(t, "error: [pos: ]method(Format) not found for type: *charlang.Any(string)-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
+	require.Equal(t, "error: method(Format) not found for type: *charlang.Any(string)-<nil>", fmt.Sprintf("%v-%v", tmpr, err))
 
 	// *Database
 	obj1 := &Database{Value: nil}

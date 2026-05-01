@@ -253,7 +253,11 @@ func (so *SimpleOptimizer) slowEvalExpr(expr parser.Expr) (parser.Expr, bool) {
 			so.printTraceMsgf("eval error: %s", err)
 		}
 		if !errors.Is(err, ErrVMAborted) {
-			so.errors = append(so.errors, so.error(expr, err))
+			innerErr := err
+			if re, ok := err.(*RuntimeError); ok && re.Err != nil {
+				innerErr = re.Err
+			}
+			so.errors = append(so.errors, so.error(expr, innerErr))
 		}
 		obj = nil
 	}

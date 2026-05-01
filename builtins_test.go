@@ -396,7 +396,7 @@ func TestBuiltinObjects(t *testing.T) {
 
 	require.Equal(t, `test: 1`, fmt.Sprintf("%v", NewError("test", "%v", "1")))
 
-	require.Equal(t, `error: [pos: ]1`, fmt.Sprintf("%v", NewCommonErrorWithPos(c, "%v", "1")))
+	require.Equal(t, `error: 1`, fmt.Sprintf("%v", NewCommonErrorWithPos(c, "%v", "1")))
 
 	tmpi, err = NewChar("return 1")
 
