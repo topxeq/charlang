@@ -136,6 +136,13 @@ var (
 	PrintWriter io.Writer = os.Stdout
 )
 
+var filterArrayImplVar func(c Call) (Object, error)
+var findArrayImplVar func(c Call) (Object, error)
+
+func callWithInvoker(fn func(c Call) (Object, error), c Call) (Object, error) {
+	return fn(c)
+}
+
 // BuiltinType represents a unique identifier for each built-in function.
 // These constants are used as indices into BuiltinObjects array and keys in BuiltinsMap.
 type BuiltinType int
@@ -740,6 +747,8 @@ const (
 
 	BuiltinMakeArray
 	BuiltinCap
+	BuiltinFilterArray
+	BuiltinFindArray
 )
 
 // BuiltinsMap maps built-in function names to their BuiltinType identifiers.
@@ -878,6 +887,10 @@ var BuiltinsMap = map[string]BuiltinType{
 	"arrayContains": BuiltinArrayContains,
 
 	"sortArray": BuiltinSortArray, // usage: sortArray(totalFindsT, "-key=runeStart", "-desc")
+
+	"filterArray": BuiltinFilterArray, // filter array by function, returns new array of items where func returns truthy, usage: filtered := filterArray(arr, func(item, index) { return item > 3 })
+
+	"findArray": BuiltinFindArray, // find first item in array where func returns truthy, returns undefined if not found, usage: found := findArray(arr, func(item, index) { return item["name"] == "test" })
 
 	"shuffle": BuiltinShuffle, // shuffle(aryT, 10)
 
@@ -2084,6 +2097,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "sortArray",
 		Value:   CallExAdapter(builtinSortArrayFunc),
 		ValueEx: builtinSortArrayFunc,
+	},
+	BuiltinFilterArray: &BuiltinFunction{
+		Name:    "filterArray",
+		Value:   CallExAdapter(builtinFilterArrayFunc),
+		ValueEx: builtinFilterArrayFunc,
+	},
+	BuiltinFindArray: &BuiltinFunction{
+		Name:    "findArray",
+		Value:   CallExAdapter(builtinFindArrayFunc),
+		ValueEx: builtinFindArrayFunc,
 	},
 	BuiltinShuffle: &BuiltinFunction{
 		Name:    "shuffle",
@@ -22205,6 +22228,14 @@ func builtinSortArrayFunc(c Call) (Object, error) {
 		"array|string|bytes",
 		args[0].TypeName(),
 	)
+}
+
+func builtinFilterArrayFunc(c Call) (Object, error) {
+	return callWithInvoker(filterArrayImplVar, c)
+}
+
+func builtinFindArrayFunc(c Call) (Object, error) {
+	return callWithInvoker(findArrayImplVar, c)
 }
 
 // builtinShuffleFunc shuffles array/string/bytes by swap iterations.

@@ -29,7 +29,7 @@ import (
 )
 
 // global vars
-var VersionG = "2.1.8"
+var VersionG = "2.1.9"
 
 var CodeTextG = ""
 
@@ -71,6 +71,9 @@ type GlobalContext struct {
 var GlobalsG *GlobalContext
 
 func init() {
+	filterArrayImplVar = filterArrayImpl
+	findArrayImplVar = findArrayImpl
+
 	GlobalsG = &GlobalContext{SyncMap: *tk.NewSyncMap(), SyncQueue: *tk.NewSyncQueue(), SyncStack: *tk.NewSyncStack(), SyncSeq: *tk.NewSeq()}
 
 	GlobalsG.Regs = make([]interface{}, RegiCountG)
@@ -3630,3 +3633,67 @@ func ToFloatQuick(o Object) float64 {
 	return 0.0
 }
 
+
+func filterArrayImpl(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return nil, NewCommonErrorWithPos(c, "not enough parameters: filterArray(array, func)")
+	}
+
+	arr, ok := args[0].(Array)
+	if !ok {
+		return nil, NewCommonErrorWithPos(c, "first argument must be array, got %T", args[0])
+	}
+
+	callee := args[1]
+	inv := NewInvoker(c.VM(), callee)
+	inv.Acquire()
+	defer inv.Release()
+
+	result := Array{}
+
+	for i, item := range arr {
+		ret, err := inv.Invoke(item, Int(i))
+		if err != nil {
+			return nil, err
+		}
+
+		if !ret.IsFalsy() {
+			result = append(result, item)
+		}
+	}
+
+	return result, nil
+}
+
+func findArrayImpl(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters: findArray(array, func)")
+	}
+
+	arr, ok := args[0].(Array)
+	if !ok {
+		return Undefined, NewCommonErrorWithPos(c, "first argument must be array, got %T", args[0])
+	}
+
+	callee := args[1]
+	inv := NewInvoker(c.VM(), callee)
+	inv.Acquire()
+	defer inv.Release()
+
+	for i, item := range arr {
+		ret, err := inv.Invoke(item, Int(i))
+		if err != nil {
+			return nil, err
+		}
+
+		if !ret.IsFalsy() {
+			return item, nil
+		}
+	}
+
+	return Undefined, nil
+}
