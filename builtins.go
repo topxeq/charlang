@@ -711,6 +711,7 @@ const (
 	BuiltinBytesWithSize
 	BuiltinBytesWithCap
 	BuiltinChars
+	BuiltinPrint
 	BuiltinPrintf
 	BuiltinPrintln
 	BuiltinSprintf
@@ -1675,6 +1676,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"sortReverse": BuiltinSortReverse,
 	"cap":         BuiltinCap,
 
+	"print":   BuiltinPrint,
 	"printf":  BuiltinPrintf,
 	"println": BuiltinPrintln,
 	"sprintf": BuiltinSprintf,
@@ -4772,6 +4774,11 @@ var BuiltinObjects = [...]Object{
 		Value:   funcPORO(builtinCapFunc),
 		ValueEx: funcPOROEx(builtinCapFunc),
 	},
+	BuiltinPrint: &BuiltinFunction{
+		Name:    "print",
+		Value:   CallExAdapter(builtinPrintFunc),
+		ValueEx: builtinPrintFunc,
+	},
 	BuiltinPrintf: &BuiltinFunction{
 		Name:    "printf",
 		Value:   CallExAdapter(builtinPrintfFunc),
@@ -5985,6 +5992,22 @@ func builtinCharsFunc(arg Object) (ret Object, err error) {
 			"string|bytes",
 			arg.TypeName(),
 		)
+	}
+	return
+}
+
+func builtinPrintFunc(c Call) (ret Object, err error) {
+	ret = Undefined
+	switch size := c.Len(); size {
+	case 0:
+	case 1:
+		_, err = fmt.Fprint(PrintWriter, c.Get(0))
+	default:
+		vargs := make([]interface{}, 0, size)
+		for i := 0; i < size; i++ {
+			vargs = append(vargs, c.Get(i))
+		}
+		_, err = fmt.Fprint(PrintWriter, vargs...)
 	}
 	return
 }
