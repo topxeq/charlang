@@ -439,6 +439,9 @@ const (
 	BuiltinSscanf
 	BuiltinStrQuote
 	BuiltinStrUnquote
+	BuiltinIsNaN
+	BuiltinParseFloat
+	BuiltinParseInt
 	BuiltinStrToFloat
 	BuiltinStrToInt
 	BuiltinStrToTime
@@ -979,6 +982,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strQuote":   BuiltinStrQuote,
 	"strUnquote": BuiltinStrUnquote,
 
+	"isNaN":      BuiltinIsNaN,     // check if a value is NaN, usage: isNaN(x)
+	"parseFloat": BuiltinParseFloat, // parse string to float, return error if failed, usage: parseFloat("3.14")
+	"parseInt":   BuiltinParseInt,  // parse string to int, return error if failed, usage: parseInt("42")
 	"strToFloat": BuiltinStrToFloat, // convert string to float, return default value if failed, usage: strToFloat("3.14"), strToFloat("abc", 0.0)
 	"strToInt":  BuiltinStrToInt,  // convert string to int, return error if failed
 	"strToTime": BuiltinStrToTime, // convert string to time by format, usage: strToTime(strA, "20060102150405"), default "2006-01-02 15:04:05"
@@ -2412,6 +2418,21 @@ var BuiltinObjects = [...]Object{
 		Name:    "strUnquote",
 		Value:   CallExAdapter(builtintStrUnquoteFunc),
 		ValueEx: builtintStrUnquoteFunc,
+	},
+	BuiltinIsNaN: &BuiltinFunction{
+		Name:    "isNaN",
+		Value:   CallExAdapter(builtinIsNaNFunc),
+		ValueEx: builtinIsNaNFunc,
+	},
+	BuiltinParseFloat: &BuiltinFunction{
+		Name:    "parseFloat",
+		Value:   CallExAdapter(builtinParseFloatFunc),
+		ValueEx: builtinParseFloatFunc,
+	},
+	BuiltinParseInt: &BuiltinFunction{
+		Name:    "parseInt",
+		Value:   CallExAdapter(builtinParseIntFunc),
+		ValueEx: builtinParseIntFunc,
 	},
 	BuiltinStrToFloat: &BuiltinFunction{
 		Name:    "strToFloat",
@@ -19838,6 +19859,56 @@ func builtintStrUnquoteFunc(c Call) (Object, error) {
 	}
 
 	return String(rs), nil
+}
+
+func builtinIsNaNFunc(c Call) (Object, error) {
+	if c.Len() < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters: isNaN(value)")
+	}
+	tc := c.Get(0).TypeCode()
+	switch tc {
+	case 107, 109, 111, 113, 115, 201, 203:
+		return Bool(false), nil
+	default:
+		return Bool(true), nil
+	}
+}
+
+func builtinParseFloatFunc(c Call) (Object, error) {
+	if c.Len() < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters: parseFloat(string)")
+	}
+	s := strings.TrimSpace(c.Get(0).String())
+	if s == "" {
+		return &Error{Message: "parseFloat: invalid format"}, nil
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return &Error{Message: fmt.Sprintf("parseFloat: invalid format: %s", s)}, nil
+	}
+	return Float(f), nil
+}
+
+func builtinParseIntFunc(c Call) (Object, error) {
+	if c.Len() < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters: parseInt(string)")
+	}
+	s := strings.TrimSpace(c.Get(0).String())
+	if s == "" {
+		return &Error{Message: "parseInt: invalid format"}, nil
+	}
+	base := 0
+	if c.Len() > 1 {
+		b, ok := ToGoInt(c.Get(1))
+		if ok {
+			base = b
+		}
+	}
+	n, err := strconv.ParseInt(s, base, 64)
+	if err != nil {
+		return &Error{Message: fmt.Sprintf("parseInt: invalid format: %s", s)}, nil
+	}
+	return Int(n), nil
 }
 
 func builtinStrToFloatFunc(c Call) (Object, error) {
