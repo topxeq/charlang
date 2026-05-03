@@ -619,6 +619,21 @@ port := getSwitch(argsG, "-port=", "8080")
 hasVerbose := ifSwitchExists(argsG, "-v")
 ```
 
+### Common Command Line Options
+
+| Option | Description |
+|--------|-------------|
+| `-e="code"` / `-e "code"` | Execute code directly (no extra processing) |
+| `-check` / `-parse` | Syntax check (without execution) |
+| `-cmd=code` | Execute code (supports `-urlDecode` and encrypted code) |
+| `-clip` | Run from clipboard |
+| `-pipe` | Run from stdin |
+| `-shell` | Start interactive shell |
+| `-server` | Start web server |
+| `-compile -output=app.exe` | Compile to executable |
+| `-verbose` | Verbose output mode |
+| `-debug` | Debug mode |
+
 ---
 
 ## 15. Modules and Imports

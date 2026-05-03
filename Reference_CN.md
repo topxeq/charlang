@@ -1079,6 +1079,18 @@ char script.char arg1 arg2
 # 脚本内参数
 char script.char -port=8080 -debug
 
+# 直接执行代码（两种写法）
+char -e="pln(1+2)"
+char -e "pln(1+2)"
+
+# 执行代码（支持 -urlDecode 和加密代码）
+char -cmd=pln(1+2)
+
+# 语法检查（不执行，-check 和 -parse 等效）
+char -check script.char
+char -parse script.char
+char -e="1+2" -check
+
 # REPL模式
 char
 

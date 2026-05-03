@@ -383,6 +383,8 @@ Using command-line switch '-view' will show the source code of the script instea
 Examples:
 
 - Run from a source file: `char d:\scripts\test.char`
+- Execute code directly: `char -e="pln(1+2)"` or `char -e "pln(1+2)"`
+- Syntax check (without execution): `char -check script.char` or `char -parse script.char`
 - Run the text in clipboard as script source: `char -clip`
 - Run from the remote server: `char -remote http://replacewithyourdomain.com/script/abc.char`
 - Run the example code: `char -example basic.char`
@@ -2325,14 +2327,40 @@ Charlang currently has a simple optimizer for constant folding and evaluating ex
 
 #### Run Script from Command Line
 
-- One line
+- Execute code directly with `-e` parameter (two forms)
+
+```shell
+D:\tmp>char -e="pln(1+3)"
+4
+
+D:\tmp>char -e "pln(1+3)"
+4
+```
+
+- Execute code with `-cmd=` parameter (supports multi-line, URL encoding and encryption, see below)
 
 ```shell
 D:\tmp>char -cmd=pln(1+3)
 4
 ```
 
-- Multiple lines and/or with spaces
+- Check syntax without execution using `-check` or `-parse`
+
+```shell
+D:\tmp>char -check test.char
+Syntax OK: test.char
+
+D:\tmp>char -e="1+2" -check
+Syntax OK
+
+D:\tmp>char -e="1+" -check
+Error: Parse Error: expected operand, found 'EOF'
+	at (main):1:3
+```
+
+> **Difference between `-e` and `-cmd=`**: `-e` executes code directly without extra processing, suitable for simple expressions and one-liners; `-cmd=` applies special character processing (DealString) and supports the `-urlDecode` parameter for URL-encoded multi-line code, as well as `//TXDEF#` prefixed encrypted code.
+
+- `-cmd=` Multiple lines and/or with spaces
 
 Original code:
 
@@ -2348,7 +2376,7 @@ D:\tmp>char -cmd=a%20:=3%0Apln(a%20*%2012) -urlDecode
 36
 ```
 
-- Multiple lines and/or with spaces(alternative way)
+- `-cmd=` Multiple lines and/or with spaces (alternative way: encryption)
 
 Encrypt the script first:
 

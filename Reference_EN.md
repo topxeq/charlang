@@ -1078,6 +1078,18 @@ char script.char arg1 arg2
 # Script arguments
 char script.char -port=8080 -debug
 
+# Execute code directly (two forms)
+char -e="pln(1+2)"
+char -e "pln(1+2)"
+
+# Execute code (supports -urlDecode and encrypted code)
+char -cmd=pln(1+2)
+
+# Syntax check (without execution, -check and -parse are equivalent)
+char -check script.char
+char -parse script.char
+char -e="1+2" -check
+
 # REPL mode
 char
 

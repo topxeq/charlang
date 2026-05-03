@@ -619,6 +619,21 @@ port := getSwitch(argsG, "-port=", "8080")
 hasVerbose := ifSwitchExists(argsG, "-v")
 ```
 
+### 常用命令行开关
+
+| 参数 | 说明 |
+|------|------|
+| `-e="code"` / `-e "code"` | 直接执行代码（不做额外处理） |
+| `-check` / `-parse` | 语法检查（不执行） |
+| `-cmd=code` | 执行代码（支持 `-urlDecode` 和加密代码） |
+| `-clip` | 从剪贴板运行 |
+| `-pipe` | 从标准输入运行 |
+| `-shell` | 启动交互式Shell |
+| `-server` | 启动Web服务器 |
+| `-compile -output=app.exe` | 编译为可执行文件 |
+| `-verbose` | 详细输出模式 |
+| `-debug` | 调试模式 |
+
 ---
 
 ## 15. 模块与导入

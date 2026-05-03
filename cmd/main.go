@@ -1289,6 +1289,23 @@ func runArgs(argsT ...string) interface{} {
 		scriptT = "CMD"
 	}
 
+	exprT := tk.GetSwitchWithDefaultValue(argsT, "-e=", "")
+
+	if exprT == "" {
+		for i, v := range argsT {
+			if v == "-e" {
+				if i+1 < len(argsT) {
+					exprT = argsT[i+1]
+				}
+				break
+			}
+		}
+	}
+
+	if exprT != "" {
+		scriptT = "EXPRESSION"
+	}
+
 	ifPipeT := tk.IfSwitchExistsWhole(argsT, "-pipe")
 
 	ifRemoteT := tk.IfSwitchExistsWhole(argsT, "-remote")
@@ -1458,6 +1475,10 @@ func runArgs(argsT ...string) interface{} {
 		fcT = tk.DealString(fcT, "char")
 
 		scriptPathT = ""
+	} else if exprT != "" {
+		fcT = exprT
+
+		scriptPathT = "<commandline>"
 	} else if ifMagicT {
 		fcT = charlang.GetMagic(magicNumberT)
 
@@ -1887,6 +1908,16 @@ func runArgs(argsT ...string) interface{} {
 	bytecodeT, errT := charlang.Compile([]byte(fcT), charlang.MainCompilerOptions) // charlang.DefaultCompilerOptions)
 	if errT != nil {
 		return errT
+	}
+
+	ifCheckT := tk.IfSwitchExistsWhole(argsT, "-check") || tk.IfSwitchExistsWhole(argsT, "-parse")
+	if ifCheckT {
+		if scriptPathT != "" && scriptPathT != "<commandline>" {
+			tk.Pl("Syntax OK: %v", scriptPathT)
+		} else {
+			tk.Pl("Syntax OK")
+		}
+		return nil
 	}
 	// tk.Pln(2.2)
 
