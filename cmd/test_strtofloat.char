@@ -1,0 +1,4 @@
+pln(strToFloat("3.14"))
+pln(strToFloat("2.718", -1))
+pln(strToFloat("notnum", -1))
+pln(strToFloat("notnum"))

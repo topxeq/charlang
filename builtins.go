@@ -439,6 +439,7 @@ const (
 	BuiltinSscanf
 	BuiltinStrQuote
 	BuiltinStrUnquote
+	BuiltinStrToFloat
 	BuiltinStrToInt
 	BuiltinStrToTime
 	BuiltinDealStr
@@ -978,6 +979,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strQuote":   BuiltinStrQuote,
 	"strUnquote": BuiltinStrUnquote,
 
+	"strToFloat": BuiltinStrToFloat, // convert string to float, return default value if failed, usage: strToFloat("3.14"), strToFloat("abc", 0.0)
 	"strToInt":  BuiltinStrToInt,  // convert string to int, return error if failed
 	"strToTime": BuiltinStrToTime, // convert string to time by format, usage: strToTime(strA, "20060102150405"), default "2006-01-02 15:04:05"
 
@@ -2410,6 +2412,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strUnquote",
 		Value:   CallExAdapter(builtintStrUnquoteFunc),
 		ValueEx: builtintStrUnquoteFunc,
+	},
+	BuiltinStrToFloat: &BuiltinFunction{
+		Name:    "strToFloat",
+		Value:   CallExAdapter(builtinStrToFloatFunc),
+		ValueEx: builtinStrToFloatFunc,
 	},
 	BuiltinStrToInt: &BuiltinFunction{
 		Name:    "strToInt",
@@ -19831,6 +19838,22 @@ func builtintStrUnquoteFunc(c Call) (Object, error) {
 	}
 
 	return String(rs), nil
+}
+
+func builtinStrToFloatFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return Undefined, NewCommonErrorWithPos(c, "not enough parameters: strToFloat(string, defaultValue)")
+	}
+
+	defaultT := 0.0
+	if len(args) > 1 {
+		defaultT, _ = ToGoFloat64(args[1])
+	}
+
+	rs := tk.StrToFloat64WithDefaultValue(args[0].String(), defaultT)
+	return Float(rs), nil
 }
 
 // builtinStrToTimeFunc parses time from string with optional format.
