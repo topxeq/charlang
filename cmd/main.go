@@ -862,17 +862,55 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 			res.Write([]byte(toWriteT))
 			return
 		}
+		
 		// 2b. Non-.char file → serve as static
 		extT := strings.ToLower(filepath.Ext(fullPathT))
-		
 		if webExtsG[extT] {
 			http.ServeFile(res, req, fullPathT)
 		} else {
-			res.WriteHeader(404)
-			res.Write([]byte("404 Not Found"))
+			allowedT := false
+			dirT := filepath.Dir(fullPathT)
+			baseNameT := filepath.Base(fullPathT)
+			allowFileT := filepath.Join(dirT, ".charAllow")
+			if tk.IfFileExists(allowFileT) && !tk.IsDirectory(allowFileT) {
+				allowTextT := tk.LoadStringFromFile(allowFileT)
+				if !tk.IsErrStr(allowTextT) {
+					allowLinesT := tk.SplitLines(allowTextT)
+					for _, lineT := range allowLinesT {
+						lineT = strings.TrimSpace(lineT)
+						if lineT == "" {
+							continue
+						}
+						if strings.HasPrefix(lineT, "#") {
+							continue
+						}
+						matchedT, errT2 := filepath.Match(lineT, baseNameT)
+						if errT2 == nil && matchedT {
+							allowedT = true
+							break
+						}
+					}
+				}
+			}
+			if allowedT {
+				http.ServeFile(res, req, fullPathT)
+			} else {
+				res.WriteHeader(404)
+				res.Write([]byte("404 Not Found"))
+			}
 		}
-		
 		return
+		
+//		extT := strings.ToLower(filepath.Ext(fullPathT))
+//		
+//		if webExtsG[extT] {
+//			http.ServeFile(res, req, fullPathT)
+//		} else {
+//			res.WriteHeader(404)
+//			res.Write([]byte("404 Not Found"))
+//		}
+//		
+//		return
 	}
 
 	// 3. Not found → try appending .char suffix (legacy compatibility)
