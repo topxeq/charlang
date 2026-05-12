@@ -11,6 +11,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -825,7 +826,7 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 	toWriteT := ""
 
 	// === Routing logic ===
-	reqPathT := reqT
+	reqPathT, _ := url.PathUnescape(reqT)
 	fullPathT := filepath.Join(basePathG, reqPathT)
 
 	// 1. Directory → look for index.char
@@ -893,6 +894,7 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 				}
 			}
 			if allowedT {
+				res.Header().Set("Content-Disposition", "attachment")
 				http.ServeFile(res, req, fullPathT)
 			} else {
 				res.WriteHeader(404)
