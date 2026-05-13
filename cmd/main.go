@@ -769,7 +769,6 @@ func doCharms(res http.ResponseWriter, req *http.Request) {
 	if res != nil {
 		res.Header().Set("Access-Control-Allow-Origin", "*")
 		res.Header().Set("Access-Control-Allow-Headers", "*")
-		res.Header().Set("Content-Type", "text/html; charset=utf-8")
 	}
 
 	if req != nil {
