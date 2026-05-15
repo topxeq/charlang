@@ -160,6 +160,34 @@ func TestBuiltinObjects(t *testing.T) {
 
 	require.Equal(t, `{"f1":"v1","f2":"v2","field3":"value3"}`, fmt.Sprintf("%v", tk.ToJSONX(m1, "-sort")))
 
+	// setArrayItem tests
+	ary3 := Array{Int(10), Int(20), Int(30)}
+	o2, _ = builtinSetArrayItemFunc(Call{Args: Array{ary3, Int(1), Int(99)}})
+	require.Equal(t, Undefined, o2)
+	require.Equal(t, `99`, fmt.Sprintf("%v", ary3[1]))
+	require.Equal(t, `10`, fmt.Sprintf("%v", ary3[0]))
+	require.Equal(t, `30`, fmt.Sprintf("%v", ary3[2]))
+
+	o2, _ = builtinSetArrayItemFunc(Call{Args: Array{ary3, Int(-1), Int(1)}})
+	require.True(t, isErrX(o2))
+
+	o2, _ = builtinSetArrayItemFunc(Call{Args: Array{ary3, Int(3), Int(1)}})
+	require.True(t, isErrX(o2))
+
+	o2, _ = builtinSetArrayItemFunc(Call{Args: Array{Int(1), Int(0), Int(2)}})
+	require.True(t, isErrX(o2))
+
+	// removeMapItem tests
+	m2 := Map{"k1": ToStringObject("v1"), "k2": ToStringObject("v2")}
+	o2, _ = builtinRemoveMapItemFunc(Call{Args: Array{m2, ToStringObject("k1")}})
+	require.Equal(t, Undefined, o2)
+	_, okT := m2["k1"]
+	require.False(t, okT)
+	require.Equal(t, "v2", m2["k2"].String())
+
+	o2, _ = builtinRemoveMapItemFunc(Call{Args: Array{Int(1), ToStringObject("k")}})
+	require.True(t, isErrX(o2))
+
 	o2, _ = builtinByteFunc(Call{Args: Array{Int(255)}})
 
 	require.Equal(t, `255`, fmt.Sprintf("%v", o2))
@@ -3313,6 +3341,36 @@ func TestIsErrorBuiltinMore(t *testing.T) {
 func TestBuiltinDelete(t *testing.T) {
 	t.Run("delete existing key", func(t *testing.T) {
 		expectRun(t, `m := {"a": 1, "b": 2}; delete(m, "a"); return m.b`, nil, Int(2))
+	})
+}
+
+// TestBuiltinSetArrayItem tests builtin setArrayItem function
+func TestBuiltinSetArrayItem(t *testing.T) {
+	t.Run("set value at valid index", func(t *testing.T) {
+		expectRun(t, `a := [1, 2, 3]; setArrayItem(a, 1, 99); return a[1]`, nil, Int(99))
+	})
+
+	t.Run("negative index returns error", func(t *testing.T) {
+		expectRun(t, `a := [1, 2, 3]; return isErrX(setArrayItem(a, -1, 99))`, nil, True)
+	})
+
+	t.Run("out of bounds index returns error", func(t *testing.T) {
+		expectRun(t, `a := [1, 2, 3]; return isErrX(setArrayItem(a, 3, 99))`, nil, True)
+	})
+}
+
+// TestBuiltinRemoveMapItem tests builtin removeMapItem function
+func TestBuiltinRemoveMapItem(t *testing.T) {
+	t.Run("remove existing key", func(t *testing.T) {
+		expectRun(t, `m := {"a": 1, "b": 2}; removeMapItem(m, "a"); return m.b`, nil, Int(2))
+	})
+
+	t.Run("key removed from map", func(t *testing.T) {
+		expectRun(t, `m := {"a": 1, "b": 2}; removeMapItem(m, "a"); return isUndefined(m.a)`, nil, True)
+	})
+
+	t.Run("non-map returns error", func(t *testing.T) {
+		expectRun(t, `return isErrX(removeMapItem(1, "a"))`, nil, True)
 	})
 }
 

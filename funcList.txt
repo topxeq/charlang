@@ -69,6 +69,7 @@ appendSlice
 delete
 reset
 getArrayItem
+setArrayItem
 removeItem
 removeArrayItem
 removeItems
@@ -77,6 +78,7 @@ sortArray
 shuffle
 getMapItem
 setMapItem
+removeMapItem
 toOrderedMap
 unref
 setValueByRef

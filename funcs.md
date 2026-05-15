@@ -160,6 +160,8 @@
 
 **getArrayItem**
 
+**setArrayItem**
+
 **removeItem**
 
 **removeArrayItem**
@@ -175,6 +177,8 @@
 **getMapItem**
 
 **setMapItem**
+
+**removeMapItem**
 
 **toOrderedMap**
 

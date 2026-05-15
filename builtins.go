@@ -754,6 +754,8 @@ const (
 	BuiltinCap
 	BuiltinFilterArray
 	BuiltinFindArray
+	BuiltinSetArrayItem
+	BuiltinRemoveMapItem
 )
 
 // BuiltinsMap maps built-in function names to their BuiltinType identifiers.
@@ -899,8 +901,11 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"shuffle": BuiltinShuffle, // shuffle(aryT, 10)
 
-	"getMapItem": BuiltinGetMapItem,
-	"setMapItem": BuiltinSetMapItem,
+	"getMapItem":    BuiltinGetMapItem,
+	"setMapItem":    BuiltinSetMapItem,
+	"removeMapItem": BuiltinRemoveMapItem,
+
+	"setArrayItem": BuiltinSetArrayItem,
 
 	"toOrderedMap": BuiltinToOrderedMap,
 
@@ -2132,6 +2137,16 @@ var BuiltinObjects = [...]Object{
 		Name:    "setMapItem",
 		Value:   CallExAdapter(builtinSetMapItemFunc),
 		ValueEx: builtinSetMapItemFunc,
+	},
+	BuiltinSetArrayItem: &BuiltinFunction{
+		Name:    "setArrayItem",
+		Value:   CallExAdapter(builtinSetArrayItemFunc),
+		ValueEx: builtinSetArrayItemFunc,
+	},
+	BuiltinRemoveMapItem: &BuiltinFunction{
+		Name:    "removeMapItem",
+		Value:   CallExAdapter(builtinRemoveMapItemFunc),
+		ValueEx: builtinRemoveMapItemFunc,
 	},
 	BuiltinToOrderedMap: &BuiltinFunction{
 		Name:    "toOrderedMap",
@@ -5289,6 +5304,55 @@ func builtinSetMapItemFunc(c Call) (Object, error) {
 	keyT := args[1].String()
 
 	nv1[keyT] = args[2]
+
+	return Undefined, nil
+}
+
+// builtinSetArrayItemFunc sets the value at a specified index in an array.
+// Parameters: array, index, value
+// Returns Undefined on success, error if args invalid or index out of bounds
+// Does not support negative indices (consistent with getArrayItem)
+func builtinSetArrayItemFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 3 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	ary, ok := args[0].(Array)
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupported type: (%T)%v", args[0], args[0]), nil
+	}
+
+	idxT := ToIntQuick(args[1])
+
+	if idxT < 0 || idxT >= len(ary) {
+		return NewCommonErrorWithPos(c, "index out of range: %d -> %d", idxT, len(ary)), nil
+	}
+
+	ary[idxT] = args[2]
+
+	return Undefined, nil
+}
+
+// builtinRemoveMapItemFunc removes a key-value pair from a map.
+// Parameters: map, key
+// Returns Undefined on success, error if first arg is not a Map
+func builtinRemoveMapItemFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 2 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	m, ok := args[0].(Map)
+	if !ok {
+		return NewCommonErrorWithPos(c, "unsupported type: (%T)%v", args[0], args[0]), nil
+	}
+
+	keyT := args[1].String()
+
+	delete(m, keyT)
 
 	return Undefined, nil
 }
