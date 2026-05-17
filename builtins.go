@@ -756,6 +756,7 @@ const (
 	BuiltinFindArray
 	BuiltinSetArrayItem
 	BuiltinRemoveMapItem
+	BuiltinStrReplaceN
 )
 
 // BuiltinsMap maps built-in function names to their BuiltinType identifiers.
@@ -961,6 +962,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"strStartsWith":  BuiltinStrStartsWith,
 	"strEndsWith":    BuiltinStrEndsWith,
 	"strReplace":     BuiltinStrReplace,
+	"strReplaceN":    BuiltinStrReplaceN,
 	"strSplit":       BuiltinStrSplit,
 	"strSplitN":      BuiltinStrSplitN,
 	"strSplitLines":  BuiltinStrSplitLines,
@@ -2348,6 +2350,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "strReplace",
 		Value:   fnASVsRS(tk.StringReplace),
 		ValueEx: fnASVsRSex(tk.StringReplace),
+	},
+	BuiltinStrReplaceN: &BuiltinFunction{
+		Name:    "strReplaceN",
+		Value:   CallExAdapter(builtinStrReplaceNFunc),
+		ValueEx: builtinStrReplaceNFunc,
 	},
 	BuiltinStrSplit: &BuiltinFunction{
 		Name:    "strSplit",
@@ -20260,6 +20267,24 @@ func builtinAdjustFloatFunc(c Call) (Object, error) {
 	}
 
 	return NewCommonErrorWithPos(c, "unsupported type: %T", args[0]), nil
+}
+
+// builtinStrReplaceNFunc replaces at most n occurrences of old with new in src.
+// Parameters: src, old, new, n
+// n < 0 means replace all (same as strReplace)
+func builtinStrReplaceNFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 4 {
+		return NewCommonError("not enough parameters"), nil
+	}
+
+	src := args[0].String()
+	old := args[1].String()
+	newStr := args[2].String()
+	n := ToGoIntWithDefault(args[3], -1)
+
+	return ToStringObject(strings.Replace(src, old, newStr, n)), nil
 }
 
 // builtinStrSplitFunc splits string by separator with optional limit.

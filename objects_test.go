@@ -2388,7 +2388,7 @@ func TestObjectIsFalsy(t *testing.T) {
 	require.True(t, Int(0).IsFalsy())
 	require.True(t, Uint(0).IsFalsy())
 	require.True(t, Char(0).IsFalsy())
-	require.False(t, Float(0).IsFalsy())
+	require.True(t, Float(0).IsFalsy())
 	require.True(t, Float(math.NaN()).IsFalsy())
 	require.False(t, Bool(true).IsFalsy())
 	require.True(t, Bool(false).IsFalsy())

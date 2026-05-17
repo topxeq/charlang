@@ -272,6 +272,8 @@
 
 **strReplace**
 
+**strReplaceN**
+
 **strSplit**
 
 **strSplitN**

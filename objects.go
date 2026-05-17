@@ -1183,10 +1183,8 @@ func (o Float) Equal(right Object) bool {
 
 // IsFalsy implements Object interface.
 func (o Float) IsFalsy() bool {
-	// IEEE 754 says that only NaNs satisfy f != f.
-	// See math.IsNan
 	f := float64(o)
-	return f != f
+	return f == 0 || f != f
 }
 
 // CanCall implements Object interface.

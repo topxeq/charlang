@@ -85,7 +85,7 @@ func TestOptimizer(t *testing.T) {
 		{s: `1.0 <= 2.0`, cf: trueF},
 		{s: `1.0 > 2.0`, cf: falseF},
 		{s: `1.0 >= 2.0`, cf: falseF},
-		{s: `!0.0`, cf: falseF},
+		{s: `!0.0`, cf: trueF},
 		{s: `!1.0`, cf: falseF},
 		{s: `-1.0`, c: Float(-1), cf: defF},
 		{s: `+1.0`, c: Float(1), cf: defF},

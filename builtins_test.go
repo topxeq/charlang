@@ -3536,6 +3536,29 @@ func TestStrTrimMore(t *testing.T) {
 	})
 }
 
+// TestStrReplaceN tests builtinStrReplaceNFunc
+func TestStrReplaceN(t *testing.T) {
+	t.Run("replace once", func(t *testing.T) {
+		expectRun(t, `return strReplaceN("aaa", "a", "b", 1)`, nil, String("baa"))
+	})
+
+	t.Run("replace twice", func(t *testing.T) {
+		expectRun(t, `return strReplaceN("aaa", "a", "b", 2)`, nil, String("bba"))
+	})
+
+	t.Run("replace all with negative n", func(t *testing.T) {
+		expectRun(t, `return strReplaceN("aaa", "a", "b", -1)`, nil, String("bbb"))
+	})
+
+	t.Run("replace zero times", func(t *testing.T) {
+		expectRun(t, `return strReplaceN("aaa", "a", "b", 0)`, nil, String("aaa"))
+	})
+
+	t.Run("not enough parameters", func(t *testing.T) {
+		expectRun(t, `return isErrX(strReplaceN("aaa", "a", "b"))`, nil, True)
+	})
+}
+
 // TestStrSplitN tests builtinStrSplitNFunc
 func TestStrSplitN(t *testing.T) {
 	t.Run("strSplitN basic", func(t *testing.T) {

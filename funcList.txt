@@ -122,6 +122,7 @@ strIndex
 strStartsWith
 strEndsWith
 strReplace
+strReplaceN
 strSplit
 strSplitN
 strSplitLines
