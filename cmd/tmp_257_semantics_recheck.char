@@ -1,4 +1,0 @@
-﻿println(bool(0.0))
-println(bool(float("NaN")))
-println(strReplace("abc-123", "abc", "XYZ", "123", "789"))
-println(strReplaceN("abc123bbbbbb", "b", "e", 2))
