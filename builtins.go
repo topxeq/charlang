@@ -16825,7 +16825,14 @@ func builtinGenJSONRespFunc(c Call) (Object, error) {
 
 	if ok {
 		s1 = args[0].String()
-		s2 = args[1].String()
+		switch v := args[1].(type) {
+		case Map:
+			s2 = tk.ToJSONX(ConvertFromObject(v))
+		case Array:
+			s2 = tk.ToJSONX(ConvertFromObject(v))
+		default:
+			s2 = args[1].String()
+		}
 	} else {
 		v0, ok = args[0].(*HttpReq)
 
@@ -16834,7 +16841,14 @@ func builtinGenJSONRespFunc(c Call) (Object, error) {
 		}
 
 		s1 = args[1].String()
-		s2 = args[2].String()
+		switch v := args[2].(type) {
+		case Map:
+			s2 = tk.ToJSONX(ConvertFromObject(v))
+		case Array:
+			s2 = tk.ToJSONX(ConvertFromObject(v))
+		default:
+			s2 = args[2].String()
+		}
 	}
 
 	rsT := tk.GenerateJSONPResponseWithMore(s1, s2, v0.Value, ObjectsToS(args[3:])...)
