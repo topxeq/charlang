@@ -620,6 +620,11 @@ func serveStaticDirHandler(w http.ResponseWriter, r *http.Request) {
 	info, err := os.Lstat(name)
 	if err == nil {
 		if !info.IsDir() {
+			if strings.HasSuffix(name, ".char") {
+				http.NotFound(w, r)
+				return
+			}
+
 			if strings.HasSuffix(name, ".chp") {
 				chpHandler(tk.LoadStringFromFile(name), w, r)
 

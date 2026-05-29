@@ -516,6 +516,7 @@ const (
 	BuiltinParseReqForm
 	BuiltinParseReqFormEx
 	BuiltinWriteResp
+	BuiltinFlushResp
 	BuiltinMux
 	BuiltinMutex
 	BuiltinHttpHandler
@@ -1421,6 +1422,7 @@ var BuiltinsMap = map[string]BuiltinType{
 	"genJsonResp":     BuiltinGenJSONResp,
 	"genResp":         BuiltinGenJSONResp,
 	"writeResp":       BuiltinWriteResp,
+	"flushResp":       BuiltinFlushResp,
 
 	"serveFile": BuiltinServeFile,
 
@@ -3853,6 +3855,11 @@ var BuiltinObjects = [...]Object{
 		Name:    "writeResp",
 		Value:   CallExAdapter(builtinWriteRespFunc),
 		ValueEx: builtinWriteRespFunc,
+	},
+	BuiltinFlushResp: &BuiltinFunction{
+		Name:    "flushResp",
+		Value:   CallExAdapter(builtinFlushRespFunc),
+		ValueEx: builtinFlushRespFunc,
 	},
 	BuiltinServeFile: &BuiltinFunction{
 		Name:    "serveFile",
@@ -15330,6 +15337,25 @@ func builtinWriteRespFunc(c Call) (Object, error) {
 	}
 
 	return Int(r), errT
+}
+
+func builtinFlushRespFunc(c Call) (Object, error) {
+	args := c.GetArgs()
+
+	if len(args) < 1 {
+		return NewCommonErrorWithPos(c, "not enough parameters"), nil
+	}
+
+	v, ok := args[0].(*HttpResp)
+	if !ok {
+		return NewCommonErrorWithPos(c, "invalid parameter type, expected httpResp: (%T)", args[0]), nil
+	}
+
+	if f, ok := v.Value.(http.Flusher); ok {
+		f.Flush()
+	}
+
+	return Undefined, nil
 }
 
 // builtinServeFileFunc serves a file over HTTP response.
