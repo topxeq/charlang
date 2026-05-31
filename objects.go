@@ -3370,7 +3370,12 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 		if !ok {
 			o.Methods["database.connect"] = &Function{
 				Name: "database.connect",
-				Value: func(args ...Object) (Object, error) {
+				ValueEx: func(c Call) (Object, error) {
+					args := c.GetArgs()
+
+					if len(args) < 2 {
+						return NewCommonError("not enough parameters"), nil
+					}
 
 					nv0, ok := args[0].(String)
 
@@ -3389,7 +3394,11 @@ func (o *BuiltinFunction) IndexGet(index Object) (Object, error) {
 						return NewFromError(rsT.(error)), nil
 					}
 
-					return &Database{DBType: string(nv0), DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}, nil
+					dbObj := &Database{DBType: string(nv0), DBConnectString: nv1.String(), Value: rsT.(*sql.DB)}
+					if vm := c.VM(); vm != nil {
+						vm.appendResource(dbObj.Value)
+					}
+					return dbObj, nil
 				}}
 			fT = o.Methods["database.connect"]
 		}
@@ -6275,7 +6284,8 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 		if !ok {
 			o.Methods["connect"] = &Function{
 				Name: "connect",
-				Value: func(args ...Object) (Object, error) {
+				ValueEx: func(c Call) (Object, error) {
+					args := c.GetArgs()
 					if len(args) < 2 {
 						return NewCommonError("not enough parameters"), nil
 					}
@@ -6300,6 +6310,10 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 					o.DBType = string(nv0)
 					o.DBConnectString = nv1.String()
 					o.Value = rsT.(*sql.DB)
+
+					if vm := c.VM(); vm != nil {
+						vm.appendResource(o.Value)
+					}
 
 					return Undefined, nil
 				},
@@ -10634,6 +10648,10 @@ func NewFile(c Call) (Object, error) {
 
 	objT.SetMember("Path", ToStringObject(filePathT))
 
+	if vm := c.VM(); vm != nil {
+		vm.appendResource(objT.Value)
+	}
+
 	return objT, nil
 
 }
@@ -14797,7 +14815,11 @@ func NewWebSocket(c Call) (Object, error) {
 				return NewCommonErrorWithPos(c, "failed to dial websocket server: %v", errT), nil
 			}
 
-			return &WebSocket{Value: connT}, nil
+			wsObj := &WebSocket{Value: connT}
+			if vm := c.VM(); vm != nil {
+				vm.appendResource(wsObj.Value)
+			}
+			return wsObj, nil
 		}
 
 		return NewCommonErrorWithPos(c, "not enough parameters"), nil
@@ -14823,7 +14845,11 @@ func NewWebSocket(c Call) (Object, error) {
 		return NewCommonErrorWithPos(c, "failed to upgrade connection: %v", errT), nil
 	}
 
-	return &WebSocket{Value: conT}, nil
+	wsObj := &WebSocket{Value: conT}
+	if vm := c.VM(); vm != nil {
+		vm.appendResource(wsObj.Value)
+	}
+	return wsObj, nil
 }
 
 func (*WebSocket) TypeCode() int {

@@ -12320,10 +12320,10 @@ func builtinOpenFileFunc(c Call) (Object, error) {
 
 	objT.SetMember("Path", ToStringObject(pathT))
 
+	registerResource(c, objT.Value)
+
 	return objT, nil
 }
-
-// builtinLoadBytesFromFileFunc reads bytes from File or file path.
 func builtinLoadBytesFromFileFunc(c Call) (Object, error) {
 	args := c.GetArgs()
 
@@ -16751,7 +16751,21 @@ func builtinDatabaseFunc(c Call) (Object, error) {
 		db.Close()
 	})
 	
-	return &Database{DBType: v1, DBConnectString: v2, Value: rsT.(*sql.DB)}, nil
+	dbObj := &Database{DBType: v1, DBConnectString: v2, Value: rsT.(*sql.DB)}
+	registerResource(c, dbObj.Value)
+	return dbObj, nil
+}
+
+func registerResource(c Call, closer io.Closer) {
+	if vm := c.VM(); vm != nil {
+		vm.appendResource(closer)
+	}
+}
+
+func unregisterResource(c Call, closer io.Closer) {
+	if vm := c.VM(); vm != nil {
+		vm.removeResource(closer)
+	}
 }
 
 // func builtinGetErrStrXFunc(c Call) (Object, error) {
@@ -22271,6 +22285,8 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 			return NewCommonErrorWithPos(c, "failed to close file: %v", errT), nil
 		}
 
+		unregisterResource(c, r1.Value)
+
 		return Undefined, nil
 	} else if typeNameT == "database" {
 		r1 := args[0].(*Database)
@@ -22285,6 +22301,8 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 			return NewCommonErrorWithPos(c, "failed to close DB: %v", errT), nil
 		}
 
+		unregisterResource(c, r1.Value)
+
 		return Undefined, nil
 	} else if typeNameT == "webSocket" {
 		r1 := args[0].(*WebSocket)
@@ -22298,6 +22316,8 @@ func builtinCloseFunc(c Call) (result Object, err error) {
 		if errT != nil {
 			return NewCommonErrorWithPos(c, "failed to close webSocket: %v", errT), nil
 		}
+
+		unregisterResource(c, r1.Value)
 
 		return ConvertToObject(errT), nil
 	} else if typeNameT == "excel" {

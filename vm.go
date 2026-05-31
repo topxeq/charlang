@@ -43,11 +43,13 @@ package charlang
 import (
 	"errors"
 	"fmt"
+	"io"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/topxeq/charlang/parser"
 	"github.com/topxeq/charlang/token"
@@ -93,6 +95,11 @@ type VM struct {
 
 	LeBuf     []string
 	LeSshInfo map[string]string
+
+	resources   []io.Closer
+	resourceMu  sync.Mutex
+	StartTime   time.Time
+	RequestInfo string
 }
 
 // NewVM creates a VM object.
@@ -238,6 +245,37 @@ func (vm *VM) Aborted() bool {
 	return atomic.LoadInt64(&vm.abort) == 1
 }
 
+func (vm *VM) appendResource(c io.Closer) {
+	vm.resourceMu.Lock()
+	vm.resources = append(vm.resources, c)
+	vm.resourceMu.Unlock()
+}
+
+func (vm *VM) removeResource(target io.Closer) {
+	vm.resourceMu.Lock()
+	for i, r := range vm.resources {
+		if r == target {
+			vm.resources[i] = vm.resources[len(vm.resources)-1]
+			vm.resources[len(vm.resources)-1] = nil
+			vm.resources = vm.resources[:len(vm.resources)-1]
+			break
+		}
+	}
+	vm.resourceMu.Unlock()
+}
+
+func (vm *VM) CloseAllResources() {
+	vm.resourceMu.Lock()
+	defer vm.resourceMu.Unlock()
+	for _, r := range vm.resources {
+		func() {
+			defer recover()
+			r.Close()
+		}()
+	}
+	vm.resources = nil
+}
+
 // Run runs VM and executes the instructions until the OpReturn Opcode or Abort call.
 func (vm *VM) Run(globals Object, args ...Object) (Object, error) {
 	vm.mu.Lock()
@@ -272,6 +310,7 @@ func (vm *VM) init(globals Object, args ...Object) (Object, error) {
 	for run := true; run; {
 		run = vm.run()
 	}
+	vm.CloseAllResources()
 	if vm.err != nil {
 		return nil, vm.err
 	}
@@ -855,7 +894,12 @@ VMLoop:
 			return
 		}
 	}
-	vm.err = ErrVMAborted
+	atomic.StoreInt64(&vm.abort, 0)
+	if err := vm.throwGenErr(ErrVMAborted); err != nil {
+		vm.err = err
+		return
+	}
+	goto VMLoop
 }
 
 func (vm *VM) initGlobals(globals Object) {

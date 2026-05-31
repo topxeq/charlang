@@ -3,11 +3,13 @@ package charlang
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"image"
 	"io"
 	"math"
 	"math/big"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -29,7 +31,7 @@ import (
 )
 
 // global vars
-var VersionG = "2.5.8"
+var VersionG = "2.6.0"
 
 var CodeTextG = ""
 
@@ -53,6 +55,10 @@ var BigIntZero = big.NewInt(0)
 var BigFloatZero = big.NewFloat(0)
 
 var RegiCountG int = 30
+
+var ActiveVMs sync.Map
+
+var AdminTokenG = "charlang"
 
 type GlobalContext struct {
 	SyncMap   tk.SyncMap
@@ -1608,10 +1614,16 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 						envT := NewBaseEnv(globalsA) // Map{}
 
-						// if lenT > 1 {
-						// 	additionsA = argsA[1:]
-						// }
-						retT, errT := NewVM(fn2T.Value).Run(envT, additionsA...)
+						vmT := NewVM(fn2T.Value)
+						vmT.StartTime = time.Now()
+						vmT.RequestInfo = req.Method + " " + req.URL.Path
+						ActiveVMs.Store(vmT, vmT.RequestInfo)
+						defer func() {
+							ActiveVMs.Delete(vmT)
+							vmT.CloseAllResources()
+						}()
+
+						retT, errT := vmT.Run(envT, additionsA...)
 
 						if errT != nil {
 							tk.Pl("failed to run handler: %v", errT)
@@ -1644,6 +1656,9 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 				muxT := (*http.ServeMux)(c.This.(*Mux).Value)
 
+				muxT.HandleFunc("/admin/status", AdminStatusHandler)
+				muxT.HandleFunc("/admin/kill", AdminKillHandler)
+
 				if tk.IfSwitchExists(args, "-thread") || tk.IfSwitchExists(args, "-go") {
 					go tk.PlErrX(http.ListenAndServe(portT, muxT))
 
@@ -1659,7 +1674,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 				return Undefined, nil
 			},
 		},
-		"startHttpsServer": {
+			"startHttpsServer": {
 			Name: "startHttpsServer",
 			ValueEx: func(c Call) (Object, error) {
 				args := ObjectsToS(c.GetArgs())
@@ -1673,6 +1688,9 @@ var methodFuncMapG = map[int]map[string]*Function{
 				certPathT := tk.GetSwitch(args, "-certDir=", ".")
 
 				muxT := (*http.ServeMux)(c.This.(*Mux).Value)
+
+				muxT.HandleFunc("/admin/status", AdminStatusHandler)
+				muxT.HandleFunc("/admin/kill", AdminKillHandler)
 
 				certFilePathT := filepath.Join(certPathT, "server.crt")
 				certKeyPathT := filepath.Join(certPathT, "server.key")
@@ -2776,7 +2794,16 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 		(*envT)[k] = ConvertToObject(v)
 	}
 
-	retObjectT, errT := NewVM(bytecodeT).Run(
+	vmT := NewVM(bytecodeT)
+	vmT.StartTime = time.Now()
+	vmT.RequestInfo = req.Method + " " + req.URL.Path
+	ActiveVMs.Store(vmT, vmT.RequestInfo)
+	defer func() {
+		ActiveVMs.Delete(vmT)
+		vmT.CloseAllResources()
+	}()
+
+	retObjectT, errT := vmT.Run(
 		envT,
 		inParasT,
 	)
@@ -3696,4 +3723,76 @@ func findArrayImpl(c Call) (Object, error) {
 	}
 
 	return Undefined, nil
+}
+
+func IsAdminRequest(r *http.Request) bool {
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return false
+	}
+	if ip != "127.0.0.1" && ip != "::1" {
+		return false
+	}
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		token = r.Header.Get("X-Admin-Token")
+	}
+	return token == AdminTokenG
+}
+
+func AdminStatusHandler(w http.ResponseWriter, r *http.Request) {
+	if !IsAdminRequest(r) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	var vms []map[string]interface{}
+	ActiveVMs.Range(func(key, value interface{}) bool {
+		vm := key.(*VM)
+		vms = append(vms, map[string]interface{}{
+			"id":       fmt.Sprintf("%p", vm),
+			"info":     value.(string),
+			"duration": time.Since(vm.StartTime).String(),
+		})
+		return true
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"count": len(vms),
+		"vms":   vms,
+	})
+}
+
+func AdminKillHandler(w http.ResponseWriter, r *http.Request) {
+	if !IsAdminRequest(r) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, `{"error":"missing id"}`, http.StatusBadRequest)
+		return
+	}
+
+	found := false
+	ActiveVMs.Range(func(key, value interface{}) bool {
+		vm := key.(*VM)
+		if fmt.Sprintf("%p", vm) == id {
+			vm.Abort()
+			vm.CloseAllResources()
+			ActiveVMs.Delete(key)
+			found = true
+			return false
+		}
+		return true
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	if found {
+		w.Write([]byte(`{"status":"killed"}`))
+	} else {
+		http.Error(w, `{"error":"vm not found"}`, http.StatusNotFound)
+	}
 }

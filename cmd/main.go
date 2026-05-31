@@ -678,6 +678,8 @@ func doServer() {
 	basePathG = tk.GetSwitch(os.Args, "-dir=", basePathG)
 	webPathG = tk.GetSwitch(os.Args, "-webDir=", basePathG)
 	certPathG = tk.GetSwitch(os.Args, "-certDir=", basePathG)
+
+	charlang.AdminTokenG = tk.GetSwitch(os.Args, "-adminToken=", charlang.AdminTokenG)
 	
 	webExtsG = map[string]bool {
 		".html": true, ".htm": true, ".css": true, ".js": true,
@@ -702,6 +704,9 @@ func doServer() {
 	muxG.HandleFunc("/dc", doCharmsContent)
 
 	muxG.HandleFunc("/", serveStaticDirHandler)
+
+	muxG.HandleFunc("/admin/status", charlang.AdminStatusHandler)
+	muxG.HandleFunc("/admin/kill", charlang.AdminKillHandler)
 
 	tk.PlNow("Charlang Server V%v -port=%v -sslPort=%v -dir=%v -webDir=%v -certDir=%v", charlang.VersionG, portG, sslPortG, basePathG, webPathG, certPathG)
 
