@@ -18,7 +18,7 @@ require (
 	github.com/ncruces/zenity v0.10.13
 	github.com/sijms/go-ora/v2 v2.7.17
 	github.com/topxeq/charlang v0.0.0
-	github.com/topxeq/tkc v0.0.0-20260309011933-5d9a035395ca
+	github.com/topxeq/tkc v0.0.0-20260605141016-ef826d7efa1d
 )
 
 require (
@@ -178,7 +178,7 @@ require (
 	modernc.org/sqlite v1.28.0 // indirect
 )
 
-replace github.com/topxeq/tkc v0.0.0 => ../../tkc
+replace github.com/topxeq/tkc v0.0.0-20260309011933-5d9a035395ca => ../../tkc
 
 // replace github.com/topxeq/sqltk v0.0.0 => ../../sqltk
 

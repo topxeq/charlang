@@ -357,6 +357,12 @@ const (
 	BuiltinDecryptDataByTXDEE
 	BuiltinEncryptTextByTXDEE
 	BuiltinDecryptTextByTXDEE
+	BuiltinEncryptTextByTXDEM
+	BuiltinDecryptTextByTXDEM
+	BuiltinEncryptDataByTXDEM
+	BuiltinDecryptDataByTXDEM
+	BuiltinEncryptStreamByTXDEM
+	BuiltinDecryptStreamByTXDEM
 	BuiltinAesEncrypt
 	BuiltinAesDecrypt
 	BuiltinGetSha256WithKeyYY
@@ -1459,6 +1465,15 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	"encryptTextByTXDEE": BuiltinEncryptTextByTXDEE,
 	"decryptTextByTXDEE": BuiltinDecryptTextByTXDEE,
+
+	"encryptTextByTXDEM": BuiltinEncryptTextByTXDEM,
+	"decryptTextByTXDEM": BuiltinDecryptTextByTXDEM,
+
+	"encryptDataByTXDEM": BuiltinEncryptDataByTXDEM,
+	"decryptDataByTXDEM": BuiltinDecryptDataByTXDEM,
+
+	"encryptStreamByTXDEM": BuiltinEncryptStreamByTXDEM,
+	"decryptStreamByTXDEM": BuiltinDecryptStreamByTXDEM,
 
 	"encryptData":  BuiltinEncryptData,
 	"encryptBytes": BuiltinEncryptData,
@@ -3967,6 +3982,36 @@ var BuiltinObjects = [...]Object{
 		Name:    "decryptTextByTXDEE",
 		Value:   fnASSRS(tk.DecryptStringByTXDEE),
 		ValueEx: fnASSRSex(tk.DecryptStringByTXDEE),
+	},
+	BuiltinEncryptTextByTXDEM: &BuiltinFunction{
+		Name:    "encryptTextByTXDEM",
+		Value:   fnASSSRS(tk.EncryptStringByTXDEM),
+		ValueEx: fnASSSRSex(tk.EncryptStringByTXDEM),
+	},
+	BuiltinDecryptTextByTXDEM: &BuiltinFunction{
+		Name:    "decryptTextByTXDEM",
+		Value:   fnASSRS(tk.DecryptStringByTXDEM),
+		ValueEx: fnASSRSex(tk.DecryptStringByTXDEM),
+	},
+	BuiltinEncryptDataByTXDEM: &BuiltinFunction{
+		Name:    "encryptDataByTXDEM",
+		Value:   fnALySSRLy(tk.EncryptDataByTXDEM),
+		ValueEx: fnALySSRLyex(tk.EncryptDataByTXDEM),
+	},
+	BuiltinDecryptDataByTXDEM: &BuiltinFunction{
+		Name:    "decryptDataByTXDEM",
+		Value:   fnALySRLy(tk.DecryptDataByTXDEM),
+		ValueEx: fnALySRLyex(tk.DecryptDataByTXDEM),
+	},
+	BuiltinEncryptStreamByTXDEM: &BuiltinFunction{
+		Name:    "encryptStreamByTXDEM",
+		Value:   fnARSWRESS(tk.EncryptStreamByTXDEM),
+		ValueEx: fnARSWRESSex(tk.EncryptStreamByTXDEM),
+	},
+	BuiltinDecryptStreamByTXDEM: &BuiltinFunction{
+		Name:    "decryptStreamByTXDEM",
+		Value:   fnARSWREs(tk.DecryptStreamByTXDEM),
+		ValueEx: fnARSWREsex(tk.DecryptStreamByTXDEM),
 	},
 	BuiltinEncryptData: &BuiltinFunction{
 		Name:    "encryptData",
@@ -7604,6 +7649,116 @@ func fnARSWREex(fn func(io.Reader, string, io.Writer) error) CallableExFunc {
 	}
 }
 
+// like tk.EncryptStreamByTXDEM
+// fnARSWRESS adapts func(io.Reader, string, string, io.Writer) error to CallableFunc.
+func fnARSWRESS(fn func(io.Reader, string, string, io.Writer) error) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 4 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		nv1, ok := args[0].(*Reader)
+
+		if !ok {
+			return NewCommonError("invalid type of parameter 1: %v", nv1.TypeName()), nil
+		}
+
+		nv4, ok := args[3].(*Writer)
+
+		if !ok {
+			return NewCommonError("invalid type of parameter 4: %v", nv4.TypeName()), nil
+		}
+
+		rs := fn(nv1.Value, args[1].String(), args[2].String(), nv4.Value)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+// fnARSWRESSex adapts func(io.Reader, string, string, io.Writer) error to CallableExFunc.
+func fnARSWRESSex(fn func(io.Reader, string, string, io.Writer) error) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 4 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		nv1, ok := args[0].(*Reader)
+
+		if !ok {
+			return NewCommonErrorWithPos(c, "invalid type of parameter 1: %v", nv1.TypeName()), nil
+		}
+
+		nv4, ok := args[3].(*Writer)
+
+		if !ok {
+			return NewCommonErrorWithPos(c, "invalid type of parameter 4: %v", nv4.TypeName()), nil
+		}
+
+		rs := fn(nv1.Value, args[1].String(), args[2].String(), nv4.Value)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+// like tk.DecryptStreamByTXDEM
+// fnARSWREs adapts func(io.Reader, string, io.Writer) error to CallableFunc.
+func fnARSWREs(fn func(io.Reader, string, io.Writer) error) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 3 {
+			return Undefined, NewCommonError("not enough parameters")
+		}
+
+		nv1, ok := args[0].(*Reader)
+
+		if !ok {
+			return NewCommonError("invalid type of parameter 1: %v", nv1.TypeName()), nil
+		}
+
+		nv3, ok := args[2].(*Writer)
+
+		if !ok {
+			return NewCommonError("invalid type of parameter 3: %v", nv3.TypeName()), nil
+		}
+
+		vargs := ObjectsToS(args[1:2])
+
+		rs := fn(nv1.Value, vargs[0], nv3.Value)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
+// fnARSWREsex adapts func(io.Reader, string, io.Writer) error to CallableExFunc.
+func fnARSWREsex(fn func(io.Reader, string, io.Writer) error) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 3 {
+			return Undefined, NewCommonErrorWithPos(c, "not enough parameters")
+		}
+
+		nv1, ok := args[0].(*Reader)
+
+		if !ok {
+			return NewCommonErrorWithPos(c, "invalid type of parameter 1: %v", nv1.TypeName()), nil
+		}
+
+		nv3, ok := args[2].(*Writer)
+
+		if !ok {
+			return NewCommonErrorWithPos(c, "invalid type of parameter 3: %v", nv3.TypeName()), nil
+		}
+
+		vargs := ObjectsToS(args[1:2])
+
+		rs := fn(nv1.Value, vargs[0], nv3.Value)
+
+		return ConvertToObject(rs), nil
+	}
+}
+
 // like tk.CalTextSimilarity
 // fnASSRF adapts func(string, string) float64 to CallableFunc.
 func fnASSRF(fn func(string, string) float64) CallableFunc {
@@ -8067,6 +8222,47 @@ func fnALySRLyex(fn func([]byte, string) []byte) CallableExFunc {
 		}
 
 		rs := fn([]byte(nv1), args[1].String())
+
+		return Bytes(rs), nil
+	}
+}
+
+// like tk.EncryptDataByTXDEM
+// fnALySSRLy adapts func([]byte, string, string) []byte to CallableFunc.
+func fnALySSRLy(fn func([]byte, string, string) []byte) CallableFunc {
+	return func(args ...Object) (ret Object, err error) {
+		if len(args) < 3 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return Undefined, NewCommonError("unsupported type: %T", args[0])
+		}
+
+		rs := fn([]byte(nv1), args[1].String(), args[2].String())
+
+		return Bytes(rs), nil
+	}
+}
+
+// fnALySSRLyex adapts func([]byte, string, string) []byte to CallableExFunc.
+func fnALySSRLyex(fn func([]byte, string, string) []byte) CallableExFunc {
+	return func(c Call) (ret Object, err error) {
+		args := c.GetArgs()
+
+		if len(args) < 3 {
+			return NewCommonError("not enough parameters"), nil
+		}
+
+		nv1, ok := args[0].(Bytes)
+
+		if !ok {
+			return Undefined, NewCommonError("unsupported type: %T", args[0])
+		}
+
+		rs := fn([]byte(nv1), args[1].String(), args[2].String())
 
 		return Bytes(rs), nil
 	}
