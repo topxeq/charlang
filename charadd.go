@@ -2798,7 +2798,20 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 
 	vmT := NewVM(bytecodeT)
 	vmT.StartTime = time.Now()
-	vmT.RequestInfo = "[" + fileNameT + "] " + req.Method + " " + req.URL.Path
+
+	displayName := fileNameT
+	if sp, ok := globalsA["scriptPathG"]; ok {
+		if spStr, ok := sp.(string); ok && spStr != "" {
+			basePath := tk.GetSwitch(optionsA, "-base=", "")
+			if basePath != "" && strings.HasPrefix(spStr, basePath) {
+				spStr = strings.TrimPrefix(spStr, basePath)
+				spStr = strings.TrimPrefix(spStr, "/")
+				spStr = strings.TrimPrefix(spStr, "\\")
+			}
+			displayName = spStr
+		}
+	}
+	vmT.RequestInfo = "[" + displayName + "] " + req.Method + " " + req.URL.Path
 	ActiveVMs.Store(vmT, vmT.RequestInfo)
 	defer func() {
 		ActiveVMs.Delete(vmT)
