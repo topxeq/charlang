@@ -2707,6 +2707,8 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 	if reqT == "" {
 		if strings.HasPrefix(req.RequestURI, "/charms") {
 			reqT = req.RequestURI[7:]
+		} else if strings.HasPrefix(req.RequestURI, "/ms") {
+			reqT = req.RequestURI[3:]
 		} else if strings.HasPrefix(req.RequestURI, "/dc") {
 			reqT = req.RequestURI[3:]
 		}
