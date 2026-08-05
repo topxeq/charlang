@@ -49,6 +49,7 @@
         - [Request Handler Running in a New Virtual Machine](#request-handler-running-in-a-new-virtual-machine)
         - [Serve Static and Dynamic HTML Pages at the Same Time](#serve-static-and-dynamic-html-pages-at-the-same-time)
       - [Charlang's Embedded Fully Functional Web/Microservices/Application Server](#charlangs-embedded-fully-functional-webmicroservicesapplication-server)
+      - [Server Monitoring & Diagnostics (v0.6.112+)](#server-monitoring--diagnostics-v06112)
       - [Charlang as System Service](#charlang-as-system-service)
     - [7.7 More Examples](#77-more-examples)
       - [Builtin Function: checkErr](#builtin-function-checkerr)
@@ -2051,6 +2052,59 @@ Then, if we click button `button1` on the webpage, we will get the following ale
 This is because the webpage charmsTmpl.html called AJAX request to the service located at `http://127.0.0.1:80/charms/charmsApi`. And our Charlang server will find charmsApi.char (automatically added with the `.char` file name suffix) and execute it, so it will output the content we want.
 
 Now, an example of a small but fully functional WEB/application/API all-in-one server has been fully demonstrated. It is already sufficient for a general and small application service, and has almost no external dependencies. Deployment is also very convenient, only requiring the main program of Charlang and corresponding HTML and script files in the specified directory.
+
+&nbsp;
+
+#### Server Monitoring & Diagnostics (v0.6.112+)
+
+The Charlang server provides built-in monitoring tools for administrators to diagnose high CPU, memory leaks, and slow requests in production.
+
+**Enable pprof (optional diagnostic port):**
+
+```shell
+# Start with pprof on localhost-only port (default: disabled)
+char -server -port=:80 -dir=/data/scripts -adminToken=yourSecret -pprofPort=:6060
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-adminToken` | `""` | Auth token for `/admin/status` and `/admin/kill` |
+| `-pprofPort` | `""` (disabled) | Go pprof debug port, binds `127.0.0.1` only |
+
+**List running microservices (scripts):**
+
+```bash
+curl "http://host:port/admin/status?token=yourSecret"
+```
+
+```json
+{"count":2, "vms":[
+  {"id":"0xc0001a4000", "info":"[report.char] GET /charms/report", "duration":"2m35s"},
+  {"id":"0xc0001a4120", "info":"[route:/api/users] GET /api/users", "duration":"12s"}
+]}
+```
+
+**Terminate a misbehaving request:**
+
+```bash
+curl -X POST "http://host:port/admin/kill?id=0xc0001a4000&token=yourSecret"
+```
+
+**Diagnose CPU hotspots (with pprof):**
+
+```bash
+# 30-second CPU profile
+curl -o cpu.prof "http://127.0.0.1:6060/debug/pprof/profile?seconds=30"
+go tool pprof -http=:8081 cpu.prof
+```
+
+**View all goroutine stacks:**
+
+```bash
+curl "http://127.0.0.1:6060/debug/pprof/goroutine?debug=2"
+```
+
+See [docs/server-monitoring-guide.md](docs/server-monitoring-guide.md) for the full monitoring and operations guide.
 
 &nbsp;
 

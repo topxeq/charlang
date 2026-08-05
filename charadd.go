@@ -1616,7 +1616,7 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 						vmT := NewVM(fn2T.Value)
 						vmT.StartTime = time.Now()
-						vmT.RequestInfo = req.Method + " " + req.URL.Path
+						vmT.RequestInfo = "[route:" + pathT + "] " + req.Method + " " + req.URL.Path
 						ActiveVMs.Store(vmT, vmT.RequestInfo)
 						defer func() {
 							ActiveVMs.Delete(vmT)
@@ -2796,7 +2796,7 @@ func RunScriptOnHttp(codeA string, compilerOptionsA *CompilerOptions, res http.R
 
 	vmT := NewVM(bytecodeT)
 	vmT.StartTime = time.Now()
-	vmT.RequestInfo = req.Method + " " + req.URL.Path
+	vmT.RequestInfo = "[" + fileNameT + "] " + req.Method + " " + req.URL.Path
 	ActiveVMs.Store(vmT, vmT.RequestInfo)
 	defer func() {
 		ActiveVMs.Delete(vmT)

@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"os/exec"
@@ -713,6 +715,22 @@ func doServer() {
 	if sslPortG != "" {
 		tk.PlNow("try starting ssl server on %v...", sslPortG)
 		go startHttpsServer(sslPortG)
+	}
+
+	pprofPortG := tk.GetSwitch(os.Args, "-pprofPort=", "")
+	if pprofPortG != "" {
+		if !tk.StartsWith(pprofPortG, ":") {
+			pprofPortG = ":" + pprofPortG
+		}
+		go func() {
+			l, err := net.Listen("tcp", "127.0.0.1"+pprofPortG)
+			if err != nil {
+				tk.PlNow("pprof: failed to listen on 127.0.0.1%v: %v", pprofPortG, err)
+				return
+			}
+			tk.PlNow("pprof: http://127.0.0.1%v/debug/pprof/", pprofPortG)
+			http.Serve(l, nil)
+		}()
 	}
 
 	tk.PlNow("try starting server on %v ...", portG)
