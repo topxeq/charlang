@@ -283,8 +283,8 @@ func TestOptimizerIf(t *testing.T) {
 		bytecode(
 			Array{Int(12)},
 			compFunc(concatInsts(
-				makeInst(OpJump, 6),
-				makeInst(OpJump, 11),
+				makeInst(OpJump, 10),
+				makeInst(OpJump, 17),
 				makeInst(OpConstant, 0),
 				makeInst(OpReturn, 1),
 				makeInst(OpReturn, 0),
@@ -298,7 +298,7 @@ func TestOptimizerFor(t *testing.T) {
 			Array{Int(3)},
 			compFunc(concatInsts(
 				makeInst(OpConstant, 0),
-				makeInst(OpJumpFalsy, 9),
+				makeInst(OpJumpFalsy, 15),
 				makeInst(OpJump, 0),
 				makeInst(OpReturn, 0),
 			)),
@@ -324,12 +324,12 @@ func TestOptimizerFor(t *testing.T) {
 				makeInst(OpGetLocal, 0),
 				makeInst(OpConstant, 1),
 				makeInst(OpBinaryOp, int(token.Less)),
-				makeInst(OpJumpFalsy, 27),
+				makeInst(OpJumpFalsy, 37),
 				makeInst(OpGetLocal, 0),
 				makeInst(OpConstant, 2),
 				makeInst(OpBinaryOp, int(token.Add)),
 				makeInst(OpSetLocal, 0),
-				makeInst(OpJump, 5),
+				makeInst(OpJump, 7),
 				makeInst(OpReturn, 0),
 			),
 				withLocals(1),
@@ -349,10 +349,10 @@ func TestOptimizerTryThrow(t *testing.T) {
 		bytecode(
 			Array{Int(3), Float(7), String("a1b")},
 			compFunc(concatInsts(
-				makeInst(OpSetupTry, 12, 18),
+				makeInst(OpSetupTry, 20, 28),
 				makeInst(OpConstant, 0),
 				makeInst(OpPop),
-				makeInst(OpJump, 18),
+				makeInst(OpJump, 28),
 				makeInst(OpSetupCatch),
 				makeInst(OpPop),
 				makeInst(OpConstant, 1),

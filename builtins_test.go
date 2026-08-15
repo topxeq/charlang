@@ -320,7 +320,7 @@ func TestBuiltinObjects(t *testing.T) {
 
 	require.Equal(t, `[1]`, fmt.Sprintf("%v", vmT.GetLocalsQuick()))
 
-	require.Equal(t, `12 39 RETURN`, fmt.Sprintf("%v", vmT.GetCurInstr()))
+	require.Equal(t, `16 39 RETURN`, fmt.Sprintf("%v", vmT.GetCurInstr()))
 
 	require.Equal(t, `<compiledFunction>`, fmt.Sprintf("%v", vmT.GetCurFunc()))
 

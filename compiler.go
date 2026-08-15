@@ -707,18 +707,38 @@ func MakeInstruction(buf []byte, op Opcode, args ...int) ([]byte, error) {
 
 	buf = append(buf[:0], op)
 	switch op {
-	case OpConstant, OpMap, OpArray, OpGetGlobal, OpSetGlobal, OpJump,
-		OpJumpFalsy, OpAndJump, OpOrJump, OpStoreModule:
+	case OpMap, OpArray, OpStoreModule:
 		buf = append(buf, byte(args[0]>>8))
 		buf = append(buf, byte(args[0]))
 		return buf, nil
-	case OpLoadModule, OpSetupTry:
+	case OpConstant, OpGetGlobal, OpSetGlobal, OpJump, OpJumpFalsy,
+		OpAndJump, OpOrJump:
+		buf = append(buf, byte(args[0]>>24))
+		buf = append(buf, byte(args[0]>>16))
+		buf = append(buf, byte(args[0]>>8))
+		buf = append(buf, byte(args[0]))
+		return buf, nil
+	case OpLoadModule:
+		buf = append(buf, byte(args[0]>>24))
+		buf = append(buf, byte(args[0]>>16))
 		buf = append(buf, byte(args[0]>>8))
 		buf = append(buf, byte(args[0]))
 		buf = append(buf, byte(args[1]>>8))
 		buf = append(buf, byte(args[1]))
 		return buf, nil
+	case OpSetupTry:
+		buf = append(buf, byte(args[0]>>24))
+		buf = append(buf, byte(args[0]>>16))
+		buf = append(buf, byte(args[0]>>8))
+		buf = append(buf, byte(args[0]))
+		buf = append(buf, byte(args[1]>>24))
+		buf = append(buf, byte(args[1]>>16))
+		buf = append(buf, byte(args[1]>>8))
+		buf = append(buf, byte(args[1]))
+		return buf, nil
 	case OpClosure:
+		buf = append(buf, byte(args[0]>>24))
+		buf = append(buf, byte(args[0]>>16))
 		buf = append(buf, byte(args[0]>>8))
 		buf = append(buf, byte(args[0]))
 		buf = append(buf, byte(args[1]))

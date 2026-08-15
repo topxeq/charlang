@@ -339,6 +339,13 @@ func (vm *VM) run() (rerun bool) {
 	return
 }
 
+// readU32At reads a 4-byte big-endian operand (jump position or constant
+// index) from insts[off:off+4].
+func readU32At(insts []byte, off int) int {
+	return int(insts[off+3]) | int(insts[off+2])<<8 |
+		int(insts[off+1])<<16 | int(insts[off])<<24
+}
+
 func (vm *VM) loop() {
 	if DebugModeG {
 		fmt.Printf("byteCode: %v\n", vm.bytecode)
@@ -373,11 +380,11 @@ VMLoop:
 		}
 		switch vm.curInsts[vm.ip] {
 		case OpConstant:
-			cidx := int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8
+			cidx := readU32At(vm.curInsts, vm.ip+1)
 			obj := vm.constants[cidx]
 			vm.stack[vm.sp] = obj
 			vm.sp++
-			vm.ip += 2
+			vm.ip += 4
 		case OpGetLocal:
 			localIdx := int(vm.curInsts[vm.ip+1])
 			value := vm.stack[vm.curFrame.basePointer+localIdx]
@@ -437,22 +444,20 @@ VMLoop:
 			}
 		case OpAndJump:
 			if vm.stack[vm.sp-1].IsFalsy() {
-				pos := int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8
-				vm.ip = pos - 1
+				vm.ip = readU32At(vm.curInsts, vm.ip+1) - 1
 				continue
 			}
 			vm.stack[vm.sp-1] = nil
 			vm.sp--
-			vm.ip += 2
+			vm.ip += 4
 		case OpOrJump:
 			if vm.stack[vm.sp-1].IsFalsy() {
 				vm.stack[vm.sp-1] = nil
 				vm.sp--
-				vm.ip += 2
+				vm.ip += 4
 				continue
 			}
-			pos := int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8
-			vm.ip = pos - 1
+			vm.ip = readU32At(vm.curInsts, vm.ip+1) - 1
 		case OpEqual:
 			left, right := vm.stack[vm.sp-2], vm.stack[vm.sp-1]
 
@@ -551,9 +556,9 @@ VMLoop:
 			vm.sp++
 			vm.ip += 2
 		case OpClosure:
-			constIdx := int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8
+			constIdx := readU32At(vm.curInsts, vm.ip+1)
 			fn := vm.constants[constIdx].(*CompiledFunction)
-			numFree := int(vm.curInsts[vm.ip+3])
+			numFree := int(vm.curInsts[vm.ip+5])
 			free := make([]*ObjectPtr, numFree)
 			for i := 0; i < numFree; i++ {
 				switch freeVar := (vm.stack[vm.sp-numFree+i]).(type) {
@@ -578,9 +583,9 @@ VMLoop:
 			}
 			vm.stack[vm.sp] = newFn
 			vm.sp++
-			vm.ip += 3
+			vm.ip += 5
 		case OpJump:
-			vm.ip = (int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8) - 1
+			vm.ip = readU32At(vm.curInsts, vm.ip+1) - 1
 		case OpJumpFalsy:
 			vm.sp--
 			obj := vm.stack[vm.sp]
@@ -602,12 +607,12 @@ VMLoop:
 				falsy = obj.IsFalsy()
 			}
 			if falsy {
-				vm.ip = (int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8) - 1
+				vm.ip = readU32At(vm.curInsts, vm.ip+1) - 1
 				continue
 			}
-			vm.ip += 2
+			vm.ip += 4
 		case OpGetGlobal:
-			cidx := int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8
+			cidx := readU32At(vm.curInsts, vm.ip+1)
 			index := vm.constants[cidx]
 			var ret Object
 			var err error
@@ -627,10 +632,10 @@ VMLoop:
 				vm.stack[vm.sp] = ret
 			}
 
-			vm.ip += 2
+			vm.ip += 4
 			vm.sp++
 		case OpSetGlobal:
-			cidx := int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8
+			cidx := readU32At(vm.curInsts, vm.ip+1)
 			index := vm.constants[cidx]
 			value := vm.stack[vm.sp-1]
 
@@ -646,7 +651,7 @@ VMLoop:
 				continue
 			}
 
-			vm.ip += 2
+			vm.ip += 4
 			vm.sp--
 			vm.stack[vm.sp] = nil
 		case OpArray:
@@ -813,8 +818,8 @@ VMLoop:
 			val := iterator.(Iterator).Value()
 			vm.stack[vm.sp-1] = val
 		case OpLoadModule:
-			cidx := int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8
-			midx := int(vm.curInsts[vm.ip+4]) | int(vm.curInsts[vm.ip+3])<<8
+			cidx := readU32At(vm.curInsts, vm.ip+1)
+			midx := int(vm.curInsts[vm.ip+6]) | int(vm.curInsts[vm.ip+5])<<8
 			value := vm.modulesCache[midx]
 			// fmt.Printf("OpLoadModule: %#v\n", value)
 
@@ -836,7 +841,7 @@ VMLoop:
 			}
 			// fmt.Printf("OpLoadModule end: %#v\n", value)
 
-			vm.ip += 4
+			vm.ip += 6
 		case OpStoreModule:
 			midx := int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8
 			value := vm.stack[vm.sp-1]
@@ -994,8 +999,8 @@ func (vm *VM) handlePanic(r interface{}) {
 }
 
 func (vm *VM) xOpSetupTry() {
-	catch := int(vm.curInsts[vm.ip+2]) | int(vm.curInsts[vm.ip+1])<<8
-	finally := int(vm.curInsts[vm.ip+4]) | int(vm.curInsts[vm.ip+3])<<8
+	catch := readU32At(vm.curInsts, vm.ip+1)
+	finally := readU32At(vm.curInsts, vm.ip+5)
 
 	ptrs := errHandler{
 		sp:      vm.sp,
@@ -1012,7 +1017,7 @@ func (vm *VM) xOpSetupTry() {
 			vm.curFrame.errHandlers.handlers, ptrs)
 	}
 
-	vm.ip += 4
+	vm.ip += 8
 }
 
 func (vm *VM) xOpSetupCatch() {
