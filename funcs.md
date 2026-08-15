@@ -630,6 +630,12 @@
 
 **md5**
 
+**sm3**: SM3 hash (GB/T 32905-2016), returns lowercase hex digest of the raw bytes (UTF-8 for strings), usage: a := sm3("abc")
+
+**hashPassword**: hash a password with PBKDF2-HMAC-SM3 (RFC 8018 PBKDF2 + GB/T 32905-2016 SM3), fresh 16-byte random salt, returns a self-describing encoding like `$pbkdf2-sm3$<iterations>$<salt_b64url>$<digest_b64url>$`, usage: h := hashPassword(password [, iterations]) — omit iterations to use the default 10000; pass a larger iterations value for stronger hashing
+
+**verifyPassword**: verify a password against a hashPassword encoding with constant-time comparison, returns true/false, usage: ok := verifyPassword(password, hashPasswordEncoded)
+
 **urlEncode**
 
 **urlEncode1**

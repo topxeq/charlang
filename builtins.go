@@ -765,6 +765,11 @@ const (
 	BuiltinSetArrayItem
 	BuiltinRemoveMapItem
 	BuiltinStrReplaceN
+
+	BuiltinSm3
+
+	BuiltinHashPassword
+	BuiltinVerifyPassword
 )
 
 // BuiltinsMap maps built-in function names to their BuiltinType identifiers.
@@ -1211,6 +1216,10 @@ var BuiltinsMap = map[string]BuiltinType{
 
 	// encode/decode related
 	"md5": BuiltinMd5,
+	"sm3": BuiltinSm3, // SM3 hash (GB/T 32905-2016), returns lowercase hex digest
+
+	"hashPassword":   BuiltinHashPassword,   // PBKDF2-HMAC-SM3 password hashing with random salt: hashPassword(password [, iterations])
+	"verifyPassword": BuiltinVerifyPassword, // verify a password against a hashPassword encoding, constant-time compare
 
 	"urlEncode":    BuiltinUrlEncode,
 	"urlEncode1":   BuiltinUrlEncode1,
@@ -3188,6 +3197,21 @@ var BuiltinObjects = [...]Object{
 		Name:    "md5",
 		Value:   fnASRS(tk.MD5Encrypt),
 		ValueEx: fnASRSex(tk.MD5Encrypt),
+	},
+	BuiltinSm3: &BuiltinFunction{
+		Name:    "sm3",
+		Value:   CallExAdapter(builtinSm3Func),
+		ValueEx: builtinSm3Func,
+	},
+	BuiltinHashPassword: &BuiltinFunction{
+		Name:    "hashPassword",
+		Value:   CallExAdapter(builtinHashPasswordFunc),
+		ValueEx: builtinHashPasswordFunc,
+	},
+	BuiltinVerifyPassword: &BuiltinFunction{
+		Name:    "verifyPassword",
+		Value:   CallExAdapter(builtinVerifyPasswordFunc),
+		ValueEx: builtinVerifyPasswordFunc,
 	},
 	BuiltinUrlEncode: &BuiltinFunction{
 		Name:    "urlEncode",

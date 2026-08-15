@@ -1,6 +1,6 @@
 module github.com/topxeq/charlang/cmd/char
 
-go 1.24.2
+go 1.25.0
 
 // replace github.com/topxeq/gods v0.0.0 => ../../../gods
 
@@ -164,13 +164,13 @@ require (
 	github.com/yuin/goldmark-highlighting v0.0.0-20220208100518-594be1970594 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go4.org v0.0.0-20260112195520-a5071408f32f // indirect
-	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/crypto v0.54.0 // indirect
 	golang.org/x/image v0.36.0 // indirect
-	golang.org/x/net v0.50.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.41.0 // indirect
-	golang.org/x/term v0.40.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/term v0.45.0 // indirect
+	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	modernc.org/libc v1.37.6 // indirect
 	modernc.org/mathutil v1.6.0 // indirect

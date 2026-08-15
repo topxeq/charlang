@@ -1,6 +1,6 @@
 module github.com/topxeq/charlang
 
-go 1.24.2
+go 1.25.0
 
 require (
 	github.com/domodwyer/mailyak v3.1.1+incompatible
@@ -15,6 +15,7 @@ require (
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff
 	github.com/topxeq/sqltk v0.0.0-20260124035901-98bf8683db30
 	github.com/topxeq/tkc v0.0.0-20260605141016-ef826d7efa1d
+	golang.org/x/crypto v0.54.0
 )
 
 require (
@@ -132,11 +133,10 @@ require (
 	github.com/yuin/goldmark-highlighting v0.0.0-20220208100518-594be1970594 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go4.org v0.0.0-20260112195520-a5071408f32f // indirect
-	golang.org/x/crypto v0.48.0 // indirect
-	golang.org/x/net v0.50.0 // indirect
-	golang.org/x/sys v0.41.0 // indirect
-	golang.org/x/term v0.40.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/term v0.45.0 // indirect
+	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
