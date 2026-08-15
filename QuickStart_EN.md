@@ -561,6 +561,9 @@ strJoin(["a","b"], "-")  // join
 
 ```charlang
 md5("hello")            // MD5 hash
+sm3("hello")            // SM3 hash (GB/T 32905-2016)
+hashPassword("secret")  // PBKDF2-HMAC-SM3 password hashing (random salt; optional second parameter for iterations)
+verifyPassword("secret", h) // verify a password against the hash, returns true/false
 sha256("hello")         // SHA256 hash
 base64Encode("abc")     // Base64 encode
 base64Decode("YWJj")    // Base64 decode

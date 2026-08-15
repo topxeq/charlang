@@ -756,6 +756,9 @@ typeCode(v) // 类型代码
 
 ```charlang
 md5(s)              // MD5哈希
+sm3(s)              // SM3哈希（国密GB/T 32905-2016），返回小写hex摘要
+hashPassword(p[,i]) // 密码哈希：PBKDF2-HMAC-SM3+随机盐，返回自描述编码字符串；i为迭代次数（默认10000，可传更大值增强保护）
+verifyPassword(p,h) // 校验密码与hashPassword编码是否匹配（恒定时间比较），返回true/false
 sha1(s)             // SHA1哈希
 sha256(s)           // SHA256哈希
 base64Encode(s)     // Base64编码

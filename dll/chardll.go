@@ -58,6 +58,7 @@ import (
 	"strings"
 	"unsafe"
 	"fmt"
+	"sync"
 	"time"
 	"github.com/topxeq/tkc"
 	"github.com/topxeq/charlang"
@@ -96,7 +97,9 @@ func DealStr(strA, codeA *C.char) *C.char {
 
 //var CurrentVM *charlang.VM = nil
 
-var GlobalVars map[string]interface{} = nil;
+var globalVarsMutex sync.Mutex
+
+var GlobalVars map[string]interface{} = nil
 
 //export QuickRunChar
 func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA, comBufA *C.char) *C.char {
@@ -111,14 +114,9 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA, comBufA *C.char
 //	tkc.AppendStringToFile(tkc.Spr("\n codeT: %v\n", codeT), `c:\test\test.log`)
 	
 	injectT := C.GoString(injectA)
-	
+
 	codeT = injectT + codeT
 
-	nv, errT := charlang.Compile([]byte(codeT), &charlang.DefaultCompilerOptions)
-	if errT != nil {
-		return C.CString("TXERROR:" + errT.Error())
-	}
-	
 	allowLenT := 16777216
 
 	cgsmHandler := func(argsA ...interface{}) interface{} {
@@ -128,22 +126,27 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA, comBufA *C.char
 
 		switch actionA {
 		case "getGlobalVar":
+			globalVarsMutex.Lock()
 			if GlobalVars == nil {
 				GlobalVars = make(map[string]interface{}, 10)
+				globalVarsMutex.Unlock()
 				return "empty"
 			}
-			
+
 			strT := tkc.ToStr(argsA[1])
-			
-			return fmt.Sprintf("%#v", GlobalVars[strT])
+
+			rsT := fmt.Sprintf("%#v", GlobalVars[strT])
+			globalVarsMutex.Unlock()
+			return rsT
 		case "setGlobalVar":
+			globalVarsMutex.Lock()
 			if GlobalVars == nil {
 				GlobalVars = make(map[string]interface{}, 10)
-				return "empty"
 			}
-			
+
 			GlobalVars[tkc.ToStr(argsA[1])] = tkc.ToStr(argsA[2])
-			
+			globalVarsMutex.Unlock()
+
 			return fmt.Sprintf("%#v", "done")
 		case "setReturnInfo":
 			strT := tkc.ToStr(argsA[1])
@@ -153,15 +156,19 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA, comBufA *C.char
 			lenT := len(strBufT)
 			
 			bufT := make([]byte, 4)
-			
+
 			binary.BigEndian.PutUint32(bufT, uint32(lenT))
-			
+
 			C.memset(unsafe.Pointer(comBufA), C.int(1), C.size_t(1))
 
-			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 1), C.CBytes(bufT), C.size_t(4))
+			lenPtrT := C.CBytes(bufT)
+			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 1), lenPtrT, C.size_t(4))
+			C.free(unsafe.Pointer(lenPtrT))
 
-			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 5), C.CBytes(strBufT), C.size_t(lenT))
-			
+			dataPtrT := C.CBytes(strBufT)
+			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 5), dataPtrT, C.size_t(lenT))
+			C.free(unsafe.Pointer(dataPtrT))
+
 			C.memset(unsafe.Add(unsafe.Pointer(comBufA), 5+lenT), C.int(0), C.size_t(1))
 
 			return ""
@@ -200,17 +207,21 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA, comBufA *C.char
 			}
 
 			bufT := make([]byte, 4)
-			
+
 			binary.BigEndian.PutUint32(bufT, uint32(lenT))
-			
+
 			C.memset(unsafe.Pointer(comBufA), C.int(1), C.size_t(1))
 
-			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 1), C.CBytes(bufT), C.size_t(4))
+			lenPtrT := C.CBytes(bufT)
+			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 1), lenPtrT, C.size_t(4))
+			C.free(unsafe.Pointer(lenPtrT))
 
-			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 5), C.CBytes(strBufT), C.size_t(lenT))
-			
+			dataPtrT := C.CBytes(strBufT)
+			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 5), dataPtrT, C.size_t(lenT))
+			C.free(unsafe.Pointer(dataPtrT))
+
 			C.memset(unsafe.Add(unsafe.Pointer(comBufA), 5+lenT), C.int(0), C.size_t(1))
-			
+
 			return ""
 		case "talk":
 			strT := tkc.ToStr(argsA[1])
@@ -247,17 +258,21 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA, comBufA *C.char
 			}
 
 			bufT := make([]byte, 4)
-			
+
 			binary.BigEndian.PutUint32(bufT, uint32(lenT))
-			
+
 			C.memset(unsafe.Pointer(comBufA), C.int(1), C.size_t(1))
 
-			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 1), C.CBytes(bufT), C.size_t(4))
+			lenPtrT := C.CBytes(bufT)
+			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 1), lenPtrT, C.size_t(4))
+			C.free(unsafe.Pointer(lenPtrT))
 
-			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 5), C.CBytes(strBufT), C.size_t(lenT))
-			
+			dataPtrT := C.CBytes(strBufT)
+			C.memcpy(unsafe.Add(unsafe.Pointer(comBufA), 5), dataPtrT, C.size_t(lenT))
+			C.free(unsafe.Pointer(dataPtrT))
+
 			C.memset(unsafe.Add(unsafe.Pointer(comBufA), 5+lenT), C.int(0), C.size_t(1))
-			
+
 			for {
 				recvBufT := C.GoBytes(unsafe.Pointer(comBufA), 5)
 				
@@ -279,46 +294,67 @@ func QuickRunChar(codeA, paramA, secureCodeA, injectA, globalsA, comBufA *C.char
 					C.memset(unsafe.Pointer(comBufA), C.int(0), C.size_t(1))
 
 					return rs
-				
+
 //					break;
 				}
-			
+
 				time.Sleep(time.Millisecond * 10)
 			}
-
-			return ""
 		}
 		// fmt.Printf("%v\n", "GUI engined disabled")
 		return fmt.Errorf("GUI engine disabled")
 	}
 
-
 	envT := charlang.Map{}
 
-	envT["versionG"] = charlang.String{Value: charlang.VersionG}
-	envT["scriptPathG"] = charlang.String{Value: ""}
-	envT["runModeG"] = charlang.String{Value: "dll"}
-	envT["secureCodeG"] = charlang.String{Value: tkc.MD5Encrypt(secureCodeT)}
+	envT["versionG"] = charlang.String(charlang.VersionG)
+	envT["scriptPathG"] = charlang.String("")
+	envT["runModeG"] = charlang.String("dll")
+	envT["secureCodeG"] = charlang.String(tkc.MD5Encrypt(secureCodeT))
 	envT["guiHandlerG"] = charlang.NewExternalDelegate(cgsmHandler)
 //	envT["argsG"] = charlang.Array{}
 
 	globalsT := strings.TrimSpace(C.GoString(globalsA))
-	
-//	tkc.AppendStringToFile(tkc.Spr("\nglobalsT: %v\n", globalsT), `c:\test\test.log`)
-	
+
 	if globalsT != "" {
-		mapT, errT := tkc.MSSFromJSON(globalsT)
-		
-//		tkc.AppendStringToFile(tkc.Spr("\nglobalsT: %#v -- #v\n", mapT, errT), `c:\test\test.log`)
-	
-		if errT == nil {
-			for k, v := range mapT {
-				envT[k] = charlang.String{Value: v}
+		// FromJSON (not MSSFromJSON) so numeric and boolean values in
+		// the globals JSON do not fail the whole parse
+		varsT, errGlobalsT := tkc.FromJSON(globalsT)
+
+		if errGlobalsT == nil {
+			if mapT, okT := varsT.(map[string]interface{}); okT {
+				for k, v := range mapT {
+					// ToObject handles non-string JSON values (numbers,
+					// bools); a direct charlang.String(v) would panic on
+					// those via a runtime type assertion
+					if objT, objErrT := charlang.ToObject(v); objErrT == nil {
+						envT[k] = objT
+					} else {
+						envT[k] = charlang.String(tkc.ToStr(v))
+					}
+				}
 			}
 		}
 	}
 
-	retT, errT := charlang.NewVM(nv).Run(envT, charlang.String{Value: C.GoString(paramA)})
+	// register all global names with the compiler so scripts can
+	// reference them; without this the compiler rejects them as
+	// unresolved references
+	symbolTableT := charlang.NewSymbolTable()
+
+	for k := range envT {
+		_, _ = symbolTableT.DefineGlobal(k)
+	}
+
+	optsT := charlang.DefaultCompilerOptions
+	optsT.SymbolTable = symbolTableT
+
+	nv, errT := charlang.Compile([]byte(codeT), &optsT)
+	if errT != nil {
+		return C.CString("TXERROR:" + errT.Error())
+	}
+
+	retT, errT := charlang.NewVM(nv).Run(envT, charlang.String(C.GoString(paramA)))
 
 	if errT != nil {
 		return C.CString("TXERROR:" + errT.Error())

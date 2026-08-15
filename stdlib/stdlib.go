@@ -1,6 +1,5 @@
 package stdlib
 
-//go:generate go run ../cmd/mkcallable -export -output zfuncs.go stdlib.go
 
 // time module IsTime
 // json module Marshal, Quote, NoQuote, NoEscape

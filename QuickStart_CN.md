@@ -561,6 +561,9 @@ strJoin(["a","b"], "-")  // 拼接
 
 ```charlang
 md5("hello")            // MD5哈希
+sm3("hello")            // SM3哈希（国密GB/T 32905-2016）
+hashPassword("密码")     // PBKDF2-HMAC-SM3密码哈希（随机盐；可传第二参数指定迭代次数）
+verifyPassword("密码", h) // 校验密码与哈希是否匹配，返回true/false
 sha256("hello")         // SHA256哈希
 base64Encode("abc")     // Base64编码
 base64Decode("YWJj")    // Base64解码

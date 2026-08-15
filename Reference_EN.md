@@ -756,6 +756,9 @@ typeCode(v) // Type code
 
 ```charlang
 md5(s)              // MD5 hash
+sm3(s)              // SM3 hash (GB/T 32905-2016), lowercase hex digest
+hashPassword(p[,i]) // password hashing: PBKDF2-HMAC-SM3 with random salt, returns self-describing encoding; i = iterations (default 10000, pass a larger value for stronger hashing)
+verifyPassword(p,h) // verify a password against a hashPassword encoding (constant-time compare), returns true/false
 sha1(s)             // SHA1 hash
 sha256(s)           // SHA256 hash
 base64Encode(s)     // Base64 encode

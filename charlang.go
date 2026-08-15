@@ -69,7 +69,6 @@
 //	}
 package charlang
 
-//go:generate go run ./cmd/mkcallable -output zfuncs.go charlang.go
 
 import (
 	"fmt"
