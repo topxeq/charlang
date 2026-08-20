@@ -1,0 +1,64 @@
+// 连接真实MySQL库，查询 kp_student 表
+host := "106.75.36.40"
+port := "3318"
+user := "bwgj"
+pass := "Bwgj@123"
+dbname := "bwkp"
+
+pln("=== 连接MySQL ===")
+try {
+    connStr := spr("%s:%s@tcp(%s:%s)/%s?timeout=5s", user, pass, host, port, dbname)
+    db := dbConnect("mysql", connStr)
+    if isErr(db) {
+        pl("连接失败: %v", getErrStr(db))
+        exit()
+    }
+    pln("连接成功!")
+
+    // 查版本
+    pln("")
+    pln("=== MySQL版本 ===")
+    rs := dbQuery(db, "SELECT VERSION() AS ver")
+    if isErr(rs) {
+        pl("查询版本失败: %v", getErrStr(rs))
+    } else {
+        pl("版本: %v", rs)
+    }
+
+    // 查表结构
+    pln("")
+    pln("=== kp_student 表结构 ===")
+    rs = dbQuery(db, "DESCRIBE kp_student")
+    if isErr(rs) {
+        pl("查表结构失败: %v", getErrStr(rs))
+    } else {
+        plt(rs)
+    }
+
+    // 查行数
+    pln("")
+    pln("=== kp_student 行数 ===")
+    rs = dbQuery(db, "SELECT COUNT(*) AS cnt FROM kp_student")
+    if isErr(rs) {
+        pl("查行数失败: %v", getErrStr(rs))
+    } else {
+        pl("行数: %v", rs)
+    }
+
+    // 查前10条数据
+    pln("")
+    pln("=== kp_student 前10条 ===")
+    rs = dbQuery(db, "SELECT * FROM kp_student LIMIT 10")
+    if isErr(rs) {
+        pl("查询失败: %v", getErrStr(rs))
+    } else {
+        jsonStr := toJson(rs, "-indent", "-sort")
+        pln(jsonStr)
+    }
+
+    dbClose(db)
+    pln("")
+    pln("完成，连接已关闭")
+} catch e {
+    pl("异常: %v", e)
+}

@@ -13,7 +13,7 @@ require (
 	github.com/sahilm/fuzzy v0.1.1
 	github.com/stretchr/testify v1.11.1
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff
-	github.com/topxeq/sqltk v0.0.0-20260124035901-98bf8683db30
+	github.com/topxeq/sqltk v0.0.0-20260820114004-cb868047090b
 	github.com/topxeq/tkc v0.0.0-20260605141016-ef826d7efa1d
 	golang.org/x/crypto v0.54.0
 )
