@@ -630,6 +630,10 @@
 
 **md5**
 
+**sha256**: SHA256 hash, returns lowercase hex digest of the raw bytes (UTF-8 for strings), usage: a := sha256("abc")
+
+**sha1**: SHA1 hash, returns lowercase hex digest of the raw bytes (UTF-8 for strings), usage: a := sha1("abc")
+
 **sm3**: SM3 hash (GB/T 32905-2016), returns lowercase hex digest of the raw bytes (UTF-8 for strings), usage: a := sm3("abc")
 
 **hashPassword**: hash a password with PBKDF2-HMAC-SM3 (RFC 8018 PBKDF2 + GB/T 32905-2016 SM3), fresh 16-byte random salt, returns a self-describing encoding like `$pbkdf2-sm3$<iterations>$<salt_b64url>$<digest_b64url>$`, usage: h := hashPassword(password [, iterations]) — omit iterations to use the default 10000; pass a larger iterations value for stronger hashing
@@ -1195,6 +1199,10 @@
 **dbClose**
 
 **dbQuery**
+
+**dbQueryAnyType**: same as dbQuery but values keep original types (int/float/string/undefined for NULL, []byte converted to string)
+
+**dbQueryRecsAnyType**: same as dbQueryRecs but values keep original types, first row is column names
 
 **dbQueryOrdered**
 

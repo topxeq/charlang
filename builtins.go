@@ -770,6 +770,10 @@ const (
 
 	BuiltinHashPassword
 	BuiltinVerifyPassword
+	BuiltinGetSHA256
+	BuiltinSHA1
+	BuiltinDbQueryAnyType
+	BuiltinDbQueryRecsAnyType
 )
 
 // BuiltinsMap maps built-in function names to their BuiltinType identifiers.
@@ -1215,7 +1219,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"ioCopy": BuiltinIoCopy,
 
 	// encode/decode related
-	"md5": BuiltinMd5,
+	"md5":    BuiltinMd5,
+	"sha256": BuiltinGetSHA256, // SHA256 hash, returns lowercase hex digest
+	"sha1":   BuiltinSHA1, // SHA1 hash, returns lowercase hex digest
 	"sm3": BuiltinSm3, // SM3 hash (GB/T 32905-2016), returns lowercase hex digest
 
 	"hashPassword":   BuiltinHashPassword,   // PBKDF2-HMAC-SM3 password hashing with random salt: hashPassword(password [, iterations])
@@ -1599,7 +1605,9 @@ var BuiltinsMap = map[string]BuiltinType{
 	"dbConnect": BuiltinDatabase,
 	"dbClose":   BuiltinDbClose,
 
-	"dbQuery":         BuiltinDbQuery,
+	"dbQuery":            BuiltinDbQuery,
+	"dbQueryAnyType":     BuiltinDbQueryAnyType,
+	"dbQueryRecsAnyType": BuiltinDbQueryRecsAnyType,
 	"dbQueryOrdered":  BuiltinDbQueryOrdered,
 	"dbQueryRecs":     BuiltinDbQueryRecs,
 	"dbQueryMap":      BuiltinDbQueryMap,
@@ -1807,6 +1815,26 @@ var BuiltinObjects = [...]Object{
 		Name:    "globals",
 		Value:   CallExAdapter(builtinGlobalsFunc),
 		ValueEx: builtinGlobalsFunc,
+	},
+	BuiltinGetSHA256: &BuiltinFunction{
+		Name:    "sha256",
+		Value:   fnASRSE(getSHA256),
+		ValueEx: fnASRSEex(getSHA256),
+	},
+	BuiltinSHA1: &BuiltinFunction{
+		Name:    "sha1",
+		Value:   fnASRSE(getSHA1),
+		ValueEx: fnASRSEex(getSHA1),
+	},
+	BuiltinDbQueryAnyType: &BuiltinFunction{
+		Name:    "dbQueryAnyType",
+		Value:   fnADSVaRA(sqltk.QueryDBIX),
+		ValueEx: fnADSVaRAex(sqltk.QueryDBIX),
+	},
+	BuiltinDbQueryRecsAnyType: &BuiltinFunction{
+		Name:    "dbQueryRecsAnyType",
+		Value:   fnADSVaRA(sqltk.QueryDBRecsIX),
+		ValueEx: fnADSVaRAex(sqltk.QueryDBRecsIX),
 	},
 	BuiltinLen: &BuiltinFunction{
 		Name:    "len",
@@ -21448,6 +21476,17 @@ func SHA1(data []byte) []byte {
 	h := sha1.New()
 	h.Write(data)
 	return h.Sum(nil)
+}
+
+// getSHA1 returns SHA-1 hex digest of a string.
+func getSHA1(str string) (string, error) {
+	hash := sha1.New()
+	_, err := hash.Write([]byte(str))
+	if err != nil {
+		return "", fmt.Errorf("failed to compute hash: %v", err)
+	}
+
+	return bytes2Hex(hash.Sum(nil)), nil
 }
 
 // SHA1PRNG derives pseudo-random bytes from seed using SHA-1.

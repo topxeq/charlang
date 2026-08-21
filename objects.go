@@ -6370,6 +6370,54 @@ func (o *Database) IndexGet(index Object) (value Object, err error) {
 			fT = o.Methods["queryRecs"]
 		}
 		return fT, nil
+	case "queryAnyType":
+		fT, ok := o.Methods["queryAnyType"]
+		if !ok {
+			o.Methods["queryAnyType"] = &Function{
+				Name: "queryAnyType",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.QueryDBIX(o.Value, s0.String(), objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryAnyType"]
+		}
+		return fT, nil
+	case "queryRecsAnyType":
+		fT, ok := o.Methods["queryRecsAnyType"]
+		if !ok {
+			o.Methods["queryRecsAnyType"] = &Function{
+				Name: "queryRecsAnyType",
+				Value: func(args ...Object) (Object, error) {
+					if len(args) < 1 {
+						return NewCommonError("not enough parameters"), nil
+					}
+
+					s0, ok := args[0].(String)
+					if !ok {
+						return NewArgumentTypeError("first", "string", args[0].TypeName()), nil
+					}
+
+					objsT := ObjectsToI(args[1:])
+
+					return ConvertToObject(sqltk.QueryDBRecsIX(o.Value, s0.String(), objsT...)), nil
+				},
+			}
+
+			fT = o.Methods["queryRecsAnyType"]
+		}
+		return fT, nil
 	case "queryMap":
 		fT, ok := o.Methods["queryMap"]
 		if !ok {

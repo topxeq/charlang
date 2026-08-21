@@ -283,6 +283,8 @@ writeBytesAt
 copyBytes
 ioCopy
 md5
+sha1
+sha256
 urlEncode
 urlEncode1
 urlDecode
@@ -533,6 +535,8 @@ formatSqlValue
 dbConnect
 dbClose
 dbQuery
+dbQueryAnyType
+dbQueryRecsAnyType
 dbQueryOrdered
 dbQueryRecs
 dbQueryMap

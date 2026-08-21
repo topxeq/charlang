@@ -3089,6 +3089,23 @@ func ConvertToObject(vA interface{}) Object {
 		}
 
 		return rsT
+	case [][]interface{}:
+		if nv == nil {
+			return Undefined
+		}
+
+		rsT := make(Array, 0, len(nv))
+
+		for _, v := range nv {
+			lineListT := make(Array, 0, len(v))
+			for _, jv := range v {
+				lineListT = append(lineListT, ConvertToObject(jv))
+			}
+
+			rsT = append(rsT, lineListT)
+		}
+
+		return rsT
 		// case time.Time:
 		// 	return Any{Value: nv, OriginalType: "time.Time"}
 	case time.Time:

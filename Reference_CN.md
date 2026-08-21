@@ -1585,6 +1585,8 @@ db := dbConnect("mysql", "user:pass@tcp(localhost:3306)/dbname")
 | `queryMapArray` | `sql` | `array` | 查询返回map数组 |
 | `queryCount` | `sql` | `int` | 查询数量 |
 | `queryFloat` | `sql` | `float` | 查询浮点数 |
+| `queryAnyType` | `sql` | `array` | 查询返回数组（值保持原始类型） |
+| `queryRecsAnyType` | `sql` | `array` | 查询返回记录数组（值保持原始类型，首行为列名） |
 | `queryString` | `sql` | `string` | 查询字符串 |
 | `exec` | `sql` | `int` | 执行返回影响行数 |
 | `close` | - | - | 关闭连接 |

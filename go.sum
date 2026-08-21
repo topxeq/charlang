@@ -6,6 +6,8 @@ github.com/Masterminds/semver/v3 v3.2.1 h1:RN9w6+7QoMeJVGyfmbcgs28Br8cvmnucEXnY0
 github.com/Masterminds/semver/v3 v3.2.1/go.mod h1:qvl/7zhW3nngYb5+80sSMF+FG2BjYrf8m9wsX0PNOMQ=
 github.com/STARRY-S/zip v0.2.3 h1:luE4dMvRPDOWQdeDdUxUoZkzUIpTccdKdhHHsQJ1fm4=
 github.com/STARRY-S/zip v0.2.3/go.mod h1:lqJ9JdeRipyOQJrYSOtpNAiaesFO6zVDsE8GIGFaoSk=
+github.com/SeriousBug/webp-go-pure v1.2.0 h1:vNfaUavQ2pPoOL/JHhEn83g/6ln9TyIzIc2oYFN8/nM=
+github.com/SeriousBug/webp-go-pure v1.2.0/go.mod h1:fqCT8wRyNoJx+CQxMvzFpjZq2Vv7ztOdXYqbmK+xRmU=
 github.com/aarzilli/sandblast v0.0.0-20151220083925-43f8fb998d06 h1:Im/kd8D6Xggzhq6S+IP1SitRsHHmy5mxqklIjoIfJGo=
 github.com/aarzilli/sandblast v0.0.0-20151220083925-43f8fb998d06/go.mod h1:Lc8kaYF26oMHUxliWAod3EZhrPBMg0irZRYqbPZcGyo=
 github.com/adhocore/gronx v1.19.6 h1:5KNVcoR9ACgL9HhEqCm5QXsab/gI4QDIybTAWcXDKDc=
@@ -289,8 +291,14 @@ github.com/topxeq/socks v0.0.0-20230721063359-4740c5e460e9 h1:loWEalO4+4TPW4odgm
 github.com/topxeq/socks v0.0.0-20230721063359-4740c5e460e9/go.mod h1:mf0FO/pQYsuIw59dJueuJMTfc9ESck/vtn6CEHeTAtA=
 github.com/topxeq/sqltk v0.0.0-20260820114004-cb868047090b h1:UhNdtx2AQbd3js0Izajq3dCKQaPbWC1K52QMg34++/c=
 github.com/topxeq/sqltk v0.0.0-20260820114004-cb868047090b/go.mod h1:7PWmKj1vH1JUD9jFUfmlAItmcBxewV/JCr2mSo62L7E=
+github.com/topxeq/sqltk v0.0.0-20260821020322-70ac6c66a2df h1:quZYDk0MXCKd38QxZQaqoYhprYiSfttkeUN9VjpZSfc=
+github.com/topxeq/sqltk v0.0.0-20260821020322-70ac6c66a2df/go.mod h1:7PWmKj1vH1JUD9jFUfmlAItmcBxewV/JCr2mSo62L7E=
+github.com/topxeq/sqltk v0.0.0-20260821023018-84cb930dba72 h1:jrYFRqhTSkxsZbNX0LTrMeNo6rV8Niae3Hh29ML4ntI=
+github.com/topxeq/sqltk v0.0.0-20260821023018-84cb930dba72/go.mod h1:7PWmKj1vH1JUD9jFUfmlAItmcBxewV/JCr2mSo62L7E=
 github.com/topxeq/tkc v0.0.0-20260605141016-ef826d7efa1d h1:T4/M0dK5ibdyISNoqrMRyjY/izbLV3VQcE1Quscfy38=
 github.com/topxeq/tkc v0.0.0-20260605141016-ef826d7efa1d/go.mod h1:EdmMu/Thm/2nWXuzoDggIajypO7NhK16OwT5BXPQk+k=
+github.com/topxeq/tkc v0.0.0-20260821015152-2f2b55481202 h1:G9k4kQ2RbZHVty+tGPadrV+xGBNDkrQLZZ7wwIaDK08=
+github.com/topxeq/tkc v0.0.0-20260821015152-2f2b55481202/go.mod h1:nty18bJhUpG7rfRs/vLHH0Qk+UqeLvNVw2EKS/CijRU=
 github.com/topxeq/uuid v0.0.0-20210318003930-0d149e412ca1 h1:IEl6WYCFNG6l+4JSvFVZ0zKXOuu6NockB/BgL6d6FcE=
 github.com/topxeq/uuid v0.0.0-20210318003930-0d149e412ca1/go.mod h1:M6+8XhQK8KhdO8FvAckQN9zCLgJU8TZTVhITlsQwkWM=
 github.com/topxeq/xmlx v0.3.0 h1:h3Si1uMvL4jxRYkoEx16kKkSF/3FyGz7FuWEAZNKKhY=

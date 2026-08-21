@@ -18,12 +18,13 @@ require (
 	github.com/ncruces/zenity v0.10.13
 	github.com/sijms/go-ora/v2 v2.7.17
 	github.com/topxeq/charlang v0.0.0
-	github.com/topxeq/tkc v0.0.0-20260605141016-ef826d7efa1d
+	github.com/topxeq/tkc v0.0.0-20260821015152-2f2b55481202
 )
 
 require (
 	github.com/ALTree/bigfloat v0.2.0 // indirect
 	github.com/STARRY-S/zip v0.2.3 // indirect
+	github.com/SeriousBug/webp-go-pure v1.2.0 // indirect
 	github.com/aarzilli/sandblast v0.0.0-20151220083925-43f8fb998d06 // indirect
 	github.com/adhocore/gronx v1.19.6 // indirect
 	github.com/akavel/rsrc v0.10.2 // indirect
@@ -148,7 +149,7 @@ require (
 	github.com/topxeq/mahonia v0.0.0-20190828060648-12b0599ddd1a // indirect
 	github.com/topxeq/regexpx v0.0.0-20230721063247-f118dbe089d7 // indirect
 	github.com/topxeq/socks v0.0.0-20230721063359-4740c5e460e9 // indirect
-	github.com/topxeq/sqltk v0.0.0-20260820114004-cb868047090b // indirect
+	github.com/topxeq/sqltk v0.0.0-20260821023018-84cb930dba72 // indirect
 	github.com/topxeq/uuid v0.0.0-20210318003930-0d149e412ca1 // indirect
 	github.com/topxeq/xmlx v0.3.0 // indirect
 	github.com/ulikunitz/xz v0.5.15 // indirect

@@ -13,14 +13,15 @@ require (
 	github.com/sahilm/fuzzy v0.1.1
 	github.com/stretchr/testify v1.11.1
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff
-	github.com/topxeq/sqltk v0.0.0-20260820114004-cb868047090b
-	github.com/topxeq/tkc v0.0.0-20260605141016-ef826d7efa1d
+	github.com/topxeq/sqltk v0.0.0-20260821023018-84cb930dba72
+	github.com/topxeq/tkc v0.0.0-20260821015152-2f2b55481202
 	golang.org/x/crypto v0.54.0
 )
 
 require (
 	github.com/ALTree/bigfloat v0.2.0 // indirect
 	github.com/STARRY-S/zip v0.2.3 // indirect
+	github.com/SeriousBug/webp-go-pure v1.2.0 // indirect
 	github.com/aarzilli/sandblast v0.0.0-20151220083925-43f8fb998d06 // indirect
 	github.com/adhocore/gronx v1.19.6 // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
