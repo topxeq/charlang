@@ -1200,7 +1200,7 @@
 
 **dbQuery**
 
-**dbQueryAnyType**: same as dbQuery but values keep original types (int/float/string/undefined for NULL, []byte converted to string)
+**dbQueryAnyType**: same as dbQuery but values keep original types (int/float/string, NULL becomes undefined, []byte converted to string), parameters supported, usage: rows := dbQueryAnyType(db, "SELECT * FROM t WHERE id > ?", 100)
 
 **dbQueryRecsAnyType**: same as dbQueryRecs but values keep original types, first row is column names
 

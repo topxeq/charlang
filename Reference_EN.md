@@ -1455,6 +1455,8 @@ db := dbConnect("mysql", "user:pass@tcp(localhost:3306)/dbname")
 | `queryMapArray` | `sql` | `array` | Query returns map array |
 | `queryCount` | `sql` | `int` | Query count |
 | `queryFloat` | `sql` | `float` | Query float |
+| `queryAnyType` | `sql` | `array` | Query returns array (values keep original types, NULL becomes undefined) |
+| `queryRecsAnyType` | `sql` | `array` | Query returns record array (values keep original types, first row is column names) |
 | `queryString` | `sql` | `string` | Query string |
 | `exec` | `sql` | `int` | Execute, returns affected rows |
 | `close` | - | - | Close connection |
