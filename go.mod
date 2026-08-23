@@ -146,7 +146,6 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/guptarohit/asciigraph v0.5.6
 	github.com/mattn/go-runewidth v0.0.20 // indirect
-	github.com/mattn/go-sqlite3 v1.14.17 // indirect
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/vicanso/go-charts/v2 v2.6.4
 	github.com/wcharczuk/go-chart/v2 v2.1.0
