@@ -13,9 +13,9 @@ require (
 	github.com/sahilm/fuzzy v0.1.1
 	github.com/stretchr/testify v1.11.1
 	github.com/topxeq/awsapi v0.0.0-20240618030908-cda3055d09ff
-	github.com/topxeq/sqltk v0.0.0-20260821023018-84cb930dba72
-	github.com/topxeq/tkc v0.0.0-20260821015152-2f2b55481202
-	golang.org/x/crypto v0.54.0
+	github.com/topxeq/sqltk v0.0.0-20260823114515-a3b14bb04f29
+	github.com/topxeq/tkc v0.0.0-20260823094442-345bd909ac84
+	golang.org/x/crypto v0.55.0
 )
 
 require (
@@ -33,7 +33,7 @@ require (
 	github.com/bodgit/sevenzip v1.6.1 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/boombuler/barcode v1.1.0 // indirect
-	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/buger/jsonparser v1.1.2 // indirect
 	github.com/cention-sany/utf7 v0.0.0-20170124080048-26cad61bd60a // indirect
 	github.com/charmbracelet/bubbles v1.0.0 // indirect
 	github.com/charmbracelet/bubbletea v1.3.10 // indirect
@@ -70,7 +70,7 @@ require (
 	github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 // indirect
 	github.com/jhillyerd/enmime v1.3.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.18.4 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/kr/fs v0.1.0 // indirect
@@ -130,14 +130,14 @@ require (
 	github.com/xuri/efp v0.0.1 // indirect
 	github.com/xuri/nfp v0.0.2-0.20250530014748-2ddeb826f9a9 // indirect
 	github.com/yeka/zip v0.0.0-20231116150916-03d6312748a9 // indirect
-	github.com/yuin/goldmark v1.7.16 // indirect
+	github.com/yuin/goldmark v1.7.17 // indirect
 	github.com/yuin/goldmark-highlighting v0.0.0-20220208100518-594be1970594 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go4.org v0.0.0-20260112195520-a5071408f32f // indirect
-	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
@@ -151,7 +151,7 @@ require (
 	github.com/vicanso/go-charts/v2 v2.6.4
 	github.com/wcharczuk/go-chart/v2 v2.1.0
 	github.com/xuri/excelize/v2 v2.10.0
-	golang.org/x/image v0.36.0
+	golang.org/x/image v0.45.0
 )
 
 replace github.com/topxeq/tkc v0.0.0-20260309011933-5d9a035395ca => ../tkc
