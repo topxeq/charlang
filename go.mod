@@ -153,7 +153,3 @@ require (
 	github.com/xuri/excelize/v2 v2.10.0
 	golang.org/x/image v0.45.0
 )
-
-replace github.com/topxeq/tkc v0.0.0-20260309011933-5d9a035395ca => ../tkc
-
-// replace github.com/topxeq/sqltk v0.0.0 => ../sqltk
