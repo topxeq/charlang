@@ -21,3 +21,5 @@
 *.prof
 
 /TODO*
+# build output
+/out/
