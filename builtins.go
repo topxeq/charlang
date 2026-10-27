@@ -12420,7 +12420,21 @@ func builtinGetWebRespBodyFunc(c Call) (Object, error) {
 	nv, ok := rsT.(io.ReadCloser)
 
 	if ok {
-		return &Reader{Value: nv}, nil
+		// 资源登记: 与 getFormFile/dbConnect 同模式, VM 退出时 CloseAllResources 兜底关闭
+		registerResource(c, nv)
+
+		readerT := &Reader{Value: nv}
+		readerT.SetMember("close", &Function{
+			Name: "close",
+			Value: func(args ...Object) (Object, error) {
+				errT := nv.Close()
+				if errT == nil {
+					unregisterResource(c, nv)
+				}
+				return ConvertToObject(errT), nil
+			},
+		})
+		return readerT, nil
 	}
 
 	nv2, ok := rsT.([]interface{})
@@ -14313,22 +14327,26 @@ func builtinFtpGetReaderFunc(c Call) (Object, error) {
 
 	readerT := &Reader{Value: r}
 
+	// 资源登记: FTP 数据连接(Response) + 控制连接(Quit), 合并为单一 closer 登记,
+	// VM 退出时 CloseAllResources 兜底一并关闭; 原代码只兜底数据连接会漏掉控制连接
+	ftpCloserT := closerFuncT(func() error {
+		err1 := r.Close()
+		err2 := clientT.Quit()
+		if err1 != nil {
+			return err1
+		}
+		return err2
+	})
+	registerResource(c, ftpCloserT)
+
 	readerT.SetMember("close", &Function{
 		Name: "close",
 		Value: func(args ...Object) (Object, error) {
-			err1 := r.Close()
-
-			err2 := clientT.Quit()
-
-			if err1 != nil {
-				return NewCommonErrorWithPos(c, "failed to close ftp connection: %v", err), nil
+			errT := ftpCloserT.Close()
+			if errT == nil {
+				unregisterResource(c, ftpCloserT)
 			}
-
-			if err2 != nil {
-				return NewCommonErrorWithPos(c, "failed to close ftp connection: %v", err), nil
-			}
-
-			return Undefined, nil
+			return ConvertToObject(errT), nil
 		},
 	})
 
@@ -17017,6 +17035,14 @@ func unregisterResource(c Call, closer io.Closer) {
 	}
 }
 
+// closerFuncT 把闭包适配成 io.Closer，用于组合资源的资源登记
+// (如 FTP 需要同时关闭数据连接与控制连接，可注册一个合并关闭器)
+type closerFuncT func() error
+
+func (f closerFuncT) Close() error {
+	return f()
+}
+
 // func builtinGetErrStrXFunc(c Call) (Object, error) {
 // 	args := c.GetArgs()
 
@@ -19221,6 +19247,19 @@ func builtinS3GetObjectReaderFunc(c Call) (Object, error) {
 	}
 
 	readerT := &Reader{Value: objT}
+
+	// 资源登记: minio 对象流, VM 退出时兜底关闭
+	registerResource(c, objT)
+	readerT.SetMember("close", &Function{
+		Name: "close",
+		Value: func(args ...Object) (Object, error) {
+			errT := objT.Close()
+			if errT == nil {
+				unregisterResource(c, objT)
+			}
+			return ConvertToObject(errT), nil
+		},
+	})
 
 	return readerT, nil
 }

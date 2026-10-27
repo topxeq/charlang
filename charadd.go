@@ -31,7 +31,7 @@ import (
 )
 
 // global vars
-var VersionG = "2.6.3"
+var VersionG = "2.6.5"
 
 var CodeTextG = ""
 
@@ -1866,10 +1866,19 @@ var methodFuncMapG = map[int]map[string]*Function{
 
 				readerT := &Reader{Value: formFile1}
 
+				// 资源登记: 加入当前 VM 的资源表，VM 退出时 CloseAllResources 兜底关闭
+				// (与 dbConnect/websocket 等同类资源的管理模式一致, 见 builtins.go registerResource)
+				registerResource(c, formFile1)
+
 				readerT.SetMember("close", &Function{
 					Name: "close",
 					Value: func(args ...Object) (Object, error) {
-						return ConvertToObject(formFile1.Close()), nil
+						errT := formFile1.Close()
+						if errT == nil {
+							// 显式关闭后从资源表注销，避免 VM 退出时二次关闭
+							unregisterResource(c, formFile1)
+						}
+						return ConvertToObject(errT), nil
 					},
 				})
 
