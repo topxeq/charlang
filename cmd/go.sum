@@ -327,8 +327,8 @@ github.com/topxeq/docxrepl v0.0.0-20250311080137-aa66335eab2e h1:gYiBPg9MvSbZKJb
 github.com/topxeq/docxrepl v0.0.0-20250311080137-aa66335eab2e/go.mod h1:dv9nr0GOeIC+9K2+YAfQrwCx0BaZoL243J7zmJ93FxQ=
 github.com/topxeq/gods v0.0.0-20220125023913-b5718bb0c704 h1:UDjm5BOCQ4slQmGLHR9jL/0ldJDHy2CriDdqYbcI5o8=
 github.com/topxeq/gods v0.0.0-20220125023913-b5718bb0c704/go.mod h1:pwCuhd06kBt3NUKc3BQwXbh6DOznm8sbFyMixA1Im/M=
-github.com/topxeq/goph v0.0.0-20240813015542-ebac0794140b h1:N5id1qwkwAelUb5A3bFJlQHnc2inOMI81ElS7I1Cpfg=
-github.com/topxeq/goph v0.0.0-20240813015542-ebac0794140b/go.mod h1:dx69VWHgL0R0MkiXSepdhEJMBWxwqBIYUb04boZtWaY=
+github.com/topxeq/goph v0.0.0-20261027051922-db7ec51deb33 h1:rA35b/wnc7zguYgndc61bzNU2nQpboPcNY7kV1T0CPA=
+github.com/topxeq/goph v0.0.0-20261027051922-db7ec51deb33/go.mod h1:dx69VWHgL0R0MkiXSepdhEJMBWxwqBIYUb04boZtWaY=
 github.com/topxeq/mahonia v0.0.0-20190828060648-12b0599ddd1a h1:AbaDA3cbBe+3qpvek2YhvE/xn+8vLOc3J+KBlR2DMII=
 github.com/topxeq/mahonia v0.0.0-20190828060648-12b0599ddd1a/go.mod h1:Y07Sl+FLd164UCoNlvVFUb0NJWtcehctV6kaNWPjLgM=
 github.com/topxeq/regexpx v0.0.0-20230721063247-f118dbe089d7 h1:bcYgbhUq1iUMjfWbNv2VaEVPAKHt908Oxz2XQcek6bA=
